@@ -290,13 +290,6 @@ const char *msg;
 
 uint8_t bpm_blink_timer = 1;
 
-bool _running = false;
-
-bool _testUI = false;
-bool _checkTestFn = false;
-
-uint8_t draw_state = 0;
-
 #ifndef _BV
 #define _BV(bit) (1 << (bit)) 
 #endif
@@ -406,7 +399,6 @@ elapsedMillis elapsed;
 
 void setLEDPWM(uint8_t lednum, uint16_t pwm);
 void setLEDPWMDouble(uint8_t lednum1, uint16_t pwm1, uint8_t lednum2, uint16_t pwm2);
-void testLEDs();
 void u8g2_prepare(void);
 void drawEvent(std::string event, std::string eventAddl, bool erase);
 void handleSwitchStates(bool discard);
@@ -425,7 +417,6 @@ void toggleLED(uint8_t num, bool discard);
 void toggleSequencerPlayback(char btn);
 void handle_bpm_step(uint32_t tick);
 void triggerAllStepsForGlobalStep(void);
-void initTest(void);
 void initMain(void);
 void drawSequencerScreen(void);
 void drawSetTempoOverlay(void);
@@ -595,18 +586,12 @@ void setup() {
 
   delay(100);
 
-  _checkTestFn = true;
-
   // discard any dirty reads
   handleSwitchStates(true);
 
   u8g2_prepare();
 
-  if (_testUI) {
-    initTest();
-  } else {
-    initMain();
-  }
+  initMain();
 
   // Setup our clock system
   // Inits the clock
@@ -828,23 +813,6 @@ void handleDisplayModeLEDs(void)
       displayCurrentlySelectedTrack();
     }
   }
-}
-
-void initTest()
-{
-  u8g2.clearBuffer();
-  u8g2.drawStr( 24, 18, "audio enjoyer");
-  u8g2.drawStr( 36, 36, "xr-1 test");
-  u8g2.sendBuffer();
-
-  delay(1000);
-
-  testLEDs();
-
-  u8g2.clearBuffer();
-  u8g2.drawStr( 16, 18, "press any button");
-  u8g2.drawStr( 18, 36, "or twist a knob!");
-  u8g2.sendBuffer();
 }
 
 void initMain()
@@ -1297,105 +1265,89 @@ void handleSwitchStates(bool discard) {
         switch (kpd.key[i].kstate) {  // Report active key state : IDLE, PRESSED, HOLD, or RELEASED
           case PRESSED: 
             {
-              if (_checkTestFn && kpd.key[i].kchar == 'r') {
-                _testUI = true;
+              if (current_UI_mode == UI_MODE::TRACK_SEL && selectedBtnCharIsATrack(kpd.key[i].kchar)) {
+                uint8_t selTrack = getKeyStepNum(kpd.key[i].kchar);
+                current_selected_track = selTrack-1; // zero-based
+                previous_UI_mode = UI_MODE::TRACK_WRITE;
+                current_UI_mode = UI_MODE::TRACK_WRITE;
+                setDisplayStateForAllStepLEDs();
+
+                std::string msg = "Selected track: ";
+                std::string newLine = std::to_string(current_selected_track+1);
+                drawEvent(msg, newLine, false);
+              } else if (current_UI_mode == UI_MODE::TRACK_WRITE && selectedBtnCharIsATrack(kpd.key[i].kchar)) {
+              // make a duplicate method with a diff name to better reflect logic
+              // e.g., selectedBtnCharIsAValidStep()
+
+                uint8_t stepToToggle = getKeyStepNum(kpd.key[i].kchar);
+                toggleSelectedStep(stepToToggle);
+              } else if (current_UI_mode == UI_MODE::PATTERN_SEL && selectedBtnCharIsATrack(kpd.key[i].kchar)) {
+                uint8_t selPattern = getKeyStepNum(kpd.key[i].kchar);
+                current_selected_pattern = selPattern-1; // zero-based
+                previous_UI_mode = UI_MODE::PATTERN_WRITE;
+                current_UI_mode = UI_MODE::PATTERN_WRITE;
+                //setDisplayStateForAllStepLEDs();
+
+                std::string msg = "Selected pattern: ";
+                std::string newLine = std::to_string(current_selected_pattern+1);
+                drawEvent(msg, newLine, false);
               }
+              
 
-              if (_testUI) {
-                std::string pressed = "Pressed button:";
-                std::string pressedNewLine = getKeyStr(kpd.key[i].kchar);
-                drawEvent(pressed, pressedNewLine, discard);
-              } else {
-                if (current_UI_mode == UI_MODE::TRACK_SEL && selectedBtnCharIsATrack(kpd.key[i].kchar)) {
-                  uint8_t selTrack = getKeyStepNum(kpd.key[i].kchar);
-                  current_selected_track = selTrack-1; // zero-based
-                  previous_UI_mode = UI_MODE::TRACK_WRITE;
-                  current_UI_mode = UI_MODE::TRACK_WRITE;
-                  setDisplayStateForAllStepLEDs();
-
-                  std::string msg = "Selected track: ";
-                  std::string newLine = std::to_string(current_selected_track+1);
-                  drawEvent(msg, newLine, false);
-                } else if (current_UI_mode == UI_MODE::TRACK_WRITE && selectedBtnCharIsATrack(kpd.key[i].kchar)) {
-                // make a duplicate method with a diff name to better reflect logic
-                // e.g., selectedBtnCharIsAValidStep()
-
-                  uint8_t stepToToggle = getKeyStepNum(kpd.key[i].kchar);
-                  toggleSelectedStep(stepToToggle);
-                } else if (current_UI_mode == UI_MODE::PATTERN_SEL && selectedBtnCharIsATrack(kpd.key[i].kchar)) {
-                  uint8_t selPattern = getKeyStepNum(kpd.key[i].kchar);
-                  current_selected_pattern = selPattern-1; // zero-based
-                  previous_UI_mode = UI_MODE::PATTERN_WRITE;
-                  current_UI_mode = UI_MODE::PATTERN_WRITE;
-                  //setDisplayStateForAllStepLEDs();
-
-                  std::string msg = "Selected pattern: ";
-                  std::string newLine = std::to_string(current_selected_pattern+1);
-                  drawEvent(msg, newLine, false);
-                }
-                
-
-                if (kpd.key[i].kchar == 'q' || kpd.key[i].kchar == 'w') { // start or stop
-                  toggleSequencerPlayback(kpd.key[i].kchar);
-                  drawSequencerScreen();
-                }
+              if (kpd.key[i].kchar == 'q' || kpd.key[i].kchar == 'w') { // start or stop
+                toggleSequencerPlayback(kpd.key[i].kchar);
+                drawSequencerScreen();
               }
 
               break;
             }
           case HOLD:
             {
-              if (_testUI) {
-                std::string held = "Held button:";
-                std::string heldNewLine = getKeyStr(kpd.key[i].kchar);
-                drawEvent(held, heldNewLine, discard);
-              } else {
-                // init track select UI mode if track button (char c) is held
-                if (current_UI_mode != UI_MODE::TRACK_SEL && kpd.key[i].kchar == 'c') {
-                  Serial.println("enter track select mode!");
-                  current_UI_mode = UI_MODE::TRACK_SEL;
+              // init track select UI mode if track button (char c) is held
+              if (current_UI_mode != UI_MODE::TRACK_SEL && kpd.key[i].kchar == 'c') {
+                Serial.println("enter track select mode!");
+                current_UI_mode = UI_MODE::TRACK_SEL;
 
-                  std::string msg = "SELECT A TRACK!";
-                  drawEvent(msg, "", false);
+                std::string msg = "SELECT A TRACK!";
+                drawEvent(msg, "", false);
 
-                  clearAllStepLEDs();
-                  displayCurrentlySelectedTrack();
-                } else if (current_UI_mode != UI_MODE::PATTERN_SEL && kpd.key[i].kchar == 'b') {
-                  Serial.println("enter pattern select mode!");
-                  current_UI_mode = UI_MODE::PATTERN_SEL;
+                clearAllStepLEDs();
+                displayCurrentlySelectedTrack();
+              } else if (current_UI_mode != UI_MODE::PATTERN_SEL && kpd.key[i].kchar == 'b') {
+                Serial.println("enter pattern select mode!");
+                current_UI_mode = UI_MODE::PATTERN_SEL;
 
-                  std::string msg = "SELECT A PATTERN!";
-                  drawEvent(msg, "", false);
+                std::string msg = "SELECT A PATTERN!";
+                drawEvent(msg, "", false);
 
-                  // TODO: implement function to show patterns with data by illuminating their step LEDs
-                  clearAllStepLEDs();
-                  displayCurrentlySelectedPattern();
-                } else if (current_UI_mode != UI_MODE::PATTERN_SEL && kpd.key[i].kchar == '4') {
-                  Serial.println("enter tempo set mode!");
-                  current_UI_mode = UI_MODE::SET_TEMPO;
+                // TODO: implement function to show patterns with data by illuminating their step LEDs
+                clearAllStepLEDs();
+                displayCurrentlySelectedPattern();
+              } else if (current_UI_mode != UI_MODE::PATTERN_SEL && kpd.key[i].kchar == '4') {
+                Serial.println("enter tempo set mode!");
+                current_UI_mode = UI_MODE::SET_TEMPO;
 
-                  drawSetTempoOverlay();
-                }
+                drawSetTempoOverlay();
+              }
 
-                if (current_UI_mode == UI_MODE::TRACK_SEL && selectedBtnCharIsATrack(kpd.key[i].kchar)) {
-                  uint8_t selTrack = getKeyStepNum(kpd.key[i].kchar);
-                  current_selected_track = selTrack;
-                  //previous_UI_mode = UI_MODE::TRACK_WRITE;
-                  current_UI_mode = UI_MODE::TRACK_WRITE;
+              if (current_UI_mode == UI_MODE::TRACK_SEL && selectedBtnCharIsATrack(kpd.key[i].kchar)) {
+                uint8_t selTrack = getKeyStepNum(kpd.key[i].kchar);
+                current_selected_track = selTrack;
+                //previous_UI_mode = UI_MODE::TRACK_WRITE;
+                current_UI_mode = UI_MODE::TRACK_WRITE;
 
-                  std::string msg = "SELECTED TRACK: ";
-                  std::string newLine = std::to_string(current_selected_track+1);
-                  drawEvent(msg, newLine, false);
-                } else if (current_UI_mode == UI_MODE::PATTERN_SEL && selectedBtnCharIsATrack(kpd.key[i].kchar)) {
-                  uint8_t selPattern = getKeyStepNum(kpd.key[i].kchar);
-                  current_selected_pattern = selPattern;
-                  //previous_UI_mode = UI_MODE::TRACK_WRITE;
-                  current_UI_mode = UI_MODE::PATTERN_WRITE;
+                std::string msg = "SELECTED TRACK: ";
+                std::string newLine = std::to_string(current_selected_track+1);
+                drawEvent(msg, newLine, false);
+              } else if (current_UI_mode == UI_MODE::PATTERN_SEL && selectedBtnCharIsATrack(kpd.key[i].kchar)) {
+                uint8_t selPattern = getKeyStepNum(kpd.key[i].kchar);
+                current_selected_pattern = selPattern;
+                //previous_UI_mode = UI_MODE::TRACK_WRITE;
+                current_UI_mode = UI_MODE::PATTERN_WRITE;
 
-                  std::string msg = "SELECTED PATTERN: ";
-                  std::string newLine = std::to_string(current_selected_pattern+1);
-                  drawEvent(msg, newLine, false);
-                }
+                std::string msg = "SELECTED PATTERN: ";
+                std::string newLine = std::to_string(current_selected_pattern+1);
+                drawEvent(msg, newLine, false);
               }
 
               break;
@@ -1403,58 +1355,57 @@ void handleSwitchStates(bool discard) {
           case RELEASED:
             {
               // when held button is released, reset the held mode to prior mode
+              Serial.print("button char: ");
+              Serial.print(kpd.key[i].kchar);
+              Serial.print(" released!");
 
-                  Serial.print("button char: ");
-                  Serial.print(kpd.key[i].kchar);
-                  Serial.print(" released!");
+              if (current_UI_mode == UI_MODE::TRACK_WRITE) {
+                Serial.print(" selected track: ");
+                Serial.print(current_selected_track);
+                Serial.println(", entered track write mode!");
 
-                  if (current_UI_mode == UI_MODE::TRACK_WRITE) {
-                    Serial.print(" selected track: ");
-                    Serial.print(current_selected_track);
-                    Serial.println(", entered track write mode!");
+                drawSequencerScreen();
+              } else if (current_UI_mode == UI_MODE::PATTERN_WRITE) {
+                Serial.print(" selected pattern: ");
+                Serial.print(current_selected_pattern);
+                Serial.println(", entered pattern write mode!");
 
-                    drawSequencerScreen();
-                  } else if (current_UI_mode == UI_MODE::PATTERN_WRITE) {
-                    Serial.print(" selected pattern: ");
-                    Serial.print(current_selected_pattern);
-                    Serial.println(", entered pattern write mode!");
+                drawSequencerScreen();
+                clearAllStepLEDs();
+              }
 
-                    drawSequencerScreen();
-                    clearAllStepLEDs();
-                  }
+              if (current_UI_mode == UI_MODE::TRACK_SEL) {
+                Serial.print(" reverting track select mode, entering: ");
+                Serial.print(previous_UI_mode == UI_MODE::PATTERN_WRITE ? "pattern write mode!" : "track write mode!");
+                // revert back to a prior write mode, not a hold mode
+                current_UI_mode = previous_UI_mode;
 
-                  if (current_UI_mode == UI_MODE::TRACK_SEL) {
-                    Serial.print(" reverting track select mode, entering: ");
-                    Serial.print(previous_UI_mode == UI_MODE::PATTERN_WRITE ? "pattern write mode!" : "track write mode!");
-                    // revert back to a prior write mode, not a hold mode
-                    current_UI_mode = previous_UI_mode;
+                drawSequencerScreen();
+                
+                if (current_UI_mode == UI_MODE::TRACK_WRITE) {
+                  setDisplayStateForAllStepLEDs();
+                }
+              } else if (current_UI_mode == UI_MODE::PATTERN_SEL) {
+                Serial.print(" reverting pattern select mode, entering: ");
+                Serial.print(previous_UI_mode == UI_MODE::PATTERN_WRITE ? "pattern write mode!" : "track write mode!");
+                // revert back to a prior write mode, not a hold mode
+                current_UI_mode = previous_UI_mode;
 
-                    drawSequencerScreen();
-                    
-                    if (current_UI_mode == UI_MODE::TRACK_WRITE) {
-                      setDisplayStateForAllStepLEDs();
-                    }
-                  } else if (current_UI_mode == UI_MODE::PATTERN_SEL) {
-                    Serial.print(" reverting pattern select mode, entering: ");
-                    Serial.print(previous_UI_mode == UI_MODE::PATTERN_WRITE ? "pattern write mode!" : "track write mode!");
-                    // revert back to a prior write mode, not a hold mode
-                    current_UI_mode = previous_UI_mode;
+                drawSequencerScreen();
+                
+                if (current_UI_mode == UI_MODE::TRACK_WRITE) {
+                  setDisplayStateForAllStepLEDs();
+                } else if (current_UI_mode == UI_MODE::PATTERN_WRITE) {
+                  clearAllStepLEDs();
+                }
+              } else if (current_UI_mode == UI_MODE::SET_TEMPO) {
+                Serial.print(" reverting set tempo mode, entering: ");
+                Serial.print(previous_UI_mode == UI_MODE::PATTERN_WRITE ? "pattern write mode!" : "track write mode!");
+                // revert back to a prior write mode, not a hold mode
+                current_UI_mode = previous_UI_mode;
 
-                    drawSequencerScreen();
-                    
-                    if (current_UI_mode == UI_MODE::TRACK_WRITE) {
-                      setDisplayStateForAllStepLEDs();
-                    } else if (current_UI_mode == UI_MODE::PATTERN_WRITE) {
-                      clearAllStepLEDs();
-                    }
-                  } else if (current_UI_mode == UI_MODE::SET_TEMPO) {
-                    Serial.print(" reverting set tempo mode, entering: ");
-                    Serial.print(previous_UI_mode == UI_MODE::PATTERN_WRITE ? "pattern write mode!" : "track write mode!");
-                    // revert back to a prior write mode, not a hold mode
-                    current_UI_mode = previous_UI_mode;
-
-                    drawSequencerScreen();
-                  }
+                drawSequencerScreen();
+              }
 
               break;
             }
@@ -1529,35 +1480,6 @@ void setLEDPWMDouble (uint8_t lednum1, uint16_t pwm1, uint8_t lednum2, uint16_t 
     tlc.setPWM(lednum1, pwm1);
     tlc.setPWM(lednum2, pwm2);
     tlc.write();  
-}
-
-void testLEDs()
-{
-  for (int j=0; j<24; j++) {
-    if (j > 16 && j < 21) {
-      setLEDPWM(j, 100);    //sets all 24 outputs to maximum brightness PWM.
-    } else {
-      setLEDPWM(j, 4095);    //sets all 24 outputs to maximum brightness PWM.
-    }
-    //setLEDPWM(j, 50);    //sets all 24 outputs to maximum brightness PWM.
-    delay(50);
-  }
-
-  for (int j=0; j<24; j++) {
-    if (j > 16 && j < 21) {
-      setLEDPWM(j, 25);    //sets all 24 outputs to maximum brightness PWM.
-    } else {
-      setLEDPWM(j, 500);    //sets all 24 outputs to maximum brightness PWM.
-    }
-    //setLEDPWM(j, 50);    //sets all 24 outputs to maximum brightness PWM.
-    delay(50);
-  }
-
-  delay(100);
-
-  for (int i=0; i<24; i++) {
-    setLEDPWM(i, 0);    //sets all 24 outputs to no brightness PWM.
-  }
 }
 
 void writeToDAC(int chip, int chan, int val){
