@@ -15,13 +15,52 @@
 #include <TeensyVariablePlayback.h>
 #include "flashloader.h"
 
+#if F_CPU == (24000000L) //24mhz
+#define UNLOADED_IDLE_COUNTS 152000
+#elif F_CPU == (48000000L) //48mhz
+#define UNLOADED_IDLE_COUNTS 280000
+#elif F_CPU == (72000000L) //72mhz
+#define UNLOADED_IDLE_COUNTS 360000
+#elif F_CPU == (600000000L) //600mhz
+#define UNLOADED_IDLE_COUNTS 13600000
+#else //96mhz
+#define UNLOADED_IDLE_COUNTS 420000
+#endif
+
+//set cpu percent scale to a linear one
+#define LOG 0
+#define LIN 1
+#define SCALE LIN
+
+static IntervalTimer cpu;
+
+uint32_t Idle_Counter;
+uint8_t CPU_Utilization_Info_Read_To_Compute;
+uint32_t Prev_Idle_Counter;
+uint32_t Idle_Counts;
+uint32_t Calculate_Idle_Counts (void);
+bool One_MS_Task_Ready;
+bool Ten_MS_Task_Ready;
+bool One_Hundred_MS_Task_Ready;
+bool One_S_Task_Ready;
+
+extern unsigned long _heap_start;
+extern unsigned long _heap_end;
+extern char *__brkval;
+
+extern "C" char* sbrk(int incr);
+int freeram() {
+  return (char *)&_heap_end - __brkval;
+}
+
 // GUItool: begin automatically generated code
 AudioPlayArrayResmp      rraw_a1;  //xy=502,248
 AudioPlayArrayResmp      rraw_a2;  //xy=605,248
 AudioPlayArrayResmp      rraw_a3;  //xy=705,248
+AudioPlayArrayResmp      rraw_a4;  //xy=705,248
 AudioMixer4              mixer1;         //xy=638,399
-AudioMixer4             mixer2;         //xy=638,399
-AudioMixer4             mixer3;         //xy=638,399
+AudioMixer4              mixer2;         //xy=638,399
+AudioMixer4              mixer3;         //xy=638,399
 AudioOutputI2S           audioOutput;           //xy=787,407
 AudioConnection          patchCord3(rraw_a1, 0, mixer1, 0);
 AudioConnection          patchCord4(rraw_a1, 0, mixer1, 1);
@@ -29,6 +68,8 @@ AudioConnection          patchCord1(rraw_a2, 0, mixer1, 2);
 AudioConnection          patchCord2(rraw_a2, 0, mixer1, 3);
 AudioConnection          patchCord5(rraw_a3, 0, mixer2, 0);
 AudioConnection          patchCord6(rraw_a3, 0, mixer2, 1);
+AudioConnection          patchCord13(rraw_a4, 0, mixer2, 2);
+AudioConnection          patchCord14(rraw_a4, 0, mixer2, 3);
 AudioConnection          patchCord7(mixer1, 0, mixer3, 0);
 AudioConnection          patchCord8(mixer1, 0, mixer3, 1);
 AudioConnection          patchCord9(mixer2, 0, mixer3, 2);
@@ -41,7 +82,9 @@ AudioControlSGTL5000     sgtl5000_1;     //xy=793,542
 unsigned long lastSamplePlayed = 0;
 newdigate::audiosample *sample;
 newdigate::audiosample *sample2;
+newdigate::audiosample *sample2a;
 newdigate::audiosample *sample3;
+newdigate::audiosample *sample4;
 
 
 #define SDCARD_CS_PIN    BUILTIN_SDCARD
@@ -339,11 +382,7 @@ typedef struct
 
 SEQUENCER_STATE _seq_state;
 
-
-
-
-
-const int numChannels = 2; // 1 for mono, 2 for stereo...
+const int numChannels = 1; // 1 for mono, 2 for stereo...
 
 enum UI_MODE {
   BANK_WRITE,
@@ -352,6 +391,7 @@ enum UI_MODE {
   PATTERN_SEL,
   TRACK_WRITE,
   TRACK_SEL,
+  SET_TEMPO,
 };
 
 UI_MODE previous_UI_mode = UI_MODE::PATTERN_WRITE; // the default mode
@@ -360,9 +400,12 @@ UI_MODE current_UI_mode = UI_MODE::PATTERN_WRITE; // the default mode
 int8_t current_selected_pattern = 0;
 int8_t current_selected_track = 0;
 
+const uint8_t *small_font = u8g2_font_trixel_square_tf;
+
 elapsedMillis elapsed;
 
 void setLEDPWM(uint8_t lednum, uint16_t pwm);
+void setLEDPWMDouble(uint8_t lednum1, uint16_t pwm1, uint8_t lednum2, uint16_t pwm2);
 void testLEDs();
 void u8g2_prepare(void);
 void drawEvent(std::string event, std::string eventAddl, bool erase);
@@ -380,27 +423,38 @@ u_int8_t getKeyStepNum(char idx);
 uint8_t getKeyLED(char idx);
 void toggleLED(uint8_t num, bool discard);
 void toggleSequencerPlayback(char btn);
-void handle_bpm_start_btn(uint32_t tick);
 void handle_bpm_step(uint32_t tick);
-void triggerAllStepsForGlobalStep(int8_t step);
+void triggerAllStepsForGlobalStep(void);
 void initTest(void);
 void initMain(void);
 void drawSequencerScreen(void);
-void playFile(uint8_t num);
+void drawSetTempoOverlay(void);
+void playFile(uint8_t num, bool accented);
 void stopFiles(void);
 void setDisplayStateForAllStepLEDs(void);
+void setDisplayStateForPatternActiveTracksLEDs(bool enable);
 bool selectedBtnCharIsATrack(char btnChar);
 void toggleSelectedStep(uint8_t step);
 void clearAllStepLEDs(void);
+void displayCurrentlySelectedPattern(void);
+void displayCurrentlySelectedTrack(void);
+void handleDisplayModeLEDs(void);
+void Update_Task_Ready_Flags(void);
 
-void playFile(uint8_t num)
+void playFile(uint8_t num, bool accented)
 {
   if (num == 0) {
     rraw_a1.playRaw(sample->sampledata, sample->samplesize/2, numChannels);
   } else if (num == 1) {
-    rraw_a2.playRaw(sample2->sampledata, sample2->samplesize/2, numChannels);
+    if (accented) {
+      rraw_a2.playRaw(sample2a->sampledata, sample2a->samplesize/2, numChannels);
+    } else {
+      rraw_a2.playRaw(sample2->sampledata, sample2->samplesize/2, numChannels);
+    }
   } else if (num == 2) {
     rraw_a3.playRaw(sample3->sampledata, sample3->samplesize/2, numChannels);
+  } else if (num == 3) {
+    rraw_a4.playRaw(sample4->sampledata, sample4->samplesize/2, numChannels);
   }
 
   // Serial.print("Memory: ");
@@ -414,6 +468,8 @@ void stopFiles()
 {
   rraw_a1.stop();
   rraw_a2.stop();
+  rraw_a3.stop();
+  rraw_a4.stop();
   delay(10);
 }
 
@@ -421,7 +477,6 @@ void stopFiles()
 void ClockOut96PPQN(uint32_t tick) {
   // Send MIDI_CLOCK to external gears
   //usbMIDI.sendRealTime(usbMIDI.Clock);
-  handle_bpm_start_btn(tick);
   handle_bpm_step(tick);
 }
 
@@ -436,9 +491,15 @@ void onClockStop() {
 void setup() {
   Serial.begin(9600);
 
+  if (CrashReport) {
+    Serial.print(CrashReport);
+  }
+
+  cpu.begin(Update_Task_Ready_Flags, 1000);
+
   // Audio connections require memory to work.  For more
   // detailed information, see the MemoryAndCpuUsage example
-  AudioMemory(6);
+  AudioMemory(30);
 
   // Comment these out if not using the audio adaptor board.
   // This may wait forever if the SDA & SCL pins lack
@@ -446,19 +507,26 @@ void setup() {
   sgtl5000_1.enable();
   sgtl5000_1.volume(0.7);
 
+  // bd & sd
   mixer1.gain(0, 0.5);
   mixer1.gain(1, 0.5);
   mixer1.gain(2, 0.7);
   mixer1.gain(3, 0.7);
+  // lt
+  mixer2.gain(2, 0.5);
+  mixer2.gain(3, 0.5);
 
-    rraw_a1.setPlaybackRate(0.5);
+  rraw_a1.setPlaybackRate(1);
   rraw_a1.enableInterpolation(true);
 
-  rraw_a2.setPlaybackRate(0.5);
+  rraw_a2.setPlaybackRate(1);
   rraw_a2.enableInterpolation(true);
 
-  rraw_a3.setPlaybackRate(0.5);
+  rraw_a3.setPlaybackRate(1);
   rraw_a3.enableInterpolation(true);
+
+  rraw_a4.setPlaybackRate(1);
+  rraw_a4.enableInterpolation(true);
 
   SPI.setMOSI(SDCARD_MOSI_PIN);
   SPI.setSCK(SDCARD_SCK_PIN);
@@ -473,11 +541,10 @@ void setup() {
   newdigate::flashloader loader;
   sample = loader.loadSample("_BD.RAW");
   sample2 = loader.loadSample("_SD.RAW");
+  sample2a = loader.loadSample("_SD_ACC.RAW");
   sample3 = loader.loadSample("_CH.RAW");
-  // delay(10);
-  // sample = loader.loadSample("SD.RAW");
-  // delay(10);
-  // sample = loader.loadSample("CH.RAW");
+  sample4 = loader.loadSample("_LT.RAW");
+  
   delay(25);
 
   Wire1.begin();
@@ -551,6 +618,7 @@ void setup() {
   uClock.setOnClockStopOutput(onClockStop);
   // Set the clock BPM to 120 BPM
   uClock.setTempo(120);
+  //uClock.shuffle();
 
   Serial.println("fill test sequencer out");
 
@@ -613,6 +681,9 @@ void setup() {
   _seq_state.seq.banks[0].patterns[0].tracks[2].steps[14].state = TRACK_STEP_STATE::ON;
   _seq_state.seq.banks[0].patterns[0].tracks[2].steps[15].state = TRACK_STEP_STATE::OFF;
 
+  _seq_state.seq.banks[0].patterns[0].tracks[3].track_type = TRACK_TYPE::SAMPLE;
+  _seq_state.seq.banks[0].patterns[0].tracks[3].sample_id = 3;
+
   Serial.println("Done filling test sequencer out");
 
   if (current_UI_mode == UI_MODE::TRACK_WRITE) {
@@ -622,18 +693,139 @@ void setup() {
   }
 }
 
-void loop(void) {
+/* WARNING this function called from ISR */
+void Update_Task_Ready_Flags(void)
+{
+  static uint32_t counter;
+  One_MS_Task_Ready=1;
+  counter++;
+  if((counter%10)==0)
+  {
+    Ten_MS_Task_Ready=1;
+  }
+  if((counter%100)==0)
+  {
+    One_Hundred_MS_Task_Ready=1;;
+  }
+  if(counter == 1000)
+  {
+    One_S_Task_Ready=1;
+    counter=0;
+  }  
+}
 
-  // test the UI
+uint32_t Read_Idle_Counts(void)
+{
+  return Idle_Counts;
+}
+uint32_t Calculate_CPU_Utilization (uint32_t temp_counts)
+{
+  return 100 - ((100 * temp_counts) / UNLOADED_IDLE_COUNTS);
+}
+uint32_t Calculate_Idle_Counts (void)
+{
+  Idle_Counts = Idle_Counter - Prev_Idle_Counter;
+  Prev_Idle_Counter = Idle_Counter;
+  return Idle_Counts;
+}
+inline void One_MS_Task(void)
+{
+
+}
+inline void Ten_MS_Task(void)
+{
+  //uncomment line below to put in some cpu load :)
+  //delay(8);
+}
+inline void One_Hundred_MS_Task(void)
+{
+
+}
+inline void One_S_Task(void)
+{
+  uint32_t idleCounts = Calculate_Idle_Counts();
+#if SCALE == (LOG)
+  uint8_t percent1 = (Calculate_CPU_Utilization(idleCounts)*2)/2;
+  uint8_t percent2 = (Calculate_CPU_Utilization(idleCounts)*2)/2;
+  uint8_t percent = (percent1*percent2)/100;
+#elif SCALE == (LIN)
+  uint8_t percent = Calculate_CPU_Utilization(idleCounts);
+#endif
+  //output percent to serial monitor
+  Serial.print(F("CPU usage: "));
+  Serial.print(percent);
+  Serial.println(F("%"));
+  Serial.print(F("Free RAM: "));
+  Serial.println(freeram());
+  // volatile char *p = (char *)malloc(152000);
+  // *p = 0;
+  // Serial.print("freeram = ");
+  // Serial.println(freeram());
+}
+
+inline void Run_Tasks(void)
+{
+  if(One_MS_Task_Ready)
+  {
+    One_MS_Task_Ready=0;
+    One_MS_Task();
+  }
+  if(Ten_MS_Task_Ready)
+  {
+    Ten_MS_Task_Ready=0;
+    Ten_MS_Task();
+  }
+  if(One_Hundred_MS_Task_Ready)
+  {
+    One_Hundred_MS_Task_Ready=0;
+    One_Hundred_MS_Task();
+  }
+  if(One_S_Task_Ready)
+  {
+    One_S_Task_Ready=0;
+    One_S_Task();
+  }
+}
+
+void loop(void)
+{
+  Idle_Counter++; 
+  Run_Tasks();
+
+  // handle hardware input states
   handleSwitchStates(false);
   handleKeyboardStates();
   handleEncoderStates();
 
-  if (current_UI_mode == UI_MODE::TRACK_WRITE) {
-    int displayRefreshRateMs = 50;
+  // handle LED display states
+  handleDisplayModeLEDs();
+}
 
-    if (!(elapsed % displayRefreshRateMs) && _seq_state.playback_state == SEQUENCER_PLAYBACK_STATE::RUNNING) {
+void handleDisplayModeLEDs(void)
+{
+  if (current_UI_mode == UI_MODE::TRACK_WRITE) {
+    int displayRefreshRateMs = 50; // decreaseing this too much increases digital noise due to signal interference?
+
+    if (!(elapsed % displayRefreshRateMs)) {
       setDisplayStateForAllStepLEDs();
+    }
+  } else if (current_UI_mode == UI_MODE::PATTERN_WRITE) {
+    // int displayRefreshRateMs = 50;
+
+    // if (!(elapsed % displayRefreshRateMs) && _seq_state.playback_state == SEQUENCER_PLAYBACK_STATE::RUNNING) {
+    //   setDisplayStateForPatternActiveTracksLEDs();
+    // }
+  } else if (current_UI_mode == UI_MODE::PATTERN_SEL) {
+    int displayRefreshRateMs = 100;
+
+    if (!(elapsed % displayRefreshRateMs)) {
+      displayCurrentlySelectedPattern();
+    }
+  } else if (current_UI_mode == UI_MODE::TRACK_SEL) {
+    int displayRefreshRateMs = 100;
+
+    if (!(elapsed % displayRefreshRateMs)) {
+      displayCurrentlySelectedTrack();
     }
   }
 }
@@ -673,18 +865,22 @@ void drawSequencerScreen()
   u8g2.drawLine(0,10,128,10);
 
   if (current_UI_mode == UI_MODE::PATTERN_WRITE) {
-    u8g2.drawStr( 0, 0, "pattern write");
+    u8g2.drawStr( 0, 0, "PATTERN WRITE");
   } else if (current_UI_mode == UI_MODE::TRACK_WRITE) {
-    u8g2.drawStr( 0, 0, "track write");
+    u8g2.drawStr( 0, 0, "TRACK WRITE");
   }
 
-  std::string patStr = "pattern: ";
-  patStr += to_string(current_selected_pattern+1);
-  u8g2.drawStr( 0, 12, patStr.c_str());
+  std::string patStr = "PATTERN: ";
+  patStr += std::to_string(current_selected_pattern+1);
+  u8g2.drawStr( 0, 16, patStr.c_str());
 
-  std::string trkStr = "track: ";
-  trkStr += to_string(current_selected_track+1);
-  u8g2.drawStr( 0, 24, trkStr.c_str());
+  std::string trkStr = "TRACK: ";
+  trkStr += std::to_string(current_selected_track+1);
+  u8g2.drawStr( 0, 28, trkStr.c_str());
+
+  std::string tempoStr = "TEMPO: ";
+  tempoStr += std::to_string((int)uClock.getTempo());
+  u8g2.drawStr( 0, 40, tempoStr.c_str());
 
   if (_seq_state.playback_state == STOPPED) {
     u8g2.drawBox(110,2,5,5);
@@ -698,21 +894,44 @@ void drawSequencerScreen()
   u8g2.sendBuffer();
 }
 
-void triggerAllStepsForGlobalStep(int8_t step)
+void drawSetTempoOverlay(void)
+{
+  u8g2.clearBuffer();
+  u8g2.drawFrame(1,1,127,63);
+  u8g2.drawLine(1,15,127,15);
+
+  std::string tempoStr = "SET TEMPO";
+  u8g2.drawStr( 48, 5, tempoStr.c_str());
+
+  u8g2.setFont(u8g2_font_logisoso16_tr); // u8g2_font_6x10_tf
+  //u8g2.setFontRefHeightExtendedText();
+
+  std::string tempoValStr = std::to_string((int)uClock.getTempo());
+  u8g2.drawStr( 48, 25, tempoValStr.c_str());
+
+  // reset font
+
+  u8g2.setFont(small_font); // u8g2_font_6x10_tf
+  u8g2.setFontRefHeightExtendedText();
+
+  u8g2.sendBuffer();
+}
+
+void triggerAllStepsForGlobalStep(void)
 {
 
   int8_t currGlobalStep = _seq_state.current_step - 1; // get zero-based setp
   BANK currentBank = _seq_state.seq.banks[0]; // TODO: make curr bank index a globally tracked var
-  PATTERN currentPattern = currentBank.patterns[0]; // TODO: make curr pattern index a globally tracked var
+  PATTERN currentPattern = currentBank.patterns[current_selected_pattern];
 
   const int MAX_PATTERN_TRACK_SIZE = 16;
   for (int t = 0; t < MAX_PATTERN_TRACK_SIZE; t++) {
     TRACK currTrack = currentPattern.tracks[t];
     TRACK_STEP currTrackStep = currTrack.steps[currGlobalStep];
 
-    if (currTrackStep.state == TRACK_STEP_STATE::ON) {
+    if ((currTrackStep.state == TRACK_STEP_STATE::ON) || (currTrackStep.state == TRACK_STEP_STATE::ACCENTED)) {
       if (currTrack.track_type == TRACK_TYPE::SAMPLE) {
-        playFile(currTrack.sample_id);
+        playFile(currTrack.sample_id, currTrackStep.state == TRACK_STEP_STATE::ACCENTED);
       }
     }
   }
@@ -733,12 +952,56 @@ void setDisplayStateForAllStepLEDs(void)
 
     if (currTrackStepForLED.state == TRACK_STEP_STATE::OFF) {
       setLEDPWM(keyLED, 0);
-      delay(5);
+      //delay(5);
     } else if (currTrackStepForLED.state == TRACK_STEP_STATE::ON) {
+      setLEDPWM(keyLED, 512); // 256 might be better
+      //delay(5);
+    } else if (currTrackStepForLED.state == TRACK_STEP_STATE::ACCENTED) {
       setLEDPWM(keyLED, 4095);
-      delay(5);
+      //delay(5);
     }
   }
+}
+
+void setDisplayStateForPatternActiveTracksLEDs(bool enable)
+{
+  int8_t currGlobalStep = _seq_state.current_step - 1; // get zero-based step
+
+  BANK currentBank = _seq_state.seq.banks[0]; // TODO: make curr bank index a globally tracked var
+  PATTERN currentPattern = currentBank.patterns[current_selected_pattern];
+
+  const int MAX_PATTERN_TRACK_SIZE = 17;
+  for (int t = 1; t < MAX_PATTERN_TRACK_SIZE; t++) {
+    TRACK currTrack = currentPattern.tracks[t-1];
+    int8_t curr_led_char = stepCharMap[t];
+    uint8_t keyLED = getKeyLED(curr_led_char);
+    
+    TRACK_STEP currTrackStepForLED = currTrack.steps[currGlobalStep];
+
+    if (currTrackStepForLED.state == TRACK_STEP_STATE::OFF) {
+      setLEDPWM(keyLED, 0);
+      //delay(5);
+    } else if (currTrackStepForLED.state == TRACK_STEP_STATE::ON || currTrackStepForLED.state == TRACK_STEP_STATE::ACCENTED) {
+      setLEDPWM(keyLED, enable ? 4095 : 0);
+      //delay(5);
+    }
+  }
+}
+
+void displayCurrentlySelectedPattern(void)
+{
+  int8_t curr_led_char = stepCharMap[current_selected_pattern+1];
+  uint8_t keyLED = getKeyLED(curr_led_char);
+
+  setLEDPWM(keyLED, 4095);
+}
+
+void displayCurrentlySelectedTrack(void)
+{
+  int8_t curr_led_char = stepCharMap[current_selected_track+1];
+  uint8_t keyLED = getKeyLED(curr_led_char);
+  
+  setLEDPWM(keyLED, 4095);
 }
 
 void clearAllStepLEDs(void)
@@ -748,34 +1011,32 @@ void clearAllStepLEDs(void)
   }
 }
 
-void handle_bpm_start_btn(uint32_t tick)
-{
-  // This method handles displaying the BPM for the start button led
-  if ( !(tick % (96)) || (tick == 1) ) { 
-    //bpm_blink_timer = 4;
-    setLEDPWM(23, 4095); // first quarter note will flash ON slightly longer for start button
-  } else if ( !(tick % (24)) ) {
-    setLEDPWM(23, 4095); // each quarter note start button led ON
-  } else if ( !(tick % bpm_blink_timer) ) {
-    setLEDPWM(23, 0); // turn start button led OFF
-    bpm_blink_timer = 1;
-  }
-}
-
 void handle_bpm_step(uint32_t tick)
 {
-  //setDisplayStateForAllStepLEDs();
-
   // This method handles advancing the sequencer
-  // and displaying the step BMP LED
+  // and displaying the start btn and step btn BPM LEDs
 
   uint8_t bpm_step_blink_timer = 1;
   int8_t curr_step_char = stepCharMap[_seq_state.current_step];
   uint8_t keyLED = getKeyLED(curr_step_char);
 
+  // This handles displaying the BPM for the start button led
+  // on qtr note. Check for odd step number to make sure not lit on backbeat qtr note.
+  if (!(tick % 6)) {
+    if ((_seq_state.current_step == 1 || _seq_state.current_step == 5 || _seq_state.current_step == 9 || _seq_state.current_step == 13)) {
+      setLEDPWM(23, 4095); // each straight quarter note start button led ON
+    }
+  } else if ( !(tick % bpm_blink_timer) ) {
+    setLEDPWM(23, 0); // turn start button led OFF
+  }
+
+  // This handles the sixteenth steps for all tracks
   if ( !(tick % (6)) ) {
-    // handle current sixteenth steps for all tracks
-    triggerAllStepsForGlobalStep(_seq_state.current_step);
+    if (current_UI_mode == UI_MODE::PATTERN_WRITE || (previous_UI_mode == UI_MODE::PATTERN_WRITE && current_UI_mode == UI_MODE::SET_TEMPO)) {
+      setDisplayStateForPatternActiveTracksLEDs(true);
+    }
+
+    triggerAllStepsForGlobalStep();
 
     if (_seq_state.current_step > 1) {
       uint8_t prevKeyLED = getKeyLED(stepCharMap[_seq_state.current_step-1]);
@@ -784,7 +1045,7 @@ void handle_bpm_step(uint32_t tick)
       uint8_t prevKeyLED = getKeyLED(stepCharMap[16]);
       setLEDPWM(prevKeyLED, 0); // turn prev sixteenth led OFF
     }
-
+    
     setLEDPWM(keyLED, 4095); // turn sixteenth led ON
 
     if (_seq_state.current_step <= 16) {
@@ -798,7 +1059,11 @@ void handle_bpm_step(uint32_t tick)
       }
     }
   } else if ( !(tick % bpm_step_blink_timer) ) {
-    setLEDPWM(keyLED, 0); // turn sixteenth led OFF
+      setLEDPWM(keyLED, 0); // turn 16th and start ON
+
+    if (current_UI_mode == UI_MODE::PATTERN_WRITE || (previous_UI_mode == UI_MODE::PATTERN_WRITE && current_UI_mode == UI_MODE::SET_TEMPO)) {
+      setDisplayStateForPatternActiveTracksLEDs(false);
+    }
   }
 }
 
@@ -809,21 +1074,18 @@ void toggleSequencerPlayback(char btn)
 
   if (_seq_state.playback_state > STOPPED) {
     if (_seq_state.playback_state == RUNNING && btn == 'q') {
-      _seq_state.current_step = 1;
       _seq_state.playback_state = PAUSED;
       uClock.pause();
-      stopFiles();
       
       // TODO: possibly add logic to ignore turning off LED if
       // current step is also an active state track step
       
-      setLEDPWM(keyLED, 0); // turn off current step LED
-      setLEDPWM(23, 0); // turn start button led OFF
+      setLEDPWMDouble(23, 0, keyLED, 0);
 
       if (current_UI_mode == UI_MODE::TRACK_WRITE) {
         setDisplayStateForAllStepLEDs(); // TODO: wrap with "if in track view display step LED state" conditional, etc
       } else if (current_UI_mode == UI_MODE::PATTERN_WRITE) {
-        // turnOffAllTrackStepLEDs();
+        clearAllStepLEDs();
       }
     } else if (_seq_state.playback_state == PAUSED && btn == 'q') {
       // Unpaused, so advance sequencer from last known step
@@ -844,31 +1106,32 @@ void toggleSequencerPlayback(char btn)
       if (current_UI_mode == UI_MODE::TRACK_WRITE) {
         setDisplayStateForAllStepLEDs(); // TODO: wrap with "if in track view display step LED state" conditional, etc
       } else if (current_UI_mode == UI_MODE::PATTERN_WRITE) {
-        // turnOffAllTrackStepLEDs();
+        clearAllStepLEDs();
       }
     }
   } else if (btn == 'q') {
-      // Started, so start sequencer from FIRST step in pattern
-      _seq_state.current_step = 1;
-      _seq_state.playback_state = RUNNING;
-      uClock.start();
+    // Started, so start sequencer from FIRST step in pattern
+    //_seq_state.current_step = 1;
+    _seq_state.playback_state = RUNNING;
+    uClock.start();
   } else if (btn == 'w') {
-      // Stopped, so reset sequencer to FIRST step in pattern
-      _seq_state.current_step = 1;
-      _seq_state.playback_state = STOPPED;
-      uClock.stop();
-      stopFiles();
-      
-      // TODO: possibly add logic to ignore turning off LED if
-      // current step is also an active state track step
-      setLEDPWM(keyLED, 0); // turn off current step LED
-      setLEDPWM(23, 0); // turn start button led OFF
-      
-      if (current_UI_mode == UI_MODE::TRACK_WRITE) {
-        setDisplayStateForAllStepLEDs(); // TODO: wrap with "if in track view display step LED state" conditional, etc
-      } else if (current_UI_mode == UI_MODE::PATTERN_WRITE) {
-        // turnOffAllTrackStepLEDs();
-      }
+    // Stopped, so reset sequencer to FIRST step in pattern
+    _seq_state.current_step = 1;
+    _seq_state.playback_state = STOPPED;
+    uClock.stop();
+    stopFiles();
+
+    
+    // TODO: possibly add logic to ignore turning off LED if
+    // current step is also an active state track step
+    setLEDPWM(keyLED, 0); // turn off current step LED
+    setLEDPWM(23, 0); // turn start button led OFF
+    
+    if (current_UI_mode == UI_MODE::TRACK_WRITE) {
+      setDisplayStateForAllStepLEDs(); // TODO: wrap with "if in track view display step LED state" conditional, etc
+    } else if (current_UI_mode == UI_MODE::PATTERN_WRITE) {
+      clearAllStepLEDs();
+    }
   }
 }
 
@@ -926,17 +1189,54 @@ void toggleSelectedStep(uint8_t step)
 {
   uint8_t adjStep = step-1; // get zero based step num
 
+  Serial.print("adjStep: ");
+  Serial.println(adjStep);
+
   TRACK_STEP_STATE currStepState = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].state;
+
+  Serial.print("currStepState: ");
+  Serial.println(currStepState == TRACK_STEP_STATE::ACCENTED ? "accented" : (currStepState == TRACK_STEP_STATE::ON ? "on" : "off"));
 
   // TODO: implement accent state for MIDI, CV/Trig, Sample, Synth track types?
   if (currStepState == TRACK_STEP_STATE::OFF) {
     _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::ON;
-  } else {
+  } else if (currStepState == TRACK_STEP_STATE::ON) {
+    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::ACCENTED;
+  } else if (currStepState == TRACK_STEP_STATE::ACCENTED) {
     _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::OFF;
   }
 }
 
 void handleEncoderStates() {
+  // slow this down from being called every loop when in set tempo mode
+
+  if (!(elapsed % 100) && current_UI_mode == UI_MODE::SET_TEMPO) {
+    int main_encoder_idx = 0;
+    encoder_currValues[main_encoder_idx] = encoder_getValue(encoder_addrs[main_encoder_idx]);
+    if(encoder_currValues[main_encoder_idx] != encoder_lastValues[main_encoder_idx]) {
+      // std::string encoderPos = "Encoder ";
+      // encoderPos += std::to_string(main_encoder_idx);
+      // encoderPos += " pos: ";
+      // encoderPos += std::to_string(encoder_currValues[main_encoder_idx]);
+      // Serial.print("main enc: ");
+      // Serial.println(encoderPos.c_str());
+
+      int diff = encoder_currValues[main_encoder_idx] - encoder_lastValues[main_encoder_idx];
+      float currTempo = uClock.getTempo();
+      float newTempo = currTempo + diff;
+
+      if ((newTempo - currTempo >= 1) || (currTempo - newTempo) >= 1) {
+        // Serial.print("new tempo: ");
+        // Serial.println(newTempo);
+
+        uClock.setTempo(newTempo);
+        drawSetTempoOverlay();
+      }
+
+      encoder_lastValues[main_encoder_idx] = encoder_currValues[main_encoder_idx];
+    }
+  }
+
   return;
 
   for (int i=0; i<5; i++) {
@@ -987,118 +1287,186 @@ void handleKeyboardStates(void) {
 
 void handleSwitchStates(bool discard) {
   // Fills kpd.key[ ] array with up-to 10 active keys.
-    // Returns true if there are ANY active keys.
-    if (kpd.getKeys())
+  // Returns true if there are ANY active keys.
+  if (kpd.getKeys())
+  {
+    for (int i=0; i<LIST_MAX; i++)   // Scan the whole key list.
     {
-      for (int i=0; i<LIST_MAX; i++)   // Scan the whole key list.
+      if ( kpd.key[i].stateChanged )   // Only find keys that have changed state.
       {
-        if ( kpd.key[i].stateChanged )   // Only find keys that have changed state.
-        {
-          switch (kpd.key[i].kstate) {  // Report active key state : IDLE, PRESSED, HOLD, or RELEASED
-            case PRESSED: 
-              {
-                if (_checkTestFn && kpd.key[i].kchar == 'r') {
-                  _testUI = true;
-                }
-
-                if (_testUI) {
-                  std::string pressed = "Pressed button:";
-                  std::string pressedNewLine = getKeyStr(kpd.key[i].kchar);
-                  drawEvent(pressed, pressedNewLine, discard);
-                } else {
-                  if (current_UI_mode == UI_MODE::TRACK_SEL && selectedBtnCharIsATrack(kpd.key[i].kchar)) {
-                    uint8_t selTrack = getKeyStepNum(kpd.key[i].kchar);
-                    current_selected_track = selTrack-1; // zero-based
-                    previous_UI_mode = UI_MODE::TRACK_WRITE;
-                    current_UI_mode = UI_MODE::TRACK_WRITE;
-                    setDisplayStateForAllStepLEDs();
-
-                    std::string msg = "Selected track: ";
-                    std::string newLine = to_string(current_selected_track+1);
-                    drawEvent(msg, newLine, false);
-                  } else if (current_UI_mode == UI_MODE::TRACK_WRITE && selectedBtnCharIsATrack(kpd.key[i].kchar)) {
-                  // make a duplicate method with a diff name to better reflect logic
-                  // e.g., selectedBtnCharIsAValidStep()
-
-                    uint8_t stepToToggle = getKeyStepNum(kpd.key[i].kchar);
-                    toggleSelectedStep(stepToToggle);
-                  }
-                  
-
-                  if (kpd.key[i].kchar == 'q' || kpd.key[i].kchar == 'w') { // start or stop
-                    toggleSequencerPlayback(kpd.key[i].kchar);
-                    drawSequencerScreen();
-                  }
-                }
-
-                break;
+        switch (kpd.key[i].kstate) {  // Report active key state : IDLE, PRESSED, HOLD, or RELEASED
+          case PRESSED: 
+            {
+              if (_checkTestFn && kpd.key[i].kchar == 'r') {
+                _testUI = true;
               }
-            case HOLD:
-              {
-                if (_testUI) {
-                  std::string held = "Held button:";
-                  std::string heldNewLine = getKeyStr(kpd.key[i].kchar);
-                  drawEvent(held, heldNewLine, discard);
-                } else {
-                  // init track select UI mode if track button (char c) is held
-                  if (current_UI_mode != UI_MODE::TRACK_SEL && kpd.key[i].kchar == 'c') {
-                    Serial.println("enter track select mode!");
-                    current_UI_mode = UI_MODE::TRACK_SEL;
 
-                    std::string msg = "Select a track!";
-                    drawEvent(msg, "", false);
+              if (_testUI) {
+                std::string pressed = "Pressed button:";
+                std::string pressedNewLine = getKeyStr(kpd.key[i].kchar);
+                drawEvent(pressed, pressedNewLine, discard);
+              } else {
+                if (current_UI_mode == UI_MODE::TRACK_SEL && selectedBtnCharIsATrack(kpd.key[i].kchar)) {
+                  uint8_t selTrack = getKeyStepNum(kpd.key[i].kchar);
+                  current_selected_track = selTrack-1; // zero-based
+                  previous_UI_mode = UI_MODE::TRACK_WRITE;
+                  current_UI_mode = UI_MODE::TRACK_WRITE;
+                  setDisplayStateForAllStepLEDs();
 
+                  std::string msg = "Selected track: ";
+                  std::string newLine = std::to_string(current_selected_track+1);
+                  drawEvent(msg, newLine, false);
+                } else if (current_UI_mode == UI_MODE::TRACK_WRITE && selectedBtnCharIsATrack(kpd.key[i].kchar)) {
+                // make a duplicate method with a diff name to better reflect logic
+                // e.g., selectedBtnCharIsAValidStep()
+
+                  uint8_t stepToToggle = getKeyStepNum(kpd.key[i].kchar);
+                  toggleSelectedStep(stepToToggle);
+                } else if (current_UI_mode == UI_MODE::PATTERN_SEL && selectedBtnCharIsATrack(kpd.key[i].kchar)) {
+                  uint8_t selPattern = getKeyStepNum(kpd.key[i].kchar);
+                  current_selected_pattern = selPattern-1; // zero-based
+                  previous_UI_mode = UI_MODE::PATTERN_WRITE;
+                  current_UI_mode = UI_MODE::PATTERN_WRITE;
+                  //setDisplayStateForAllStepLEDs();
+
+                  std::string msg = "Selected pattern: ";
+                  std::string newLine = std::to_string(current_selected_pattern+1);
+                  drawEvent(msg, newLine, false);
+                }
+                
+
+                if (kpd.key[i].kchar == 'q' || kpd.key[i].kchar == 'w') { // start or stop
+                  toggleSequencerPlayback(kpd.key[i].kchar);
+                  drawSequencerScreen();
+                }
+              }
+
+              break;
+            }
+          case HOLD:
+            {
+              if (_testUI) {
+                std::string held = "Held button:";
+                std::string heldNewLine = getKeyStr(kpd.key[i].kchar);
+                drawEvent(held, heldNewLine, discard);
+              } else {
+                // init track select UI mode if track button (char c) is held
+                if (current_UI_mode != UI_MODE::TRACK_SEL && kpd.key[i].kchar == 'c') {
+                  Serial.println("enter track select mode!");
+                  current_UI_mode = UI_MODE::TRACK_SEL;
+
+                  std::string msg = "SELECT A TRACK!";
+                  drawEvent(msg, "", false);
+
+                  clearAllStepLEDs();
+                  displayCurrentlySelectedTrack();
+                } else if (current_UI_mode != UI_MODE::PATTERN_SEL && kpd.key[i].kchar == 'b') {
+                  Serial.println("enter pattern select mode!");
+                  current_UI_mode = UI_MODE::PATTERN_SEL;
+
+                  std::string msg = "SELECT A PATTERN!";
+                  drawEvent(msg, "", false);
+
+                  // TODO: implement function to show patterns with data by illuminating their step LEDs
+                  clearAllStepLEDs();
+                  displayCurrentlySelectedPattern();
+                } else if (current_UI_mode != UI_MODE::PATTERN_SEL && kpd.key[i].kchar == '4') {
+                  Serial.println("enter tempo set mode!");
+                  current_UI_mode = UI_MODE::SET_TEMPO;
+
+                  drawSetTempoOverlay();
+                }
+
+                if (current_UI_mode == UI_MODE::TRACK_SEL && selectedBtnCharIsATrack(kpd.key[i].kchar)) {
+                  uint8_t selTrack = getKeyStepNum(kpd.key[i].kchar);
+                  current_selected_track = selTrack;
+                  //previous_UI_mode = UI_MODE::TRACK_WRITE;
+                  current_UI_mode = UI_MODE::TRACK_WRITE;
+
+                  std::string msg = "SELECTED TRACK: ";
+                  std::string newLine = std::to_string(current_selected_track+1);
+                  drawEvent(msg, newLine, false);
+                } else if (current_UI_mode == UI_MODE::PATTERN_SEL && selectedBtnCharIsATrack(kpd.key[i].kchar)) {
+                  uint8_t selPattern = getKeyStepNum(kpd.key[i].kchar);
+                  current_selected_pattern = selPattern;
+                  //previous_UI_mode = UI_MODE::TRACK_WRITE;
+                  current_UI_mode = UI_MODE::PATTERN_WRITE;
+
+                  std::string msg = "SELECTED PATTERN: ";
+                  std::string newLine = std::to_string(current_selected_pattern+1);
+                  drawEvent(msg, newLine, false);
+                }
+              }
+
+              break;
+            }
+          case RELEASED:
+            {
+              // when held button is released, reset the held mode to prior mode
+
+                  Serial.print("button char: ");
+                  Serial.print(kpd.key[i].kchar);
+                  Serial.print(" released!");
+
+                  if (current_UI_mode == UI_MODE::TRACK_WRITE) {
+                    Serial.print(" selected track: ");
+                    Serial.print(current_selected_track);
+                    Serial.println(", entered track write mode!");
+
+                    drawSequencerScreen();
+                  } else if (current_UI_mode == UI_MODE::PATTERN_WRITE) {
+                    Serial.print(" selected pattern: ");
+                    Serial.print(current_selected_pattern);
+                    Serial.println(", entered pattern write mode!");
+
+                    drawSequencerScreen();
                     clearAllStepLEDs();
                   }
 
-                  if (current_UI_mode == UI_MODE::TRACK_SEL && selectedBtnCharIsATrack(kpd.key[i].kchar)) {
-                    uint8_t selTrack = getKeyStepNum(kpd.key[i].kchar);
-                    current_selected_track = selTrack;
-                    //previous_UI_mode = UI_MODE::TRACK_WRITE;
-                    current_UI_mode = UI_MODE::TRACK_WRITE;
+                  if (current_UI_mode == UI_MODE::TRACK_SEL) {
+                    Serial.print(" reverting track select mode, entering: ");
+                    Serial.print(previous_UI_mode == UI_MODE::PATTERN_WRITE ? "pattern write mode!" : "track write mode!");
+                    // revert back to a prior write mode, not a hold mode
+                    current_UI_mode = previous_UI_mode;
 
-                    std::string msg = "Selected track: ";
-                    std::string newLine = to_string(current_selected_track+1);
-                    drawEvent(msg, newLine, false);
-                  }
-                }
-
-                break;
-              }
-            case RELEASED:
-              {
-                // when held button is released, reset the held mode to prior mode
-
-                    Serial.print("button char: ");
-                    Serial.print(kpd.key[i].kchar);
-                    Serial.print(" released!");
-
+                    drawSequencerScreen();
+                    
                     if (current_UI_mode == UI_MODE::TRACK_WRITE) {
-                      Serial.print(" selected track: ");
-                      Serial.print(current_selected_track);
-                      Serial.println(", entered track write mode!");
-
-                      drawSequencerScreen();
+                      setDisplayStateForAllStepLEDs();
                     }
+                  } else if (current_UI_mode == UI_MODE::PATTERN_SEL) {
+                    Serial.print(" reverting pattern select mode, entering: ");
+                    Serial.print(previous_UI_mode == UI_MODE::PATTERN_WRITE ? "pattern write mode!" : "track write mode!");
+                    // revert back to a prior write mode, not a hold mode
+                    current_UI_mode = previous_UI_mode;
 
-                    if (current_UI_mode == UI_MODE::TRACK_SEL) {
-                      Serial.print(" reverting track select mode, entering: ");
-                      Serial.print(previous_UI_mode == UI_MODE::PATTERN_WRITE ? "pattern write mode!" : "track write mode!");
-                      // revert back to a prior write mode, not a hold mode
-                      current_UI_mode = previous_UI_mode;
+                    drawSequencerScreen();
+                    
+                    if (current_UI_mode == UI_MODE::TRACK_WRITE) {
+                      setDisplayStateForAllStepLEDs();
+                    } else if (current_UI_mode == UI_MODE::PATTERN_WRITE) {
+                      clearAllStepLEDs();
                     }
+                  } else if (current_UI_mode == UI_MODE::SET_TEMPO) {
+                    Serial.print(" reverting set tempo mode, entering: ");
+                    Serial.print(previous_UI_mode == UI_MODE::PATTERN_WRITE ? "pattern write mode!" : "track write mode!");
+                    // revert back to a prior write mode, not a hold mode
+                    current_UI_mode = previous_UI_mode;
 
-                break;
-              }
-            case IDLE:
-              {
-                //
-                break;
-              }
-          }
+                    drawSequencerScreen();
+                  }
+
+              break;
+            }
+          case IDLE:
+            {
+              //
+              break;
+            }
         }
       }
     }
+  }
 }
 
 void drawEvent(std::string event, std::string eventAddl, bool discard) {
@@ -1125,7 +1493,6 @@ void encoder_set(int addr, int16_t rmin, int16_t rmax, int16_t rstep, int16_t rv
   Wire1.endTransmission();
 }
 
-// Set encoder wheel value
 void encoder_setValue(int addr, int16_t rval) {
   Wire1.beginTransmission(addr);
   Wire1.write((uint8_t)(rval & 0xff)); Wire1.write((uint8_t)(rval >> 8));
@@ -1144,7 +1511,7 @@ int16_t encoder_getValue(int addr) {
 }
 
 void u8g2_prepare(void) {
-  u8g2.setFont(u8g2_font_6x10_tf);
+  u8g2.setFont(small_font); // u8g2_font_6x10_tf
   u8g2.setFontRefHeightExtendedText();
   u8g2.setDrawColor(1);
   u8g2.setFontPosTop();
@@ -1154,6 +1521,13 @@ void u8g2_prepare(void) {
 void setLEDPWM (uint8_t lednum, uint16_t pwm)
 {
     tlc.setPWM(lednum, pwm);
+    tlc.write();  
+}
+
+void setLEDPWMDouble (uint8_t lednum1, uint16_t pwm1, uint8_t lednum2, uint16_t pwm2)
+{
+    tlc.setPWM(lednum1, pwm1);
+    tlc.setPWM(lednum2, pwm2);
     tlc.write();  
 }
 
