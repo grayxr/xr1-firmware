@@ -43,6 +43,11 @@
         "streambuf": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "map": "cpp"
+        "map": "cpp",
+        "iomanip": "cpp",
+        "ctime": "cpp",
+        "iostream": "cpp",
+        "istream": "cpp",
+        "sstream": "cpp"
     }
 }
