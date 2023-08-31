@@ -587,12 +587,12 @@ typedef struct
   float width = 0.5; // pulsewidth / waveshaping
   float oscalevel = 1;
   float oscblevel = 0.5;
-  float cutoff = 1200;
+  float cutoff = 1600;
   float res = 0;
   float filter_attack = 0;
-  float filter_decay = 500;
+  float filter_decay = 1000;
   float filter_sustain = 1.0;
-  float filter_release = 50;
+  float filter_release = 5000;
   float filterenvamt = 1.0;
   float amp_attack = 0;
   float amp_decay = 500;
@@ -1514,8 +1514,8 @@ std::map<TRACK_TYPE, std::map<int, std::string>> trackCurrLayerNameMap = {
     {0, "MAIN"},
     {1, "OSC"},
     {2, "FILTER"},
-    {3, "F-ENV"},
-    {4, "A-ENV"},
+    {3, "FIL-ENV"},
+    {4, "AMP-ENV"},
     {5, "OUTPUT"},
   }},
   { MONO_SAMPLE, {
@@ -1573,22 +1573,21 @@ SOUND_CONTROL_MODS getSubtractiveSynthControlModData()
   {
   case 0: // MAIN
     mods.aName = "LEN";
-    mods.bName = "uTM";
-    mods.cName = "PRB";
-    mods.dName = "NSE";
+    mods.bName = "VEL";
+    mods.cName = "uTM";
+    mods.dName = "PRB";
 
     if (current_UI_mode == SUBMITTING_STEP_VALUE) {
       TRACK_STEP step = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
-      mods.aValue = std::to_string(step.length); // TODO : use 1/16 etc display
+
+      mods.aValue = std::to_string(step.length); // TODO: use 1/16 etc display
     } else {
-      mods.aValue = std::to_string(track.length); // TODO : use 1/16 etc display
+      mods.aValue = std::to_string(track.length); // TODO: use 1/16 etc display
     }
 
-    mods.bValue = "--"; // TODO : impl
-    mods.cValue = "100%"; // TODO : impl
-
-    mods.dValue = std::to_string((float)round(track.noise * 100) / 100);
-    mods.dValue = mods.dValue.substr(0,3);
+    mods.bValue = "50%"; // TODO: impl
+    mods.cValue = "100%"; // TODO: impl
+    mods.dValue = "100%"; // TODO: impl
     break;
   
   case 1: // OSC
@@ -1604,12 +1603,13 @@ SOUND_CONTROL_MODS getSubtractiveSynthControlModData()
     break;
   
   case 2: // FILTER
-    mods.aName = "TYP";
+    mods.aName = "NOI";
     mods.bName = "FRQ";
     mods.cName = "RES";
     mods.dName = "AMT";
 
-    mods.aValue = std::to_string(track.filter_type);
+    mods.aValue = std::to_string((float)round(track.noise * 100) / 100);
+    mods.aValue = mods.aValue.substr(0,3);
 
     mods.bValue = std::to_string(track.cutoff);
     mods.bValue = mods.bValue.substr(0,5);
@@ -1905,31 +1905,39 @@ void drawControlMods(void)
   int ctrlModSpacerMult = 25;
 
   // draw control mod indicators (a,b,c,d)
-  u8g2.setColorIndex((u_int8_t)1);
-  u8g2.drawBox(ctrlModHeaderStartX,ctrlModHeaderY,ctrlModHeaderBoxSize,ctrlModHeaderBoxSize);
-  u8g2.drawBox(ctrlModHeaderStartX+(ctrlModSpacerMult*1),ctrlModHeaderY,ctrlModHeaderBoxSize,ctrlModHeaderBoxSize);
-  u8g2.drawBox(ctrlModHeaderStartX+(ctrlModSpacerMult*2),ctrlModHeaderY,ctrlModHeaderBoxSize,ctrlModHeaderBoxSize);
-  u8g2.drawBox(ctrlModHeaderStartX+(ctrlModSpacerMult*3),ctrlModHeaderY,ctrlModHeaderBoxSize,ctrlModHeaderBoxSize);
-  u8g2.drawLine(ctrlModHeaderStartX,20,29,52);
-  u8g2.drawLine(ctrlModHeaderStartX+(ctrlModSpacerMult*1),20,ctrlModHeaderStartX+(ctrlModSpacerMult*1),52);
-  u8g2.drawLine(ctrlModHeaderStartX+(ctrlModSpacerMult*2),20,ctrlModHeaderStartX+(ctrlModSpacerMult*2),52);
-  u8g2.drawLine(ctrlModHeaderStartX+(ctrlModSpacerMult*3),20,ctrlModHeaderStartX+(ctrlModSpacerMult*3),52);
-  u8g2.setColorIndex((u_int8_t)0);
-  u8g2.drawStr(ctrlModHeaderStartX+3,ctrlModHeaderY+1, "a");
-  u8g2.drawStr(ctrlModHeaderStartX+3+(ctrlModSpacerMult*1),ctrlModHeaderY+1, "b");
-  u8g2.drawStr(ctrlModHeaderStartX+3+(ctrlModSpacerMult*2),ctrlModHeaderY+1, "c");
-  u8g2.drawStr(ctrlModHeaderStartX+3+(ctrlModSpacerMult*3),ctrlModHeaderY+1, "d");
-  u8g2.setColorIndex((u_int8_t)1);
+  u8g2.drawLine(ctrlModHeaderStartX,30,128,30);
+
+  u8g2.drawLine(21+ctrlModHeaderStartX,20,21+ctrlModHeaderStartX,52);
+  u8g2.drawLine(22+ctrlModHeaderStartX+(ctrlModSpacerMult*1),20,22+ctrlModHeaderStartX+(ctrlModSpacerMult*1),52);
+  u8g2.drawLine(24+ctrlModHeaderStartX+(ctrlModSpacerMult*2),20,24+ctrlModHeaderStartX+(ctrlModSpacerMult*2),52);
+  //u8g2.drawLine(20+ctrlModHeaderStartX+(ctrlModSpacerMult*3),20,20+ctrlModHeaderStartX+(ctrlModSpacerMult*3),52);
+  
+  // u8g2.setColorIndex((u_int8_t)1);
+  // u8g2.drawBox(ctrlModHeaderStartX,ctrlModHeaderY,ctrlModHeaderBoxSize,ctrlModHeaderBoxSize);
+  // u8g2.drawBox(ctrlModHeaderStartX+(ctrlModSpacerMult*1),ctrlModHeaderY,ctrlModHeaderBoxSize,ctrlModHeaderBoxSize);
+  // u8g2.drawBox(ctrlModHeaderStartX+(ctrlModSpacerMult*2),ctrlModHeaderY,ctrlModHeaderBoxSize,ctrlModHeaderBoxSize);
+  // u8g2.drawBox(ctrlModHeaderStartX+(ctrlModSpacerMult*3),ctrlModHeaderY,ctrlModHeaderBoxSize,ctrlModHeaderBoxSize);
+  // u8g2.drawLine(ctrlModHeaderStartX,20,29,52);
+  // u8g2.drawLine(ctrlModHeaderStartX+(ctrlModSpacerMult*1),20,ctrlModHeaderStartX+(ctrlModSpacerMult*1),52);
+  // u8g2.drawLine(ctrlModHeaderStartX+(ctrlModSpacerMult*2),20,ctrlModHeaderStartX+(ctrlModSpacerMult*2),52);
+  // u8g2.drawLine(ctrlModHeaderStartX+(ctrlModSpacerMult*3),20,ctrlModHeaderStartX+(ctrlModSpacerMult*3),52);
+  // u8g2.setColorIndex((u_int8_t)0);
+  // u8g2.drawStr(ctrlModHeaderStartX+3,ctrlModHeaderY+1, "a");
+  // u8g2.drawStr(ctrlModHeaderStartX+3+(ctrlModSpacerMult*1),ctrlModHeaderY+1, "b");
+  // u8g2.drawStr(ctrlModHeaderStartX+3+(ctrlModSpacerMult*2),ctrlModHeaderY+1, "c");
+  // u8g2.drawStr(ctrlModHeaderStartX+3+(ctrlModSpacerMult*3),ctrlModHeaderY+1, "d");
+  // u8g2.setColorIndex((u_int8_t)1);
 
   SOUND_CONTROL_MODS mods = getControlModDataForTrack();
 
-  u8g2.drawStr(ctrlModHeaderStartX+11,ctrlModHeaderY+1, mods.aName.c_str());
-  u8g2.drawStr(ctrlModHeaderStartX+11+(ctrlModSpacerMult*1),ctrlModHeaderY+1, mods.bName.c_str());
-  u8g2.drawStr(ctrlModHeaderStartX+11+(ctrlModSpacerMult*2),ctrlModHeaderY+1, mods.cName.c_str());
-  u8g2.drawStr(ctrlModHeaderStartX+11+(ctrlModSpacerMult*3),ctrlModHeaderY+1, mods.dName.c_str());
-  u8g2.drawStr(34,ctrlModHeaderY+15, mods.aValue.c_str());
-  u8g2.drawStr(61,ctrlModHeaderY+15, mods.bValue.c_str());
-  u8g2.drawStr(87,ctrlModHeaderY+15, mods.cValue.c_str());
+  u8g2.drawStr(1+ctrlModHeaderStartX+2,ctrlModHeaderY+1, mods.aName.c_str());
+  u8g2.drawStr(2+ctrlModHeaderStartX+2+(ctrlModSpacerMult*1),ctrlModHeaderY+1, mods.bName.c_str());
+  u8g2.drawStr(3+ctrlModHeaderStartX+2+(ctrlModSpacerMult*2),ctrlModHeaderY+1, mods.cName.c_str());
+  u8g2.drawStr(4+ctrlModHeaderStartX+2+(ctrlModSpacerMult*3),ctrlModHeaderY+1, mods.dName.c_str());
+  
+  u8g2.drawStr(36,ctrlModHeaderY+15, mods.aValue.c_str());
+  u8g2.drawStr(60,ctrlModHeaderY+15, mods.bValue.c_str());
+  u8g2.drawStr(84,ctrlModHeaderY+15, mods.cValue.c_str());
   u8g2.drawStr(112,ctrlModHeaderY+15, mods.dValue.c_str());
 }
 
@@ -2584,15 +2592,23 @@ void handleEncoderSubtractiveSynthModA(int diff)
 
     drawSequencerScreen();
   } else if (current_layer_selected == 2) {
-    int currFilterType = currTrack.filter_type;
-    float newFilterType = currFilterType + diff;
+    float currNoise = currTrack.noise;
+    float newNoise = currTrack.noise + (diff * 0.05);
 
-    if (newFilterType != currFilterType) {
-      int newActualFilterType = currFilterType == 0 ? 1 : 0;
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].filter_type = newActualFilterType;
+    Serial.print("currNoise: ");
+    Serial.print(currNoise);
+    Serial.print(" newNoise: ");
+    Serial.println(newNoise);
 
-      voices[current_selected_track].mix.gain(1, newActualFilterType == 1 ? 1 : 0); // svf filtered synth OFF by default
-      voices[current_selected_track].mix.gain(2, newActualFilterType == 0 ? 1 : 0); // ladder filtered synth ON by default
+    if (!(newNoise < 0.01 || newNoise > 1.0) && newNoise != currNoise) {
+      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].noise = newNoise;
+
+      Serial.print("tracks[current_selected_track].noise: ");
+      Serial.println(_seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].noise);
+
+      AudioNoInterrupts();
+      voices[current_selected_track].noise.amplitude(newNoise);
+      AudioInterrupts();
 
       drawSequencerScreen();
     }
@@ -2663,7 +2679,7 @@ void handleEncoderSubtractiveSynthModB(int diff)
   TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
 
   if (current_layer_selected == 0) {
-    // microtiming
+    // TODO: velocity
   } else if (current_layer_selected == 1) {
     float currDetune = currTrack.detune;
     float newDetune = currDetune + diff;
@@ -2877,26 +2893,7 @@ void handleEncoderSubtractiveSynthModD(int diff)
   TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
 
   if (current_layer_selected == 0) { // first layer
-    float currNoise = currTrack.noise;
-    float newNoise = currTrack.noise + (diff * 0.05);
-
-    Serial.print("currNoise: ");
-    Serial.print(currNoise);
-    Serial.print(" newNoise: ");
-    Serial.println(newNoise);
-
-    if (!(newNoise < 0.01 || newNoise > 1.0) && newNoise != currNoise) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].noise = newNoise;
-
-      Serial.print("tracks[current_selected_track].noise: ");
-      Serial.println(_seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].noise);
-
-      AudioNoInterrupts();
-      voices[current_selected_track].noise.amplitude(newNoise);
-      AudioInterrupts();
-
-      drawSequencerScreen();
-    }
+    // probability
   } else if (current_layer_selected == 1) { // width
     float currWidth = currTrack.width;
     float newWidth = currWidth + (diff * 0.01);
