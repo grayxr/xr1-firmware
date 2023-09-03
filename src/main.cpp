@@ -136,6 +136,12 @@ const uint8_t bitocra13_c[1988] U8G2_FONT_SECTION("bitocra13_c") =
   "\377\377\0";
 
 
+#include <Audio.h>
+#include <Wire.h>
+#include <SPI.h>
+#include <SD.h>
+#include <SerialFlash.h>
+
 // GUItool: begin automatically generated code
 AudioSynthNoiseWhite     vnoise3;        //xy=390,865
 AudioSynthNoiseWhite     vnoise2;        //xy=392,605
@@ -161,18 +167,14 @@ AudioEffectEnvelope      vfilterenv3;    //xy=556.857105255127,848.9999847412109
 AudioEffectEnvelope      vfilterenv1;    //xy=559,342
 AudioMixer4              voscmix1;       //xy=560,283
 AudioEffectEnvelope      vfilterenv4;    //xy=559,1097
-AudioFilterLadder        vlfilter3;      //xy=726,852
-AudioFilterLadder        vlfilter2;      //xy=728,592
-AudioFilterLadder        vlfilter4;      //xy=726,1102
-AudioPlayArrayResmp  vmsample2; //xy=730,477
-AudioFilterLadder        vlfilter1;      //xy=731,343
-AudioPlayArrayResmp  vmsample3; //xy=730,739
-AudioPlayArrayResmp  vmsample4; //xy=730,989
-AudioFilterStateVariable vsvfilter2;     //xy=732,538
-AudioFilterStateVariable vsvfilter3;     //xy=731,798
-AudioFilterStateVariable vsvfilter4;     //xy=731,1048
-AudioFilterStateVariable vsvfilter1;     //xy=735,289
-AudioPlayArrayResmp  vmsample1;  //xy=736,217
+AudioPlayArrayResmp  vmsample1;  //xy=726.0000305175781,243.6666603088379
+AudioPlayArrayResmp  vmsample2; //xy=730.0000305175781,492.00000953674316
+AudioPlayArrayResmp  vmsample3; //xy=730.0000305175781,749.0000085830688
+AudioPlayArrayResmp  vmsample4; //xy=730.0000076293945,1000.6666650772095
+AudioFilterLadder        vlfilter1;      //xy=736.0000915527344,296.3333549499512
+AudioFilterLadder        vlfilter2; //xy=739.999927520752,544.1667289733887
+AudioFilterLadder        vlfilter3;      //xy=741.0000305175781,803.6666793823242
+AudioFilterLadder        vlfilter4;      //xy=740.9999885559082,1053.6666288375854
 AudioMixer4              vmix2;          //xy=887,531
 AudioMixer4              vmix3;          //xy=886,791
 AudioMixer4              vmix4;          //xy=886,1041
@@ -231,89 +233,81 @@ AudioConnection          patchCord15(voscb1, 0, voscmix1, 1);
 AudioConnection          patchCord16(vosca1, 0, voscmix1, 0);
 AudioConnection          patchCord17(vfilterenv2, 0, vlfilter2, 1);
 AudioConnection          patchCord18(vfilterenv2, 0, vlfilter2, 2);
-AudioConnection          patchCord19(vfilterenv2, 0, vsvfilter2, 1);
-AudioConnection          patchCord20(voscmix2, 0, vsvfilter2, 0);
-AudioConnection          patchCord21(voscmix2, 0, vlfilter2, 0);
-AudioConnection          patchCord22(voscmix3, 0, vsvfilter3, 0);
-AudioConnection          patchCord23(voscmix3, 0, vlfilter3, 0);
-AudioConnection          patchCord24(voscmix4, 0, vsvfilter4, 0);
-AudioConnection          patchCord25(voscmix4, 0, vlfilter4, 0);
-AudioConnection          patchCord26(vfilterenv3, 0, vsvfilter3, 1);
-AudioConnection          patchCord27(vfilterenv3, 0, vlfilter3, 1);
-AudioConnection          patchCord28(vfilterenv3, 0, vlfilter3, 2);
-AudioConnection          patchCord29(vfilterenv1, 0, vsvfilter1, 1);
-AudioConnection          patchCord30(vfilterenv1, 0, vlfilter1, 1);
-AudioConnection          patchCord31(vfilterenv1, 0, vlfilter1, 2);
-AudioConnection          patchCord32(voscmix1, 0, vsvfilter1, 0);
-AudioConnection          patchCord33(voscmix1, 0, vlfilter1, 0);
-AudioConnection          patchCord34(vfilterenv4, 0, vsvfilter4, 1);
-AudioConnection          patchCord35(vfilterenv4, 0, vlfilter4, 1);
-AudioConnection          patchCord36(vfilterenv4, 0, vlfilter4, 2);
-AudioConnection          patchCord37(vlfilter3, 0, vmix3, 2);
-AudioConnection          patchCord38(vlfilter2, 0, vmix2, 2);
-AudioConnection          patchCord39(vlfilter4, 0, vmix4, 2);
-AudioConnection          patchCord40(vmsample2, 0, vmix2, 0);
-AudioConnection          patchCord41(vlfilter1, 0, vmix1, 2);
-AudioConnection          patchCord42(vmsample3, 0, vmix3, 0);
-AudioConnection          patchCord43(vmsample4, 0, vmix4, 0);
-AudioConnection          patchCord44(vsvfilter2, 0, vmix2, 1);
-AudioConnection          patchCord45(vsvfilter3, 0, vmix3, 1);
-AudioConnection          patchCord46(vsvfilter4, 0, vmix4, 1);
-AudioConnection          patchCord47(vsvfilter1, 0, vmix1, 1);
-AudioConnection          patchCord48(vmsample1, 0, vmix1, 0);
-AudioConnection          patchCord49(vmix2, venv2);
-AudioConnection          patchCord50(vmix3, venv3);
-AudioConnection          patchCord51(vmix4, venv4);
-AudioConnection          patchCord52(vmix1, venv1);
-AudioConnection          patchCord53(venv3, vleft3);
-AudioConnection          patchCord54(venv3, vright3);
-AudioConnection          patchCord55(venv2, vleft2);
-AudioConnection          patchCord56(venv2, vright2);
-AudioConnection          patchCord57(venv4, vleft4);
-AudioConnection          patchCord58(venv4, vright4);
-AudioConnection          patchCord59(venv1, vleft1);
-AudioConnection          patchCord60(venv1, vright1);
-AudioConnection          patchCord61(vssample2, 0, vsubmixl2, 0);
-AudioConnection          patchCord62(vssample2, 1, vsubmixr2, 0);
-AudioConnection          patchCord63(vssample3, 0, vsubmixl3, 0);
-AudioConnection          patchCord64(vssample3, 1, vsubmixr3, 0);
-AudioConnection          patchCord65(vssample4, 0, vsubmixl4, 0);
-AudioConnection          patchCord66(vssample4, 1, vsubmixr4, 0);
-AudioConnection          patchCord67(vssample1, 0, vsubmixl1, 0);
-AudioConnection          patchCord68(vssample1, 1, vsubmixr1, 0);
-AudioConnection          patchCord69(vleft3, 0, vsubmixl3, 1);
-AudioConnection          patchCord70(vleft2, 0, vsubmixl2, 1);
-AudioConnection          patchCord71(vleft4, 0, vsubmixl4, 1);
-AudioConnection          patchCord72(vright3, 0, vsubmixr3, 1);
-AudioConnection          patchCord73(vleft1, 0, vsubmixl1, 1);
-AudioConnection          patchCord74(vright2, 0, vsubmixr2, 1);
-AudioConnection          patchCord75(vright4, 0, vsubmixr4, 1);
-AudioConnection          patchCord76(vright1, 0, vsubmixr1, 1);
-AudioConnection          patchCord77(vsubmixr4, vbitcrusherr4);
-AudioConnection          patchCord78(vsubmixl4, vbitcrusherl4);
-AudioConnection          patchCord79(vsubmixl3, vbitcrusherl3);
-AudioConnection          patchCord80(vsubmixr3, vbitcrusherr3);
-AudioConnection          patchCord81(vsubmixl1, vbitcrusherl1);
-AudioConnection          patchCord82(vsubmixr1, vbitcrusherr1);
-AudioConnection          patchCord83(vsubmixl2, vbitcrusherl2);
-AudioConnection          patchCord84(vsubmixr2, vbitcrusherr2);
-AudioConnection          patchCord85(vbitcrusherl4, 0, mainMixerLeft, 3);
-AudioConnection          patchCord86(vbitcrusherr4, 0, mainMixerRight, 3);
-AudioConnection          patchCord87(vbitcrusherl1, 0, mainMixerLeft, 0);
-AudioConnection          patchCord88(vbitcrusherr1, 0, mainMixerRight, 0);
-AudioConnection          patchCord89(vbitcrusherl3, 0, mainMixerLeft, 2);
-AudioConnection          patchCord90(vbitcrusherr3, 0, mainMixerRight, 2);
-AudioConnection          patchCord91(vbitcrusherl2, 0, mainMixerLeft, 1);
-AudioConnection          patchCord92(vbitcrusherr2, 0, mainMixerRight, 1);
-AudioConnection          patchCord93(mainMixerRight, 0, i2s1, 1);
-AudioConnection          patchCord94(mainMixerLeft, 0, i2s1, 0);
+AudioConnection          patchCord19(voscmix2, 0, vlfilter2, 0);
+AudioConnection          patchCord20(voscmix3, 0, vlfilter3, 0);
+AudioConnection          patchCord21(voscmix4, 0, vlfilter4, 0);
+AudioConnection          patchCord22(vfilterenv3, 0, vlfilter3, 1);
+AudioConnection          patchCord23(vfilterenv3, 0, vlfilter3, 2);
+AudioConnection          patchCord24(vfilterenv1, 0, vlfilter1, 1);
+AudioConnection          patchCord25(vfilterenv1, 0, vlfilter1, 2);
+AudioConnection          patchCord26(voscmix1, 0, vlfilter1, 0);
+AudioConnection          patchCord27(vfilterenv4, 0, vlfilter4, 1);
+AudioConnection          patchCord28(vfilterenv4, 0, vlfilter4, 2);
+AudioConnection          patchCord29(vmsample1, 0, vmix1, 0);
+AudioConnection          patchCord30(vmsample2, 0, vmix2, 0);
+AudioConnection          patchCord31(vmsample3, 0, vmix3, 0);
+AudioConnection          patchCord32(vmsample4, 0, vmix4, 0);
+AudioConnection          patchCord33(vlfilter1, 0, vmix1, 1);
+AudioConnection          patchCord34(vlfilter2, 0, vmix2, 1);
+AudioConnection          patchCord35(vlfilter3, 0, vmix3, 1);
+AudioConnection          patchCord36(vlfilter4, 0, vmix4, 1);
+AudioConnection          patchCord37(vmix2, venv2);
+AudioConnection          patchCord38(vmix3, venv3);
+AudioConnection          patchCord39(vmix4, venv4);
+AudioConnection          patchCord40(vmix1, venv1);
+AudioConnection          patchCord41(venv3, vleft3);
+AudioConnection          patchCord42(venv3, vright3);
+AudioConnection          patchCord43(venv2, vleft2);
+AudioConnection          patchCord44(venv2, vright2);
+AudioConnection          patchCord45(venv4, vleft4);
+AudioConnection          patchCord46(venv4, vright4);
+AudioConnection          patchCord47(venv1, vleft1);
+AudioConnection          patchCord48(venv1, vright1);
+AudioConnection          patchCord49(vssample2, 0, vsubmixl2, 0);
+AudioConnection          patchCord50(vssample2, 1, vsubmixr2, 0);
+AudioConnection          patchCord51(vssample3, 0, vsubmixl3, 0);
+AudioConnection          patchCord52(vssample3, 1, vsubmixr3, 0);
+AudioConnection          patchCord53(vssample4, 0, vsubmixl4, 0);
+AudioConnection          patchCord54(vssample4, 1, vsubmixr4, 0);
+AudioConnection          patchCord55(vssample1, 0, vsubmixl1, 0);
+AudioConnection          patchCord56(vssample1, 1, vsubmixr1, 0);
+AudioConnection          patchCord57(vleft3, 0, vsubmixl3, 1);
+AudioConnection          patchCord58(vleft2, 0, vsubmixl2, 1);
+AudioConnection          patchCord59(vleft4, 0, vsubmixl4, 1);
+AudioConnection          patchCord60(vright3, 0, vsubmixr3, 1);
+AudioConnection          patchCord61(vleft1, 0, vsubmixl1, 1);
+AudioConnection          patchCord62(vright2, 0, vsubmixr2, 1);
+AudioConnection          patchCord63(vright4, 0, vsubmixr4, 1);
+AudioConnection          patchCord64(vright1, 0, vsubmixr1, 1);
+AudioConnection          patchCord65(vsubmixr4, vbitcrusherr4);
+AudioConnection          patchCord66(vsubmixl4, vbitcrusherl4);
+AudioConnection          patchCord67(vsubmixl3, vbitcrusherl3);
+AudioConnection          patchCord68(vsubmixr3, vbitcrusherr3);
+AudioConnection          patchCord69(vsubmixl1, vbitcrusherl1);
+AudioConnection          patchCord70(vsubmixr1, vbitcrusherr1);
+AudioConnection          patchCord71(vsubmixl2, vbitcrusherl2);
+AudioConnection          patchCord72(vsubmixr2, vbitcrusherr2);
+AudioConnection          patchCord73(vbitcrusherl4, 0, mainMixerLeft, 3);
+AudioConnection          patchCord74(vbitcrusherr4, 0, mainMixerRight, 3);
+AudioConnection          patchCord75(vbitcrusherl1, 0, mainMixerLeft, 0);
+AudioConnection          patchCord76(vbitcrusherr1, 0, mainMixerRight, 0);
+AudioConnection          patchCord77(vbitcrusherl3, 0, mainMixerLeft, 2);
+AudioConnection          patchCord78(vbitcrusherr3, 0, mainMixerRight, 2);
+AudioConnection          patchCord79(vbitcrusherl2, 0, mainMixerLeft, 1);
+AudioConnection          patchCord80(vbitcrusherr2, 0, mainMixerRight, 1);
+AudioConnection          patchCord81(mainMixerRight, 0, i2s1, 1);
+AudioConnection          patchCord82(mainMixerLeft, 0, i2s1, 0);
 
 AudioControlSGTL5000     sgtl5000_1;     //xy=2112.428466796875,718.5714073181152
 // GUItool: end automatically generated code
 
 
+
 unsigned long lastSamplePlayed = 0;
-newdigate::audiosample *sample;
+
+newdigate::audiosample *samples[16];
+
+// newdigate::audiosample *sample;
 // newdigate::audiosample *sample2;
 // newdigate::audiosample *sample2a;
 // newdigate::audiosample *sample3;
@@ -560,7 +554,8 @@ typedef struct
   TRACK_STEP_STATE state = OFF;
   uint8_t note = 0; // 0 - C
   uint8_t octave = 4; // 4 - middle C (C4)
-  uint8_t length = 0; // 0 = OFF
+  uint8_t length = 4; // 4 = 1/16
+  uint8_t velocity = 50; // 1 - 100%
   uint8_t microtiming = 0; // 1 = 100ms
   uint8_t probability = 0; // 1 = 100ms
 } TRACK_STEP;
@@ -581,6 +576,7 @@ typedef struct
   uint8_t bitrate = 16;
   uint16_t samplerate = 44100;
   uint8_t filter_type = 0; // 0 = ladder, 1 = SVF
+  uint8_t velocity = 50; // 1 - 100%
   float level = 0.7; // TODO: impl real default level based on default mixer settings
   float pan = 0; // -1.0 = panned fully left, 1.0 = panned fully right
   float sample_play_rate = 1.0;
@@ -752,6 +748,31 @@ std::string getTrackTypeNameStr(TRACK_TYPE type);
 void handleHeadphoneAdjustment(void);
 void handleEncoderSetTempo();
 void handleAddToStepStack(uint32_t tick, int track, int step);
+void noteOffForAllSounds(void);
+
+typedef struct
+{
+  float left;
+  float right;
+} PANNED_AMOUNTS;
+
+PANNED_AMOUNTS getStereoPanValues(float pan);
+PANNED_AMOUNTS getStereoPanValues(float pan)
+{
+  PANNED_AMOUNTS amounts;
+
+  amounts.left = 1.0;
+  if (pan < 0) {
+    amounts.left += pan;
+  }
+
+  amounts.right = 1.0;
+  if (pan > 0) {
+    amounts.right -= pan;
+  }
+
+  return amounts;
+}
 
 std::string getTrackTypeNameStr(TRACK_TYPE type)
 {
@@ -805,6 +826,8 @@ void onClockStart() {
 
 void onClockStop() {
   //usbMIDI.sendRealTime(usbMIDI.Stop);
+
+  noteOffForAllSounds();
 }
 
 int8_t keyboardOctave = 4; // range 1-7 ?
@@ -819,7 +842,6 @@ class BaseVoice
     AudioSynthNoiseWhite        &noise;
     AudioMixer4                 &oscMix;
     AudioSynthWaveformDc        &dc;
-    AudioFilterStateVariable    &svfilter;
     AudioFilterLadder           &lfilter;
     AudioEffectEnvelope         &filterEnv;
     AudioMixer4                 &mix;
@@ -839,7 +861,6 @@ class BaseVoice
       AudioSynthNoiseWhite        &noise,
       AudioMixer4                 &oscMix,
       AudioSynthWaveformDc        &dc,
-      AudioFilterStateVariable    &svfilter,
       AudioFilterLadder           &lfilter,
       AudioEffectEnvelope         &filterEnv,
       AudioMixer4                 &mix,
@@ -857,7 +878,6 @@ class BaseVoice
         noise {noise},
         oscMix {oscMix},
         dc {dc},
-        svfilter {svfilter},
         lfilter {lfilter},
         filterEnv {filterEnv},
         mix {mix},
@@ -877,54 +897,70 @@ class BaseVoice
 
 BaseVoice voices[VOICE_COUNT] = {
   BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vsvfilter1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
   ),
   BaseVoice(
-    vssample2,vmsample2,vosca2,voscb2,vnoise2,voscmix2,vdc2,vsvfilter2,vlfilter2,vfilterenv2,vmix2,venv2,vleft2,vright2,vsubmixl2,vsubmixr2,vbitcrusherl2,vbitcrusherr2
+    vssample2,vmsample2,vosca2,voscb2,vnoise2,voscmix2,vdc2,vlfilter2,vfilterenv2,vmix2,venv2,vleft2,vright2,vsubmixl2,vsubmixr2,vbitcrusherl2,vbitcrusherr2
   ),
   BaseVoice(
-    vssample3,vmsample3,vosca3,voscb3,vnoise3,voscmix3,vdc3,vsvfilter3,vlfilter3,vfilterenv3,vmix3,venv3,vleft3,vright3,vsubmixl3,vsubmixr3,vbitcrusherl3,vbitcrusherr3
+    vssample3,vmsample3,vosca3,voscb3,vnoise3,voscmix3,vdc3,vlfilter3,vfilterenv3,vmix3,venv3,vleft3,vright3,vsubmixl3,vsubmixr3,vbitcrusherl3,vbitcrusherr3
   ),
   BaseVoice(
-    vssample4,vmsample4,vosca4,voscb4,vnoise4,voscmix4,vdc4,vsvfilter4,vlfilter4,vfilterenv4,vmix4,venv4,vleft4,vright4,vsubmixl4,vsubmixr4,vbitcrusherl4,vbitcrusherr4
+    vssample4,vmsample4,vosca4,voscb4,vnoise4,voscmix4,vdc4,vlfilter4,vfilterenv4,vmix4,venv4,vleft4,vright4,vsubmixl4,vsubmixr4,vbitcrusherl4,vbitcrusherr4
   ),
   BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vsvfilter1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
   ),
   BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vsvfilter1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
   ),
   BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vsvfilter1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
   ),
   BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vsvfilter1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
   ),
   BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vsvfilter1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
   ),
   BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vsvfilter1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
   ),
   BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vsvfilter1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
   ),
   BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vsvfilter1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
   ),
   BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vsvfilter1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
   ),
   BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vsvfilter1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
   ),
   BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vsvfilter1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
   ),
   BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vsvfilter1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
   ),
 };
+
+void noteOffForAllSounds(void)
+{
+  for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+  {
+    TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t];
+  
+    if (currTrack.track_type == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
+      //voices[track].filterEnv.releaseNoteOn(10);
+      voices[t].ampEnv.noteOff();
+      voices[t].filterEnv.noteOff();
+    } else {
+      voices[t].ampEnv.noteOff();
+    }
+  }
+}
 
 void initTrackSounds()
 {
@@ -954,9 +990,6 @@ void initTrackSounds()
     voices[v].oscMix.gain(1, 0.33);
     voices[v].oscMix.gain(2, 0.33);
     voices[v].dc.amplitude(1);
-    voices[v].svfilter.frequency(currTrack.cutoff);
-    voices[v].svfilter.resonance(currTrack.res);
-    voices[v].svfilter.octaveControl(4);
     voices[v].lfilter.frequency(currTrack.cutoff);
     voices[v].lfilter.resonance(currTrack.res);
     voices[v].lfilter.octaveControl(4);
@@ -965,20 +998,19 @@ void initTrackSounds()
     voices[v].filterEnv.sustain(currTrack.filter_sustain);
     voices[v].filterEnv.release(currTrack.filter_release);
     //voices[v].filterEnv.releaseNoteOn(15);
-    voices[v].ampEnv.attack(currTrack.amp_attack);
-    voices[v].ampEnv.decay(currTrack.amp_decay);
-    voices[v].ampEnv.sustain(currTrack.amp_sustain);
-    voices[v].ampEnv.release(currTrack.amp_release);
+    voices[v].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
+    voices[v].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
+    voices[v].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
+    voices[v].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
     //voices[v].ampEnv.releaseNoteOn(15);
 
     // output
     voices[v].mix.gain(0, 1); // mono sample
-    voices[v].mix.gain(1, 0); // svf filtered synth OFF by default
-    voices[v].mix.gain(2, 1); // ladder filtered synth ON by default
+    voices[v].mix.gain(1, 1); // svf filtered synth OFF by default
 
     // mono to L&R
-    voices[v].leftCtrl.gain(1);
-    voices[v].rightCtrl.gain(1);
+    voices[v].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+    voices[v].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
 
     // Sub L&R mixers
     voices[v].leftSubMix.gain(0, currTrack.level); // stereo sample left
@@ -1016,29 +1048,27 @@ void changeTrackSoundType(uint8_t t, TRACK_TYPE newType)
 
     // turn sample volume all the way up
     trackVoice.mix.gain(0, 1);
-    // turn synth volumes all the way down
-    trackVoice.mix.gain(1, 0); // svf
-    trackVoice.mix.gain(2, 0); // ladder
+    // turn synth volume all the way down
+    trackVoice.mix.gain(1, 0); // ladder
 
     // TESTING: just open up the amp env completely to hear the sample normally
-    trackVoice.ampEnv.attack(1);
-    trackVoice.ampEnv.decay(1000);
-    trackVoice.ampEnv.sustain(1);
-    trackVoice.ampEnv.release(1000);
+    // trackVoice.ampEnv.attack(1);
+    // trackVoice.ampEnv.decay(1000);
+    // trackVoice.ampEnv.sustain(1);
+    // trackVoice.ampEnv.release(1000);
   } else if (newType == TRACK_TYPE::STEREO_SAMPLE) {
     _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::STEREO_SAMPLE;
 
     // turn sample volume all the way up
     trackVoice.mix.gain(0, 1);
     // turn synth volumes all the way down
-    trackVoice.mix.gain(1, 0); // svf
-    trackVoice.mix.gain(2, 0); // ladder
+    trackVoice.mix.gain(1, 0); // ladder
 
     // TESTING: just open up the amp env completely to hear the sample normally
-    trackVoice.ampEnv.attack(1);
-    trackVoice.ampEnv.decay(1000);
-    trackVoice.ampEnv.sustain(1);
-    trackVoice.ampEnv.release(1000);
+    // trackVoice.ampEnv.attack(1);
+    // trackVoice.ampEnv.decay(1000);
+    // trackVoice.ampEnv.sustain(1);
+    // trackVoice.ampEnv.release(1000);
   } else if (newType == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
     _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
 
@@ -1047,8 +1077,7 @@ void changeTrackSoundType(uint8_t t, TRACK_TYPE newType)
     // turn sample volume all the way down
     trackVoice.mix.gain(0, 0);
     // turn synth volumes all the way up
-    trackVoice.mix.gain(1, 0); // svf
-    trackVoice.mix.gain(2, 1); // ladder
+    trackVoice.mix.gain(1, 1); // ladder
 
     // TESTING: revert amp env to normal synth setting
     trackVoice.ampEnv.attack(currTrack.amp_attack);
@@ -1060,22 +1089,19 @@ void changeTrackSoundType(uint8_t t, TRACK_TYPE newType)
 
     // turn all audio for this track voice down
     trackVoice.mix.gain(0, 0); // mono sample
-    trackVoice.mix.gain(1, 0); // svf
-    trackVoice.mix.gain(2, 0); // ladder
+    trackVoice.mix.gain(1, 0); // ladder
   } else if (newType == TRACK_TYPE::CV_GATE) {
     _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::CV_GATE;
 
     // turn all audio for this track voice down
     trackVoice.mix.gain(0, 0); // mono sample
-    trackVoice.mix.gain(1, 0); // svf
-    trackVoice.mix.gain(2, 0); // ladder
+    trackVoice.mix.gain(1, 0); // ladder
   }else if (newType == TRACK_TYPE::CV_TRIG) {
     _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::CV_TRIG;
 
     // turn all audio for this track voice down
     trackVoice.mix.gain(0, 0); // mono sample
-    trackVoice.mix.gain(1, 0); // svf
-    trackVoice.mix.gain(2, 0); // ladder
+    trackVoice.mix.gain(1, 0); // ladder
   }
 }
 
@@ -1091,6 +1117,86 @@ void initUsableSampleNames(void)
   // test out a random sample name:
   Serial.print("random sample name check: ");
   Serial.println(usableSampleNames[127]);
+}
+
+
+
+bool isRawFile(const char* filename);
+bool isRawFile(const char* filename) {
+  int8_t len = strlen(filename);
+
+  Serial.print("strlen: ");
+  Serial.println(len);
+
+  bool result = false;
+  String fStr = filename;
+
+  if (fStr.toLowerCase().substring((len - 4), len) == ".raw") {
+    result = true;
+  }
+
+  return result;
+}
+
+void parseRootForRawSamples(void);
+void parseRootForRawSamples(void)
+{
+  File dir = SD.open("/");
+
+  uint32_t totalSizeLimit = 8000000; // 8 MB
+  uint32_t totalSizeCollected = 0;
+  uint8_t currentFileIndex = 0;
+
+  while(true) {
+    File entry = dir.openNextFile();
+    if (! entry) {
+      Serial.println("** no files found **");
+      break;
+    }
+
+    if (!entry.isDirectory()) {
+      if (strlen(entry.name()) > MAX_SAMPLE_NAME_LENGTH) {
+        Serial.print("Sample names can only be 32 characters long, not loading: ");
+        Serial.println(entry.name());
+        continue;
+      }
+
+      if (isRawFile(entry.name())) {
+        // files have sizes, directories do not
+        totalSizeCollected += entry.size();
+        if (totalSizeCollected >= totalSizeLimit) {
+          Serial.println("size limit reached, not loading any more samples!");
+          break;
+        }
+
+        if ((currentFileIndex + 1) > MAX_USABLE_SAMPLE_IDS) {
+          Serial.println("Reached the 255 RAW sample limit!");
+          break;
+        }
+
+        strcpy(usableSampleNames[currentFileIndex], entry.name());
+
+        ++currentFileIndex;
+      }
+    }
+    
+    entry.close();
+  }
+}
+
+void loadRawSamplesFromSdCard(void);
+void loadRawSamplesFromSdCard(void)
+{  
+  parseRootForRawSamples();
+
+  newdigate::flashloader loader;
+  
+  // only load 16 samples into PSRAM at a time, for now
+  for (int s = 0; s < 16; s++) {
+    if (usableSampleNames[s] != "N/A") {
+      samples[s] = loader.loadSample(usableSampleNames[s]);
+      }
+  }
 }
 
 void setup() {
@@ -1122,18 +1228,14 @@ void setup() {
 
   initTrackSounds();
 
+  // prepare sample names to be occupied
+  initUsableSampleNames();
+
   // IMPORTANT: DO THIS AFTER SD IS INITIALIZED ABOVE
   // load short project mono samples into PSRAM
-  newdigate::flashloader loader;
-  sample = loader.loadSample("_BD.RAW");
-  //   sample2 = loader.loadSample("_SD.RAW");
-  //   sample2a = loader.loadSample("_SD_ACC.RAW");
-  //   sample3 = loader.loadSample("_CH.RAW");
-  //   sample4 = loader.loadSample("_LT.RAW");
+  loadRawSamplesFromSdCard();
   
   delay(25);
-
-  initUsableSampleNames();
 
   Wire1.begin();
 
@@ -1585,7 +1687,14 @@ SOUND_CONTROL_MODS getSubtractiveSynthControlModData()
       mods.aValue = std::to_string(track.length); // TODO: use 1/16 etc display
     }
 
-    mods.bValue = "50%"; // TODO: impl
+    if (current_UI_mode == SUBMITTING_STEP_VALUE) {
+      TRACK_STEP step = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
+
+      mods.bValue = std::to_string(step.velocity); // TODO: use 1/16 etc display
+    } else {
+      mods.bValue = std::to_string(track.velocity); // TODO: use 1/16 etc display
+    }
+
     mods.cValue = "100%"; // TODO: impl
     mods.dValue = "100%"; // TODO: impl
     break;
@@ -1696,7 +1805,7 @@ SOUND_CONTROL_MODS getRawSampleControlModData()
     mods.dName = "BIT";
 
     mods.aValue = "1"; // TODO : impl sample directory fetching
-    mods.bValue = "1"; // TODO: impl sample file fetching
+    mods.bValue = std::to_string(track.sample_id+1);
     mods.cValue = getPlaybackSpeedStr(track.sample_play_rate);
     mods.dValue = std::to_string(track.bitrate);
     break;
@@ -2048,7 +2157,7 @@ void drawSequencerScreen()
     if (currTrackType == SUBTRACTIVE_SYNTH) {
       trackInfoStr += getTrackTypeNameStr(currTrackType);
     } else if (currTrackType == MONO_SAMPLE || currTrackType == STEREO_SAMPLE) {
-      trackInfoStr += "SD.RAW"; // TODO: implement actual file name fetching later
+      trackInfoStr += usableSampleNames[currTrack.sample_id];
     } else if (currTrackType == MIDI) {
       trackInfoStr += "";
     } else if (currTrackType == CV_GATE || currTrackType == CV_TRIG) {
@@ -2120,10 +2229,20 @@ void drawSetTempoOverlay(void)
 void triggerTrackManually(uint8_t t, uint8_t note) {
   TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
 
-  // ignore sample env noteOn events for now?!
   if (currTrack.track_type == TRACK_TYPE::MONO_SAMPLE) {
+
+  AudioNoInterrupts();
+    voices[t].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+    voices[t].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+
+    voices[t].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
+    voices[t].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
+    voices[t].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
+    voices[t].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
+  AudioInterrupts();
+
     voices[t].ampEnv.noteOn();
-    voices[t].mSample.playRaw(sample->sampledata, sample->samplesize/2, numChannels);
+    voices[t].mSample.playRaw(samples[currTrack.sample_id]->sampledata, samples[currTrack.sample_id]->samplesize/2, numChannels);
   } else if (currTrack.track_type == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
 
   AudioNoInterrupts();
@@ -2133,10 +2252,14 @@ void triggerTrackManually(uint8_t t, uint8_t note) {
 
     voices[t].osca.frequency(octaveFreqA);
     voices[t].oscb.frequency(octaveFreqB);
-    voices[t].ampEnv.attack(currTrack.amp_attack);
-    voices[t].ampEnv.decay(currTrack.amp_decay);
-    voices[t].ampEnv.sustain(currTrack.amp_sustain);
-    voices[t].ampEnv.release(currTrack.amp_release);
+
+    voices[t].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+    voices[t].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+
+    voices[t].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
+    voices[t].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
+    voices[t].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
+    voices[t].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
     voices[t].filterEnv.attack(currTrack.filter_attack);
     voices[t].filterEnv.decay(currTrack.filter_decay);
     voices[t].filterEnv.sustain(currTrack.filter_sustain);
@@ -2175,8 +2298,19 @@ void handleNoteOnForTrackStep(int track, int step)
   TRACK_STEP stepToUse = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[track].steps[step];
 
   if (trackToUse.track_type == TRACK_TYPE::MONO_SAMPLE) {
+
+  AudioNoInterrupts();
+    voices[track].leftCtrl.gain(getStereoPanValues(trackToUse.pan).left * (stepToUse.velocity * 0.01));
+    voices[track].rightCtrl.gain(getStereoPanValues(trackToUse.pan).right * (stepToUse.velocity * 0.01));
+
+    voices[track].ampEnv.attack(trackToUse.amp_attack * (stepToUse.velocity * 0.01));
+    voices[track].ampEnv.decay(trackToUse.amp_decay * (stepToUse.velocity * 0.01));
+    voices[track].ampEnv.sustain(trackToUse.amp_sustain * (stepToUse.velocity * 0.01));
+    voices[track].ampEnv.release(trackToUse.amp_release * (stepToUse.velocity * 0.01));
+  AudioInterrupts();
+
     voices[track].ampEnv.noteOn();
-    voices[track].mSample.playRaw(sample->sampledata, sample->samplesize/2, numChannels);
+    voices[track].mSample.playRaw(samples[trackToUse.sample_id]->sampledata, samples[trackToUse.sample_id]->samplesize/2, numChannels);
   } else if (trackToUse.track_type == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
 
   AudioNoInterrupts();
@@ -2186,6 +2320,18 @@ void handleNoteOnForTrackStep(int track, int step)
 
     voices[track].osca.frequency(octaveFreqA);
     voices[track].oscb.frequency(octaveFreqB);
+
+    voices[track].leftCtrl.gain(getStereoPanValues(trackToUse.pan).left * (stepToUse.velocity * 0.01));
+    voices[track].rightCtrl.gain(getStereoPanValues(trackToUse.pan).right * (stepToUse.velocity * 0.01));
+
+    voices[track].ampEnv.attack(trackToUse.amp_attack * (stepToUse.velocity * 0.01));
+    voices[track].ampEnv.decay(trackToUse.amp_decay * (stepToUse.velocity * 0.01));
+    voices[track].ampEnv.sustain(trackToUse.amp_sustain * (stepToUse.velocity * 0.01));
+    voices[track].ampEnv.release(trackToUse.amp_release * (stepToUse.velocity * 0.01));
+    voices[track].filterEnv.attack(trackToUse.filter_attack);
+    voices[track].filterEnv.decay(trackToUse.filter_decay);
+    voices[track].filterEnv.sustain(trackToUse.filter_sustain);
+    voices[track].filterEnv.release(trackToUse.filter_release);
   AudioInterrupts();
 
     // now triggers envs
@@ -2199,12 +2345,14 @@ void handleNoteOffForTrackStep(int track, int step)
 {
   TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[track];
 
-  //voices[track].ampEnv.releaseNoteOn(10);
-  voices[track].ampEnv.noteOff();
-  
+  //voices[track].ampEnv.releaseNoteOn(10);  
+  //voices[track].filterEnv.releaseNoteOn(10);
+
   if (currTrack.track_type == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
-    //voices[track].filterEnv.releaseNoteOn(10);
+    voices[track].ampEnv.noteOff();
     voices[track].filterEnv.noteOff();
+  } else {
+    voices[track].ampEnv.noteOff();
   }
 }
 
@@ -2511,8 +2659,10 @@ void toggleSelectedStep(uint8_t step)
     // copy track properties to steps
     _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].note = currTrack.note;
     _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].octave = currTrack.octave;
+    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].velocity = currTrack.velocity;
   } else if (currStepState == TRACK_STEP_STATE::ON) {
     _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::ACCENTED;
+    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].velocity = 100; // TODO: use a "global accent" value here
   } else if (currStepState == TRACK_STEP_STATE::ACCENTED) {
     _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::OFF;
   }
@@ -2557,13 +2707,6 @@ void handleEncoderSubtractiveSynthModA(int diff)
       newLen = currLen + diff;
     }
 
-    Serial.print("currLen: ");
-    Serial.print(currLen);
-    Serial.print(" newLen: ");
-    Serial.print(newLen);
-    Serial.print("diff: ");
-    Serial.println(diff);
-
     if (!(newLen < 0 && newLen > 64) && (newLen != currLen)) {
       if (current_UI_mode == SUBMITTING_STEP_VALUE) {
         _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step].length = newLen;
@@ -2595,16 +2738,8 @@ void handleEncoderSubtractiveSynthModA(int diff)
     float currNoise = currTrack.noise;
     float newNoise = currTrack.noise + (diff * 0.05);
 
-    Serial.print("currNoise: ");
-    Serial.print(currNoise);
-    Serial.print(" newNoise: ");
-    Serial.println(newNoise);
-
     if (!(newNoise < 0.01 || newNoise > 1.0) && newNoise != currNoise) {
       _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].noise = newNoise;
-
-      Serial.print("tracks[current_selected_track].noise: ");
-      Serial.println(_seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].noise);
 
       AudioNoInterrupts();
       voices[current_selected_track].noise.amplitude(newNoise);
@@ -2679,7 +2814,19 @@ void handleEncoderSubtractiveSynthModB(int diff)
   TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
 
   if (current_layer_selected == 0) {
-    // TODO: velocity
+    float currVel = currTrack.velocity;
+    float newVel = currTrack.velocity + diff;
+
+    if (!(newVel < 1 || newVel > 100) && newVel != currVel) {
+      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].velocity = newVel;
+
+      // AudioNoInterrupts();
+      // voices[current_selected_track].leftCtrl.gain(newVel * 0.01);
+      // voices[current_selected_track].rightCtrl.gain(newVel * 0.01);
+      // AudioInterrupts();
+
+      drawSequencerScreen();
+    }
   } else if (current_layer_selected == 1) {
     float currDetune = currTrack.detune;
     float newDetune = currDetune + diff;
@@ -2723,7 +2870,6 @@ void handleEncoderSubtractiveSynthModB(int diff)
 
       AudioNoInterrupts();
       voices[current_selected_track].lfilter.frequency(newCutoff);
-      voices[current_selected_track].svfilter.frequency(newCutoff);
       AudioInterrupts();
 
       drawSequencerScreen();
@@ -2851,7 +2997,6 @@ void handleEncoderSubtractiveSynthModC(int diff)
 
       AudioNoInterrupts();
       voices[current_selected_track].lfilter.resonance(newRes);
-      voices[current_selected_track].svfilter.resonance(newRes);
       AudioInterrupts();
 
       drawSequencerScreen();
@@ -2978,14 +3123,47 @@ void handleEncoderRawSampleModA(int diff)
 {
   TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
 
-  if (current_layer_selected = 0) {
+  if (current_layer_selected == 0) {
     // sample dir
   } else if (current_layer_selected == 1) {
     // loop a
   } else if (current_layer_selected == 2) {
-    // amp attack
+    float currAtt = currTrack.amp_attack;
+
+    int mult = 1;
+    if (abs(diff) > 5) {
+      mult = 100;
+    } else if (abs(diff) > 1 && abs(diff) < 5) {
+      mult = 10;
+    }
+
+    float newAtt = currTrack.amp_attack + (diff * mult);
+
+    if (!(newAtt < 1 || newAtt > 11880) && newAtt != currAtt) {
+      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].amp_attack = newAtt;
+
+      AudioNoInterrupts();
+      voices[current_selected_track].ampEnv.attack(newAtt);
+      AudioInterrupts();
+
+      drawSequencerScreen();
+    }
   }else if (current_layer_selected == 3) {
-    // output lvl
+    float currLvl = currTrack.level;
+    float newLvl = currTrack.level + (diff * 0.1);
+
+    if (!(newLvl < -0.1 || newLvl > 1.1) && newLvl != currLvl) {
+      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].level = newLvl;
+
+      AudioNoInterrupts();
+      voices[current_selected_track].leftSubMix.gain(0, newLvl);
+      voices[current_selected_track].leftSubMix.gain(1, newLvl);
+      voices[current_selected_track].rightSubMix.gain(0, newLvl);
+      voices[current_selected_track].rightSubMix.gain(1, newLvl);
+      AudioInterrupts();
+
+      drawSequencerScreen();
+    }
   }
 }
 
@@ -2994,14 +3172,65 @@ void handleEncoderRawSampleModB(int diff)
 {
   TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
 
-  if (current_layer_selected = 0) {
-    // sample file
+  if (current_layer_selected == 0) {
+    int newSampleId = currTrack.sample_id + diff;
+
+    if (newSampleId < 0) {
+      newSampleId = 6;
+    } else if (newSampleId > 6) { // TODO: expand this to sample max, not 6
+      newSampleId = 0;
+    }
+
+    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].sample_id = newSampleId;
+
+    drawSequencerScreen();
   } else if (current_layer_selected == 1) {
     // loop b
   } else if (current_layer_selected == 2) {
-    // amp decay
+    float currDecay = currTrack.amp_decay;
+
+    int mult = 1;
+    if (abs(diff) > 5) {
+      mult = 100;
+    } else if (abs(diff) > 1 && abs(diff) < 5) {
+      mult = 10;
+    }
+
+    float newDecay = currTrack.amp_decay + (diff * mult);
+
+    if (!(newDecay < 0 || newDecay > 11880) && newDecay != currDecay) {
+      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].amp_decay = newDecay;
+
+      AudioNoInterrupts();
+      voices[current_selected_track].ampEnv.decay(newDecay);
+      AudioInterrupts();
+
+      drawSequencerScreen();
+    }
   }else if (current_layer_selected == 3) {
-    // output pan
+    float currPan = currTrack.pan;
+    float newPan = currTrack.pan + (diff * 0.1);
+
+    if (!(newPan < -1.0 || newPan > 1.0) && newPan != currPan) {
+      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].pan = newPan;
+
+      float newGainL = 1.0;
+      if (newPan < 0) {
+        newGainL += newPan;
+      }
+
+      float newGainR = 1.0;
+      if (newPan > 0) {
+        newGainR -= newPan;
+      }
+
+      AudioNoInterrupts();
+      voices[current_selected_track].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+      voices[current_selected_track].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+      AudioInterrupts();
+
+      drawSequencerScreen();
+    }
   }
 }
 
@@ -3033,7 +3262,18 @@ void handleEncoderRawSampleModC(int diff)
   } else if (current_layer_selected == 1) {
     // loop c
   } else if (current_layer_selected == 2) {
-    // amp sus
+    float curSus = currTrack.amp_sustain;
+    float newSus = currTrack.amp_sustain + (diff * 0.01);
+
+    if (!(newSus < 0 || newSus > 1.0) && newSus != curSus) {
+      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].amp_sustain = newSus;
+
+      AudioNoInterrupts();
+      voices[current_selected_track].ampEnv.sustain(newSus);
+      AudioInterrupts();
+
+      drawSequencerScreen();
+    }
   } else if (current_layer_selected == 3) {
     // n/a
   }
@@ -3063,7 +3303,26 @@ void handleEncoderRawSampleModD(int diff)
   } else if (current_layer_selected == 1) {
     // loop d
   } else if (current_layer_selected == 2) {
-    // amp release
+    float curRel = currTrack.amp_release;
+
+    int mult = 1;
+    if (abs(diff) > 5) {
+      mult = 200;
+    } else if (abs(diff) > 1 && abs(diff) < 5) {
+      mult = 20;
+    }
+
+    float newRel = currTrack.amp_release + (diff * mult);
+
+    if (!(newRel < 0 || newRel > 11880) && newRel != curRel) {
+      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].amp_release = newRel;
+
+      AudioNoInterrupts();
+      voices[current_selected_track].ampEnv.release(newRel);
+      AudioInterrupts();
+
+      drawSequencerScreen();
+    }
   }else if (current_layer_selected == 3) {
     // n/a
   }
