@@ -135,13 +135,6 @@ const uint8_t bitocra13_c[1988] U8G2_FONT_SECTION("bitocra13_c") =
   "\272_RL\233\61h\376\13M\272G\60hS;\6\1\377\12U\272OrL\233\61h\0\0\0\4"
   "\377\377\0";
 
-
-#include <Audio.h>
-#include <Wire.h>
-#include <SPI.h>
-#include <SD.h>
-#include <SerialFlash.h>
-
 // GUItool: begin automatically generated code
 AudioSynthNoiseWhite     vnoise3;        //xy=390,865
 AudioSynthNoiseWhite     vnoise2;        //xy=392,605
@@ -175,45 +168,161 @@ AudioFilterLadder        vlfilter1;      //xy=736.0000915527344,296.333354949951
 AudioFilterLadder        vlfilter2; //xy=739.999927520752,544.1667289733887
 AudioFilterLadder        vlfilter3;      //xy=741.0000305175781,803.6666793823242
 AudioFilterLadder        vlfilter4;      //xy=740.9999885559082,1053.6666288375854
+AudioPlayArrayResmp  vmsample8; //xy=864.6666145324707,1867.6665539741516
+AudioPlayArrayResmp  vmsample5; //xy=871.166675567627,1300.999927997589
+AudioPlayArrayResmp  vmsample7; //xy=871.3333015441895,1667.6665539741516
+AudioPlayArrayResmp  vmsample6; //xy=874.666675567627,1490.999927997589
 AudioMixer4              vmix2;          //xy=887,531
 AudioMixer4              vmix3;          //xy=886,791
 AudioMixer4              vmix4;          //xy=886,1041
 AudioMixer4              vmix1;          //xy=890,282
+AudioPlayArrayResmp  vmsample16; //xy=880.6666145324707,3962.6665539741516
+AudioPlayArrayResmp  vmsample13; //xy=887.166675567627,3395.999927997589
+AudioPlayArrayResmp  vmsample15; //xy=887.3333015441895,3762.6665539741516
+AudioPlayArrayResmp  vmsample14; //xy=890.666675567627,3585.999927997589
+AudioPlayArrayResmp  vmsample12; //xy=908.1666145324707,2927.6665539741516
+AudioPlayArrayResmp  vmsample9; //xy=914.666675567627,2360.999927997589
+AudioPlayArrayResmp  vmsample11; //xy=914.8333015441895,2727.6665539741516
+AudioPlayArrayResmp  vmsample10; //xy=918.166675567627,2550.999927997589
 AudioEffectEnvelope      venv3;          //xy=1023,790
 AudioEffectEnvelope      venv2;          //xy=1025,530
 AudioEffectEnvelope      venv4;          //xy=1023,1040
+AudioEffectEnvelope      venv8; //xy=1019.9999389648438,1866.6666259765625
 AudioEffectEnvelope      venv1;          //xy=1028,281
+AudioEffectEnvelope      venv5; //xy=1026.5,1300
+AudioEffectEnvelope      venv7; //xy=1026.6666259765625,1666.6666259765625
+AudioEffectEnvelope      venv6; //xy=1030,1490
+AudioEffectEnvelope      venv16; //xy=1035.9999389648438,3961.6666259765625
+AudioEffectEnvelope      venv13; //xy=1042.5,3395
+AudioEffectEnvelope      venv15; //xy=1042.6666259765625,3761.6666259765625
+AudioEffectEnvelope      venv14; //xy=1046,3585
+AudioEffectEnvelope      venv12; //xy=1063.4999389648438,2926.6666259765625
+AudioEffectEnvelope      venv9; //xy=1070,2360
+AudioEffectEnvelope      venv11; //xy=1070.1666259765625,2726.6666259765625
+AudioEffectEnvelope      venv10; //xy=1073.5,2550
 AudioPlayWAVstereo       vssample2;      //xy=1172,457
 AudioPlayWAVstereo       vssample3;      //xy=1171,716
+AudioPlayWAVstereo       vssample8; //xy=1166.9999389648438,1793.6666259765625
 AudioPlayWAVstereo       vssample4;      //xy=1171,966
 AudioPlayWAVstereo       vssample1;      //xy=1175,208
+AudioPlayWAVstereo       vssample5; //xy=1173.5,1227
+AudioPlayWAVstereo       vssample7; //xy=1173.6666259765625,1593.6666259765625
 AudioAmplifier           vleft3;         //xy=1177,772
+AudioAmplifier           vleft8; //xy=1172.9999389648438,1848.6666259765625
 AudioAmplifier           vleft2;         //xy=1179,512
 AudioAmplifier           vleft4;         //xy=1177,1022
 AudioAmplifier           vright3;        //xy=1178,811
 AudioAmplifier           vleft1;         //xy=1181,263
 AudioAmplifier           vright2;        //xy=1180,551
 AudioAmplifier           vright4;        //xy=1178,1060
+AudioAmplifier           vright8; //xy=1174.9999389648438,1887.6666259765625
+AudioPlayWAVstereo       vssample6; //xy=1177,1417
 AudioAmplifier           vright1;        //xy=1183,302
+AudioAmplifier           vleft5; //xy=1179.5,1282
+AudioAmplifier           vleft7; //xy=1179.6666259765625,1648.6666259765625
+AudioAmplifier           vright5; //xy=1181.5,1321
+AudioAmplifier           vright7; //xy=1181.6666259765625,1687.6666259765625
+AudioAmplifier           vleft6; //xy=1183,1472
+AudioAmplifier           vright6; //xy=1185,1511
+AudioPlayWAVstereo       vssample16; //xy=1182.9999389648438,3888.6666259765625
+AudioPlayWAVstereo       vssample13; //xy=1189.5,3322
+AudioPlayWAVstereo       vssample15; //xy=1189.6666259765625,3688.6666259765625
+AudioAmplifier           vleft16; //xy=1188.9999389648438,3943.6666259765625
+AudioAmplifier           vright16; //xy=1190.9999389648438,3982.6666259765625
+AudioPlayWAVstereo       vssample14; //xy=1193,3512
+AudioAmplifier           vleft13; //xy=1195.5,3377
+AudioAmplifier           vleft15; //xy=1195.6666259765625,3743.6666259765625
+AudioAmplifier           vright13; //xy=1197.5,3416
+AudioAmplifier           vright15; //xy=1197.6666259765625,3782.6666259765625
+AudioAmplifier           vleft14; //xy=1199,3567
+AudioAmplifier           vright14; //xy=1201,3606
+AudioPlayWAVstereo       vssample12; //xy=1210.4999389648438,2853.6666259765625
+AudioPlayWAVstereo       vssample9; //xy=1217,2287
+AudioPlayWAVstereo       vssample11; //xy=1217.1666259765625,2653.6666259765625
+AudioAmplifier           vleft12; //xy=1216.4999389648438,2908.6666259765625
+AudioAmplifier           vright12; //xy=1218.4999389648438,2947.6666259765625
+AudioPlayWAVstereo       vssample10; //xy=1220.5,2477
+AudioAmplifier           vleft9; //xy=1223,2342
+AudioAmplifier           vleft11; //xy=1223.1666259765625,2708.6666259765625
+AudioAmplifier           vright9; //xy=1225,2381
+AudioAmplifier           vright11; //xy=1225.1666259765625,2747.6666259765625
+AudioAmplifier           vleft10; //xy=1226.5,2532
+AudioAmplifier           vright10; //xy=1228.5,2571
 AudioMixer4              vsubmixr4;      //xy=1379.6667213439941,1071.9999599456787
 AudioMixer4              vsubmixl4;      //xy=1381.333351135254,1001.6666660308838
 AudioMixer4              vsubmixl3;      //xy=1383.0001373291016,764.3333435058594
 AudioMixer4              vsubmixr3;      //xy=1384.666763305664,833.666618347168
+AudioMixer4              vsubmixl8; //xy=1383.5714073181152,1851.238042831421
+AudioMixer4              vsubmixr8; //xy=1384.2380332946777,1923.238039970398
 AudioMixer4              vsubmixl1;      //xy=1391.5714683532715,265.5714168548584
 AudioMixer4              vsubmixr1;      //xy=1392.238094329834,337.57141399383545
+AudioMixer4              vsubmixl5; //xy=1390.0714683532715,1284.5714168548584
+AudioMixer4              vsubmixr5; //xy=1390.738094329834,1356.5714139938354
+AudioMixer4              vsubmixl7; //xy=1390.238094329834,1651.238042831421
 AudioMixer4              vsubmixl2;      //xy=1395.2379722595215,510.2857246398926
 AudioMixer4              vsubmixr2;      //xy=1395.2381744384766,581.047568321228
-AudioEffectBitcrusher    vbitcrusherl4; //xy=1583.3331756591797,1017.4999418258667
-AudioEffectBitcrusher    vbitcrusherr4; //xy=1583.3333549499512,1056.0713481903076
-AudioEffectBitcrusher    vbitcrusherl1;    //xy=1591.428451538086,283.57143211364746
-AudioEffectBitcrusher    vbitcrusherr1;    //xy=1591.4286308288574,322.1428384780884
-AudioEffectBitcrusher    vbitcrusherl3; //xy=1593.333152770996,779.1666126251221
-AudioEffectBitcrusher    vbitcrusherr3; //xy=1593.3333549499512,819.404691696167
-AudioEffectBitcrusher    vbitcrusherl2; //xy=1599.9998779296875,530.8333129882812
-AudioEffectBitcrusher    vbitcrusherr2; //xy=1600.000057220459,569.4047193527222
-AudioMixer4              mainMixerRight; //xy=1894.1428604125977,695.1428718566895
-AudioMixer4              mainMixerLeft;  //xy=1895.0000534057617,614.9999885559082
-AudioOutputI2S           i2s1;           //xy=2113.714179992676,655.0000152587891
+AudioMixer4              vsubmixr7; //xy=1390.9047203063965,1723.238039970398
+AudioMixer4              vsubmixl6; //xy=1393.5714683532715,1474.5714168548584
+AudioMixer4              vsubmixr6; //xy=1394.238094329834,1546.5714139938354
+AudioMixer4              vsubmixl16; //xy=1399.5714073181152,3946.238042831421
+AudioMixer4              vsubmixr16; //xy=1400.2380332946777,4018.238039970398
+AudioMixer4              vsubmixl13; //xy=1406.0714683532715,3379.5714168548584
+AudioMixer4              vsubmixr13; //xy=1406.738094329834,3451.5714139938354
+AudioMixer4              vsubmixl15; //xy=1406.238094329834,3746.238042831421
+AudioMixer4              vsubmixr15; //xy=1406.9047203063965,3818.238039970398
+AudioMixer4              vsubmixl14; //xy=1409.5714683532715,3569.5714168548584
+AudioMixer4              vsubmixr14; //xy=1410.238094329834,3641.5714139938354
+AudioMixer4              vsubmixl12; //xy=1427.0714073181152,2911.238042831421
+AudioMixer4              vsubmixr12; //xy=1427.7380332946777,2983.238039970398
+AudioMixer4              vsubmixl9; //xy=1433.5714683532715,2344.5714168548584
+AudioMixer4              vsubmixr9; //xy=1434.238094329834,2416.5714139938354
+AudioMixer4              vsubmixl11; //xy=1433.738094329834,2711.238042831421
+AudioMixer4              vsubmixr11; //xy=1434.4047203063965,2783.238039970398
+AudioMixer4              vsubmixl10; //xy=1437.0714683532715,2534.5714168548584
+AudioMixer4              vsubmixr10; //xy=1437.738094329834,2606.5714139938354
+AudioEffectBitcrusher    vbitcrusherl1; //xy=1583.3331756591797,1017.4999418258667
+AudioEffectBitcrusher    vbitcrusherr1; //xy=1583.3333549499512,1056.0713481903076
+AudioEffectBitcrusher    vbitcrusherl2; //xy=1581.7618713378906,1909.4761505126953
+AudioEffectBitcrusher    vbitcrusherr2; //xy=1583.4283905029297,1869.23805809021
+AudioEffectBitcrusher    vbitcrusherl3; //xy=1583.3331756591797,1017.4999418258667
+AudioEffectBitcrusher    vbitcrusherr3; //xy=1583.3333549499512,1056.0713481903076
+AudioEffectBitcrusher    vbitcrusherl4; //xy=1581.7618713378906,1909.4761505126953
+AudioEffectBitcrusher    vbitcrusherr4; //xy=1583.4283905029297,1869.23805809021
+AudioEffectBitcrusher    vbitcrusherl5; //xy=1583.3331756591797,1017.4999418258667
+AudioEffectBitcrusher    vbitcrusherr5; //xy=1583.3333549499512,1056.0713481903076
+AudioEffectBitcrusher    vbitcrusherl6; //xy=1581.7618713378906,1909.4761505126953
+AudioEffectBitcrusher    vbitcrusherr6; //xy=1583.4283905029297,1869.23805809021
+AudioEffectBitcrusher    vbitcrusherl7; //xy=1583.3331756591797,1017.4999418258667
+AudioEffectBitcrusher    vbitcrusherr7; //xy=1583.3333549499512,1056.0713481903076
+AudioEffectBitcrusher    vbitcrusherl8; //xy=1581.7618713378906,1909.4761505126953
+AudioEffectBitcrusher    vbitcrusherr8; //xy=1583.4283905029297,1869.23805809021
+AudioEffectBitcrusher    vbitcrusherl9; //xy=1583.3331756591797,1017.4999418258667
+AudioEffectBitcrusher    vbitcrusherr9; //xy=1583.3333549499512,1056.0713481903076
+AudioEffectBitcrusher    vbitcrusherl10; //xy=1581.7618713378906,1909.4761505126953
+AudioEffectBitcrusher    vbitcrusherr10; //xy=1583.4283905029297,1869.23805809021
+AudioEffectBitcrusher    vbitcrusherl11; //xy=1583.3331756591797,1017.4999418258667
+AudioEffectBitcrusher    vbitcrusherr11; //xy=1583.3333549499512,1056.0713481903076
+AudioEffectBitcrusher    vbitcrusherl12; //xy=1581.7618713378906,1909.4761505126953
+AudioEffectBitcrusher    vbitcrusherr12; //xy=1583.4283905029297,1869.23805809021
+AudioEffectBitcrusher    vbitcrusherl13; //xy=1583.3331756591797,1017.4999418258667
+AudioEffectBitcrusher    vbitcrusherr13; //xy=1583.3333549499512,1056.0713481903076
+AudioEffectBitcrusher    vbitcrusherl14; //xy=1581.7618713378906,1909.4761505126953
+AudioEffectBitcrusher    vbitcrusherr14; //xy=1583.4283905029297,1869.23805809021
+AudioEffectBitcrusher    vbitcrusherl15; //xy=1583.3331756591797,1017.4999418258667
+AudioEffectBitcrusher    vbitcrusherr15; //xy=1583.3333549499512,1056.0713481903076
+AudioEffectBitcrusher    vbitcrusherl16; //xy=1581.7618713378906,1909.4761505126953
+AudioEffectBitcrusher    vbitcrusherr16; //xy=1583.4283905029297,1869.23805809021
+AudioMixer4              mixerLeft2; //xy=1859.1666984558105,1580.8333568572998
+AudioMixer4              mixerRight4; //xy=1851.642807006836,3732.6428833007812
+AudioMixer4              mixerLeft4; //xy=1852.5,3652.5
+AudioMixer4              mixerRight2; //xy=1861.642734527588,1657.6428089141846
+AudioMixer4              mixerLeft1;  //xy=1895.0000534057617,614.9999885559082
+AudioMixer4              mixerRight3; //xy=1889.1428604125977,2710.1428718566895
+AudioMixer4              mixerLeft3; //xy=1890.0000534057617,2629.999988555908
+AudioMixer4              mixerRight1; //xy=1899.9761505126953,695.1428909301758
+AudioMixer4              mainMixerLeft;         //xy=2425.833595275879,2078.3334159851074
+AudioMixer4              mainMixerRight;         //xy=2429.1665992736816,2153.3335819244385
+AudioOutputI2S           i2s1;           //xy=2602.880558013916,2109.166506767273
 
 AudioConnection          patchCord1(vnoise3, 0, voscmix3, 2);
 AudioConnection          patchCord2(vnoise2, 0, voscmix2, 2);
@@ -251,55 +360,196 @@ AudioConnection          patchCord33(vlfilter1, 0, vmix1, 1);
 AudioConnection          patchCord34(vlfilter2, 0, vmix2, 1);
 AudioConnection          patchCord35(vlfilter3, 0, vmix3, 1);
 AudioConnection          patchCord36(vlfilter4, 0, vmix4, 1);
-AudioConnection          patchCord37(vmix2, venv2);
-AudioConnection          patchCord38(vmix3, venv3);
-AudioConnection          patchCord39(vmix4, venv4);
-AudioConnection          patchCord40(vmix1, venv1);
-AudioConnection          patchCord41(venv3, vleft3);
-AudioConnection          patchCord42(venv3, vright3);
-AudioConnection          patchCord43(venv2, vleft2);
-AudioConnection          patchCord44(venv2, vright2);
-AudioConnection          patchCord45(venv4, vleft4);
-AudioConnection          patchCord46(venv4, vright4);
-AudioConnection          patchCord47(venv1, vleft1);
-AudioConnection          patchCord48(venv1, vright1);
-AudioConnection          patchCord49(vssample2, 0, vsubmixl2, 0);
-AudioConnection          patchCord50(vssample2, 1, vsubmixr2, 0);
-AudioConnection          patchCord51(vssample3, 0, vsubmixl3, 0);
-AudioConnection          patchCord52(vssample3, 1, vsubmixr3, 0);
-AudioConnection          patchCord53(vssample4, 0, vsubmixl4, 0);
-AudioConnection          patchCord54(vssample4, 1, vsubmixr4, 0);
-AudioConnection          patchCord55(vssample1, 0, vsubmixl1, 0);
-AudioConnection          patchCord56(vssample1, 1, vsubmixr1, 0);
-AudioConnection          patchCord57(vleft3, 0, vsubmixl3, 1);
-AudioConnection          patchCord58(vleft2, 0, vsubmixl2, 1);
-AudioConnection          patchCord59(vleft4, 0, vsubmixl4, 1);
-AudioConnection          patchCord60(vright3, 0, vsubmixr3, 1);
-AudioConnection          patchCord61(vleft1, 0, vsubmixl1, 1);
-AudioConnection          patchCord62(vright2, 0, vsubmixr2, 1);
-AudioConnection          patchCord63(vright4, 0, vsubmixr4, 1);
-AudioConnection          patchCord64(vright1, 0, vsubmixr1, 1);
-AudioConnection          patchCord65(vsubmixr4, vbitcrusherr4);
-AudioConnection          patchCord66(vsubmixl4, vbitcrusherl4);
-AudioConnection          patchCord67(vsubmixl3, vbitcrusherl3);
-AudioConnection          patchCord68(vsubmixr3, vbitcrusherr3);
-AudioConnection          patchCord69(vsubmixl1, vbitcrusherl1);
-AudioConnection          patchCord70(vsubmixr1, vbitcrusherr1);
-AudioConnection          patchCord71(vsubmixl2, vbitcrusherl2);
-AudioConnection          patchCord72(vsubmixr2, vbitcrusherr2);
-AudioConnection          patchCord73(vbitcrusherl4, 0, mainMixerLeft, 3);
-AudioConnection          patchCord74(vbitcrusherr4, 0, mainMixerRight, 3);
-AudioConnection          patchCord75(vbitcrusherl1, 0, mainMixerLeft, 0);
-AudioConnection          patchCord76(vbitcrusherr1, 0, mainMixerRight, 0);
-AudioConnection          patchCord77(vbitcrusherl3, 0, mainMixerLeft, 2);
-AudioConnection          patchCord78(vbitcrusherr3, 0, mainMixerRight, 2);
-AudioConnection          patchCord79(vbitcrusherl2, 0, mainMixerLeft, 1);
-AudioConnection          patchCord80(vbitcrusherr2, 0, mainMixerRight, 1);
-AudioConnection          patchCord81(mainMixerRight, 0, i2s1, 1);
-AudioConnection          patchCord82(mainMixerLeft, 0, i2s1, 0);
+AudioConnection          patchCord37(vmsample8, venv8);
+AudioConnection          patchCord38(vmsample5, venv5);
+AudioConnection          patchCord39(vmsample7, venv7);
+AudioConnection          patchCord40(vmsample6, venv6);
+AudioConnection          patchCord41(vmix2, venv2);
+AudioConnection          patchCord42(vmix3, venv3);
+AudioConnection          patchCord43(vmix4, venv4);
+AudioConnection          patchCord44(vmix1, venv1);
+AudioConnection          patchCord45(vmsample16, venv16);
+AudioConnection          patchCord46(vmsample13, venv13);
+AudioConnection          patchCord47(vmsample15, venv15);
+AudioConnection          patchCord48(vmsample14, venv14);
+AudioConnection          patchCord49(vmsample12, venv12);
+AudioConnection          patchCord50(vmsample9, venv9);
+AudioConnection          patchCord51(vmsample11, venv11);
+AudioConnection          patchCord52(vmsample10, venv10);
+AudioConnection          patchCord53(venv3, vleft3);
+AudioConnection          patchCord54(venv3, vright3);
+AudioConnection          patchCord55(venv2, vleft2);
+AudioConnection          patchCord56(venv2, vright2);
+AudioConnection          patchCord57(venv4, vleft4);
+AudioConnection          patchCord58(venv4, vright4);
+AudioConnection          patchCord59(venv8, vleft8);
+AudioConnection          patchCord60(venv8, vright8);
+AudioConnection          patchCord61(venv1, vleft1);
+AudioConnection          patchCord62(venv1, vright1);
+AudioConnection          patchCord63(venv5, vleft5);
+AudioConnection          patchCord64(venv5, vright5);
+AudioConnection          patchCord65(venv7, vleft7);
+AudioConnection          patchCord66(venv7, vright7);
+AudioConnection          patchCord67(venv6, vleft6);
+AudioConnection          patchCord68(venv6, vright6);
+AudioConnection          patchCord69(venv16, vleft16);
+AudioConnection          patchCord70(venv16, vright16);
+AudioConnection          patchCord71(venv13, vleft13);
+AudioConnection          patchCord72(venv13, vright13);
+AudioConnection          patchCord73(venv15, vleft15);
+AudioConnection          patchCord74(venv15, vright15);
+AudioConnection          patchCord75(venv14, vleft14);
+AudioConnection          patchCord76(venv14, vright14);
+AudioConnection          patchCord77(venv12, vleft12);
+AudioConnection          patchCord78(venv12, vright12);
+AudioConnection          patchCord79(venv9, vleft9);
+AudioConnection          patchCord80(venv9, vright9);
+AudioConnection          patchCord81(venv11, vleft11);
+AudioConnection          patchCord82(venv11, vright11);
+AudioConnection          patchCord83(venv10, vleft10);
+AudioConnection          patchCord84(venv10, vright10);
+AudioConnection          patchCord85(vssample2, 0, vsubmixl2, 0);
+AudioConnection          patchCord86(vssample2, 1, vsubmixr2, 0);
+AudioConnection          patchCord87(vssample3, 0, vsubmixl3, 0);
+AudioConnection          patchCord88(vssample3, 1, vsubmixr3, 0);
+AudioConnection          patchCord89(vssample8, 0, vsubmixl8, 0);
+AudioConnection          patchCord90(vssample8, 1, vsubmixr8, 0);
+AudioConnection          patchCord91(vssample4, 0, vsubmixl4, 0);
+AudioConnection          patchCord92(vssample4, 1, vsubmixr4, 0);
+AudioConnection          patchCord93(vssample1, 0, vsubmixl1, 0);
+AudioConnection          patchCord94(vssample1, 1, vsubmixr1, 0);
+AudioConnection          patchCord95(vssample5, 0, vsubmixl5, 0);
+AudioConnection          patchCord96(vssample5, 1, vsubmixr5, 0);
+AudioConnection          patchCord97(vssample7, 0, vsubmixl7, 0);
+AudioConnection          patchCord98(vssample7, 1, vsubmixr7, 0);
+AudioConnection          patchCord99(vleft3, 0, vsubmixl3, 1);
+AudioConnection          patchCord100(vleft8, 0, vsubmixl8, 1);
+AudioConnection          patchCord101(vleft2, 0, vsubmixl2, 1);
+AudioConnection          patchCord102(vleft4, 0, vsubmixl4, 1);
+AudioConnection          patchCord103(vright3, 0, vsubmixr3, 1);
+AudioConnection          patchCord104(vleft1, 0, vsubmixl1, 1);
+AudioConnection          patchCord105(vright2, 0, vsubmixr2, 1);
+AudioConnection          patchCord106(vright4, 0, vsubmixr4, 1);
+AudioConnection          patchCord107(vright8, 0, vsubmixr8, 1);
+AudioConnection          patchCord108(vssample6, 0, vsubmixl6, 0);
+AudioConnection          patchCord109(vssample6, 1, vsubmixr6, 0);
+AudioConnection          patchCord110(vright1, 0, vsubmixr1, 1);
+AudioConnection          patchCord111(vleft5, 0, vsubmixl5, 1);
+AudioConnection          patchCord112(vleft7, 0, vsubmixl7, 1);
+AudioConnection          patchCord113(vright5, 0, vsubmixr5, 1);
+AudioConnection          patchCord114(vright7, 0, vsubmixr7, 1);
+AudioConnection          patchCord115(vleft6, 0, vsubmixl6, 1);
+AudioConnection          patchCord116(vright6, 0, vsubmixr6, 1);
+AudioConnection          patchCord117(vssample16, 0, vsubmixl16, 0);
+AudioConnection          patchCord118(vssample16, 1, vsubmixr16, 0);
+AudioConnection          patchCord119(vssample13, 0, vsubmixl13, 0);
+AudioConnection          patchCord120(vssample13, 1, vsubmixr13, 0);
+AudioConnection          patchCord121(vssample15, 0, vsubmixl15, 0);
+AudioConnection          patchCord122(vssample15, 1, vsubmixr15, 0);
+AudioConnection          patchCord123(vleft16, 0, vsubmixl16, 1);
+AudioConnection          patchCord124(vright16, 0, vsubmixr16, 1);
+AudioConnection          patchCord125(vssample14, 0, vsubmixl14, 0);
+AudioConnection          patchCord126(vssample14, 1, vsubmixr14, 0);
+AudioConnection          patchCord127(vleft13, 0, vsubmixl13, 1);
+AudioConnection          patchCord128(vleft15, 0, vsubmixl15, 1);
+AudioConnection          patchCord129(vright13, 0, vsubmixr13, 1);
+AudioConnection          patchCord130(vright15, 0, vsubmixr15, 1);
+AudioConnection          patchCord131(vleft14, 0, vsubmixl14, 1);
+AudioConnection          patchCord132(vright14, 0, vsubmixr14, 1);
+AudioConnection          patchCord133(vssample12, 0, vsubmixl12, 0);
+AudioConnection          patchCord134(vssample12, 1, vsubmixr12, 0);
+AudioConnection          patchCord135(vssample9, 0, vsubmixl9, 0);
+AudioConnection          patchCord136(vssample9, 1, vsubmixr9, 0);
+AudioConnection          patchCord137(vssample11, 0, vsubmixl11, 0);
+AudioConnection          patchCord138(vssample11, 1, vsubmixr11, 0);
+AudioConnection          patchCord139(vleft12, 0, vsubmixl12, 1);
+AudioConnection          patchCord140(vright12, 0, vsubmixr12, 1);
+AudioConnection          patchCord141(vssample10, 0, vsubmixl10, 0);
+AudioConnection          patchCord142(vssample10, 1, vsubmixr10, 0);
+AudioConnection          patchCord143(vleft9, 0, vsubmixl9, 1);
+AudioConnection          patchCord144(vleft11, 0, vsubmixl11, 1);
+AudioConnection          patchCord145(vright9, 0, vsubmixr9, 1);
+AudioConnection          patchCord146(vright11, 0, vsubmixr11, 1);
+AudioConnection          patchCord147(vleft10, 0, vsubmixl10, 1);
+AudioConnection          patchCord148(vright10, 0, vsubmixr10, 1);
+AudioConnection          patchCord149(vsubmixr4, vbitcrusherr4);
+AudioConnection          patchCord150(vsubmixl4, vbitcrusherl4);
+AudioConnection          patchCord151(vsubmixl3, vbitcrusherl3);
+AudioConnection          patchCord152(vsubmixr3, vbitcrusherr3);
+AudioConnection          patchCord153(vsubmixl8, vbitcrusherl8);
+AudioConnection          patchCord154(vsubmixr8, vbitcrusherr8);
+AudioConnection          patchCord155(vsubmixl1, vbitcrusherl1);
+AudioConnection          patchCord156(vsubmixr1, vbitcrusherr1);
+AudioConnection          patchCord157(vsubmixl5, vbitcrusherl5);
+AudioConnection          patchCord158(vsubmixr5, vbitcrusherr5);
+AudioConnection          patchCord159(vsubmixl7, vbitcrusherl7);
+AudioConnection          patchCord160(vsubmixl2, vbitcrusherl2);
+AudioConnection          patchCord161(vsubmixr2, vbitcrusherr2);
+AudioConnection          patchCord162(vsubmixr7, vbitcrusherr7);
+AudioConnection          patchCord163(vsubmixl6, vbitcrusherl6);
+AudioConnection          patchCord164(vsubmixr6, vbitcrusherr6);
+AudioConnection          patchCord165(vsubmixl16, vbitcrusherl16);
+AudioConnection          patchCord166(vsubmixr16, vbitcrusherr16);
+AudioConnection          patchCord167(vsubmixl13, vbitcrusherl13);
+AudioConnection          patchCord168(vsubmixr13, vbitcrusherr13);
+AudioConnection          patchCord169(vsubmixl15, vbitcrusherl15);
+AudioConnection          patchCord170(vsubmixr15, vbitcrusherr16);
+AudioConnection          patchCord171(vsubmixl14, vbitcrusherl14);
+AudioConnection          patchCord172(vsubmixr14, vbitcrusherr14);
+AudioConnection          patchCord173(vsubmixl12, vbitcrusherl12);
+AudioConnection          patchCord174(vsubmixr12, vbitcrusherr12);
+AudioConnection          patchCord175(vsubmixl9, vbitcrusherl9);
+AudioConnection          patchCord176(vsubmixr9, vbitcrusherr9);
+AudioConnection          patchCord177(vsubmixl11, vbitcrusherl11);
+AudioConnection          patchCord178(vsubmixr11, vbitcrusherr11);
+AudioConnection          patchCord179(vsubmixl10, vbitcrusherl10);
+AudioConnection          patchCord180(vsubmixr10, vbitcrusherr10);
+AudioConnection          patchCord181(vbitcrusherl4, 0, mixerLeft1, 3);
+AudioConnection          patchCord182(vbitcrusherr4, 0, mixerRight1, 3);
+AudioConnection          patchCord183(vbitcrusherr8, 0, mixerRight2, 3);
+AudioConnection          patchCord184(vbitcrusherl8, 0, mixerLeft2, 3);
+AudioConnection          patchCord185(vbitcrusherl1, 0, mixerLeft1, 0);
+AudioConnection          patchCord186(vbitcrusherr1, 0, mixerRight1, 0);
+AudioConnection          patchCord187(vbitcrusherl5, 0, mixerLeft2, 0);
+AudioConnection          patchCord188(vbitcrusherr5, 0, mixerRight2, 0);
+AudioConnection          patchCord189(vbitcrusherl3, 0, mixerLeft1, 2);
+AudioConnection          patchCord190(vbitcrusherr3, 0, mixerRight1, 2);
+AudioConnection          patchCord191(vbitcrusherl7, 0, mixerLeft2, 2);
+AudioConnection          patchCord192(vbitcrusherr7, 0, mixerRight2, 2);
+AudioConnection          patchCord193(vbitcrusherl6, 0, mixerLeft2, 1);
+AudioConnection          patchCord194(vbitcrusherl2, 0, mixerLeft1, 1);
+AudioConnection          patchCord195(vbitcrusherr2, 0, mixerRight1, 1);
+AudioConnection          patchCord196(vbitcrusherr6, 0, mixerRight2, 1);
+AudioConnection          patchCord197(vbitcrusherr16, 0, mixerRight4, 3);
+AudioConnection          patchCord198(vbitcrusherl16, 0, mixerLeft4, 3);
+AudioConnection          patchCord199(vbitcrusherl13, 0, mixerLeft4, 0);
+AudioConnection          patchCord200(vbitcrusherr13, 0, mixerRight4, 0);
+AudioConnection          patchCord201(vbitcrusherl15, 0, mixerLeft4, 2);
+AudioConnection          patchCord202(vbitcrusherr15, 0, mixerRight4, 2);
+AudioConnection          patchCord203(vbitcrusherl14, 0, mixerLeft4, 1);
+AudioConnection          patchCord204(vbitcrusherr14, 0, mixerRight4, 1);
+AudioConnection          patchCord205(vbitcrusherr12, 0, mixerRight3, 3);
+AudioConnection          patchCord206(vbitcrusherl12, 0, mixerLeft3, 3);
+AudioConnection          patchCord207(vbitcrusherr9, 0, mixerRight3, 0);
+AudioConnection          patchCord208(vbitcrusherl9, 0, mixerLeft3, 0);
+AudioConnection          patchCord209(vbitcrusherl11, 0, mixerLeft3, 2);
+AudioConnection          patchCord210(vbitcrusherr11, 0, mixerRight3, 2);
+AudioConnection          patchCord211(vbitcrusherl10, 0, mixerLeft3, 1);
+AudioConnection          patchCord212(vbitcrusherr10, 0, mixerRight3, 1);
+AudioConnection          patchCord213(mixerLeft2, 0, mainMixerLeft, 1);
+AudioConnection          patchCord214(mixerRight4, 0, mainMixerRight, 3);
+AudioConnection          patchCord215(mixerLeft4, 0, mainMixerLeft, 3);
+AudioConnection          patchCord216(mixerRight2, 0, mainMixerRight, 1);
+AudioConnection          patchCord217(mixerLeft1, 0, mainMixerLeft, 0);
+AudioConnection          patchCord218(mixerRight3, 0, mainMixerRight, 2);
+AudioConnection          patchCord219(mixerLeft3, 0, mainMixerLeft, 2);
+AudioConnection          patchCord220(mixerRight1, 0, mainMixerRight, 0);
+AudioConnection          patchCord221(mainMixerLeft, 0, i2s1, 0);
+AudioConnection          patchCord222(mainMixerRight, 0, i2s1, 1);
 
-AudioControlSGTL5000     sgtl5000_1;     //xy=2112.428466796875,718.5714073181152
+AudioControlSGTL5000     sgtl5000_1;     //xy=2609.095317840576,2062.7380781173706
 // GUItool: end automatically generated code
+
 
 
 
@@ -562,7 +812,7 @@ typedef struct
 
 typedef struct
 {
-  TRACK_TYPE track_type = SUBTRACTIVE_SYNTH;
+  TRACK_TYPE track_type = MONO_SAMPLE;
   TRACK_STEP steps[MAXIMUM_SEQUENCER_STEPS];
   uint8_t last_step = DEFAULT_LAST_STEP;
   uint8_t sample_dir = 0;
@@ -832,7 +1082,7 @@ void onClockStop() {
 
 int8_t keyboardOctave = 4; // range 1-7 ?
 
-class BaseVoice
+class ComboVoice
 {
   public:
     AudioPlayWAVstereo          &sSample;
@@ -853,7 +1103,7 @@ class BaseVoice
     AudioEffectBitcrusher       &leftBitCrush;
     AudioEffectBitcrusher       &rightBitCrush;
  
-    BaseVoice(
+    ComboVoice(
       AudioPlayWAVstereo          &sSample,
       AudioPlayArrayResmp         &mSample,
       AudioSynthWaveform          &osca,
@@ -893,62 +1143,104 @@ class BaseVoice
     }
 };
 
-#define VOICE_COUNT 16
+class SampleVoice
+{
+  public:
+    AudioPlayWAVstereo          &sSample;
+    AudioPlayArrayResmp         &mSample;
+    AudioEffectEnvelope         &ampEnv;
+    AudioAmplifier              &leftCtrl;
+    AudioAmplifier              &rightCtrl;
+    AudioMixer4                 &leftSubMix;
+    AudioMixer4                 &rightSubMix;
+    AudioEffectBitcrusher       &leftBitCrush;
+    AudioEffectBitcrusher       &rightBitCrush;
+ 
+    SampleVoice(
+      AudioPlayWAVstereo          &sSample,
+      AudioPlayArrayResmp         &mSample,
+      AudioEffectEnvelope         &ampEnv,
+      AudioAmplifier              &leftCtrl,
+      AudioAmplifier              &rightCtrl,
+      AudioMixer4                 &leftSubMix,
+      AudioMixer4                 &rightSubMix,
+      AudioEffectBitcrusher       &leftBitCrush,
+      AudioEffectBitcrusher       &rightBitCrush
+    ) : sSample {sSample},
+        mSample {mSample},
+        ampEnv {ampEnv},
+        leftCtrl {leftCtrl},
+        rightCtrl {rightCtrl},
+        leftSubMix {leftSubMix},
+        rightSubMix {rightSubMix},
+        leftBitCrush {leftBitCrush},
+        rightBitCrush {rightBitCrush}
+    {
+      //
+    }
+};
 
-BaseVoice voices[VOICE_COUNT] = {
-  BaseVoice(
+#define COMBO_VOICE_COUNT 4
+
+ComboVoice voices[COMBO_VOICE_COUNT] = {
+  ComboVoice(
     vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
   ),
-  BaseVoice(
+  ComboVoice(
     vssample2,vmsample2,vosca2,voscb2,vnoise2,voscmix2,vdc2,vlfilter2,vfilterenv2,vmix2,venv2,vleft2,vright2,vsubmixl2,vsubmixr2,vbitcrusherl2,vbitcrusherr2
   ),
-  BaseVoice(
+  ComboVoice(
     vssample3,vmsample3,vosca3,voscb3,vnoise3,voscmix3,vdc3,vlfilter3,vfilterenv3,vmix3,venv3,vleft3,vright3,vsubmixl3,vsubmixr3,vbitcrusherl3,vbitcrusherr3
   ),
-  BaseVoice(
+  ComboVoice(
     vssample4,vmsample4,vosca4,voscb4,vnoise4,voscmix4,vdc4,vlfilter4,vfilterenv4,vmix4,venv4,vleft4,vright4,vsubmixl4,vsubmixr4,vbitcrusherl4,vbitcrusherr4
   ),
-  BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+};
+
+#define SAMPLE_VOICE_COUNT 12
+
+SampleVoice sampleVoices[SAMPLE_VOICE_COUNT] = {
+  SampleVoice(
+    vssample5,vmsample5,venv5,vleft5,vright5,vsubmixl5,vsubmixr5,vbitcrusherl5,vbitcrusherr5
   ),
-  BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+  SampleVoice(
+    vssample6,vmsample6,venv6,vleft6,vright6,vsubmixl6,vsubmixr6,vbitcrusherl6,vbitcrusherr6
   ),
-  BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+  SampleVoice(
+    vssample7,vmsample7,venv7,vleft7,vright7,vsubmixl7,vsubmixr7,vbitcrusherl7,vbitcrusherr7
   ),
-  BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+  SampleVoice(
+    vssample8,vmsample8,venv8,vleft8,vright8,vsubmixl8,vsubmixr8,vbitcrusherl8,vbitcrusherr8
   ),
-  BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+  SampleVoice(
+    vssample9,vmsample9,venv9,vleft9,vright9,vsubmixl9,vsubmixr9,vbitcrusherl9,vbitcrusherr9
   ),
-  BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+  SampleVoice(
+    vssample10,vmsample10,venv10,vleft10,vright10,vsubmixl10,vsubmixr10,vbitcrusherl10,vbitcrusherr10
   ),
-  BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+  SampleVoice(
+    vssample11,vmsample11,venv11,vleft11,vright11,vsubmixl11,vsubmixr11,vbitcrusherl11,vbitcrusherr11
   ),
-  BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+  SampleVoice(
+    vssample12,vmsample12,venv12,vleft12,vright12,vsubmixl12,vsubmixr12,vbitcrusherl12,vbitcrusherr12
   ),
-  BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+  SampleVoice(
+    vssample13,vmsample13,venv13,vleft13,vright13,vsubmixl13,vsubmixr13,vbitcrusherl13,vbitcrusherr13
   ),
-  BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+  SampleVoice(
+    vssample14,vmsample14,venv14,vleft14,vright14,vsubmixl14,vsubmixr14,vbitcrusherl14,vbitcrusherr14
   ),
-  BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+  SampleVoice(
+    vssample15,vmsample15,venv15,vleft15,vright15,vsubmixl15,vsubmixr15,vbitcrusherl15,vbitcrusherr15
   ),
-  BaseVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+  SampleVoice(
+    vssample16,vmsample16,venv16,vleft16,vright16,vsubmixl16,vsubmixr16,vbitcrusherl16,vbitcrusherr16
   ),
 };
 
 void noteOffForAllSounds(void)
 {
-  for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+  for (int t = 0; t < 4; t++)
   {
     TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t];
   
@@ -960,12 +1252,17 @@ void noteOffForAllSounds(void)
       voices[t].ampEnv.noteOff();
     }
   }
+
+  for (int s = 0; s < 12; s++)
+  {
+    sampleVoices[s].ampEnv.noteOff();
+  }
 }
 
 void initTrackSounds()
 {
-  // configure voice audio objects
-  for (int v = 0; v < VOICE_COUNT; v++) {    
+  // configure combo voice audio objects
+  for (int v = 0; v < COMBO_VOICE_COUNT; v++) {    
     // only create buffers for stereo samples when needed
     // voices[v].sSample.createBuffer(2048, AudioBuffer::inExt);
 
@@ -1025,6 +1322,41 @@ void initTrackSounds()
     voices[v].rightBitCrush.sampleRate(currTrack.samplerate);
   }
 
+  // configure sample voice audio objects
+  for (int v = 0; v < SAMPLE_VOICE_COUNT; v++) {    
+    // only create buffers for stereo samples when needed
+    // voices[v].sSample.createBuffer(2048, AudioBuffer::inExt);
+
+    // TODO: eventually need to restore all sounds for all patterns and their tracks?
+    TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[v];
+
+    // init mono sample
+    sampleVoices[v].mSample.setPlaybackRate(currTrack.sample_play_rate);
+    sampleVoices[v].mSample.enableInterpolation(true);
+
+    sampleVoices[v].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
+    sampleVoices[v].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
+    sampleVoices[v].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
+    sampleVoices[v].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
+    //sampleVoices[v].ampEnv.releaseNoteOn(15);
+
+    // mono to L&R
+    sampleVoices[v].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+    sampleVoices[v].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+
+    // Sub L&R mixers
+    sampleVoices[v].leftSubMix.gain(0, currTrack.level); // stereo sample left
+    sampleVoices[v].leftSubMix.gain(1, currTrack.level); // mono sample / synth left
+    sampleVoices[v].rightSubMix.gain(0, currTrack.level); // stereo sample right
+    sampleVoices[v].rightSubMix.gain(1, currTrack.level); // mono sample / synth right
+
+    // Effects
+    sampleVoices[v].leftBitCrush.bits(currTrack.bitrate);
+    sampleVoices[v].leftBitCrush.sampleRate(currTrack.samplerate);
+    sampleVoices[v].rightBitCrush.bits(currTrack.bitrate);
+    sampleVoices[v].rightBitCrush.sampleRate(currTrack.samplerate);
+  }
+
   // Main L&R output mixer
   mainMixerLeft.gain(0, 1);
   mainMixerRight.gain(0, 1);
@@ -1036,9 +1368,35 @@ void initTrackSounds()
   mainMixerRight.gain(3, 1);
 }
 
+void changeSampleTrackSoundType(uint8_t t, TRACK_TYPE newType);
+void changeSampleTrackSoundType(uint8_t t, TRACK_TYPE newType)
+{
+  SampleVoice trackVoice = sampleVoices[t];
+  TRACK_TYPE currType = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type;
+
+  if (currType == newType) return;
+
+  if (newType == TRACK_TYPE::MONO_SAMPLE) {
+    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::MONO_SAMPLE;
+  } else if (newType == TRACK_TYPE::STEREO_SAMPLE) {
+    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::STEREO_SAMPLE;
+  } else if (newType == TRACK_TYPE::MIDI) {
+    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::MIDI;
+  } else if (newType == TRACK_TYPE::CV_GATE) {
+    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::CV_GATE;
+  }else if (newType == TRACK_TYPE::CV_TRIG) {
+    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::CV_TRIG;
+  }
+}
+
 void changeTrackSoundType(uint8_t t, TRACK_TYPE newType)
 {
-  BaseVoice trackVoice = voices[t];
+  if (t > 3) {
+    changeSampleTrackSoundType(t, newType);
+    return;
+  }
+
+  ComboVoice trackVoice = voices[t];
   TRACK_TYPE currType = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type;
 
   if (currType == newType) return;
@@ -1050,12 +1408,6 @@ void changeTrackSoundType(uint8_t t, TRACK_TYPE newType)
     trackVoice.mix.gain(0, 1);
     // turn synth volume all the way down
     trackVoice.mix.gain(1, 0); // ladder
-
-    // TESTING: just open up the amp env completely to hear the sample normally
-    // trackVoice.ampEnv.attack(1);
-    // trackVoice.ampEnv.decay(1000);
-    // trackVoice.ampEnv.sustain(1);
-    // trackVoice.ampEnv.release(1000);
   } else if (newType == TRACK_TYPE::STEREO_SAMPLE) {
     _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::STEREO_SAMPLE;
 
@@ -1063,12 +1415,6 @@ void changeTrackSoundType(uint8_t t, TRACK_TYPE newType)
     trackVoice.mix.gain(0, 1);
     // turn synth volumes all the way down
     trackVoice.mix.gain(1, 0); // ladder
-
-    // TESTING: just open up the amp env completely to hear the sample normally
-    // trackVoice.ampEnv.attack(1);
-    // trackVoice.ampEnv.decay(1000);
-    // trackVoice.ampEnv.sustain(1);
-    // trackVoice.ampEnv.release(1000);
   } else if (newType == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
     _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
 
@@ -2230,19 +2576,33 @@ void triggerTrackManually(uint8_t t, uint8_t note) {
   TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
 
   if (currTrack.track_type == TRACK_TYPE::MONO_SAMPLE) {
+    if (t < 4) {
+    AudioNoInterrupts();
+      voices[t].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+      voices[t].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
 
-  AudioNoInterrupts();
-    voices[t].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
-    voices[t].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+      voices[t].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
+      voices[t].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
+      voices[t].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
+      voices[t].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
+    AudioInterrupts();
 
-    voices[t].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
-    voices[t].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
-    voices[t].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
-    voices[t].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
-  AudioInterrupts();
+      voices[t].ampEnv.noteOn();
+      voices[t].mSample.playRaw(samples[currTrack.sample_id]->sampledata, samples[currTrack.sample_id]->samplesize/2, numChannels);
+    } else {
+    AudioNoInterrupts();
+      sampleVoices[t].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+      sampleVoices[t].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
 
-    voices[t].ampEnv.noteOn();
-    voices[t].mSample.playRaw(samples[currTrack.sample_id]->sampledata, samples[currTrack.sample_id]->samplesize/2, numChannels);
+      sampleVoices[t].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
+      sampleVoices[t].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
+      sampleVoices[t].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
+      sampleVoices[t].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
+    AudioInterrupts();
+
+      sampleVoices[t].ampEnv.noteOn();
+      sampleVoices[t].mSample.playRaw(samples[currTrack.sample_id]->sampledata, samples[currTrack.sample_id]->samplesize/2, numChannels);
+    }
   } else if (currTrack.track_type == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
 
   AudioNoInterrupts();
@@ -2298,19 +2658,33 @@ void handleNoteOnForTrackStep(int track, int step)
   TRACK_STEP stepToUse = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[track].steps[step];
 
   if (trackToUse.track_type == TRACK_TYPE::MONO_SAMPLE) {
+    if (track > 3) {
+    AudioNoInterrupts();
+      sampleVoices[track].leftCtrl.gain(getStereoPanValues(trackToUse.pan).left * (stepToUse.velocity * 0.01));
+      sampleVoices[track].rightCtrl.gain(getStereoPanValues(trackToUse.pan).right * (stepToUse.velocity * 0.01));
 
-  AudioNoInterrupts();
-    voices[track].leftCtrl.gain(getStereoPanValues(trackToUse.pan).left * (stepToUse.velocity * 0.01));
-    voices[track].rightCtrl.gain(getStereoPanValues(trackToUse.pan).right * (stepToUse.velocity * 0.01));
+      sampleVoices[track].ampEnv.attack(trackToUse.amp_attack * (stepToUse.velocity * 0.01));
+      sampleVoices[track].ampEnv.decay(trackToUse.amp_decay * (stepToUse.velocity * 0.01));
+      sampleVoices[track].ampEnv.sustain(trackToUse.amp_sustain * (stepToUse.velocity * 0.01));
+      sampleVoices[track].ampEnv.release(trackToUse.amp_release * (stepToUse.velocity * 0.01));
+    AudioInterrupts();
 
-    voices[track].ampEnv.attack(trackToUse.amp_attack * (stepToUse.velocity * 0.01));
-    voices[track].ampEnv.decay(trackToUse.amp_decay * (stepToUse.velocity * 0.01));
-    voices[track].ampEnv.sustain(trackToUse.amp_sustain * (stepToUse.velocity * 0.01));
-    voices[track].ampEnv.release(trackToUse.amp_release * (stepToUse.velocity * 0.01));
-  AudioInterrupts();
+      sampleVoices[track].ampEnv.noteOn();
+      sampleVoices[track].mSample.playRaw(samples[trackToUse.sample_id]->sampledata, samples[trackToUse.sample_id]->samplesize/2, numChannels);
+    } else {
+    AudioNoInterrupts();
+      voices[track].leftCtrl.gain(getStereoPanValues(trackToUse.pan).left * (stepToUse.velocity * 0.01));
+      voices[track].rightCtrl.gain(getStereoPanValues(trackToUse.pan).right * (stepToUse.velocity * 0.01));
 
-    voices[track].ampEnv.noteOn();
-    voices[track].mSample.playRaw(samples[trackToUse.sample_id]->sampledata, samples[trackToUse.sample_id]->samplesize/2, numChannels);
+      voices[track].ampEnv.attack(trackToUse.amp_attack * (stepToUse.velocity * 0.01));
+      voices[track].ampEnv.decay(trackToUse.amp_decay * (stepToUse.velocity * 0.01));
+      voices[track].ampEnv.sustain(trackToUse.amp_sustain * (stepToUse.velocity * 0.01));
+      voices[track].ampEnv.release(trackToUse.amp_release * (stepToUse.velocity * 0.01));
+    AudioInterrupts();
+
+      voices[track].ampEnv.noteOn();
+      voices[track].mSample.playRaw(samples[trackToUse.sample_id]->sampledata, samples[trackToUse.sample_id]->samplesize/2, numChannels);
+    }
   } else if (trackToUse.track_type == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
 
   AudioNoInterrupts();
@@ -2345,14 +2719,15 @@ void handleNoteOffForTrackStep(int track, int step)
 {
   TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[track];
 
-  //voices[track].ampEnv.releaseNoteOn(10);  
-  //voices[track].filterEnv.releaseNoteOn(10);
-
   if (currTrack.track_type == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
     voices[track].ampEnv.noteOff();
     voices[track].filterEnv.noteOff();
   } else {
-    voices[track].ampEnv.noteOff();
+    if (track > 3) {
+      sampleVoices[track].ampEnv.noteOff();
+    } else {
+      voices[track].ampEnv.noteOff();
+    }
   }
 }
 
@@ -3142,9 +3517,15 @@ void handleEncoderRawSampleModA(int diff)
     if (!(newAtt < 1 || newAtt > 11880) && newAtt != currAtt) {
       _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].amp_attack = newAtt;
 
-      AudioNoInterrupts();
-      voices[current_selected_track].ampEnv.attack(newAtt);
-      AudioInterrupts();
+      if (current_selected_track > 3) {
+        AudioNoInterrupts();
+        sampleVoices[current_selected_track].ampEnv.attack(newAtt);
+        AudioInterrupts();
+      } else {
+        AudioNoInterrupts();
+        voices[current_selected_track].ampEnv.attack(newAtt);
+        AudioInterrupts();
+      }
 
       drawSequencerScreen();
     }
@@ -3155,12 +3536,21 @@ void handleEncoderRawSampleModA(int diff)
     if (!(newLvl < -0.1 || newLvl > 1.1) && newLvl != currLvl) {
       _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].level = newLvl;
 
-      AudioNoInterrupts();
-      voices[current_selected_track].leftSubMix.gain(0, newLvl);
-      voices[current_selected_track].leftSubMix.gain(1, newLvl);
-      voices[current_selected_track].rightSubMix.gain(0, newLvl);
-      voices[current_selected_track].rightSubMix.gain(1, newLvl);
-      AudioInterrupts();
+      if (current_selected_track > 3) {
+        AudioNoInterrupts();
+        sampleVoices[current_selected_track].leftSubMix.gain(0, newLvl);
+        sampleVoices[current_selected_track].leftSubMix.gain(1, newLvl);
+        sampleVoices[current_selected_track].rightSubMix.gain(0, newLvl);
+        sampleVoices[current_selected_track].rightSubMix.gain(1, newLvl);
+        AudioInterrupts();
+      } else {
+        AudioNoInterrupts();
+        voices[current_selected_track].leftSubMix.gain(0, newLvl);
+        voices[current_selected_track].leftSubMix.gain(1, newLvl);
+        voices[current_selected_track].rightSubMix.gain(0, newLvl);
+        voices[current_selected_track].rightSubMix.gain(1, newLvl);
+        AudioInterrupts();
+      }
 
       drawSequencerScreen();
     }
@@ -3201,9 +3591,15 @@ void handleEncoderRawSampleModB(int diff)
     if (!(newDecay < 0 || newDecay > 11880) && newDecay != currDecay) {
       _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].amp_decay = newDecay;
 
-      AudioNoInterrupts();
-      voices[current_selected_track].ampEnv.decay(newDecay);
-      AudioInterrupts();
+      if (current_selected_track > 3) {
+        AudioNoInterrupts();
+        sampleVoices[current_selected_track].ampEnv.decay(newDecay);
+        AudioInterrupts();
+      } else {
+        AudioNoInterrupts();
+        voices[current_selected_track].ampEnv.decay(newDecay);
+        AudioInterrupts();
+      }
 
       drawSequencerScreen();
     }
@@ -3224,10 +3620,17 @@ void handleEncoderRawSampleModB(int diff)
         newGainR -= newPan;
       }
 
-      AudioNoInterrupts();
-      voices[current_selected_track].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
-      voices[current_selected_track].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
-      AudioInterrupts();
+      if (current_selected_track > 3) {
+        AudioNoInterrupts();
+        sampleVoices[current_selected_track].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+        sampleVoices[current_selected_track].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+        AudioInterrupts();
+      } else {
+        AudioNoInterrupts();
+        voices[current_selected_track].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+        voices[current_selected_track].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+        AudioInterrupts();
+      }
 
       drawSequencerScreen();
     }
@@ -3252,10 +3655,16 @@ void handleEncoderRawSampleModC(int diff)
       }
 
       _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].sample_play_rate = newSpeed;
-
-      AudioNoInterrupts();
-      voices[current_selected_track].mSample.setPlaybackRate(newSpeed);
-      AudioInterrupts();
+      
+      if (current_selected_track > 3) {
+        AudioNoInterrupts();
+        sampleVoices[current_selected_track].mSample.setPlaybackRate(newSpeed);
+        AudioInterrupts();
+      } else {
+        AudioNoInterrupts();
+        voices[current_selected_track].mSample.setPlaybackRate(newSpeed);
+        AudioInterrupts();
+      }
 
       drawSequencerScreen();
     }
@@ -3268,9 +3677,15 @@ void handleEncoderRawSampleModC(int diff)
     if (!(newSus < 0 || newSus > 1.0) && newSus != curSus) {
       _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].amp_sustain = newSus;
 
-      AudioNoInterrupts();
-      voices[current_selected_track].ampEnv.sustain(newSus);
-      AudioInterrupts();
+      if (current_selected_track > 3) {
+        AudioNoInterrupts();
+        sampleVoices[current_selected_track].ampEnv.sustain(newSus);
+        AudioInterrupts();
+      } else {
+        AudioNoInterrupts();
+        voices[current_selected_track].ampEnv.sustain(newSus);
+        AudioInterrupts();
+      }
 
       drawSequencerScreen();
     }
@@ -3290,13 +3705,23 @@ void handleEncoderRawSampleModD(int diff)
 
     if (!(newBitrate < 1 || newBitrate > 16) && newBitrate != currBitrate) {
       _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].bitrate = newBitrate;
-      
-      AudioNoInterrupts();
 
-      voices[current_selected_track].leftBitCrush.bits(newBitrate);
-      voices[current_selected_track].rightBitCrush.bits(newBitrate);
+      if (current_selected_track > 3) {
+        AudioNoInterrupts();
 
-      AudioInterrupts();
+        sampleVoices[current_selected_track].leftBitCrush.bits(newBitrate);
+        sampleVoices[current_selected_track].rightBitCrush.bits(newBitrate);
+
+        AudioInterrupts();
+
+      } else {
+        AudioNoInterrupts();
+
+        voices[current_selected_track].leftBitCrush.bits(newBitrate);
+        voices[current_selected_track].rightBitCrush.bits(newBitrate);
+
+        AudioInterrupts();
+      }
 
       drawSequencerScreen();
     }
@@ -3316,10 +3741,16 @@ void handleEncoderRawSampleModD(int diff)
 
     if (!(newRel < 0 || newRel > 11880) && newRel != curRel) {
       _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].amp_release = newRel;
-
-      AudioNoInterrupts();
-      voices[current_selected_track].ampEnv.release(newRel);
-      AudioInterrupts();
+    
+      if (current_selected_track > 3) {
+        AudioNoInterrupts();
+        sampleVoices[current_selected_track].ampEnv.release(newRel);
+        AudioInterrupts();
+      } else {
+        AudioNoInterrupts();
+        voices[current_selected_track].ampEnv.release(newRel);
+        AudioInterrupts();
+      }
 
       drawSequencerScreen();
     }
@@ -3456,9 +3887,13 @@ void handleKeyboardStates(void) {
         TRACK currSelTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
 
         if (keyboardNotesHeld == 0) {
-          voices[current_selected_track].ampEnv.noteOff();
-          if (currSelTrack.track_type == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
-            voices[current_selected_track].filterEnv.noteOff();
+          if (current_selected_track > 3) {
+            sampleVoices[current_selected_track].ampEnv.noteOff();
+          } else {
+            voices[current_selected_track].ampEnv.noteOff();
+            if (currSelTrack.track_type == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
+              voices[current_selected_track].filterEnv.noteOff();
+            }
           }
         }
       }
@@ -3510,10 +3945,13 @@ void handleKeyboardStates(void) {
       TRACK currSelTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
 
       if (keyboardNotesHeld == 0) {
-        voices[current_selected_track].ampEnv.noteOff();
-
-        if (currSelTrack.track_type == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
-          voices[current_selected_track].filterEnv.noteOff();
+        if (current_selected_track > 3) {
+          sampleVoices[current_selected_track].ampEnv.noteOff();
+        } else {
+          voices[current_selected_track].ampEnv.noteOff();
+          if (currSelTrack.track_type == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
+            voices[current_selected_track].filterEnv.noteOff();
+          }
         }
       }
     }
@@ -3563,7 +4001,6 @@ void handleSwitchStates(bool discard) {
                 } else if (current_UI_mode == TRACK_SEL && kpd.key[i].kchar == SOUND_SETUP_BTN_CHAR) {
                   TRACK_TYPE currType = _seq_state.seq.banks[0].patterns[0].tracks[current_selected_track].track_type;
                   
-
                   Serial.print("changing ");
                   Serial.print(current_selected_track+1);
                   Serial.print(" track sound for pattern ");
@@ -3571,7 +4008,7 @@ void handleSwitchStates(bool discard) {
                   Serial.print(" to sound type: ");
                   Serial.println(currType);
 
-                  TRACK_TYPE newType = SUBTRACTIVE_SYNTH;
+                  TRACK_TYPE newType = current_selected_track > 3 ? MONO_SAMPLE : SUBTRACTIVE_SYNTH;
                   if (currType == SUBTRACTIVE_SYNTH) {
                     newType = MONO_SAMPLE;
                   } else if (currType == MONO_SAMPLE) {
