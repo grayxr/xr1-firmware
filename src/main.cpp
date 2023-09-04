@@ -274,44 +274,12 @@ AudioMixer4              vsubmixl14; //xy=1409.5714683532715,3569.5714168548584
 AudioMixer4              vsubmixr14; //xy=1410.238094329834,3641.5714139938354
 AudioMixer4              vsubmixl12; //xy=1427.0714073181152,2911.238042831421
 AudioMixer4              vsubmixr12; //xy=1427.7380332946777,2983.238039970398
-AudioMixer4              vsubmixl9; //xy=1433.5714683532715,2344.5714168548584
 AudioMixer4              vsubmixr9; //xy=1434.238094329834,2416.5714139938354
 AudioMixer4              vsubmixl11; //xy=1433.738094329834,2711.238042831421
 AudioMixer4              vsubmixr11; //xy=1434.4047203063965,2783.238039970398
 AudioMixer4              vsubmixl10; //xy=1437.0714683532715,2534.5714168548584
+AudioMixer4              vsubmixl9; //xy=1437.857063293457,2341.7143173217773
 AudioMixer4              vsubmixr10; //xy=1437.738094329834,2606.5714139938354
-AudioEffectBitcrusher    vbitcrusherl1; //xy=1583.3331756591797,1017.4999418258667
-AudioEffectBitcrusher    vbitcrusherr1; //xy=1583.3333549499512,1056.0713481903076
-AudioEffectBitcrusher    vbitcrusherl2; //xy=1581.7618713378906,1909.4761505126953
-AudioEffectBitcrusher    vbitcrusherr2; //xy=1583.4283905029297,1869.23805809021
-AudioEffectBitcrusher    vbitcrusherl3; //xy=1583.3331756591797,1017.4999418258667
-AudioEffectBitcrusher    vbitcrusherr3; //xy=1583.3333549499512,1056.0713481903076
-AudioEffectBitcrusher    vbitcrusherl4; //xy=1581.7618713378906,1909.4761505126953
-AudioEffectBitcrusher    vbitcrusherr4; //xy=1583.4283905029297,1869.23805809021
-AudioEffectBitcrusher    vbitcrusherl5; //xy=1583.3331756591797,1017.4999418258667
-AudioEffectBitcrusher    vbitcrusherr5; //xy=1583.3333549499512,1056.0713481903076
-AudioEffectBitcrusher    vbitcrusherl6; //xy=1581.7618713378906,1909.4761505126953
-AudioEffectBitcrusher    vbitcrusherr6; //xy=1583.4283905029297,1869.23805809021
-AudioEffectBitcrusher    vbitcrusherl7; //xy=1583.3331756591797,1017.4999418258667
-AudioEffectBitcrusher    vbitcrusherr7; //xy=1583.3333549499512,1056.0713481903076
-AudioEffectBitcrusher    vbitcrusherl8; //xy=1581.7618713378906,1909.4761505126953
-AudioEffectBitcrusher    vbitcrusherr8; //xy=1583.4283905029297,1869.23805809021
-AudioEffectBitcrusher    vbitcrusherl9; //xy=1583.3331756591797,1017.4999418258667
-AudioEffectBitcrusher    vbitcrusherr9; //xy=1583.3333549499512,1056.0713481903076
-AudioEffectBitcrusher    vbitcrusherl10; //xy=1581.7618713378906,1909.4761505126953
-AudioEffectBitcrusher    vbitcrusherr10; //xy=1583.4283905029297,1869.23805809021
-AudioEffectBitcrusher    vbitcrusherl11; //xy=1583.3331756591797,1017.4999418258667
-AudioEffectBitcrusher    vbitcrusherr11; //xy=1583.3333549499512,1056.0713481903076
-AudioEffectBitcrusher    vbitcrusherl12; //xy=1581.7618713378906,1909.4761505126953
-AudioEffectBitcrusher    vbitcrusherr12; //xy=1583.4283905029297,1869.23805809021
-AudioEffectBitcrusher    vbitcrusherl13; //xy=1583.3331756591797,1017.4999418258667
-AudioEffectBitcrusher    vbitcrusherr13; //xy=1583.3333549499512,1056.0713481903076
-AudioEffectBitcrusher    vbitcrusherl14; //xy=1581.7618713378906,1909.4761505126953
-AudioEffectBitcrusher    vbitcrusherr14; //xy=1583.4283905029297,1869.23805809021
-AudioEffectBitcrusher    vbitcrusherl15; //xy=1583.3331756591797,1017.4999418258667
-AudioEffectBitcrusher    vbitcrusherr15; //xy=1583.3333549499512,1056.0713481903076
-AudioEffectBitcrusher    vbitcrusherl16; //xy=1581.7618713378906,1909.4761505126953
-AudioEffectBitcrusher    vbitcrusherr16; //xy=1583.4283905029297,1869.23805809021
 AudioMixer4              mixerLeft2; //xy=1859.1666984558105,1580.8333568572998
 AudioMixer4              mixerRight4; //xy=1851.642807006836,3732.6428833007812
 AudioMixer4              mixerLeft4; //xy=1852.5,3652.5
@@ -472,98 +440,57 @@ AudioConnection          patchCord145(vright9, 0, vsubmixr9, 1);
 AudioConnection          patchCord146(vright11, 0, vsubmixr11, 1);
 AudioConnection          patchCord147(vleft10, 0, vsubmixl10, 1);
 AudioConnection          patchCord148(vright10, 0, vsubmixr10, 1);
-AudioConnection          patchCord149(vsubmixr4, vbitcrusherr4);
-AudioConnection          patchCord150(vsubmixl4, vbitcrusherl4);
-AudioConnection          patchCord151(vsubmixl3, vbitcrusherl3);
-AudioConnection          patchCord152(vsubmixr3, vbitcrusherr3);
-AudioConnection          patchCord153(vsubmixl8, vbitcrusherl8);
-AudioConnection          patchCord154(vsubmixr8, vbitcrusherr8);
-AudioConnection          patchCord155(vsubmixl1, vbitcrusherl1);
-AudioConnection          patchCord156(vsubmixr1, vbitcrusherr1);
-AudioConnection          patchCord157(vsubmixl5, vbitcrusherl5);
-AudioConnection          patchCord158(vsubmixr5, vbitcrusherr5);
-AudioConnection          patchCord159(vsubmixl7, vbitcrusherl7);
-AudioConnection          patchCord160(vsubmixl2, vbitcrusherl2);
-AudioConnection          patchCord161(vsubmixr2, vbitcrusherr2);
-AudioConnection          patchCord162(vsubmixr7, vbitcrusherr7);
-AudioConnection          patchCord163(vsubmixl6, vbitcrusherl6);
-AudioConnection          patchCord164(vsubmixr6, vbitcrusherr6);
-AudioConnection          patchCord165(vsubmixl16, vbitcrusherl16);
-AudioConnection          patchCord166(vsubmixr16, vbitcrusherr16);
-AudioConnection          patchCord167(vsubmixl13, vbitcrusherl13);
-AudioConnection          patchCord168(vsubmixr13, vbitcrusherr13);
-AudioConnection          patchCord169(vsubmixl15, vbitcrusherl15);
-AudioConnection          patchCord170(vsubmixr15, vbitcrusherr16);
-AudioConnection          patchCord171(vsubmixl14, vbitcrusherl14);
-AudioConnection          patchCord172(vsubmixr14, vbitcrusherr14);
-AudioConnection          patchCord173(vsubmixl12, vbitcrusherl12);
-AudioConnection          patchCord174(vsubmixr12, vbitcrusherr12);
-AudioConnection          patchCord175(vsubmixl9, vbitcrusherl9);
-AudioConnection          patchCord176(vsubmixr9, vbitcrusherr9);
-AudioConnection          patchCord177(vsubmixl11, vbitcrusherl11);
-AudioConnection          patchCord178(vsubmixr11, vbitcrusherr11);
-AudioConnection          patchCord179(vsubmixl10, vbitcrusherl10);
-AudioConnection          patchCord180(vsubmixr10, vbitcrusherr10);
-AudioConnection          patchCord181(vbitcrusherl4, 0, mixerLeft1, 3);
-AudioConnection          patchCord182(vbitcrusherr4, 0, mixerRight1, 3);
-AudioConnection          patchCord183(vbitcrusherr8, 0, mixerRight2, 3);
-AudioConnection          patchCord184(vbitcrusherl8, 0, mixerLeft2, 3);
-AudioConnection          patchCord185(vbitcrusherl1, 0, mixerLeft1, 0);
-AudioConnection          patchCord186(vbitcrusherr1, 0, mixerRight1, 0);
-AudioConnection          patchCord187(vbitcrusherl5, 0, mixerLeft2, 0);
-AudioConnection          patchCord188(vbitcrusherr5, 0, mixerRight2, 0);
-AudioConnection          patchCord189(vbitcrusherl3, 0, mixerLeft1, 2);
-AudioConnection          patchCord190(vbitcrusherr3, 0, mixerRight1, 2);
-AudioConnection          patchCord191(vbitcrusherl7, 0, mixerLeft2, 2);
-AudioConnection          patchCord192(vbitcrusherr7, 0, mixerRight2, 2);
-AudioConnection          patchCord193(vbitcrusherl6, 0, mixerLeft2, 1);
-AudioConnection          patchCord194(vbitcrusherl2, 0, mixerLeft1, 1);
-AudioConnection          patchCord195(vbitcrusherr2, 0, mixerRight1, 1);
-AudioConnection          patchCord196(vbitcrusherr6, 0, mixerRight2, 1);
-AudioConnection          patchCord197(vbitcrusherr16, 0, mixerRight4, 3);
-AudioConnection          patchCord198(vbitcrusherl16, 0, mixerLeft4, 3);
-AudioConnection          patchCord199(vbitcrusherl13, 0, mixerLeft4, 0);
-AudioConnection          patchCord200(vbitcrusherr13, 0, mixerRight4, 0);
-AudioConnection          patchCord201(vbitcrusherl15, 0, mixerLeft4, 2);
-AudioConnection          patchCord202(vbitcrusherr15, 0, mixerRight4, 2);
-AudioConnection          patchCord203(vbitcrusherl14, 0, mixerLeft4, 1);
-AudioConnection          patchCord204(vbitcrusherr14, 0, mixerRight4, 1);
-AudioConnection          patchCord205(vbitcrusherr12, 0, mixerRight3, 3);
-AudioConnection          patchCord206(vbitcrusherl12, 0, mixerLeft3, 3);
-AudioConnection          patchCord207(vbitcrusherr9, 0, mixerRight3, 0);
-AudioConnection          patchCord208(vbitcrusherl9, 0, mixerLeft3, 0);
-AudioConnection          patchCord209(vbitcrusherl11, 0, mixerLeft3, 2);
-AudioConnection          patchCord210(vbitcrusherr11, 0, mixerRight3, 2);
-AudioConnection          patchCord211(vbitcrusherl10, 0, mixerLeft3, 1);
-AudioConnection          patchCord212(vbitcrusherr10, 0, mixerRight3, 1);
-AudioConnection          patchCord213(mixerLeft2, 0, mainMixerLeft, 1);
-AudioConnection          patchCord214(mixerRight4, 0, mainMixerRight, 3);
-AudioConnection          patchCord215(mixerLeft4, 0, mainMixerLeft, 3);
-AudioConnection          patchCord216(mixerRight2, 0, mainMixerRight, 1);
-AudioConnection          patchCord217(mixerLeft1, 0, mainMixerLeft, 0);
-AudioConnection          patchCord218(mixerRight3, 0, mainMixerRight, 2);
-AudioConnection          patchCord219(mixerLeft3, 0, mainMixerLeft, 2);
-AudioConnection          patchCord220(mixerRight1, 0, mainMixerRight, 0);
-AudioConnection          patchCord221(mainMixerLeft, 0, i2s1, 0);
-AudioConnection          patchCord222(mainMixerRight, 0, i2s1, 1);
+AudioConnection          patchCord149(vsubmixr4, 0, mixerRight1, 3);
+AudioConnection          patchCord150(vsubmixl4, 0, mixerLeft1, 3);
+AudioConnection          patchCord151(vsubmixl3, 0, mixerLeft1, 2);
+AudioConnection          patchCord152(vsubmixr3, 0, mixerRight1, 2);
+AudioConnection          patchCord153(vsubmixl8, 0, mixerLeft2, 3);
+AudioConnection          patchCord154(vsubmixr8, 0, mixerRight2, 3);
+AudioConnection          patchCord155(vsubmixl1, 0, mixerLeft1, 0);
+AudioConnection          patchCord156(vsubmixr1, 0, mixerRight1, 0);
+AudioConnection          patchCord157(vsubmixl5, 0, mixerLeft2, 0);
+AudioConnection          patchCord158(vsubmixr5, 0, mixerRight2, 0);
+AudioConnection          patchCord159(vsubmixl7, 0, mixerLeft2, 2);
+AudioConnection          patchCord160(vsubmixl2, 0, mixerLeft1, 1);
+AudioConnection          patchCord161(vsubmixr2, 0, mixerRight1, 1);
+AudioConnection          patchCord162(vsubmixr7, 0, mixerRight2, 2);
+AudioConnection          patchCord163(vsubmixl6, 0, mixerLeft2, 1);
+AudioConnection          patchCord164(vsubmixr6, 0, mixerRight2, 1);
+AudioConnection          patchCord165(vsubmixl16, 0, mixerLeft4, 3);
+AudioConnection          patchCord166(vsubmixr16, 0, mixerRight4, 3);
+AudioConnection          patchCord167(vsubmixl13, 0, mixerLeft4, 0);
+AudioConnection          patchCord168(vsubmixr13, 0, mixerRight4, 0);
+AudioConnection          patchCord169(vsubmixl15, 0, mixerLeft4, 2);
+AudioConnection          patchCord170(vsubmixr15, 0, mixerRight4, 2);
+AudioConnection          patchCord171(vsubmixl14, 0, mixerLeft4, 1);
+AudioConnection          patchCord172(vsubmixr14, 0, mixerRight4, 1);
+AudioConnection          patchCord173(vsubmixl12, 0, mixerLeft3, 3);
+AudioConnection          patchCord174(vsubmixr12, 0, mixerRight3, 3);
+AudioConnection          patchCord175(vsubmixr9, 0, mixerRight3, 0);
+AudioConnection          patchCord176(vsubmixl11, 0, mixerLeft3, 2);
+AudioConnection          patchCord177(vsubmixr11, 0, mixerRight3, 2);
+AudioConnection          patchCord178(vsubmixl10, 0, mixerLeft3, 1);
+AudioConnection          patchCord179(vsubmixl9, 0, mixerLeft3, 0);
+AudioConnection          patchCord180(vsubmixr10, 0, mixerRight3, 1);
+AudioConnection          patchCord181(mixerLeft2, 0, mainMixerLeft, 1);
+AudioConnection          patchCord182(mixerRight4, 0, mainMixerRight, 3);
+AudioConnection          patchCord183(mixerLeft4, 0, mainMixerLeft, 3);
+AudioConnection          patchCord184(mixerRight2, 0, mainMixerRight, 1);
+AudioConnection          patchCord185(mixerLeft1, 0, mainMixerLeft, 0);
+AudioConnection          patchCord186(mixerRight3, 0, mainMixerRight, 2);
+AudioConnection          patchCord187(mixerLeft3, 0, mainMixerLeft, 2);
+AudioConnection          patchCord188(mixerRight1, 0, mainMixerRight, 0);
+AudioConnection          patchCord189(mainMixerLeft, 0, i2s1, 0);
+AudioConnection          patchCord190(mainMixerRight, 0, i2s1, 1);
 
 AudioControlSGTL5000     sgtl5000_1;     //xy=2609.095317840576,2062.7380781173706
 // GUItool: end automatically generated code
-
-
-
 
 unsigned long lastSamplePlayed = 0;
 
 newdigate::audiosample *samples[16];
 
-// newdigate::audiosample *sample;
-// newdigate::audiosample *sample2;
-// newdigate::audiosample *sample2a;
-// newdigate::audiosample *sample3;
-// newdigate::audiosample *sample4;
-
-
+#define sd1 SD
 #define SDCARD_CS_PIN    BUILTIN_SDCARD
 #define SDCARD_MOSI_PIN  43  // not actually used
 #define SDCARD_SCK_PIN   45  // not actually used
@@ -759,8 +686,10 @@ float noteToFreqArr[13] = {
 };
 
 #define MAX_USABLE_SAMPLE_IDS 256
+#define MAX_USABLE_WAV_SAMPLE_IDS 512
 #define MAX_SAMPLE_NAME_LENGTH 32
 char usableSampleNames[MAX_USABLE_SAMPLE_IDS][MAX_SAMPLE_NAME_LENGTH];
+char usableWavSampleNames[MAX_USABLE_SAMPLE_IDS][MAX_SAMPLE_NAME_LENGTH];
 
 ResponsiveAnalogRead analog(A8, true); // headphone pot
 
@@ -789,8 +718,8 @@ enum TRACK_TYPE {
   CV_TRIG = 1,
   CV_GATE = 2,
   SUBTRACTIVE_SYNTH = 3,
-  MONO_SAMPLE = 4,
-  STEREO_SAMPLE = 5,
+  RAW_SAMPLE = 4,
+  WAV_SAMPLE = 5,
 };
 
 enum TRACK_STEP_STATE {
@@ -806,27 +735,34 @@ typedef struct
   uint8_t octave = 4; // 4 - middle C (C4)
   uint8_t length = 4; // 4 = 1/16
   uint8_t velocity = 50; // 1 - 100%
-  uint8_t microtiming = 0; // 1 = 100ms
   uint8_t probability = 0; // 1 = 100ms
+  int8_t microtiming = 0; // 1 = 100ms
 } TRACK_STEP;
 
 typedef struct
 {
-  TRACK_TYPE track_type = MONO_SAMPLE;
+  TRACK_TYPE track_type = RAW_SAMPLE;
   TRACK_STEP steps[MAXIMUM_SEQUENCER_STEPS];
-  uint8_t last_step = DEFAULT_LAST_STEP;
+  uint16_t samplerate = 44100;
   uint8_t sample_dir = 0;
-  uint8_t sample_id = 0;
+  uint8_t raw_sample_id = 0;
+  uint8_t wav_sample_id = 0;
   uint8_t waveform = WAVEFORM_TYPE::SAW;
+  uint8_t last_step = DEFAULT_LAST_STEP;
   uint8_t note = 0; // 0 - C1
   uint8_t octave = 4; // 4 - middle C (C4)
   int8_t detune = -7;
   int8_t fine = 0;
+  int8_t microtiming = 0; // 1 = 100ms
   uint8_t length = 4; // 1 = 1/64 step len
   uint8_t bitrate = 16;
-  uint16_t samplerate = 44100;
-  uint8_t filter_type = 0; // 0 = ladder, 1 = SVF
   uint8_t velocity = 50; // 1 - 100%
+  uint8_t probability = 100;
+  uint8_t channel = 1;
+  uint8_t looptype = 0;
+  uint32_t loopstart = 0;
+  uint32_t loopfinish = 3000;
+  play_start playstart = play_start_sample;
   float level = 0.7; // TODO: impl real default level based on default mixer settings
   float pan = 0; // -1.0 = panned fully left, 1.0 = panned fully right
   float sample_play_rate = 1.0;
@@ -843,8 +779,9 @@ typedef struct
   float amp_attack = 0;
   float amp_decay = 500;
   float amp_sustain = 1.0;
-  float amp_release = 0;
+  float amp_release = 500;
   float noise = 0;
+  bool chromatic_enabled = false;
 } TRACK;
 
 typedef struct
@@ -908,6 +845,7 @@ enum UI_MODE {
 UI_MODE previous_UI_mode = PATTERN_WRITE; // the default mode
 UI_MODE current_UI_mode = PATTERN_WRITE; // the default mode
 
+int8_t current_selected_bank = 0; // default to 0 (first)
 int8_t current_selected_pattern = 0; // default to 0 (first)
 int8_t current_selected_track = 0; // default to 0 (first)
 int8_t current_selected_step = -1; // default to -1 (none)
@@ -927,7 +865,7 @@ const uint8_t backwardsNoteNumbers[13] = {
 
 int keyboardNotesHeld = 0;
 
-int current_layer_selected = 0;
+int current_page_selected = 0;
 
 int oscWaveforms[6] = {
   WAVEFORM_SAWTOOTH,
@@ -954,6 +892,27 @@ std::map<int, int> waveformFindMap = {
   {WAVEFORM_SQUARE, 3},
   {WAVEFORM_PULSE, 4},
   {WAVEFORM_SINE, 5},
+};
+
+std::map<int, loop_type> loopTypeSelMap = {
+  {0, looptype_none},
+  {1, looptype_repeat},
+  {2, looptype_repeat}, // used for chromatic repeat
+};
+
+std::map<loop_type, int> loopTypeFindMap = {
+  {looptype_none, 0},
+  {looptype_repeat, 1},
+};
+
+std::map<int, play_start> playStartSelMap = {
+  {0, play_start_sample},
+  {1, play_start_loop},
+};
+
+std::map<play_start, int> playStartFindMap = {
+  {play_start_sample, 0},
+  {play_start_loop, 1},
 };
 
 const uint8_t *small_font = bitocra7_c; // u8g2_font_trixel_square_tf
@@ -988,17 +947,19 @@ void toggleSelectedStep(uint8_t step);
 void clearAllStepLEDs(void);
 void displayCurrentlySelectedPattern(void);
 void displayCurrentlySelectedTrack(void);
-void Update_Task_Ready_Flags(void);
-void checkAllTracksForNoteOff(void);
 void changeTrackSoundType(uint8_t track, TRACK_TYPE newType);
 void initTrackSounds(void);
 void initUsableSampleNames(void);
+void initUsableWavSampleNames(void);
 void triggerTrackManually(uint8_t t, uint8_t note);
 std::string getTrackTypeNameStr(TRACK_TYPE type);
 void handleHeadphoneAdjustment(void);
 void handleEncoderSetTempo();
 void handleAddToStepStack(uint32_t tick, int track, int step);
 void noteOffForAllSounds(void);
+PATTERN getCurrentSelectedPattern(void);
+TRACK getCurrentSelectedTrack(void);
+TRACK_STEP getCurrentSelectedTrackStep(void);
 
 typedef struct
 {
@@ -1040,12 +1001,12 @@ std::string getTrackTypeNameStr(TRACK_TYPE type)
     
     break;
   
-  case TRACK_TYPE::MONO_SAMPLE :
+  case TRACK_TYPE::RAW_SAMPLE :
     str = "MONO SAMPLE";
     
     break;
   
-  case TRACK_TYPE::STEREO_SAMPLE :
+  case TRACK_TYPE::WAV_SAMPLE :
     str = "STEREO SAMPLE";
     
     break;
@@ -1085,8 +1046,8 @@ int8_t keyboardOctave = 4; // range 1-7 ?
 class ComboVoice
 {
   public:
-    AudioPlayWAVstereo          &sSample;
-    AudioPlayArrayResmp         &mSample;
+    AudioPlayWAVstereo          &wSample;
+    AudioPlayArrayResmp         &rSample;
     AudioSynthWaveform          &osca;
     AudioSynthWaveform          &oscb;
     AudioSynthNoiseWhite        &noise;
@@ -1100,12 +1061,10 @@ class ComboVoice
     AudioAmplifier              &rightCtrl;
     AudioMixer4                 &leftSubMix;
     AudioMixer4                 &rightSubMix;
-    AudioEffectBitcrusher       &leftBitCrush;
-    AudioEffectBitcrusher       &rightBitCrush;
  
     ComboVoice(
-      AudioPlayWAVstereo          &sSample,
-      AudioPlayArrayResmp         &mSample,
+      AudioPlayWAVstereo          &wSample,
+      AudioPlayArrayResmp         &rSample,
       AudioSynthWaveform          &osca,
       AudioSynthWaveform          &oscb,
       AudioSynthNoiseWhite        &noise,
@@ -1118,11 +1077,9 @@ class ComboVoice
       AudioAmplifier              &leftCtrl,
       AudioAmplifier              &rightCtrl,
       AudioMixer4                 &leftSubMix,
-      AudioMixer4                 &rightSubMix,
-      AudioEffectBitcrusher       &leftBitCrush,
-      AudioEffectBitcrusher       &rightBitCrush
-    ) : sSample {sSample},
-        mSample {mSample},
+      AudioMixer4                 &rightSubMix
+    ) : wSample {wSample},
+        rSample {rSample},
         osca {osca},
         oscb {oscb},
         noise {noise},
@@ -1135,9 +1092,7 @@ class ComboVoice
         leftCtrl {leftCtrl},
         rightCtrl {rightCtrl},
         leftSubMix {leftSubMix},
-        rightSubMix {rightSubMix},
-        leftBitCrush {leftBitCrush},
-        rightBitCrush {rightBitCrush}
+        rightSubMix {rightSubMix}
     {
       //
     }
@@ -1146,35 +1101,29 @@ class ComboVoice
 class SampleVoice
 {
   public:
-    AudioPlayWAVstereo          &sSample;
-    AudioPlayArrayResmp         &mSample;
+    AudioPlayWAVstereo          &wSample;
+    AudioPlayArrayResmp         &rSample;
     AudioEffectEnvelope         &ampEnv;
     AudioAmplifier              &leftCtrl;
     AudioAmplifier              &rightCtrl;
     AudioMixer4                 &leftSubMix;
     AudioMixer4                 &rightSubMix;
-    AudioEffectBitcrusher       &leftBitCrush;
-    AudioEffectBitcrusher       &rightBitCrush;
  
     SampleVoice(
-      AudioPlayWAVstereo          &sSample,
-      AudioPlayArrayResmp         &mSample,
+      AudioPlayWAVstereo          &wSample,
+      AudioPlayArrayResmp         &rSample,
       AudioEffectEnvelope         &ampEnv,
       AudioAmplifier              &leftCtrl,
       AudioAmplifier              &rightCtrl,
       AudioMixer4                 &leftSubMix,
-      AudioMixer4                 &rightSubMix,
-      AudioEffectBitcrusher       &leftBitCrush,
-      AudioEffectBitcrusher       &rightBitCrush
-    ) : sSample {sSample},
-        mSample {mSample},
+      AudioMixer4                 &rightSubMix
+    ) : wSample {wSample},
+        rSample {rSample},
         ampEnv {ampEnv},
         leftCtrl {leftCtrl},
         rightCtrl {rightCtrl},
         leftSubMix {leftSubMix},
-        rightSubMix {rightSubMix},
-        leftBitCrush {leftBitCrush},
-        rightBitCrush {rightBitCrush}
+        rightSubMix {rightSubMix}
     {
       //
     }
@@ -1182,18 +1131,18 @@ class SampleVoice
 
 #define COMBO_VOICE_COUNT 4
 
-ComboVoice voices[COMBO_VOICE_COUNT] = {
+ComboVoice comboVoices[COMBO_VOICE_COUNT] = {
   ComboVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1,vbitcrusherl1,vbitcrusherr1
+    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1
   ),
   ComboVoice(
-    vssample2,vmsample2,vosca2,voscb2,vnoise2,voscmix2,vdc2,vlfilter2,vfilterenv2,vmix2,venv2,vleft2,vright2,vsubmixl2,vsubmixr2,vbitcrusherl2,vbitcrusherr2
+    vssample2,vmsample2,vosca2,voscb2,vnoise2,voscmix2,vdc2,vlfilter2,vfilterenv2,vmix2,venv2,vleft2,vright2,vsubmixl2,vsubmixr2
   ),
   ComboVoice(
-    vssample3,vmsample3,vosca3,voscb3,vnoise3,voscmix3,vdc3,vlfilter3,vfilterenv3,vmix3,venv3,vleft3,vright3,vsubmixl3,vsubmixr3,vbitcrusherl3,vbitcrusherr3
+    vssample3,vmsample3,vosca3,voscb3,vnoise3,voscmix3,vdc3,vlfilter3,vfilterenv3,vmix3,venv3,vleft3,vright3,vsubmixl3,vsubmixr3
   ),
   ComboVoice(
-    vssample4,vmsample4,vosca4,voscb4,vnoise4,voscmix4,vdc4,vlfilter4,vfilterenv4,vmix4,venv4,vleft4,vright4,vsubmixl4,vsubmixr4,vbitcrusherl4,vbitcrusherr4
+    vssample4,vmsample4,vosca4,voscb4,vnoise4,voscmix4,vdc4,vlfilter4,vfilterenv4,vmix4,venv4,vleft4,vright4,vsubmixl4,vsubmixr4
   ),
 };
 
@@ -1201,40 +1150,40 @@ ComboVoice voices[COMBO_VOICE_COUNT] = {
 
 SampleVoice sampleVoices[SAMPLE_VOICE_COUNT] = {
   SampleVoice(
-    vssample5,vmsample5,venv5,vleft5,vright5,vsubmixl5,vsubmixr5,vbitcrusherl5,vbitcrusherr5
+    vssample5,vmsample5,venv5,vleft5,vright5,vsubmixl5,vsubmixr5
   ),
   SampleVoice(
-    vssample6,vmsample6,venv6,vleft6,vright6,vsubmixl6,vsubmixr6,vbitcrusherl6,vbitcrusherr6
+    vssample6,vmsample6,venv6,vleft6,vright6,vsubmixl6,vsubmixr6
   ),
   SampleVoice(
-    vssample7,vmsample7,venv7,vleft7,vright7,vsubmixl7,vsubmixr7,vbitcrusherl7,vbitcrusherr7
+    vssample7,vmsample7,venv7,vleft7,vright7,vsubmixl7,vsubmixr7
   ),
   SampleVoice(
-    vssample8,vmsample8,venv8,vleft8,vright8,vsubmixl8,vsubmixr8,vbitcrusherl8,vbitcrusherr8
+    vssample8,vmsample8,venv8,vleft8,vright8,vsubmixl8,vsubmixr8
   ),
   SampleVoice(
-    vssample9,vmsample9,venv9,vleft9,vright9,vsubmixl9,vsubmixr9,vbitcrusherl9,vbitcrusherr9
+    vssample9,vmsample9,venv9,vleft9,vright9,vsubmixl9,vsubmixr9
   ),
   SampleVoice(
-    vssample10,vmsample10,venv10,vleft10,vright10,vsubmixl10,vsubmixr10,vbitcrusherl10,vbitcrusherr10
+    vssample10,vmsample10,venv10,vleft10,vright10,vsubmixl10,vsubmixr10
   ),
   SampleVoice(
-    vssample11,vmsample11,venv11,vleft11,vright11,vsubmixl11,vsubmixr11,vbitcrusherl11,vbitcrusherr11
+    vssample11,vmsample11,venv11,vleft11,vright11,vsubmixl11,vsubmixr11
   ),
   SampleVoice(
-    vssample12,vmsample12,venv12,vleft12,vright12,vsubmixl12,vsubmixr12,vbitcrusherl12,vbitcrusherr12
+    vssample12,vmsample12,venv12,vleft12,vright12,vsubmixl12,vsubmixr12
   ),
   SampleVoice(
-    vssample13,vmsample13,venv13,vleft13,vright13,vsubmixl13,vsubmixr13,vbitcrusherl13,vbitcrusherr13
+    vssample13,vmsample13,venv13,vleft13,vright13,vsubmixl13,vsubmixr13
   ),
   SampleVoice(
-    vssample14,vmsample14,venv14,vleft14,vright14,vsubmixl14,vsubmixr14,vbitcrusherl14,vbitcrusherr14
+    vssample14,vmsample14,venv14,vleft14,vright14,vsubmixl14,vsubmixr14
   ),
   SampleVoice(
-    vssample15,vmsample15,venv15,vleft15,vright15,vsubmixl15,vsubmixr15,vbitcrusherl15,vbitcrusherr15
+    vssample15,vmsample15,venv15,vleft15,vright15,vsubmixl15,vsubmixr15
   ),
   SampleVoice(
-    vssample16,vmsample16,venv16,vleft16,vright16,vsubmixl16,vsubmixr16,vbitcrusherl16,vbitcrusherr16
+    vssample16,vmsample16,venv16,vleft16,vright16,vsubmixl16,vsubmixr16
   ),
 };
 
@@ -1242,14 +1191,14 @@ void noteOffForAllSounds(void)
 {
   for (int t = 0; t < 4; t++)
   {
-    TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t];
+    TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t];
   
     if (currTrack.track_type == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
       //voices[track].filterEnv.releaseNoteOn(10);
-      voices[t].ampEnv.noteOff();
-      voices[t].filterEnv.noteOff();
+      comboVoices[t].ampEnv.noteOff();
+      comboVoices[t].filterEnv.noteOff();
     } else {
-      voices[t].ampEnv.noteOff();
+      comboVoices[t].ampEnv.noteOff();
     }
   }
 
@@ -1263,76 +1212,64 @@ void initTrackSounds()
 {
   // configure combo voice audio objects
   for (int v = 0; v < COMBO_VOICE_COUNT; v++) {    
-    // only create buffers for stereo samples when needed
-    // voices[v].sSample.createBuffer(2048, AudioBuffer::inExt);
-
     // TODO: eventually need to restore all sounds for all patterns and their tracks?
-    TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[v];
+    TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[v];
 
-    // init mono sample
-    voices[v].mSample.setPlaybackRate(currTrack.sample_play_rate);
-    voices[v].mSample.enableInterpolation(true);
+    // init mono RAW sample
+    comboVoices[v].rSample.setPlaybackRate(currTrack.sample_play_rate);
+    comboVoices[v].rSample.enableInterpolation(true);
 
     // init synth
-    voices[v].osca.begin(currTrack.waveform);
-    voices[v].osca.amplitude(currTrack.oscalevel);
-    voices[v].osca.frequency(261.63); // C4 TODO: use find freq LUT with track note
-    voices[v].osca.pulseWidth(currTrack.width);
-    voices[v].oscb.begin(currTrack.waveform);
-    voices[v].oscb.amplitude(currTrack.oscblevel);
-    voices[v].oscb.frequency(261.63); // C3 TODO: use find freq LUT with track note + detune
-    voices[v].oscb.pulseWidth(currTrack.width);
-    voices[v].noise.amplitude(currTrack.noise);
-    voices[v].oscMix.gain(0, 0.33);
-    voices[v].oscMix.gain(1, 0.33);
-    voices[v].oscMix.gain(2, 0.33);
-    voices[v].dc.amplitude(1);
-    voices[v].lfilter.frequency(currTrack.cutoff);
-    voices[v].lfilter.resonance(currTrack.res);
-    voices[v].lfilter.octaveControl(4);
-    voices[v].filterEnv.attack(currTrack.filter_attack);
-    voices[v].filterEnv.decay(currTrack.filter_decay);
-    voices[v].filterEnv.sustain(currTrack.filter_sustain);
-    voices[v].filterEnv.release(currTrack.filter_release);
-    //voices[v].filterEnv.releaseNoteOn(15);
-    voices[v].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
-    voices[v].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
-    voices[v].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
-    voices[v].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
-    //voices[v].ampEnv.releaseNoteOn(15);
+    comboVoices[v].osca.begin(currTrack.waveform);
+    comboVoices[v].osca.amplitude(currTrack.oscalevel);
+    comboVoices[v].osca.frequency(261.63); // C4 TODO: use find freq LUT with track note
+    comboVoices[v].osca.pulseWidth(currTrack.width);
+    comboVoices[v].oscb.begin(currTrack.waveform);
+    comboVoices[v].oscb.amplitude(currTrack.oscblevel);
+    comboVoices[v].oscb.frequency(261.63); // C3 TODO: use find freq LUT with track note + detune
+    comboVoices[v].oscb.pulseWidth(currTrack.width);
+    comboVoices[v].noise.amplitude(currTrack.noise);
+    comboVoices[v].oscMix.gain(0, 0.33);
+    comboVoices[v].oscMix.gain(1, 0.33);
+    comboVoices[v].oscMix.gain(2, 0.33);
+    comboVoices[v].dc.amplitude(1);
+    comboVoices[v].lfilter.frequency(currTrack.cutoff);
+    comboVoices[v].lfilter.resonance(currTrack.res);
+    comboVoices[v].lfilter.octaveControl(4);
+    comboVoices[v].filterEnv.attack(currTrack.filter_attack);
+    comboVoices[v].filterEnv.decay(currTrack.filter_decay);
+    comboVoices[v].filterEnv.sustain(currTrack.filter_sustain);
+    comboVoices[v].filterEnv.release(currTrack.filter_release);
+    //comboVoices[v].filterEnv.releaseNoteOn(15);
+    comboVoices[v].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
+    comboVoices[v].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
+    comboVoices[v].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
+    comboVoices[v].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
+    //comboVoices[v].ampEnv.releaseNoteOn(15);
 
     // output
-    voices[v].mix.gain(0, 1); // mono sample
-    voices[v].mix.gain(1, 1); // svf filtered synth OFF by default
+    comboVoices[v].mix.gain(0, 1); // raw sample
+    comboVoices[v].mix.gain(1, 1); // synth
 
     // mono to L&R
-    voices[v].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
-    voices[v].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+    comboVoices[v].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+    comboVoices[v].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
 
     // Sub L&R mixers
-    voices[v].leftSubMix.gain(0, currTrack.level); // stereo sample left
-    voices[v].leftSubMix.gain(1, currTrack.level); // mono sample / synth left
-    voices[v].rightSubMix.gain(0, currTrack.level); // stereo sample right
-    voices[v].rightSubMix.gain(1, currTrack.level); // mono sample / synth right
-
-    // Effects
-    voices[v].leftBitCrush.bits(currTrack.bitrate);
-    voices[v].leftBitCrush.sampleRate(currTrack.samplerate);
-    voices[v].rightBitCrush.bits(currTrack.bitrate);
-    voices[v].rightBitCrush.sampleRate(currTrack.samplerate);
+    comboVoices[v].leftSubMix.gain(0, currTrack.level); // wav sample left
+    comboVoices[v].leftSubMix.gain(1, currTrack.level); // raw sample / synth left
+    comboVoices[v].rightSubMix.gain(0, currTrack.level); // wav sample right
+    comboVoices[v].rightSubMix.gain(1, currTrack.level); // raw sample / synth right
   }
 
   // configure sample voice audio objects
-  for (int v = 0; v < SAMPLE_VOICE_COUNT; v++) {    
-    // only create buffers for stereo samples when needed
-    // voices[v].sSample.createBuffer(2048, AudioBuffer::inExt);
-
+  for (int v = 0; v < SAMPLE_VOICE_COUNT; v++) {
     // TODO: eventually need to restore all sounds for all patterns and their tracks?
-    TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[v];
+    TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[v];
 
-    // init mono sample
-    sampleVoices[v].mSample.setPlaybackRate(currTrack.sample_play_rate);
-    sampleVoices[v].mSample.enableInterpolation(true);
+    // init mono RAW sample
+    sampleVoices[v].rSample.setPlaybackRate(currTrack.sample_play_rate);
+    sampleVoices[v].rSample.enableInterpolation(true);
 
     sampleVoices[v].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
     sampleVoices[v].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
@@ -1345,17 +1282,47 @@ void initTrackSounds()
     sampleVoices[v].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
 
     // Sub L&R mixers
-    sampleVoices[v].leftSubMix.gain(0, currTrack.level); // stereo sample left
-    sampleVoices[v].leftSubMix.gain(1, currTrack.level); // mono sample / synth left
-    sampleVoices[v].rightSubMix.gain(0, currTrack.level); // stereo sample right
-    sampleVoices[v].rightSubMix.gain(1, currTrack.level); // mono sample / synth right
-
-    // Effects
-    sampleVoices[v].leftBitCrush.bits(currTrack.bitrate);
-    sampleVoices[v].leftBitCrush.sampleRate(currTrack.samplerate);
-    sampleVoices[v].rightBitCrush.bits(currTrack.bitrate);
-    sampleVoices[v].rightBitCrush.sampleRate(currTrack.samplerate);
+    sampleVoices[v].leftSubMix.gain(0, currTrack.level); // wav sample left
+    sampleVoices[v].leftSubMix.gain(1, currTrack.level); // raw sample / synth left
+    sampleVoices[v].rightSubMix.gain(0, currTrack.level); // wav sample right
+    sampleVoices[v].rightSubMix.gain(1, currTrack.level); // raw sample / synth right
   }
+
+  mixerLeft1.gain(0, 1);
+  mixerRight1.gain(0, 1);
+  mixerLeft1.gain(1, 1);
+  mixerRight1.gain(1, 1);
+  mixerLeft1.gain(2, 1);
+  mixerRight1.gain(2, 1);
+  mixerLeft1.gain(3, 1);
+  mixerRight1.gain(3, 1);
+
+  mixerLeft2.gain(0, 1);
+  mixerRight2.gain(0, 1);
+  mixerLeft2.gain(1, 1);
+  mixerRight2.gain(1, 1);
+  mixerLeft2.gain(2, 1);
+  mixerRight2.gain(2, 1);
+  mixerLeft2.gain(3, 1);
+  mixerRight2.gain(3, 1);
+
+  mixerLeft3.gain(0, 1);
+  mixerRight3.gain(0, 1);
+  mixerLeft3.gain(1, 1);
+  mixerRight3.gain(1, 1);
+  mixerLeft3.gain(2, 1);
+  mixerRight3.gain(2, 1);
+  mixerLeft3.gain(3, 1);
+  mixerRight3.gain(3, 1);
+
+  mixerLeft4.gain(0, 1);
+  mixerRight4.gain(0, 1);
+  mixerLeft4.gain(1, 1);
+  mixerRight4.gain(1, 1);
+  mixerLeft4.gain(2, 1);
+  mixerRight4.gain(2, 1);
+  mixerLeft4.gain(3, 1);
+  mixerRight4.gain(3, 1);
 
   // Main L&R output mixer
   mainMixerLeft.gain(0, 1);
@@ -1371,21 +1338,27 @@ void initTrackSounds()
 void changeSampleTrackSoundType(uint8_t t, TRACK_TYPE newType);
 void changeSampleTrackSoundType(uint8_t t, TRACK_TYPE newType)
 {
-  SampleVoice trackVoice = sampleVoices[t];
-  TRACK_TYPE currType = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type;
+  TRACK_TYPE currType = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type;
 
   if (currType == newType) return;
 
-  if (newType == TRACK_TYPE::MONO_SAMPLE) {
-    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::MONO_SAMPLE;
-  } else if (newType == TRACK_TYPE::STEREO_SAMPLE) {
-    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::STEREO_SAMPLE;
-  } else if (newType == TRACK_TYPE::MIDI) {
-    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::MIDI;
-  } else if (newType == TRACK_TYPE::CV_GATE) {
-    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::CV_GATE;
-  }else if (newType == TRACK_TYPE::CV_TRIG) {
-    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::CV_TRIG;
+  if (currType == WAV_SAMPLE) {
+    sampleVoices[t-4].wSample.disposeBuffer();
+  }
+
+  if (newType == RAW_SAMPLE) {
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = RAW_SAMPLE;
+  } else if (newType == WAV_SAMPLE) {
+    // only create buffers for stereo samples when needed
+    sampleVoices[t-4].wSample.createBuffer(2048, AudioBuffer::inExt);
+
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = WAV_SAMPLE;
+  } else if (newType == MIDI) {
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = MIDI;
+  } else if (newType == CV_GATE) {
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = CV_GATE;
+  }else if (newType == CV_TRIG) {
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = CV_TRIG;
   }
 }
 
@@ -1396,29 +1369,36 @@ void changeTrackSoundType(uint8_t t, TRACK_TYPE newType)
     return;
   }
 
-  ComboVoice trackVoice = voices[t];
-  TRACK_TYPE currType = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type;
+  ComboVoice trackVoice = comboVoices[t];
+  TRACK_TYPE currType = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type;
 
   if (currType == newType) return;
 
-  if (newType == TRACK_TYPE::MONO_SAMPLE) {
-    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::MONO_SAMPLE;
+  if (currType == WAV_SAMPLE) {
+    trackVoice.wSample.disposeBuffer();
+  }
+
+  if (newType == RAW_SAMPLE) {
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = RAW_SAMPLE;
 
     // turn sample volume all the way up
     trackVoice.mix.gain(0, 1);
     // turn synth volume all the way down
-    trackVoice.mix.gain(1, 0); // ladder
-  } else if (newType == TRACK_TYPE::STEREO_SAMPLE) {
-    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::STEREO_SAMPLE;
+    trackVoice.mix.gain(1, 0); // synth
+  } else if (newType == WAV_SAMPLE) {
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = WAV_SAMPLE;
+
+    // only create buffers for stereo samples when needed
+    trackVoice.wSample.createBuffer(2048, AudioBuffer::inExt);
 
     // turn sample volume all the way up
     trackVoice.mix.gain(0, 1);
     // turn synth volumes all the way down
-    trackVoice.mix.gain(1, 0); // ladder
-  } else if (newType == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
-    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
+    trackVoice.mix.gain(1, 0); // synth
+  } else if (newType == SUBTRACTIVE_SYNTH) {
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = SUBTRACTIVE_SYNTH;
 
-    TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t];
+    TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t];
 
     // turn sample volume all the way down
     trackVoice.mix.gain(0, 0);
@@ -1430,20 +1410,20 @@ void changeTrackSoundType(uint8_t t, TRACK_TYPE newType)
     trackVoice.ampEnv.decay(currTrack.amp_decay);
     trackVoice.ampEnv.sustain(currTrack.amp_sustain);
     trackVoice.ampEnv.release(currTrack.amp_release);
-  } else if (newType == TRACK_TYPE::MIDI) {
-    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::MIDI;
+  } else if (newType == MIDI) {
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = MIDI;
 
     // turn all audio for this track voice down
     trackVoice.mix.gain(0, 0); // mono sample
     trackVoice.mix.gain(1, 0); // ladder
-  } else if (newType == TRACK_TYPE::CV_GATE) {
-    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::CV_GATE;
+  } else if (newType == CV_GATE) {
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = CV_GATE;
 
     // turn all audio for this track voice down
     trackVoice.mix.gain(0, 0); // mono sample
     trackVoice.mix.gain(1, 0); // ladder
-  }else if (newType == TRACK_TYPE::CV_TRIG) {
-    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[t].track_type = TRACK_TYPE::CV_TRIG;
+  }else if (newType == CV_TRIG) {
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = CV_TRIG;
 
     // turn all audio for this track voice down
     trackVoice.mix.gain(0, 0); // mono sample
@@ -1459,13 +1439,75 @@ void initUsableSampleNames(void)
   for (int n=0; n<MAX_USABLE_SAMPLE_IDS; n++) {
     strcpy(usableSampleNames[n], "N/A");
   }
-
-  // test out a random sample name:
-  Serial.print("random sample name check: ");
-  Serial.println(usableSampleNames[127]);
 }
 
+void initUsableWavSampleNames(void)
+{
+  // TODO: implement a proper project sample pool so that
+  // sample IDs adhere to their respective sample names
+  // when loading project data from the SD card
+  for (int n=0; n<MAX_USABLE_SAMPLE_IDS; n++) {
+    strcpy(usableWavSampleNames[n], "N/A");
+  }
+}
 
+bool isWavFile(const char* filename);
+bool isWavFile(const char* filename) {
+  int8_t len = strlen(filename);
+
+  Serial.print("strlen: ");
+  Serial.println(len);
+
+  bool result = false;
+  String fStr = filename;
+
+  if (fStr.toLowerCase().substring((len - 4), len) == ".wav") {
+    result = true;
+  }
+
+  return result;
+}
+
+uint16_t wavSamplesAvailable = 0;
+
+void parseRootForWavSamples(void);
+void parseRootForWavSamples(void)
+{
+  File dir = SD.open("/");
+
+  uint8_t currentFileIndex = 0;
+
+  while(true) {
+    File entry = dir.openNextFile();
+    if (! entry) {
+      Serial.println("** no files found **");
+      break;
+    }
+
+    if (!entry.isDirectory()) {
+      if (strlen(entry.name()) > MAX_SAMPLE_NAME_LENGTH) {
+        Serial.print("Sample names can only be 32 characters long, not loading: ");
+        Serial.println(entry.name());
+        continue;
+      }
+
+      if ((currentFileIndex + 1) > MAX_USABLE_WAV_SAMPLE_IDS) {
+        Serial.println("Reached the 512 WAV sample limit!");
+        break;
+      }
+
+      if (isWavFile(entry.name())) {
+        // files have sizes, directories do not
+        strcpy(usableWavSampleNames[currentFileIndex], entry.name());
+
+        ++wavSamplesAvailable;
+        ++currentFileIndex;
+      }
+    }
+    
+    entry.close();
+  }
+}
 
 bool isRawFile(const char* filename);
 bool isRawFile(const char* filename) {
@@ -1483,6 +1525,8 @@ bool isRawFile(const char* filename) {
 
   return result;
 }
+
+uint16_t rawSamplesAvailable = 0;
 
 void parseRootForRawSamples(void);
 void parseRootForRawSamples(void)
@@ -1522,6 +1566,8 @@ void parseRootForRawSamples(void)
 
         strcpy(usableSampleNames[currentFileIndex], entry.name());
 
+        ++rawSamplesAvailable;
+
         ++currentFileIndex;
       }
     }
@@ -1536,12 +1582,15 @@ void loadRawSamplesFromSdCard(void)
   parseRootForRawSamples();
 
   newdigate::flashloader loader;
+
+  char naChar[32];
+  strcpy(naChar, "N/A");
   
-  // only load 16 samples into PSRAM at a time, for now
+  // only load 16 samples in PSRAM at a time, for now
   for (int s = 0; s < 16; s++) {
-    if (usableSampleNames[s] != "N/A") {
+    if (usableSampleNames[s] != naChar) {
       samples[s] = loader.loadSample(usableSampleNames[s]);
-      }
+    }
   }
 }
 
@@ -1580,6 +1629,8 @@ void setup() {
   // IMPORTANT: DO THIS AFTER SD IS INITIALIZED ABOVE
   // load short project mono samples into PSRAM
   loadRawSamplesFromSdCard();
+
+  parseRootForWavSamples();
   
   delay(25);
 
@@ -1648,88 +1699,92 @@ void setup() {
 
   Serial.println("Now fill sequencer with some example data");
 
-  _seq_state.seq.banks[0].patterns[0].tracks[0].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
-  _seq_state.seq.banks[0].patterns[0].tracks[0].waveform = SAW;
-  _seq_state.seq.banks[0].patterns[0].tracks[0].sample_id = 0; // 0 = N/A
-  _seq_state.seq.banks[0].patterns[0].tracks[0].steps[0].state = TRACK_STEP_STATE::ON;
-  _seq_state.seq.banks[0].patterns[0].tracks[0].steps[0].note = 0;
-  _seq_state.seq.banks[0].patterns[0].tracks[0].steps[0].octave = 4;
-  _seq_state.seq.banks[0].patterns[0].tracks[0].steps[0].length = 4;
-  _seq_state.seq.banks[0].patterns[0].tracks[0].steps[1].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[0].steps[2].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[0].steps[3].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[0].steps[4].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[0].steps[5].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[0].steps[6].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[0].steps[7].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[0].steps[8].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[0].steps[9].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[0].steps[10].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[0].steps[11].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[0].steps[12].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[0].steps[13].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[0].steps[14].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[0].steps[15].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].waveform = SAW;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].raw_sample_id = 0;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].wav_sample_id = 0;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[0].state = TRACK_STEP_STATE::ON;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[0].note = 0;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[0].octave = 4;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[0].length = 4;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[1].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[2].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[3].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[4].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[5].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[6].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[7].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[8].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[9].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[10].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[11].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[12].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[13].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[14].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[15].state = TRACK_STEP_STATE::OFF;
 
-  _seq_state.seq.banks[0].patterns[0].tracks[1].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
-  _seq_state.seq.banks[0].patterns[0].tracks[1].waveform = SAW;
-  _seq_state.seq.banks[0].patterns[0].tracks[1].sample_id = 0; // 0 = N/A
-  _seq_state.seq.banks[0].patterns[0].tracks[1].steps[0].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[1].steps[1].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[1].steps[2].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[1].steps[3].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[1].steps[4].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[1].steps[5].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[1].steps[6].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[1].steps[7].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[1].steps[8].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[1].steps[9].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[1].steps[10].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[1].steps[11].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[1].steps[12].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[1].steps[13].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[1].steps[14].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[1].steps[15].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].waveform = SAW;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].raw_sample_id = 0;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].wav_sample_id = 0;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[0].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[1].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[2].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[3].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[4].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[5].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[6].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[7].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[8].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[9].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[10].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[11].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[12].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[13].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[14].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[15].state = TRACK_STEP_STATE::OFF;
 
-  _seq_state.seq.banks[0].patterns[0].tracks[2].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
-  _seq_state.seq.banks[0].patterns[0].tracks[2].waveform = SAW;
-  _seq_state.seq.banks[0].patterns[0].tracks[2].sample_id = 0; // 0 = N/A
-  _seq_state.seq.banks[0].patterns[0].tracks[2].steps[0].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[2].steps[1].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[2].steps[2].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[2].steps[3].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[2].steps[4].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[2].steps[5].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[2].steps[6].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[2].steps[7].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[2].steps[8].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[2].steps[9].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[2].steps[10].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[2].steps[11].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[2].steps[12].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[2].steps[13].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[2].steps[14].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[2].steps[15].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].waveform = SAW;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].raw_sample_id = 0;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].wav_sample_id = 0;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[0].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[1].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[2].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[3].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[4].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[5].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[6].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[7].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[8].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[9].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[10].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[11].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[12].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[13].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[14].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[15].state = TRACK_STEP_STATE::OFF;
 
-  _seq_state.seq.banks[0].patterns[0].tracks[3].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
-  _seq_state.seq.banks[0].patterns[0].tracks[3].waveform = SAW;
-  _seq_state.seq.banks[0].patterns[0].tracks[3].sample_id = 0; // 0 = N/A
-  _seq_state.seq.banks[0].patterns[0].tracks[3].steps[0].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[3].steps[1].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[3].steps[2].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[3].steps[3].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[3].steps[4].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[3].steps[5].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[3].steps[6].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[3].steps[7].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[3].steps[8].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[3].steps[9].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[3].steps[10].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[3].steps[11].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[3].steps[12].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[3].steps[13].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[3].steps[14].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[0].patterns[0].tracks[3].steps[15].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].waveform = SAW;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].raw_sample_id = 0;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].wav_sample_id = 0;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[0].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[1].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[2].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[3].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[4].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[5].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[6].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[7].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[8].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[9].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[10].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[11].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[12].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[13].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[14].state = TRACK_STEP_STATE::OFF;
+  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[15].state = TRACK_STEP_STATE::OFF;
 
   current_selected_pattern = 0;
   current_selected_track = 0;
@@ -1742,23 +1797,14 @@ void setup() {
   Serial.print(" sizeof step stack: ");
   Serial.print(sizeof(_step_stack));
 
-  Serial.print(" charCharsMap: ");
-  Serial.print(sizeof(charCharsMap));
+  Serial.print(" comboVoices: ");
+  Serial.println(sizeof(comboVoices));
 
-  Serial.print(" stepCharMap: ");
-  Serial.print(sizeof(stepCharMap));
-
-  Serial.print(" charStepMap: ");
-  Serial.print(sizeof(charStepMap));
-
-  Serial.print(" charLEDMap: ");
-  Serial.print(sizeof(charLEDMap));
-
-  Serial.print(" voices: ");
-  Serial.println(sizeof(voices));
+  Serial.print(" sampleVoices: ");
+  Serial.println(sizeof(sampleVoices));
 
   if (current_UI_mode == TRACK_WRITE) {
-    setDisplayStateForAllStepLEDs(); // TODO: wrap with "if in track view display step LED state" conditional, etc
+    setDisplayStateForAllStepLEDs();
   }
 }
 
@@ -1817,27 +1863,27 @@ std::string getTrackMetaStr(TRACK_TYPE type)
 
   switch (type)
   {
-  case TRACK_TYPE::SUBTRACTIVE_SYNTH:
+  case SUBTRACTIVE_SYNTH:
     outputStr = "SYNTH";
     break;
   
-  case TRACK_TYPE::MONO_SAMPLE:
+  case RAW_SAMPLE:
     outputStr = "RSAMPL";
     break;
   
-  case TRACK_TYPE::STEREO_SAMPLE:
+  case WAV_SAMPLE:
     outputStr = "WSAMPL";
     break;
   
-  case TRACK_TYPE::MIDI:
+  case MIDI:
     outputStr = "MIDI";
     break;
   
-  case TRACK_TYPE::CV_GATE:
+  case CV_GATE:
     outputStr = "CV/GAT";
     break;
   
-  case TRACK_TYPE::CV_TRIG:
+  case CV_TRIG:
     outputStr = "CV/TRG";
     break;
   
@@ -1908,11 +1954,11 @@ std::string getDisplayNote(void)
   std::string outputStr;
 
   if (current_UI_mode == SUBMITTING_STEP_VALUE) {
-    TRACK_STEP currTrackStep = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
+    TRACK_STEP currTrackStep = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
     outputStr += baseNoteToStr[currTrackStep.note];
     outputStr += std::to_string(currTrackStep.octave);
   } else {
-    TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+    TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
     outputStr += baseNoteToStr[currTrack.note];
     outputStr += std::to_string(currTrack.octave);
   }
@@ -1948,31 +1994,31 @@ std::string getPlaybackSpeedStr(float rate)
   return outputStr;
 }
 
-std::map<TRACK_TYPE, int> trackLayerNumMap = {
+std::map<TRACK_TYPE, int> trackPageNumMap = {
   { SUBTRACTIVE_SYNTH, 6},
-  { MONO_SAMPLE, 4},
-  { STEREO_SAMPLE, 1},
+  { RAW_SAMPLE, 4},
+  { WAV_SAMPLE, 1},
   { MIDI, 1},
   { CV_GATE, 1},
   { CV_TRIG, 1},
 };
 
-std::map<TRACK_TYPE, std::map<int, std::string>> trackCurrLayerNameMap = {
+std::map<TRACK_TYPE, std::map<int, std::string>> trackCurrPageNameMap = {
   { SUBTRACTIVE_SYNTH, {
     {0, "MAIN"},
     {1, "OSC"},
     {2, "FILTER"},
-    {3, "FIL-ENV"},
-    {4, "AMP-ENV"},
+    {3, "FILTER ENV"},
+    {4, "AMP ENV"},
     {5, "OUTPUT"},
   }},
-  { MONO_SAMPLE, {
+  { RAW_SAMPLE, {
     {0, "MAIN"},
     {1, "LOOP"},
-    {2, "AMP"},
+    {2, "AMP ENV"},
     {3, "OUTPUT"},
   }},
-  { STEREO_SAMPLE, {
+  { WAV_SAMPLE, {
     {0, "MAIN"},
   }},
   { MIDI, {
@@ -1986,14 +2032,32 @@ std::map<TRACK_TYPE, std::map<int, std::string>> trackCurrLayerNameMap = {
   }},
 };
 
-std::string getCurrLayerNameForTrack(void);
-std::string getCurrLayerNameForTrack(void)
+std::string getCurrPageNameForTrack(void);
+std::string getCurrPageNameForTrack(void)
 {
-  std::string outputStr = "LAYER:";
-
-  TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
   
-  outputStr += trackCurrLayerNameMap[currTrack.track_type][current_layer_selected];
+  std::string outputStr = trackCurrPageNameMap[currTrack.track_type][current_page_selected];
+
+  return outputStr;
+}
+
+std::string getLoopTypeName(void);
+std::string getLoopTypeName(void)
+{
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+
+  std::string outputStr;
+
+  if (loopTypeSelMap[currTrack.looptype] == loop_type::looptype_none) {
+    outputStr += "OFF";
+  } else if (loopTypeSelMap[currTrack.looptype] == loop_type::looptype_repeat) {
+    if (currTrack.chromatic_enabled) {
+      outputStr += "CHR";
+    } else {
+    outputStr += "REP";
+    }
+  }
 
   return outputStr;
 }
@@ -2015,9 +2079,9 @@ SOUND_CONTROL_MODS getSubtractiveSynthControlModData()
 {
   SOUND_CONTROL_MODS mods;
 
-  TRACK track = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK track = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
 
-  switch (current_layer_selected)
+  switch (current_page_selected)
   {
   case 0: // MAIN
     mods.aName = "LEN";
@@ -2026,7 +2090,7 @@ SOUND_CONTROL_MODS getSubtractiveSynthControlModData()
     mods.dName = "PRB";
 
     if (current_UI_mode == SUBMITTING_STEP_VALUE) {
-      TRACK_STEP step = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
+      TRACK_STEP step = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
 
       mods.aValue = std::to_string(step.length); // TODO: use 1/16 etc display
     } else {
@@ -2034,7 +2098,7 @@ SOUND_CONTROL_MODS getSubtractiveSynthControlModData()
     }
 
     if (current_UI_mode == SUBMITTING_STEP_VALUE) {
-      TRACK_STEP step = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
+      TRACK_STEP step = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
 
       mods.bValue = std::to_string(step.velocity); // TODO: use 1/16 etc display
     } else {
@@ -2122,10 +2186,15 @@ SOUND_CONTROL_MODS getSubtractiveSynthControlModData()
     mods.cName = "--"; // fx send?
     mods.dName = "--"; // fx return?
 
-    mods.aValue = std::to_string(track.level);
-    mods.bValue = std::to_string(track.pan);
-    mods.cValue = "";
-    mods.dValue = "";
+
+    mods.aValue = std::to_string((float)round(track.level * 100) / 100);
+    mods.aValue = mods.aValue.substr(0,3);
+
+    mods.bValue = std::to_string((float)round(track.pan * 100) / 100);
+    mods.bValue = mods.bValue.substr(0,3);
+
+    mods.cValue = "--";
+    mods.dValue = "--";
     break;
   
   default:
@@ -2140,32 +2209,32 @@ SOUND_CONTROL_MODS getRawSampleControlModData()
 {
   SOUND_CONTROL_MODS mods;
 
-  TRACK track = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK track = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
 
-  switch (current_layer_selected)
+  switch (current_page_selected)
   {
   case 0: // MAIN
-    mods.aName = "DIR";
-    mods.bName = "FIL";
-    mods.cName = "SPD";
-    mods.dName = "BIT";
+    mods.aName = "FIL";
+    mods.bName = "SPD";
+    mods.cName = "--";
+    mods.dName = "--";
 
-    mods.aValue = "1"; // TODO : impl sample directory fetching
-    mods.bValue = std::to_string(track.sample_id+1);
-    mods.cValue = getPlaybackSpeedStr(track.sample_play_rate);
-    mods.dValue = std::to_string(track.bitrate);
+    mods.aValue = std::to_string(track.raw_sample_id+1);
+    mods.bValue = getPlaybackSpeedStr(track.sample_play_rate);
+    mods.cValue = "--";
+    mods.dValue = "--";
     break;
   
   case 1: // LOOPING
     mods.aName = "TYP";
-    mods.bName = "STR";
-    mods.cName = "FIN";
-    mods.dName = "--";
+    mods.bName = "LST";
+    mods.cName = "LFI";
+    mods.dName = "PST";
 
-    mods.aValue = "OFF";
-    mods.bValue = "0ms";
-    mods.cValue = "END";
-    mods.dValue = "--";
+    mods.aValue = getLoopTypeName();
+    mods.bValue = std::to_string(track.loopstart);
+    mods.cValue = std::to_string(track.loopfinish);
+    mods.dValue = track.playstart == play_start::play_start_loop ? "LOP" : "SMP";
     break;
   
   case 2: // AMP ENV
@@ -2174,10 +2243,18 @@ SOUND_CONTROL_MODS getRawSampleControlModData()
     mods.cName = "SUS";
     mods.dName = "REL";
 
-    mods.aValue = std::to_string(track.amp_attack);
-    mods.bValue = std::to_string(track.amp_decay);
-    mods.cValue = std::to_string(track.amp_sustain);
-    mods.dValue = std::to_string(track.amp_release);
+    mods.aValue = std::to_string((float)round(track.amp_attack * 100) / 100);
+    mods.aValue = mods.aValue.substr(0,3);
+
+    mods.bValue = std::to_string((float)round(track.amp_decay * 100) / 100);
+    mods.bValue = mods.bValue.substr(0,3);
+
+    mods.cValue = std::to_string((float)round(track.amp_sustain * 100) / 100);
+    mods.cValue = mods.cValue.substr(0,3);
+
+    mods.dValue = std::to_string((float)round(track.amp_release * 100) / 100);
+    mods.dValue = mods.dValue.substr(0,3);
+
     break;
   
   case 3: // OUTPUT
@@ -2186,10 +2263,14 @@ SOUND_CONTROL_MODS getRawSampleControlModData()
     mods.cName = "--"; // fx send?
     mods.dName = "--"; // fx return?
 
-    mods.aValue = std::to_string(track.level);
-    mods.bValue = std::to_string(track.pan);
-    mods.cValue = "";
-    mods.dValue = "";
+    mods.aValue = std::to_string((float)round(track.level * 100) / 100);
+    mods.aValue = mods.aValue.substr(0,3);
+
+    mods.bValue = std::to_string((float)round(track.pan * 100) / 100);
+    mods.bValue = mods.bValue.substr(0,3);
+
+    mods.cValue = "--";
+    mods.dValue = "--";
     break;
   
   default:
@@ -2204,20 +2285,20 @@ SOUND_CONTROL_MODS getWavSampleControlModData()
 {
   SOUND_CONTROL_MODS mods;
 
-  TRACK track = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK track = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
 
-  switch (current_layer_selected)
+  switch (current_page_selected)
   {
   case 0: // MAIN
-    mods.aName = "DIR";
-    mods.bName = "FIL";
-    mods.cName = "POS";
-    mods.dName = "BIT";
+    mods.aName = "FIL";
+    mods.bName = "POS";
+    mods.cName = "--";
+    mods.dName = "--";
 
-    mods.aValue = "1"; // TODO : impl sample directory fetching
-    mods.bValue = "1"; // TODO: impl sample file fetching
-    mods.cValue = "0ms"; // TODO: impl setting sample position
-    mods.dValue = std::to_string(track.bitrate);
+    mods.aValue = std::to_string(track.wav_sample_id+1);
+    mods.bValue = "0ms";
+    mods.cValue = "--";
+    mods.dValue = "--";
     break;
   
   default:
@@ -2232,9 +2313,9 @@ SOUND_CONTROL_MODS getMidiControlModData()
 {
   SOUND_CONTROL_MODS mods;
 
-  TRACK track = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK track = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
 
-  switch (current_layer_selected)
+  switch (current_page_selected)
   {
   case 0: // MAIN
     mods.aName = "LEN";
@@ -2242,10 +2323,10 @@ SOUND_CONTROL_MODS getMidiControlModData()
     mods.cName = "CHN";
     mods.dName = "PRB";
 
-    mods.aValue = "1/16"; // TODO : impl
-    mods.bValue = "50%"; // TODO: impl
-    mods.cValue = "01"; // TODO: impl
-    mods.dValue = "100%"; // TODO: impl
+    mods.aValue = std::to_string(track.length); // TODO : impl
+    mods.bValue = std::to_string(track.velocity); // TODO: impl
+    mods.cValue = std::to_string(track.channel); // TODO: impl
+    mods.dValue = std::to_string(track.probability); // TODO: impl
     break;
   
   default:
@@ -2260,9 +2341,9 @@ SOUND_CONTROL_MODS getCvGateControlModData()
 {
   SOUND_CONTROL_MODS mods;
 
-  TRACK track = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK track = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
 
-  switch (current_layer_selected)
+  switch (current_page_selected)
   {
   case 0: // MAIN
     mods.aName = "LEN";
@@ -2270,7 +2351,7 @@ SOUND_CONTROL_MODS getCvGateControlModData()
     mods.cName = "uTM";
     mods.dName = "PRB";
 
-    mods.aValue = "1/16"; // TODO : impl
+    mods.aValue = std::to_string(track.length); // TODO : impl
     mods.bValue = "1AB"; // TODO: impl
     mods.cValue = "--"; // TODO: impl
     mods.dValue = "100%"; // TODO: impl
@@ -2288,17 +2369,17 @@ SOUND_CONTROL_MODS getCvTrigControlModData()
 {
   SOUND_CONTROL_MODS mods;
 
-  TRACK track = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK track = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
 
-  switch (current_layer_selected)
+  switch (current_page_selected)
   {
   case 0: // MAIN
-    mods.aName = "TRG";
+    mods.aName = "--";
     mods.bName = "OUT";
     mods.cName = "uTM";
     mods.dName = "PRB";
 
-    mods.aValue = "10ms"; // TODO : impl
+    mods.aValue = "--";
     mods.bValue = "1AB"; // TODO: impl
     mods.cValue = "--"; // TODO: impl
     mods.dValue = "100%"; // TODO: impl
@@ -2316,7 +2397,7 @@ SOUND_CONTROL_MODS getControlModDataForTrack()
 {
   SOUND_CONTROL_MODS mods;
 
-  TRACK track = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK track = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
   
   switch (track.track_type)
   {
@@ -2324,11 +2405,11 @@ SOUND_CONTROL_MODS getControlModDataForTrack()
     mods = getSubtractiveSynthControlModData();
     break;
   
-  case MONO_SAMPLE:
+  case RAW_SAMPLE:
     mods = getRawSampleControlModData();
     break;
   
-  case STEREO_SAMPLE:
+  case WAV_SAMPLE:
     mods = getWavSampleControlModData();
     break;
   
@@ -2396,42 +2477,42 @@ void drawControlMods(void)
   u8g2.drawStr(112,ctrlModHeaderY+15, mods.dValue.c_str());
 }
 
-void drawLayerNumIndicators(void);
-void drawLayerNumIndicators(void)
+void drawPageNumIndicators(void);
+void drawPageNumIndicators(void)
 {
-  TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
   
-  int layerNumBasedStartX = 81 - (3 * trackLayerNumMap[currTrack.track_type]);
-  int layerTabPosY = 56;
-  int layerTabFooterNameStartX = 17;
+  int pageNumBasedStartX = 81 - (3 * trackPageNumMap[currTrack.track_type]);
+  int pageTabPosY = 56;
+  int pageTabFooterNameStartX = 17;
 
-  if (trackLayerNumMap[currTrack.track_type] == 5) {
-    layerTabFooterNameStartX -= 10;
-  } else if (trackLayerNumMap[currTrack.track_type] == 4) {
-    layerTabFooterNameStartX -= 1;
-  } else if (trackLayerNumMap[currTrack.track_type] == 1) {
-    layerTabFooterNameStartX += 30;
+  if (trackPageNumMap[currTrack.track_type] == 5) {
+    pageTabFooterNameStartX -= 10;
+  } else if (trackPageNumMap[currTrack.track_type] == 4) {
+    pageTabFooterNameStartX -= 1;
+  } else if (trackPageNumMap[currTrack.track_type] == 1) {
+    pageTabFooterNameStartX += 30;
   } 
 
   u8g2.drawLine(0,52,128,52);
-  u8g2.drawStr(0,layerTabPosY, getCurrLayerNameForTrack().c_str());
+  u8g2.drawStr(0,pageTabPosY, getCurrPageNameForTrack().c_str());
 
-  int layerBoxStartX = (layerNumBasedStartX + 30) - (trackLayerNumMap[currTrack.track_type] * 5);
-  layerBoxStartX += 8 / (trackLayerNumMap[currTrack.track_type]);
+  int pageBoxStartX = (pageNumBasedStartX + 30) - (trackPageNumMap[currTrack.track_type] * 5);
+  pageBoxStartX += 8 / (trackPageNumMap[currTrack.track_type]);
 
-  int layerNumStartX = layerBoxStartX + 3;
-  int layerBetweenPaddingtX = 10;
+  int pageNumStartX = pageBoxStartX + 3;
+  int pageBetweenPaddingtX = 10;
 
-  u8g2.drawBox(layerBoxStartX+(layerBetweenPaddingtX*current_layer_selected),55,9,9);
+  u8g2.drawBox(pageBoxStartX+(pageBetweenPaddingtX*current_page_selected),55,9,9);
 
-  for (int l = 0; l < trackLayerNumMap[currTrack.track_type]; l++)
+  for (int l = 0; l < trackPageNumMap[currTrack.track_type]; l++)
   {
-    if (l == current_layer_selected) {
+    if (l == current_page_selected) {
       u8g2.setColorIndex((u_int8_t)0);
-      u8g2.drawStr(layerNumStartX+(layerBetweenPaddingtX*l),layerTabPosY, std::to_string(l+1).c_str());
+      u8g2.drawStr(pageNumStartX+(pageBetweenPaddingtX*l),pageTabPosY, std::to_string(l+1).c_str());
       u8g2.setColorIndex((u_int8_t)1);
     } else {
-      u8g2.drawStr(layerNumStartX+(layerBetweenPaddingtX*l),layerTabPosY, std::to_string(l+1).c_str());
+      u8g2.drawStr(pageNumStartX+(pageBetweenPaddingtX*l),pageTabPosY, std::to_string(l+1).c_str());
     }
   }
 }
@@ -2479,7 +2560,7 @@ void drawSequencerScreen()
   if (current_UI_mode == PATTERN_WRITE) {
     // implement pattern main context area
   } else if (current_UI_mode == TRACK_WRITE || current_UI_mode == TRACK_SEL || current_UI_mode == SUBMITTING_STEP_VALUE) {
-    TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+    TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
     TRACK_TYPE currTrackType = currTrack.track_type;
 
     // draw track meta type box
@@ -2502,8 +2583,10 @@ void drawSequencerScreen()
     std::string trackInfoStr;
     if (currTrackType == SUBTRACTIVE_SYNTH) {
       trackInfoStr += getTrackTypeNameStr(currTrackType);
-    } else if (currTrackType == MONO_SAMPLE || currTrackType == STEREO_SAMPLE) {
-      trackInfoStr += usableSampleNames[currTrack.sample_id];
+    } else if (currTrackType == RAW_SAMPLE) {
+      trackInfoStr += usableSampleNames[currTrack.raw_sample_id];
+    } else if (currTrackType == RAW_SAMPLE || currTrackType == WAV_SAMPLE) {
+      trackInfoStr += usableWavSampleNames[currTrack.wav_sample_id];
     } else if (currTrackType == MIDI) {
       trackInfoStr += "";
     } else if (currTrackType == CV_GATE || currTrackType == CV_TRIG) {
@@ -2513,12 +2596,12 @@ void drawSequencerScreen()
     u8g2.setColorIndex((u_int8_t)1);
 
     // draw track description / main icon area
-    if (currTrackType == SUBTRACTIVE_SYNTH || currTrackType == MIDI || currTrackType == CV_GATE) {
+    if (currTrackType == RAW_SAMPLE || currTrackType == SUBTRACTIVE_SYNTH || currTrackType == MIDI || currTrackType == CV_GATE) {
       u8g2.drawStr(6, 23, "NOTE");
       u8g2.setFont(bitocra13_c);
       u8g2.drawStr(8, 32, getDisplayNote().c_str());
       u8g2.setFont(bitocra7_c);
-    } else if (currTrackType == MONO_SAMPLE || currTrackType == STEREO_SAMPLE) {
+    } else if (currTrackType == WAV_SAMPLE) {
       u8g2.drawLine(4,29,4,40);
       u8g2.drawLine(4,40,22,40);
       u8g2.drawLine(22,27,22,40);
@@ -2537,7 +2620,7 @@ void drawSequencerScreen()
     // draw control mod area
     drawControlMods();
 
-    drawLayerNumIndicators();
+    drawPageNumIndicators();
   }
 
   u8g2.sendBuffer();
@@ -2571,71 +2654,150 @@ void drawSetTempoOverlay(void)
   u8g2.sendBuffer();
 }
 
-// todo implement noteOn/noteOff parameterization
-void triggerTrackManually(uint8_t t, uint8_t note) {
-  TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
-
-  if (currTrack.track_type == TRACK_TYPE::MONO_SAMPLE) {
-    if (t < 4) {
-    AudioNoInterrupts();
-      voices[t].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
-      voices[t].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
-
-      voices[t].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
-      voices[t].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
-      voices[t].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
-      voices[t].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
-    AudioInterrupts();
-
-      voices[t].ampEnv.noteOn();
-      voices[t].mSample.playRaw(samples[currTrack.sample_id]->sampledata, samples[currTrack.sample_id]->samplesize/2, numChannels);
-    } else {
-    AudioNoInterrupts();
-      sampleVoices[t].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
-      sampleVoices[t].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
-
-      sampleVoices[t].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
-      sampleVoices[t].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
-      sampleVoices[t].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
-      sampleVoices[t].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
-    AudioInterrupts();
-
-      sampleVoices[t].ampEnv.noteOn();
-      sampleVoices[t].mSample.playRaw(samples[currTrack.sample_id]->sampledata, samples[currTrack.sample_id]->samplesize/2, numChannels);
-    }
-  } else if (currTrack.track_type == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
+void triggerSubtractiveSynthNoteOn(uint8_t t, uint8_t note);
+void triggerSubtractiveSynthNoteOn(uint8_t t, uint8_t note)
+{
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
 
   AudioNoInterrupts();
-    float foundBaseFreq = noteToFreqArr[note];
-    float octaveFreqA = (foundBaseFreq + (currTrack.fine * 0.01)) * (pow(2, keyboardOctave));
-    float octaveFreqB = (foundBaseFreq * pow(2.0, (float)currTrack.detune/12.0)) * (pow(2, keyboardOctave));
+  float foundBaseFreq = noteToFreqArr[note];
+  float octaveFreqA = (foundBaseFreq + (currTrack.fine * 0.01)) * (pow(2, keyboardOctave));
+  float octaveFreqB = (foundBaseFreq * pow(2.0, (float)currTrack.detune/12.0)) * (pow(2, keyboardOctave));
 
-    voices[t].osca.frequency(octaveFreqA);
-    voices[t].oscb.frequency(octaveFreqB);
+  comboVoices[t].osca.frequency(octaveFreqA);
+  comboVoices[t].oscb.frequency(octaveFreqB);
 
-    voices[t].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
-    voices[t].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+  comboVoices[t].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+  comboVoices[t].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
 
-    voices[t].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
-    voices[t].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
-    voices[t].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
-    voices[t].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
-    voices[t].filterEnv.attack(currTrack.filter_attack);
-    voices[t].filterEnv.decay(currTrack.filter_decay);
-    voices[t].filterEnv.sustain(currTrack.filter_sustain);
-    voices[t].filterEnv.release(currTrack.filter_release);
+  comboVoices[t].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
+  comboVoices[t].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
+  comboVoices[t].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
+  comboVoices[t].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
+  comboVoices[t].filterEnv.attack(currTrack.filter_attack);
+  comboVoices[t].filterEnv.decay(currTrack.filter_decay);
+  comboVoices[t].filterEnv.sustain(currTrack.filter_sustain);
+  comboVoices[t].filterEnv.release(currTrack.filter_release);
   AudioInterrupts();
 
-    // now triggers env
-    voices[t].ampEnv.noteOn();
-    voices[t].filterEnv.noteOn();
+  // now triggers env
+  comboVoices[t].ampEnv.noteOn();
+  comboVoices[t].filterEnv.noteOn();
+}
+
+void triggerRawSampleNoteOn(uint8_t t, uint8_t note);
+void triggerRawSampleNoteOn(uint8_t t, uint8_t note)
+{
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  int tOffset = t-4;
+
+  if (t < 4) {
+  AudioNoInterrupts();
+    comboVoices[t].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+    comboVoices[t].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+
+    comboVoices[t].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
+    comboVoices[t].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
+    comboVoices[t].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
+    comboVoices[t].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
+  AudioInterrupts();
+
+    comboVoices[t].ampEnv.noteOn();
+    comboVoices[t].rSample.playRaw(samples[currTrack.raw_sample_id]->sampledata, samples[currTrack.raw_sample_id]->samplesize/2, numChannels);
+
+    // always re-initialize loop type
+    comboVoices[t].rSample.setLoopType(loopTypeSelMap[currTrack.looptype]);
+
+    if (loopTypeSelMap[currTrack.looptype] == looptype_none) {
+      comboVoices[t].rSample.setPlayStart(play_start::play_start_sample);
+      comboVoices[t].rSample.setLoopType(loop_type::looptype_none);
+    } else if (loopTypeSelMap[currTrack.looptype] == looptype_repeat) {
+      float loopFinishToUse = currTrack.loopfinish;
+
+      if (currTrack.chromatic_enabled) {
+        float foundBaseFreq = noteToFreqArr[note];
+        float octaveFreq = foundBaseFreq * (pow(2, keyboardOctave));
+        //float freq = 440.0 * powf(2.0, (12-69) / 12.0);
+        uint32_t numSamples = 44100 / octaveFreq;
+
+        loopFinishToUse = numSamples;
+      }
+
+      comboVoices[t].rSample.setPlayStart(currTrack.playstart == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
+      comboVoices[t].rSample.setLoopStart(currTrack.loopstart);
+      comboVoices[t].rSample.setLoopFinish(loopFinishToUse);
+    }
+  } else {
+  AudioNoInterrupts();
+    sampleVoices[tOffset].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+    sampleVoices[tOffset].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+
+    sampleVoices[tOffset].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
+    sampleVoices[tOffset].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
+    sampleVoices[tOffset].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
+    sampleVoices[tOffset].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
+  AudioInterrupts();
+
+    sampleVoices[tOffset].ampEnv.noteOn();
+    sampleVoices[tOffset].rSample.playRaw(samples[currTrack.raw_sample_id]->sampledata, samples[currTrack.raw_sample_id]->samplesize/2, numChannels);
+
+    // always re-initialize loop type
+    sampleVoices[tOffset].rSample.setLoopType(loopTypeSelMap[currTrack.looptype]);
+
+    if (loopTypeSelMap[currTrack.looptype] == looptype_none) {
+      sampleVoices[tOffset].rSample.setPlayStart(play_start::play_start_sample);
+      sampleVoices[tOffset].rSample.setLoopType(loop_type::looptype_none);
+    } else if (loopTypeSelMap[currTrack.looptype] == looptype_repeat) {
+      float loopFinishToUse = currTrack.loopfinish;
+
+      if (currTrack.chromatic_enabled) {
+        float foundBaseFreq = noteToFreqArr[note];
+        float octaveFreq = foundBaseFreq * (pow(2, keyboardOctave));
+        //float freq = 440.0 * powf(2.0, (12-69) / 12.0);
+        uint32_t numSamples = 44100 / octaveFreq;
+
+        loopFinishToUse = numSamples;
+      }
+
+      sampleVoices[tOffset].rSample.setPlayStart(currTrack.playstart == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
+      sampleVoices[tOffset].rSample.setLoopStart(currTrack.loopstart);
+      sampleVoices[tOffset].rSample.setLoopFinish(loopFinishToUse);
+    }
+
+  }
+}
+
+void triggerWavSampleNoteOn(uint8_t t, uint8_t note);
+void triggerWavSampleNoteOn(uint8_t t, uint8_t note)
+{
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  int tOffset = t-4;
+
+  if (t < 4) {
+    comboVoices[t].ampEnv.noteOn();
+    comboVoices[t].wSample.play(usableWavSampleNames[currTrack.wav_sample_id], sd1);
+  } else {
+    sampleVoices[tOffset].ampEnv.noteOn();
+    sampleVoices[tOffset].wSample.play(usableWavSampleNames[currTrack.wav_sample_id], sd1);
+  }
+}
+
+void triggerTrackManually(uint8_t t, uint8_t note) {
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+
+  if (currTrack.track_type == RAW_SAMPLE) {
+    triggerRawSampleNoteOn(t, note);
+  } else if (currTrack.track_type == WAV_SAMPLE) {
+    triggerWavSampleNoteOn(t, note);
+  } else if (currTrack.track_type == SUBTRACTIVE_SYNTH) {
+    triggerSubtractiveSynthNoteOn(t, note);
   }
 }
 
 void triggerAllStepsForGlobalStep(uint32_t tick)
 {
   int8_t currGlobalStep = _seq_state.current_step - 1; // get zero-based global step
-  PATTERN currentPattern = _seq_state.seq.banks[0].patterns[current_selected_pattern];
+  PATTERN currentPattern = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern];
 
   const int MAX_PATTERN_TRACK_SIZE = 16; // TODO: make this a define later
 
@@ -2651,89 +2813,171 @@ void triggerAllStepsForGlobalStep(uint32_t tick)
 
 bool checked_remaining_seq_notes = false;
 
+void handleRawSampleNoteOnForTrackStep(int track, int step);
+void handleRawSampleNoteOnForTrackStep(int track, int step)
+{
+  TRACK trackToUse = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[track];
+  TRACK_STEP stepToUse = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[track].steps[step];
+
+  if (track > 3) {
+    int tOffset = track-4;
+  AudioNoInterrupts();
+    sampleVoices[tOffset].leftCtrl.gain(getStereoPanValues(trackToUse.pan).left * (stepToUse.velocity * 0.01));
+    sampleVoices[tOffset].rightCtrl.gain(getStereoPanValues(trackToUse.pan).right * (stepToUse.velocity * 0.01));
+
+    sampleVoices[tOffset].ampEnv.attack(trackToUse.amp_attack * (stepToUse.velocity * 0.01));
+    sampleVoices[tOffset].ampEnv.decay(trackToUse.amp_decay * (stepToUse.velocity * 0.01));
+    sampleVoices[tOffset].ampEnv.sustain(trackToUse.amp_sustain * (stepToUse.velocity * 0.01));
+    sampleVoices[tOffset].ampEnv.release(trackToUse.amp_release * (stepToUse.velocity * 0.01));
+  AudioInterrupts();
+
+    sampleVoices[tOffset].ampEnv.noteOn();
+    sampleVoices[tOffset].rSample.playRaw(samples[trackToUse.raw_sample_id]->sampledata, samples[trackToUse.raw_sample_id]->samplesize/2, numChannels);
+
+    // always re-initialize loop type
+    sampleVoices[tOffset].rSample.setLoopType(loopTypeSelMap[trackToUse.looptype]);
+
+    if (loopTypeSelMap[trackToUse.looptype] == looptype_none) {
+      sampleVoices[tOffset].rSample.setPlayStart(play_start::play_start_sample);
+      sampleVoices[tOffset].rSample.setLoopType(loop_type::looptype_none);
+    } else if (loopTypeSelMap[trackToUse.looptype] == looptype_repeat) {
+      float loopFinishToUse = trackToUse.loopfinish;
+
+      if (trackToUse.chromatic_enabled) {
+        float foundBaseFreq = noteToFreqArr[stepToUse.note];
+        float octaveFreq = foundBaseFreq * (pow(2, keyboardOctave));
+        //float freq = 440.0 * powf(2.0, (12-69) / 12.0);
+        uint32_t numSamples = 44100 / octaveFreq;
+
+        loopFinishToUse = numSamples;
+      }
+
+      sampleVoices[tOffset].rSample.setPlayStart(trackToUse.playstart == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
+      sampleVoices[tOffset].rSample.setLoopStart(trackToUse.loopstart);
+      sampleVoices[tOffset].rSample.setLoopFinish(loopFinishToUse);
+    }
+  } else {
+  AudioNoInterrupts();
+    comboVoices[track].leftCtrl.gain(getStereoPanValues(trackToUse.pan).left * (stepToUse.velocity * 0.01));
+    comboVoices[track].rightCtrl.gain(getStereoPanValues(trackToUse.pan).right * (stepToUse.velocity * 0.01));
+
+    comboVoices[track].ampEnv.attack(trackToUse.amp_attack * (stepToUse.velocity * 0.01));
+    comboVoices[track].ampEnv.decay(trackToUse.amp_decay * (stepToUse.velocity * 0.01));
+    comboVoices[track].ampEnv.sustain(trackToUse.amp_sustain * (stepToUse.velocity * 0.01));
+    comboVoices[track].ampEnv.release(trackToUse.amp_release * (stepToUse.velocity * 0.01));
+  AudioInterrupts();
+
+    comboVoices[track].ampEnv.noteOn();
+    comboVoices[track].rSample.playRaw(samples[trackToUse.raw_sample_id]->sampledata, samples[trackToUse.raw_sample_id]->samplesize/2, numChannels);
+
+    // always re-initialize loop type
+    comboVoices[track].rSample.setLoopType(loopTypeSelMap[trackToUse.looptype]);
+
+    if (loopTypeSelMap[trackToUse.looptype] == looptype_none) {
+      comboVoices[track].rSample.setPlayStart(play_start::play_start_sample);
+      comboVoices[track].rSample.setLoopType(loop_type::looptype_none);
+    } else if (loopTypeSelMap[trackToUse.looptype] == looptype_repeat) {
+      float loopFinishToUse = trackToUse.loopfinish;
+
+      if (trackToUse.chromatic_enabled) {
+        float foundBaseFreq = noteToFreqArr[stepToUse.note];
+        float octaveFreq = foundBaseFreq * (pow(2, keyboardOctave));
+        //float freq = 440.0 * powf(2.0, (12-69) / 12.0);
+        uint32_t numSamples = 44100 / octaveFreq;
+
+        loopFinishToUse = numSamples;
+      }
+
+      comboVoices[track].rSample.setPlayStart(trackToUse.playstart == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
+      comboVoices[track].rSample.setLoopStart(trackToUse.loopstart);
+      comboVoices[track].rSample.setLoopFinish(loopFinishToUse);
+    }
+  }
+}
+
+void handleWavSampleNoteOnForTrackStep(int track, int step);
+void handleWavSampleNoteOnForTrackStep(int track, int step)
+{
+  TRACK trackToUse = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[track];
+
+  if (track > 3) {
+    int tOffset = track-4;
+
+    sampleVoices[tOffset].ampEnv.noteOn();
+    sampleVoices[tOffset].wSample.play(usableWavSampleNames[trackToUse.wav_sample_id], sd1);
+  } else {
+    comboVoices[track].ampEnv.noteOn();
+    comboVoices[track].wSample.play(usableWavSampleNames[trackToUse.wav_sample_id], sd1);
+  }
+}
+
+void handleSubtractiveSynthNoteOnForTrackStep(int track, int step);
+void handleSubtractiveSynthNoteOnForTrackStep(int track, int step)
+{
+  TRACK trackToUse = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[track];
+  TRACK_STEP stepToUse = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[track].steps[step];
+
+  AudioNoInterrupts();
+  float foundBaseFreq = noteToFreqArr[stepToUse.note];
+  float octaveFreqA = (foundBaseFreq + (trackToUse.fine * 0.01)) * (pow(2, stepToUse.octave));
+  float octaveFreqB = (foundBaseFreq * pow(2.0, (float)trackToUse.detune/12.0)) * (pow(2, stepToUse.octave));
+
+  comboVoices[track].osca.frequency(octaveFreqA);
+  comboVoices[track].oscb.frequency(octaveFreqB);
+
+  comboVoices[track].leftCtrl.gain(getStereoPanValues(trackToUse.pan).left * (stepToUse.velocity * 0.01));
+  comboVoices[track].rightCtrl.gain(getStereoPanValues(trackToUse.pan).right * (stepToUse.velocity * 0.01));
+
+  comboVoices[track].ampEnv.attack(trackToUse.amp_attack * (stepToUse.velocity * 0.01));
+  comboVoices[track].ampEnv.decay(trackToUse.amp_decay * (stepToUse.velocity * 0.01));
+  comboVoices[track].ampEnv.sustain(trackToUse.amp_sustain * (stepToUse.velocity * 0.01));
+  comboVoices[track].ampEnv.release(trackToUse.amp_release * (stepToUse.velocity * 0.01));
+  comboVoices[track].filterEnv.attack(trackToUse.filter_attack);
+  comboVoices[track].filterEnv.decay(trackToUse.filter_decay);
+  comboVoices[track].filterEnv.sustain(trackToUse.filter_sustain);
+  comboVoices[track].filterEnv.release(trackToUse.filter_release);
+  AudioInterrupts();
+
+  // now triggers envs
+  comboVoices[track].ampEnv.noteOn();
+  comboVoices[track].filterEnv.noteOn();
+}
+
 void handleNoteOnForTrackStep(int track, int step);
 void handleNoteOnForTrackStep(int track, int step)
 {
-  TRACK trackToUse = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[track];
-  TRACK_STEP stepToUse = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[track].steps[step];
+  TRACK trackToUse = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[track];
 
-  if (trackToUse.track_type == TRACK_TYPE::MONO_SAMPLE) {
-    if (track > 3) {
-    AudioNoInterrupts();
-      sampleVoices[track].leftCtrl.gain(getStereoPanValues(trackToUse.pan).left * (stepToUse.velocity * 0.01));
-      sampleVoices[track].rightCtrl.gain(getStereoPanValues(trackToUse.pan).right * (stepToUse.velocity * 0.01));
-
-      sampleVoices[track].ampEnv.attack(trackToUse.amp_attack * (stepToUse.velocity * 0.01));
-      sampleVoices[track].ampEnv.decay(trackToUse.amp_decay * (stepToUse.velocity * 0.01));
-      sampleVoices[track].ampEnv.sustain(trackToUse.amp_sustain * (stepToUse.velocity * 0.01));
-      sampleVoices[track].ampEnv.release(trackToUse.amp_release * (stepToUse.velocity * 0.01));
-    AudioInterrupts();
-
-      sampleVoices[track].ampEnv.noteOn();
-      sampleVoices[track].mSample.playRaw(samples[trackToUse.sample_id]->sampledata, samples[trackToUse.sample_id]->samplesize/2, numChannels);
-    } else {
-    AudioNoInterrupts();
-      voices[track].leftCtrl.gain(getStereoPanValues(trackToUse.pan).left * (stepToUse.velocity * 0.01));
-      voices[track].rightCtrl.gain(getStereoPanValues(trackToUse.pan).right * (stepToUse.velocity * 0.01));
-
-      voices[track].ampEnv.attack(trackToUse.amp_attack * (stepToUse.velocity * 0.01));
-      voices[track].ampEnv.decay(trackToUse.amp_decay * (stepToUse.velocity * 0.01));
-      voices[track].ampEnv.sustain(trackToUse.amp_sustain * (stepToUse.velocity * 0.01));
-      voices[track].ampEnv.release(trackToUse.amp_release * (stepToUse.velocity * 0.01));
-    AudioInterrupts();
-
-      voices[track].ampEnv.noteOn();
-      voices[track].mSample.playRaw(samples[trackToUse.sample_id]->sampledata, samples[trackToUse.sample_id]->samplesize/2, numChannels);
-    }
-  } else if (trackToUse.track_type == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
-
-  AudioNoInterrupts();
-    float foundBaseFreq = noteToFreqArr[stepToUse.note];
-    float octaveFreqA = (foundBaseFreq + (trackToUse.fine * 0.01)) * (pow(2, stepToUse.octave));
-    float octaveFreqB = (foundBaseFreq * pow(2.0, (float)trackToUse.detune/12.0)) * (pow(2, stepToUse.octave));
-
-    voices[track].osca.frequency(octaveFreqA);
-    voices[track].oscb.frequency(octaveFreqB);
-
-    voices[track].leftCtrl.gain(getStereoPanValues(trackToUse.pan).left * (stepToUse.velocity * 0.01));
-    voices[track].rightCtrl.gain(getStereoPanValues(trackToUse.pan).right * (stepToUse.velocity * 0.01));
-
-    voices[track].ampEnv.attack(trackToUse.amp_attack * (stepToUse.velocity * 0.01));
-    voices[track].ampEnv.decay(trackToUse.amp_decay * (stepToUse.velocity * 0.01));
-    voices[track].ampEnv.sustain(trackToUse.amp_sustain * (stepToUse.velocity * 0.01));
-    voices[track].ampEnv.release(trackToUse.amp_release * (stepToUse.velocity * 0.01));
-    voices[track].filterEnv.attack(trackToUse.filter_attack);
-    voices[track].filterEnv.decay(trackToUse.filter_decay);
-    voices[track].filterEnv.sustain(trackToUse.filter_sustain);
-    voices[track].filterEnv.release(trackToUse.filter_release);
-  AudioInterrupts();
-
-    // now triggers envs
-    voices[track].ampEnv.noteOn();
-    voices[track].filterEnv.noteOn();
+  if (trackToUse.track_type == RAW_SAMPLE) {
+    handleRawSampleNoteOnForTrackStep(track, step);
+  } else if (trackToUse.track_type == WAV_SAMPLE) {
+    handleWavSampleNoteOnForTrackStep(track, step);
+  } else if (trackToUse.track_type == SUBTRACTIVE_SYNTH) {
+    handleSubtractiveSynthNoteOnForTrackStep(track, step);
   }
 }
 
 void handleNoteOffForTrackStep(int track, int step);
 void handleNoteOffForTrackStep(int track, int step)
 {
-  TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[track];
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[track];
 
-  if (currTrack.track_type == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
-    voices[track].ampEnv.noteOff();
-    voices[track].filterEnv.noteOff();
+  if (currTrack.track_type == SUBTRACTIVE_SYNTH) {
+    comboVoices[track].ampEnv.noteOff();
+    comboVoices[track].filterEnv.noteOff();
   } else {
     if (track > 3) {
-      sampleVoices[track].ampEnv.noteOff();
+      int tOffset = track-4;
+      sampleVoices[tOffset].ampEnv.noteOff();
     } else {
-      voices[track].ampEnv.noteOff();
+      comboVoices[track].ampEnv.noteOff();
     }
   }
 }
 
 void setDisplayStateForAllStepLEDs(void)
 {
-  BANK currentBank = _seq_state.seq.banks[0]; // TODO: make curr bank index a globally tracked var
+  BANK currentBank = _seq_state.seq.banks[current_selected_bank]; // TODO: make curr bank index a globally tracked var
   PATTERN currentPattern = currentBank.patterns[current_selected_pattern]; // TODO: make curr pattern index a globally tracked var
   TRACK currTrack = currentPattern.tracks[current_selected_track]; // TODO: make curr pattern index a globally tracked var
 
@@ -2757,7 +3001,7 @@ void setDisplayStateForPatternActiveTracksLEDs(bool enable)
 {
   int8_t currGlobalStep = _seq_state.current_step - 1; // get zero-based step
 
-  BANK currentBank = _seq_state.seq.banks[0]; // TODO: make curr bank index a globally tracked var
+  BANK currentBank = _seq_state.seq.banks[current_selected_bank]; // TODO: make curr bank index a globally tracked var
   PATTERN currentPattern = currentBank.patterns[current_selected_pattern];
 
   const int MAX_PATTERN_TRACK_SIZE = 17;
@@ -2820,8 +3064,8 @@ void handleRemoveFromStepStack(uint32_t tick)
 
 void handleAddToStepStack(uint32_t tick, int track, int step)
 {
-  TRACK trackToUse = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[track];
-  TRACK_STEP stepToUse = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[track].steps[step];
+  TRACK trackToUse = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[track];
+  TRACK_STEP stepToUse = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[track].steps[step];
 
   for ( uint8_t i = 0; i < STEP_STACK_SIZE; i++ ) {
     if ( _step_stack[i].length == -1 ) {
@@ -2843,13 +3087,12 @@ void handle_bpm_step(uint32_t tick)
   int8_t curr_step_char = stepCharMap[_seq_state.current_step];
   uint8_t keyLED = getKeyLED(curr_step_char);
 
-  int currPatternLastStep = _seq_state.seq.banks[0].patterns[current_selected_pattern].last_step;
+  int currPatternLastStep = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].last_step;
 
   // This handles displaying the BPM for the start button led
   // on qtr note. Check for odd step number to make sure not lit on backbeat qtr note.
   if (!(tick % 6)) {
-    //bool isOnStraightBeat = (_seq_state.current_step == 1 || !((_seq_state.current_step-1) % 4));
-    bool isOnStraightBeat = (_seq_state.current_step == 1 || _seq_state.current_step == 5 || _seq_state.current_step == 9 || _seq_state.current_step == 13);
+    bool isOnStraightBeat = (_seq_state.current_step == 1 || !((_seq_state.current_step-1) % 4));
     if (isOnStraightBeat) {
       setLEDPWM(23, 4095); // each straight quarter note start button led ON
     }
@@ -2875,7 +3118,7 @@ void handle_bpm_step(uint32_t tick)
     } else if (current_UI_mode == TRACK_SEL) {
       clearAllStepLEDs();
       displayCurrentlySelectedTrack();
-    } else {
+    } else if (current_UI_mode == TRACK_WRITE) {
 
       // show sequencer running LEDs for all other modes?
       if (_seq_state.current_step > 1) {
@@ -2928,9 +3171,6 @@ void toggleSequencerPlayback(char btn)
       _seq_state.playback_state = PAUSED;
       uClock.pause();
       
-      // TODO: possibly add logic to ignore turning off LED if
-      // current step is also an active state track step
-      
       setLEDPWMDouble(23, 0, keyLED, 0);
 
       if (current_UI_mode == UI_MODE::TRACK_WRITE) {
@@ -2948,8 +3188,6 @@ void toggleSequencerPlayback(char btn)
       _seq_state.playback_state = STOPPED;
       uClock.stop();
 
-      // TODO: possibly add logic to ignore turning off LED if
-      // current step is also an active state track step
       setLEDPWM(keyLED, 0); // turn off current step LED
       setLEDPWM(23, 0); // turn start button led OFF
       
@@ -2970,9 +3208,7 @@ void toggleSequencerPlayback(char btn)
     _seq_state.playback_state = STOPPED;
     uClock.stop();
     
-    // TODO: possibly add logic to ignore turning off LED if
-    // current step is also an active state track step
-    setLEDPWM(keyLED, 0); // turn off current step LED
+    //setLEDPWM(keyLED, 0); // turn off current step LED
     setLEDPWM(23, 0); // turn start button led OFF
     
     if (current_UI_mode == UI_MODE::TRACK_WRITE) {
@@ -3021,25 +3257,25 @@ void toggleSelectedStep(uint8_t step)
   Serial.print("adjStep: ");
   Serial.println(adjStep);
 
-  TRACK_STEP_STATE currStepState = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].state;
+  TRACK_STEP_STATE currStepState = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].state;
 
   Serial.print("currStepState: ");
   Serial.println(currStepState == TRACK_STEP_STATE::ACCENTED ? "accented" : (currStepState == TRACK_STEP_STATE::ON ? "on" : "off"));
 
-  TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
 
   // TODO: implement accent state for MIDI, CV/Trig, Sample, Synth track types?
   if (currStepState == TRACK_STEP_STATE::OFF) {
-    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::ON;
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::ON;
     // copy track properties to steps
-    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].note = currTrack.note;
-    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].octave = currTrack.octave;
-    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].velocity = currTrack.velocity;
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].note = currTrack.note;
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].octave = currTrack.octave;
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].velocity = currTrack.velocity;
   } else if (currStepState == TRACK_STEP_STATE::ON) {
-    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::ACCENTED;
-    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].velocity = 100; // TODO: use a "global accent" value here
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::ACCENTED;
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].velocity = 100; // TODO: use a "global accent" value here
   } else if (currStepState == TRACK_STEP_STATE::ACCENTED) {
-    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::OFF;
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::OFF;
   }
 }
 
@@ -3065,135 +3301,190 @@ void handleEncoderSetTempo()
   }
 }
 
+void updateTrackLength(int diff);
+void updateTrackLength(int diff)
+{
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+
+  // length adj
+  int currLen = currTrack.length;
+  int newLen = currLen + diff;
+
+  if (current_UI_mode == SUBMITTING_STEP_VALUE) {
+    TRACK_STEP currStep = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
+
+    currLen = currStep.length;
+    newLen = currLen + diff;
+  }
+
+  if (!(newLen < 0 && newLen > 64) && (newLen != currLen)) {
+    if (current_UI_mode == SUBMITTING_STEP_VALUE) {
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step].length = newLen;
+    } else {
+      // TODO: see if track length is even needed?
+      // if it is, just copy current track length to all steps in track 
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].length = newLen;
+    }
+
+    drawSequencerScreen();
+  }
+}
+
+void updateSubtractiveSynthWaveform(int diff);
+void updateSubtractiveSynthWaveform(int diff)
+{
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+
+  int newWaveform = (waveformFindMap[(int)currTrack.waveform]) + diff;
+
+  if (newWaveform < 0) {
+    newWaveform = 5;
+  } else if (newWaveform > 5) {
+    newWaveform = 0;
+  }
+
+  int waveformSel = waveformSelMap[newWaveform];
+
+  _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].waveform = waveformSel;
+  comboVoices[current_selected_track].osca.begin(waveformSel);
+  comboVoices[current_selected_track].oscb.begin(waveformSel);
+
+  drawSequencerScreen();
+}
+
+void updateSubtractiveSynthNoiseAmt(int diff);
+void updateSubtractiveSynthNoiseAmt(int diff)
+{
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  float currNoise = currTrack.noise;
+  float newNoise = currTrack.noise + (diff * 0.05);
+
+  if (!(newNoise < 0.01 || newNoise > 1.0) && newNoise != currNoise) {
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].noise = newNoise;
+
+    AudioNoInterrupts();
+    comboVoices[current_selected_track].noise.amplitude(newNoise);
+    AudioInterrupts();
+
+    drawSequencerScreen();
+  }
+}
+
+void updateSubtractiveSynthFilterEnvAttack(int diff);
+void updateSubtractiveSynthFilterEnvAttack(int diff)
+{
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+
+  float currAtt = currTrack.filter_attack;
+
+  int mult = 1;
+  if (abs(diff) > 5) {
+    mult = 200;
+  } else if (abs(diff) > 1 && abs(diff) < 5) {
+    mult = 20;
+  }
+
+  float newAtt = currTrack.filter_attack + (diff * mult);
+
+  if (!(newAtt < 0 || newAtt > 11880) && newAtt != currAtt) {
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].filter_attack = newAtt;
+
+    AudioNoInterrupts();
+    comboVoices[current_selected_track].filterEnv.attack(newAtt);
+    AudioInterrupts();
+
+    drawSequencerScreen();
+  }
+}
+
+void updateTrackAmpEnvAttack(int diff);
+void updateTrackAmpEnvAttack(int diff)
+{
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+
+  float currAtt = currTrack.amp_attack;
+
+  int mult = 1;
+  if (abs(diff) > 5) {
+    mult = 100;
+  } else if (abs(diff) > 1 && abs(diff) < 5) {
+    mult = 10;
+  }
+
+  float newAtt = currTrack.amp_attack + (diff * mult);
+
+  if (!(newAtt < 1 || newAtt > 11880) && newAtt != currAtt) {
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].amp_attack = newAtt;
+
+    AudioNoInterrupts();
+    comboVoices[current_selected_track].ampEnv.attack(newAtt);
+    AudioInterrupts();
+
+    drawSequencerScreen();
+  }
+}
+
+void updateComboTrackLevel(int diff);
+void updateComboTrackLevel(int diff)
+{
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+
+  float currLvl = currTrack.level;
+  float newLvl = currTrack.level + (diff * 0.1);
+
+  if (!(newLvl < -0.1 || newLvl > 1.1) && newLvl != currLvl) {
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].level = newLvl;
+
+    AudioNoInterrupts();
+    comboVoices[current_selected_track].leftSubMix.gain(0, newLvl);
+    comboVoices[current_selected_track].leftSubMix.gain(1, newLvl);
+    comboVoices[current_selected_track].rightSubMix.gain(0, newLvl);
+    comboVoices[current_selected_track].rightSubMix.gain(1, newLvl);
+    AudioInterrupts();
+
+    drawSequencerScreen();
+  }
+}
+
 void handleEncoderSubtractiveSynthModA(int diff);
 void handleEncoderSubtractiveSynthModA(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
-
-  if (current_layer_selected == 0) {
-    // length adj
-    int currLen = currTrack.length;
-    int newLen = currLen + diff;
-
-    if (current_UI_mode == SUBMITTING_STEP_VALUE) {
-      TRACK_STEP currStep = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
-
-      currLen = currStep.length;
-      newLen = currLen + diff;
-    }
-
-    if (!(newLen < 0 && newLen > 64) && (newLen != currLen)) {
-      if (current_UI_mode == SUBMITTING_STEP_VALUE) {
-        _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step].length = newLen;
-      } else {
-        // TODO: see if track length is even needed?
-        // if it is, just copy current track length to all steps in track 
-        _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].length = newLen;
-      }
-
-      drawSequencerScreen();
-    }
-  } else if (current_layer_selected == 1) {
-    int newWaveform = (waveformFindMap[(int)currTrack.waveform]) + diff;
-
-    if (newWaveform < 0) {
-      newWaveform = 5;
-    } else if (newWaveform > 5) {
-      newWaveform = 0;
-    }
-
-    int waveformSel = waveformSelMap[newWaveform];
-
-    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].waveform = waveformSel;
-    voices[current_selected_track].osca.begin(waveformSel);
-    voices[current_selected_track].oscb.begin(waveformSel);
-
-    drawSequencerScreen();
-  } else if (current_layer_selected == 2) {
-    float currNoise = currTrack.noise;
-    float newNoise = currTrack.noise + (diff * 0.05);
-
-    if (!(newNoise < 0.01 || newNoise > 1.0) && newNoise != currNoise) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].noise = newNoise;
-
-      AudioNoInterrupts();
-      voices[current_selected_track].noise.amplitude(newNoise);
-      AudioInterrupts();
-
-      drawSequencerScreen();
-    }
-  } else if (current_layer_selected == 3) {
-    float currAtt = currTrack.filter_attack;
-
-    int mult = 1;
-    if (abs(diff) > 5) {
-      mult = 200;
-    } else if (abs(diff) > 1 && abs(diff) < 5) {
-      mult = 20;
-    }
-
-    float newAtt = currTrack.filter_attack + (diff * mult);
-
-    if (!(newAtt < 0 || newAtt > 11880) && newAtt != currAtt) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].filter_attack = newAtt;
-
-      AudioNoInterrupts();
-      voices[current_selected_track].filterEnv.attack(newAtt);
-      AudioInterrupts();
-
-      drawSequencerScreen();
-    }
-  } else if (current_layer_selected == 4 ) {
-    float currAtt = currTrack.amp_attack;
-
-    int mult = 1;
-    if (abs(diff) > 5) {
-      mult = 100;
-    } else if (abs(diff) > 1 && abs(diff) < 5) {
-      mult = 10;
-    }
-
-    float newAtt = currTrack.amp_attack + (diff * mult);
-
-    if (!(newAtt < 1 || newAtt > 11880) && newAtt != currAtt) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].amp_attack = newAtt;
-
-      AudioNoInterrupts();
-      voices[current_selected_track].ampEnv.attack(newAtt);
-      AudioInterrupts();
-
-      drawSequencerScreen();
-    }
-  } else if (current_layer_selected == 5) {
-    float currLvl = currTrack.level;
-    float newLvl = currTrack.level + (diff * 0.1);
-
-    if (!(newLvl < -0.1 || newLvl > 1.1) && newLvl != currLvl) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].level = newLvl;
-
-      AudioNoInterrupts();
-      voices[current_selected_track].leftSubMix.gain(0, newLvl);
-      voices[current_selected_track].leftSubMix.gain(1, newLvl);
-      voices[current_selected_track].rightSubMix.gain(0, newLvl);
-      voices[current_selected_track].rightSubMix.gain(1, newLvl);
-      AudioInterrupts();
-
-      drawSequencerScreen();
-    }
+  switch (current_page_selected)
+  {
+  case 0:
+    updateTrackLength(diff);
+    break;
+  case 1:
+    updateSubtractiveSynthWaveform(diff);
+    break;
+  case 2:
+    updateSubtractiveSynthNoiseAmt(diff);
+    break;
+  case 3:
+    updateSubtractiveSynthFilterEnvAttack(diff);
+    break;
+  case 4:
+    updateTrackAmpEnvAttack(diff);
+    break;
+  case 5:
+    updateComboTrackLevel(diff);
+    break;
+  default:
+    break;
   }
 }
 
 void handleEncoderSubtractiveSynthModB(int diff);
 void handleEncoderSubtractiveSynthModB(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
 
-  if (current_layer_selected == 0) {
+  if (current_page_selected == 0) {
     float currVel = currTrack.velocity;
     float newVel = currTrack.velocity + diff;
 
     if (!(newVel < 1 || newVel > 100) && newVel != currVel) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].velocity = newVel;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].velocity = newVel;
 
       // AudioNoInterrupts();
       // voices[current_selected_track].leftCtrl.gain(newVel * 0.01);
@@ -3202,7 +3493,7 @@ void handleEncoderSubtractiveSynthModB(int diff)
 
       drawSequencerScreen();
     }
-  } else if (current_layer_selected == 1) {
+  } else if (current_page_selected == 1) {
     float currDetune = currTrack.detune;
     float newDetune = currDetune + diff;
 
@@ -3212,7 +3503,7 @@ void handleEncoderSubtractiveSynthModB(int diff)
         note_to_use = note_on_keyboard;
       }
 
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].detune = newDetune;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].detune = newDetune;
 
       // if seq is running, don't adjust detune in realtime:
       if (_seq_state.playback_state != RUNNING) {          
@@ -3221,14 +3512,14 @@ void handleEncoderSubtractiveSynthModB(int diff)
         
         float foundBaseFreq = noteToFreqArr[note_to_use];
         float octaveFreqB = (foundBaseFreq * pow(2.0, (float)newDetune/12.0)) * (pow(2, keyboardOctave));
-        voices[current_selected_track].oscb.frequency(octaveFreqB);
+        comboVoices[current_selected_track].oscb.frequency(octaveFreqB);
 
         AudioInterrupts();
       }
 
       drawSequencerScreen();
     }
-  } else if (current_layer_selected == 2) {
+  } else if (current_page_selected == 2) {
     float currCutoff = currTrack.cutoff;
 
     int mult = 1;
@@ -3241,15 +3532,15 @@ void handleEncoderSubtractiveSynthModB(int diff)
     float newCutoff = currTrack.cutoff + (diff * mult);
 
     if (!(newCutoff < 1 || newCutoff > 3000) && newCutoff != currCutoff) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].cutoff = newCutoff;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].cutoff = newCutoff;
 
       AudioNoInterrupts();
-      voices[current_selected_track].lfilter.frequency(newCutoff);
+      comboVoices[current_selected_track].lfilter.frequency(newCutoff);
       AudioInterrupts();
 
       drawSequencerScreen();
     }
-  } else if (current_layer_selected == 3) {
+  } else if (current_page_selected == 3) {
     float currDecay = currTrack.filter_decay;
 
     int mult = 1;
@@ -3262,15 +3553,15 @@ void handleEncoderSubtractiveSynthModB(int diff)
     float newDecay = currTrack.filter_decay + (diff * mult);
 
     if (!(newDecay < 0 || newDecay > 11880) && newDecay != currDecay) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].filter_decay = newDecay;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].filter_decay = newDecay;
 
       AudioNoInterrupts();
-      voices[current_selected_track].filterEnv.decay(newDecay);
+      comboVoices[current_selected_track].filterEnv.decay(newDecay);
       AudioInterrupts();
 
       drawSequencerScreen();
     }
-  } else if (current_layer_selected == 4) {
+  } else if (current_page_selected == 4) {
     float currDecay = currTrack.amp_decay;
 
     int mult = 1;
@@ -3283,20 +3574,20 @@ void handleEncoderSubtractiveSynthModB(int diff)
     float newDecay = currTrack.amp_decay + (diff * mult);
 
     if (!(newDecay < 0 || newDecay > 11880) && newDecay != currDecay) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].amp_decay = newDecay;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].amp_decay = newDecay;
 
       AudioNoInterrupts();
-      voices[current_selected_track].ampEnv.decay(newDecay);
+      comboVoices[current_selected_track].ampEnv.decay(newDecay);
       AudioInterrupts();
 
       drawSequencerScreen();
     }
-  } else if (current_layer_selected == 5) {
+  } else if (current_page_selected == 5) {
     float currPan = currTrack.pan;
     float newPan = currTrack.pan + (diff * 0.1);
 
     if (!(newPan < -1.0 || newPan > 1.0) && newPan != currPan) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].pan = newPan;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].pan = newPan;
 
       float newGainL = 1.0;
       if (newPan < 0) {
@@ -3309,8 +3600,8 @@ void handleEncoderSubtractiveSynthModB(int diff)
       }
 
       AudioNoInterrupts();
-      voices[current_selected_track].leftCtrl.gain(newGainL);
-      voices[current_selected_track].rightCtrl.gain(newGainR);
+      comboVoices[current_selected_track].leftCtrl.gain(newGainL);
+      comboVoices[current_selected_track].rightCtrl.gain(newGainR);
       AudioInterrupts();
 
       drawSequencerScreen();
@@ -3321,17 +3612,17 @@ void handleEncoderSubtractiveSynthModB(int diff)
 void handleEncoderSubtractiveSynthModC(int diff);
 void handleEncoderSubtractiveSynthModC(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
 
-  if (current_layer_selected == 0) {
+  if (current_page_selected == 0) {
     // probability
-  } else if (current_layer_selected == 1) {
+  } else if (current_page_selected == 1) {
     float currFine = currTrack.fine;
     float newFine = currFine + diff;
 
     if (!(newFine < -50.0 || newFine > 50.0) && newFine != currFine) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].fine = newFine;
-      TRACK_STEP currStep = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].fine = newFine;
+      TRACK_STEP currStep = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
 
       // TODO: also use step note
       uint8_t note_to_use = currTrack.note;
@@ -3348,14 +3639,14 @@ void handleEncoderSubtractiveSynthModC(int diff)
       
       AudioNoInterrupts();
 
-      voices[current_selected_track].osca.frequency(octaveFreqA);
+      comboVoices[current_selected_track].osca.frequency(octaveFreqA);
 
       AudioInterrupts();
       }
 
       drawSequencerScreen();
     }
-  } else if (current_layer_selected == 2) {
+  } else if (current_page_selected == 2) {
     float currRes = currTrack.res;
 
     int mult = 1;
@@ -3368,41 +3659,41 @@ void handleEncoderSubtractiveSynthModC(int diff)
     float newRes = currTrack.res + (diff * mult * 0.01);
 
     if (!(newRes < -0.01 || newRes > 1.9) && newRes != currRes) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].res = newRes;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].res = newRes;
 
       AudioNoInterrupts();
-      voices[current_selected_track].lfilter.resonance(newRes);
+      comboVoices[current_selected_track].lfilter.resonance(newRes);
       AudioInterrupts();
 
       drawSequencerScreen();
     }
-  } else if (current_layer_selected == 3) {
+  } else if (current_page_selected == 3) {
     float curSus = currTrack.filter_sustain;
     float newSus = currTrack.filter_sustain + (diff * 0.01);
 
     if (!(newSus < 0 || newSus > 1.0) && newSus != curSus) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].filter_sustain = newSus;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].filter_sustain = newSus;
 
       AudioNoInterrupts();
-      voices[current_selected_track].filterEnv.sustain(newSus);
+      comboVoices[current_selected_track].filterEnv.sustain(newSus);
       AudioInterrupts();
 
       drawSequencerScreen();
     }
-  } else if (current_layer_selected == 4) {
+  } else if (current_page_selected == 4) {
     float curSus = currTrack.amp_sustain;
     float newSus = currTrack.amp_sustain + (diff * 0.01);
 
     if (!(newSus < 0 || newSus > 1.0) && newSus != curSus) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].amp_sustain = newSus;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].amp_sustain = newSus;
 
       AudioNoInterrupts();
-      voices[current_selected_track].ampEnv.sustain(newSus);
+      comboVoices[current_selected_track].ampEnv.sustain(newSus);
       AudioInterrupts();
 
       drawSequencerScreen();
     }
-  } else if (current_layer_selected == 5) {
+  } else if (current_page_selected == 5) {
     // n/a
   }
 }
@@ -3410,22 +3701,22 @@ void handleEncoderSubtractiveSynthModC(int diff)
 void handleEncoderSubtractiveSynthModD(int diff);
 void handleEncoderSubtractiveSynthModD(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
 
-  if (current_layer_selected == 0) { // first layer
+  if (current_page_selected == 0) { // first page
     // probability
-  } else if (current_layer_selected == 1) { // width
+  } else if (current_page_selected == 1) { // width
     float currWidth = currTrack.width;
     float newWidth = currWidth + (diff * 0.01);
 
     if (!(newWidth < 0.01 || newWidth > 1.0) && newWidth != currWidth) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].width = newWidth;
-      voices[current_selected_track].osca.pulseWidth(newWidth);
-      voices[current_selected_track].oscb.pulseWidth(newWidth);
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].width = newWidth;
+      comboVoices[current_selected_track].osca.pulseWidth(newWidth);
+      comboVoices[current_selected_track].oscb.pulseWidth(newWidth);
 
       drawSequencerScreen();
     }
-  } else if (current_layer_selected == 2) {
+  } else if (current_page_selected == 2) {
     float currFilterAmt = currTrack.filterenvamt;
 
     int mult = 1;
@@ -3438,15 +3729,15 @@ void handleEncoderSubtractiveSynthModD(int diff)
     float newFilterAmt = currTrack.filterenvamt + (diff * mult * 0.005);
 
     if (!(newFilterAmt < -1.0 || newFilterAmt > 1.0) && newFilterAmt != currFilterAmt) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].filterenvamt = newFilterAmt;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].filterenvamt = newFilterAmt;
 
       AudioNoInterrupts();
-      voices[current_selected_track].dc.amplitude(newFilterAmt);
+      comboVoices[current_selected_track].dc.amplitude(newFilterAmt);
       AudioInterrupts();
 
       drawSequencerScreen();
     }
-  } else if (current_layer_selected == 3) {
+  } else if (current_page_selected == 3) {
     float curRel = currTrack.filter_release;
 
     int mult = 1;
@@ -3459,15 +3750,15 @@ void handleEncoderSubtractiveSynthModD(int diff)
     float newRel = currTrack.filter_release + (diff * mult);
 
     if (!(newRel < 0 || newRel > 11880) && newRel != curRel) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].filter_release = newRel;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].filter_release = newRel;
 
       AudioNoInterrupts();
-      voices[current_selected_track].filterEnv.release(newRel);
+      comboVoices[current_selected_track].filterEnv.release(newRel);
       AudioInterrupts();
 
       drawSequencerScreen();
     }
-  } else if (current_layer_selected == 4) {
+  } else if (current_page_selected == 4) {
     float curRel = currTrack.amp_release;
 
     int mult = 1;
@@ -3480,15 +3771,15 @@ void handleEncoderSubtractiveSynthModD(int diff)
     float newRel = currTrack.amp_release + (diff * mult);
 
     if (!(newRel < 0 || newRel > 11880) && newRel != curRel) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].amp_release = newRel;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].amp_release = newRel;
 
       AudioNoInterrupts();
-      voices[current_selected_track].ampEnv.release(newRel);
+      comboVoices[current_selected_track].ampEnv.release(newRel);
       AudioInterrupts();
 
       drawSequencerScreen();
     }
-  } else if (current_layer_selected == 5) {
+  } else if (current_page_selected == 5) {
       // n/a
   }
 }
@@ -3496,13 +3787,58 @@ void handleEncoderSubtractiveSynthModD(int diff)
 void handleEncoderRawSampleModA(int diff);
 void handleEncoderRawSampleModA(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
 
-  if (current_layer_selected == 0) {
-    // sample dir
-  } else if (current_layer_selected == 1) {
-    // loop a
-  } else if (current_layer_selected == 2) {
+  if (current_page_selected == 0) {
+    int newSampleId = currTrack.raw_sample_id + diff;
+
+    Serial.print("newSampleId: ");
+    Serial.println(newSampleId);
+
+    if (newSampleId < 0) {
+      newSampleId = (rawSamplesAvailable-1);
+    } else if (newSampleId > (rawSamplesAvailable-1)) {
+      newSampleId = 0;
+    }
+
+    Serial.print("rawSamplesAvailable: ");
+    Serial.println(rawSamplesAvailable);
+
+    Serial.print("newSampleId post: ");
+    Serial.println(newSampleId);
+
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].raw_sample_id = newSampleId;
+
+    drawSequencerScreen();
+  } else if (current_page_selected == 1) {
+
+    Serial.print("currTrack.looptype pre: ");
+    Serial.println(currTrack.looptype);
+
+    int newLoopType = (currTrack.looptype + diff);
+
+    Serial.print("newLoopType pre: ");
+    Serial.println(newLoopType);
+
+    if (newLoopType < 0) {
+      newLoopType = 2;
+    } else if (newLoopType > 2) {
+      newLoopType = 0;
+    }
+
+    Serial.print("newLoopType post: ");
+    Serial.println(newLoopType);
+
+    if (newLoopType == 2) {
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].chromatic_enabled = true;
+    } else {
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].chromatic_enabled = false;
+    }
+
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].looptype = newLoopType;
+
+    drawSequencerScreen();
+  } else if (current_page_selected == 2) {
     float currAtt = currTrack.amp_attack;
 
     int mult = 1;
@@ -3515,40 +3851,40 @@ void handleEncoderRawSampleModA(int diff)
     float newAtt = currTrack.amp_attack + (diff * mult);
 
     if (!(newAtt < 1 || newAtt > 11880) && newAtt != currAtt) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].amp_attack = newAtt;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].amp_attack = newAtt;
 
       if (current_selected_track > 3) {
         AudioNoInterrupts();
-        sampleVoices[current_selected_track].ampEnv.attack(newAtt);
+        sampleVoices[current_selected_track-4].ampEnv.attack(newAtt);
         AudioInterrupts();
       } else {
         AudioNoInterrupts();
-        voices[current_selected_track].ampEnv.attack(newAtt);
+        comboVoices[current_selected_track].ampEnv.attack(newAtt);
         AudioInterrupts();
       }
 
       drawSequencerScreen();
     }
-  }else if (current_layer_selected == 3) {
+  }else if (current_page_selected == 3) {
     float currLvl = currTrack.level;
     float newLvl = currTrack.level + (diff * 0.1);
 
     if (!(newLvl < -0.1 || newLvl > 1.1) && newLvl != currLvl) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].level = newLvl;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].level = newLvl;
 
       if (current_selected_track > 3) {
         AudioNoInterrupts();
-        sampleVoices[current_selected_track].leftSubMix.gain(0, newLvl);
-        sampleVoices[current_selected_track].leftSubMix.gain(1, newLvl);
-        sampleVoices[current_selected_track].rightSubMix.gain(0, newLvl);
-        sampleVoices[current_selected_track].rightSubMix.gain(1, newLvl);
+        sampleVoices[current_selected_track-4].leftSubMix.gain(0, newLvl);
+        sampleVoices[current_selected_track-4].leftSubMix.gain(1, newLvl);
+        sampleVoices[current_selected_track-4].rightSubMix.gain(0, newLvl);
+        sampleVoices[current_selected_track-4].rightSubMix.gain(1, newLvl);
         AudioInterrupts();
       } else {
         AudioNoInterrupts();
-        voices[current_selected_track].leftSubMix.gain(0, newLvl);
-        voices[current_selected_track].leftSubMix.gain(1, newLvl);
-        voices[current_selected_track].rightSubMix.gain(0, newLvl);
-        voices[current_selected_track].rightSubMix.gain(1, newLvl);
+        comboVoices[current_selected_track].leftSubMix.gain(0, newLvl);
+        comboVoices[current_selected_track].leftSubMix.gain(1, newLvl);
+        comboVoices[current_selected_track].rightSubMix.gain(0, newLvl);
+        comboVoices[current_selected_track].rightSubMix.gain(1, newLvl);
         AudioInterrupts();
       }
 
@@ -3560,23 +3896,52 @@ void handleEncoderRawSampleModA(int diff)
 void handleEncoderRawSampleModB(int diff);
 void handleEncoderRawSampleModB(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
 
-  if (current_layer_selected == 0) {
-    int newSampleId = currTrack.sample_id + diff;
+  if (current_page_selected == 0) {
+    // sample speed adj
+    float currSpeed = currTrack.sample_play_rate;
+    float newSpeed = currSpeed + (diff * 0.1);
 
-    if (newSampleId < 0) {
-      newSampleId = 6;
-    } else if (newSampleId > 6) { // TODO: expand this to sample max, not 6
-      newSampleId = 0;
+    if (!(newSpeed < -1.1 || newSpeed > 10.1) && newSpeed != currSpeed) {
+      if ((currSpeed > 0.0 && newSpeed < 0.1) || (currSpeed == -1.0 && newSpeed < -1.0)) {
+        newSpeed = -1.0;
+      } else if (currSpeed <= -1.0 && newSpeed > -1.0) {
+        newSpeed = 0.1;
+      }
+
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].sample_play_rate = newSpeed;
+      
+      if (current_selected_track > 3) {
+        AudioNoInterrupts();
+        sampleVoices[current_selected_track-4].rSample.setPlaybackRate(newSpeed);
+        AudioInterrupts();
+      } else {
+        AudioNoInterrupts();
+        comboVoices[current_selected_track].rSample.setPlaybackRate(newSpeed);
+        AudioInterrupts();
+      }
+
+      drawSequencerScreen();
+    }
+  } else if (current_page_selected == 1) {
+    uint32_t currLoopStart = currTrack.loopstart;
+
+    int mult = 1;
+    if (abs(diff) > 5) {
+      mult = 100;
+    } else if (abs(diff) > 1 && abs(diff) < 5) {
+      mult = 10;
     }
 
-    _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].sample_id = newSampleId;
+    uint32_t newLoopStart = currLoopStart + (diff * mult);
 
-    drawSequencerScreen();
-  } else if (current_layer_selected == 1) {
-    // loop b
-  } else if (current_layer_selected == 2) {
+    if (!(newLoopStart < 0) && newLoopStart != currLoopStart) {
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].loopstart = newLoopStart;
+
+      drawSequencerScreen();
+    }
+  } else if (current_page_selected == 2) {
     float currDecay = currTrack.amp_decay;
 
     int mult = 1;
@@ -3589,7 +3954,7 @@ void handleEncoderRawSampleModB(int diff)
     float newDecay = currTrack.amp_decay + (diff * mult);
 
     if (!(newDecay < 0 || newDecay > 11880) && newDecay != currDecay) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].amp_decay = newDecay;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].amp_decay = newDecay;
 
       if (current_selected_track > 3) {
         AudioNoInterrupts();
@@ -3597,18 +3962,18 @@ void handleEncoderRawSampleModB(int diff)
         AudioInterrupts();
       } else {
         AudioNoInterrupts();
-        voices[current_selected_track].ampEnv.decay(newDecay);
+        comboVoices[current_selected_track].ampEnv.decay(newDecay);
         AudioInterrupts();
       }
 
       drawSequencerScreen();
     }
-  }else if (current_layer_selected == 3) {
+  }else if (current_page_selected == 3) {
     float currPan = currTrack.pan;
     float newPan = currTrack.pan + (diff * 0.1);
 
     if (!(newPan < -1.0 || newPan > 1.0) && newPan != currPan) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].pan = newPan;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].pan = newPan;
 
       float newGainL = 1.0;
       if (newPan < 0) {
@@ -3622,13 +3987,13 @@ void handleEncoderRawSampleModB(int diff)
 
       if (current_selected_track > 3) {
         AudioNoInterrupts();
-        sampleVoices[current_selected_track].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
-        sampleVoices[current_selected_track].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+        sampleVoices[current_selected_track-4].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+        sampleVoices[current_selected_track-4].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
         AudioInterrupts();
       } else {
         AudioNoInterrupts();
-        voices[current_selected_track].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
-        voices[current_selected_track].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+        comboVoices[current_selected_track].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+        comboVoices[current_selected_track].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
         AudioInterrupts();
       }
 
@@ -3640,56 +4005,48 @@ void handleEncoderRawSampleModB(int diff)
 void handleEncoderRawSampleModC(int diff);
 void handleEncoderRawSampleModC(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
 
-  if (current_layer_selected == 0) {
-    // sample speed adj
-    float currSpeed = currTrack.sample_play_rate;
-    float newSpeed = currSpeed + (diff * 0.1);
+  if (current_page_selected == 0) {
+    // n/a
+  } else if (current_page_selected == 1) {
+    uint32_t currLoopFinish = currTrack.loopfinish;
 
-    if (!(newSpeed < -1.1 || newSpeed > 10.1) && newSpeed != currSpeed) {
-      if ((currSpeed > 0.0 && newSpeed < 0.1) || (currSpeed == -1.0 && newSpeed < -1.0)) {
-        newSpeed = -1.0;
-      } else if (currSpeed <= -1.0 && newSpeed > -1.0) {
-        newSpeed = 0.1;
-      }
+    int mult = 1;
+    if (abs(diff) > 5) {
+      mult = 100;
+    } else if (abs(diff) > 1 && abs(diff) < 5) {
+      mult = 10;
+    }
 
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].sample_play_rate = newSpeed;
-      
-      if (current_selected_track > 3) {
-        AudioNoInterrupts();
-        sampleVoices[current_selected_track].mSample.setPlaybackRate(newSpeed);
-        AudioInterrupts();
-      } else {
-        AudioNoInterrupts();
-        voices[current_selected_track].mSample.setPlaybackRate(newSpeed);
-        AudioInterrupts();
-      }
+    uint32_t newLoopFinish = currLoopFinish + (diff * mult);
+    
+
+    if (!(newLoopFinish < 0) && newLoopFinish != currLoopFinish) {
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].loopfinish = newLoopFinish;
 
       drawSequencerScreen();
     }
-  } else if (current_layer_selected == 1) {
-    // loop c
-  } else if (current_layer_selected == 2) {
+  } else if (current_page_selected == 2) {
     float curSus = currTrack.amp_sustain;
     float newSus = currTrack.amp_sustain + (diff * 0.01);
 
     if (!(newSus < 0 || newSus > 1.0) && newSus != curSus) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].amp_sustain = newSus;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].amp_sustain = newSus;
 
       if (current_selected_track > 3) {
         AudioNoInterrupts();
-        sampleVoices[current_selected_track].ampEnv.sustain(newSus);
+        sampleVoices[current_selected_track-4].ampEnv.sustain(newSus);
         AudioInterrupts();
       } else {
         AudioNoInterrupts();
-        voices[current_selected_track].ampEnv.sustain(newSus);
+        comboVoices[current_selected_track].ampEnv.sustain(newSus);
         AudioInterrupts();
       }
 
       drawSequencerScreen();
     }
-  } else if (current_layer_selected == 3) {
+  } else if (current_page_selected == 3) {
     // n/a
   }
 }
@@ -3697,37 +4054,55 @@ void handleEncoderRawSampleModC(int diff)
 void handleEncoderRawSampleModD(int diff);
 void handleEncoderRawSampleModD(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
 
-  if (current_layer_selected == 0) {
+  if (current_page_selected == 0) {
     uint8_t currBitrate = currTrack.bitrate;
     uint8_t newBitrate = currBitrate + diff;
 
     if (!(newBitrate < 1 || newBitrate > 16) && newBitrate != currBitrate) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].bitrate = newBitrate;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].bitrate = newBitrate;
 
       if (current_selected_track > 3) {
         AudioNoInterrupts();
 
-        sampleVoices[current_selected_track].leftBitCrush.bits(newBitrate);
-        sampleVoices[current_selected_track].rightBitCrush.bits(newBitrate);
+        // sampleVoices[current_selected_track].leftBitCrush.bits(newBitrate);
+        // sampleVoices[current_selected_track].rightBitCrush.bits(newBitrate);
 
         AudioInterrupts();
 
       } else {
         AudioNoInterrupts();
 
-        voices[current_selected_track].leftBitCrush.bits(newBitrate);
-        voices[current_selected_track].rightBitCrush.bits(newBitrate);
+        // comboVoices[current_selected_track].leftBitCrush.bits(newBitrate);
+        // comboVoices[current_selected_track].rightBitCrush.bits(newBitrate);
 
         AudioInterrupts();
       }
 
       drawSequencerScreen();
     }
-  } else if (current_layer_selected == 1) {
-    // loop d
-  } else if (current_layer_selected == 2) {
+  } else if (current_page_selected == 1) {
+    int newPlayStart = (playStartFindMap[currTrack.playstart]) + diff;
+
+    Serial.print("newPlayStart pre: ");
+    Serial.println(newPlayStart);
+
+    if (newPlayStart < 0) {
+      newPlayStart = 1;
+    } else if (newPlayStart > 1) {
+      newPlayStart = 0;
+    }
+
+    Serial.print("newPlayStart post: ");
+    Serial.println(newPlayStart);
+
+    play_start playStartSel = playStartSelMap[newPlayStart];
+
+    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].playstart = playStartSel;
+
+    drawSequencerScreen();
+  } else if (current_page_selected == 2) {
     float curRel = currTrack.amp_release;
 
     int mult = 1;
@@ -3740,30 +4115,66 @@ void handleEncoderRawSampleModD(int diff)
     float newRel = currTrack.amp_release + (diff * mult);
 
     if (!(newRel < 0 || newRel > 11880) && newRel != curRel) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].amp_release = newRel;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].amp_release = newRel;
     
       if (current_selected_track > 3) {
         AudioNoInterrupts();
-        sampleVoices[current_selected_track].ampEnv.release(newRel);
+        sampleVoices[current_selected_track-4].ampEnv.release(newRel);
         AudioInterrupts();
       } else {
         AudioNoInterrupts();
-        voices[current_selected_track].ampEnv.release(newRel);
+        comboVoices[current_selected_track].ampEnv.release(newRel);
         AudioInterrupts();
       }
 
       drawSequencerScreen();
     }
-  }else if (current_layer_selected == 3) {
+  }else if (current_page_selected == 3) {
     // n/a
   }
   
 }
 
+void handleEncoderWavSampleModA(int diff);
+void handleEncoderWavSampleModA(int diff)
+{
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+
+  int newSampleId = currTrack.wav_sample_id + diff;
+
+  if (newSampleId < 0) {
+    newSampleId = (wavSamplesAvailable-1);
+  } else if (newSampleId > (wavSamplesAvailable-1)) {
+    newSampleId = 0;
+  }
+
+  _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].wav_sample_id = newSampleId;
+
+  drawSequencerScreen();
+}
+
+void handleEncoderWavSampleModB(int diff);
+void handleEncoderWavSampleModB(int diff)
+{
+  //
+}
+
+void handleEncoderWavSampleModC(int diff);
+void handleEncoderWavSampleModC(int diff)
+{
+  //
+}
+
+void handleEncoderWavSampleModD(int diff);
+void handleEncoderWavSampleModD(int diff)
+{
+  //
+}
+
 void handleEncoderSetTrackMods(void);
 void handleEncoderSetTrackMods(void)
 {
-  TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
 
   const int modCount = 4;
   for (int m = 0; m < modCount; m++)
@@ -3785,7 +4196,7 @@ void handleEncoderSetTrackMods(void)
         } else if (m == 3) {
           handleEncoderSubtractiveSynthModD(diff);
         }
-      } else if (currTrack.track_type == MONO_SAMPLE) {
+      } else if (currTrack.track_type == RAW_SAMPLE) {
         if (m == 0) {
           handleEncoderRawSampleModA(diff);
         } else if (m == 1) {
@@ -3795,6 +4206,16 @@ void handleEncoderSetTrackMods(void)
         } else if (m == 3) {
           handleEncoderRawSampleModD(diff);
         }
+      } else if (currTrack.track_type == WAV_SAMPLE) {
+        if (m == 0) {
+          handleEncoderWavSampleModA(diff);
+        } else if (m == 1) {
+          handleEncoderWavSampleModB(diff);
+        } else if (m == 2) {
+          handleEncoderWavSampleModC(diff);
+        } else if (m == 3) {
+          handleEncoderWavSampleModD(diff);
+        }
       }
 
       encoder_lastValues[modEncoderIdx] = encoder_currValues[modEncoderIdx];
@@ -3802,34 +4223,31 @@ void handleEncoderSetTrackMods(void)
   }
 }
 
-void handleEncoderTraverseLayers(void);
-void handleEncoderTraverseLayers(void)
+void handleEncoderTraversePages(void);
+void handleEncoderTraversePages(void)
 {
   int main_encoder_idx = 0;
   encoder_currValues[main_encoder_idx] = encoder_getValue(encoder_addrs[main_encoder_idx]);
 
   if(encoder_currValues[main_encoder_idx] != encoder_lastValues[main_encoder_idx]) {
     int diff = encoder_currValues[main_encoder_idx] - encoder_lastValues[main_encoder_idx];
-    int newLayer = current_layer_selected + diff;
+    int newPage = current_page_selected + diff;
 
-    if (newLayer != current_layer_selected) {
-      TRACK currTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
-      int maxLayersForCurrTrack = trackLayerNumMap[currTrack.track_type];
+    if (newPage != current_page_selected) {
+      TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+      int maxPagesForCurrTrack = trackPageNumMap[currTrack.track_type];
 
-      if (maxLayersForCurrTrack == 1) {
+      if (maxPagesForCurrTrack == 1) {
         return;
       }
 
-      if (newLayer > (maxLayersForCurrTrack-1)) {
-        newLayer = 0;
-      } else if (newLayer < 0) {
-        newLayer = maxLayersForCurrTrack-1;
+      if (newPage > (maxPagesForCurrTrack-1)) {
+        newPage = 0;
+      } else if (newPage < 0) {
+        newPage = maxPagesForCurrTrack-1;
       }
 
-      current_layer_selected = newLayer;
-
-      Serial.print("current layer selected (non-zero based): ");
-      Serial.println(current_layer_selected+1);
+      current_page_selected = newPage;
 
       drawSequencerScreen();
     }
@@ -3844,7 +4262,7 @@ void handleEncoderStates() {
     handleEncoderSetTempo();
   } else if (!(elapsed % 50) && (current_UI_mode == TRACK_WRITE || current_UI_mode == SUBMITTING_STEP_VALUE)) {
     if (current_UI_mode == TRACK_WRITE) {
-      handleEncoderTraverseLayers();
+      handleEncoderTraversePages();
     }
 
     handleEncoderSetTrackMods();
@@ -3884,15 +4302,15 @@ void handleKeyboardStates(void) {
       released = true;
 
       if (current_UI_mode != UI_MODE::SUBMITTING_STEP_VALUE) {
-        TRACK currSelTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+        TRACK currSelTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
 
         if (keyboardNotesHeld == 0) {
           if (current_selected_track > 3) {
-            sampleVoices[current_selected_track].ampEnv.noteOff();
+            sampleVoices[current_selected_track-4].ampEnv.noteOff();
           } else {
-            voices[current_selected_track].ampEnv.noteOff();
+            comboVoices[current_selected_track].ampEnv.noteOff();
             if (currSelTrack.track_type == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
-              voices[current_selected_track].filterEnv.noteOff();
+              comboVoices[current_selected_track].filterEnv.noteOff();
             }
           }
         }
@@ -3932,25 +4350,25 @@ void handleKeyboardStates(void) {
   // released a key button, so modify a step's note number if also holding a step button
   if (released && invertedNoteNumber > -1) {
     if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step].note = invertedNoteNumber;
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step].octave = keyboardOctave;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step].note = invertedNoteNumber;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step].octave = keyboardOctave;
 
       drawSequencerScreen();
     } else if (current_UI_mode == TRACK_SEL) {
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].note = invertedNoteNumber;
-      _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].octave = keyboardOctave;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].note = invertedNoteNumber;
+      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].octave = keyboardOctave;
 
       drawSequencerScreen();
     } else {
-      TRACK currSelTrack = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track];
+      TRACK currSelTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
 
       if (keyboardNotesHeld == 0) {
         if (current_selected_track > 3) {
-          sampleVoices[current_selected_track].ampEnv.noteOff();
+          sampleVoices[current_selected_track-4].ampEnv.noteOff();
         } else {
-          voices[current_selected_track].ampEnv.noteOff();
+          comboVoices[current_selected_track].ampEnv.noteOff();
           if (currSelTrack.track_type == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
-            voices[current_selected_track].filterEnv.noteOff();
+            comboVoices[current_selected_track].filterEnv.noteOff();
           }
         }
       }
@@ -3973,8 +4391,8 @@ void handleSwitchStates(bool discard) {
         switch (kpd.key[i].kstate) {  // Report active key state : IDLE, PRESSED, HOLD, or RELEASED
           case PRESSED: 
             {
-              // Serial.print("button pressed: ");
-              // Serial.println(kpd.key[i].kchar);
+              Serial.print("button pressed: ");
+              Serial.println(kpd.key[i].kchar);
 
               if (!function_started) {
                 // track select
@@ -3999,7 +4417,7 @@ void handleSwitchStates(bool discard) {
                   clearAllStepLEDs();
                   displayCurrentlySelectedTrack();
                 } else if (current_UI_mode == TRACK_SEL && kpd.key[i].kchar == SOUND_SETUP_BTN_CHAR) {
-                  TRACK_TYPE currType = _seq_state.seq.banks[0].patterns[0].tracks[current_selected_track].track_type;
+                  TRACK_TYPE currType = _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[current_selected_track].track_type;
                   
                   Serial.print("changing ");
                   Serial.print(current_selected_track+1);
@@ -4008,12 +4426,12 @@ void handleSwitchStates(bool discard) {
                   Serial.print(" to sound type: ");
                   Serial.println(currType);
 
-                  TRACK_TYPE newType = current_selected_track > 3 ? MONO_SAMPLE : SUBTRACTIVE_SYNTH;
+                  TRACK_TYPE newType = current_selected_track > 3 ? RAW_SAMPLE : SUBTRACTIVE_SYNTH;
                   if (currType == SUBTRACTIVE_SYNTH) {
-                    newType = MONO_SAMPLE;
-                  } else if (currType == MONO_SAMPLE) {
-                    newType = STEREO_SAMPLE;
-                  } else if (currType == STEREO_SAMPLE) {
+                    newType = RAW_SAMPLE;
+                  } else if (currType == RAW_SAMPLE) {
+                    newType = WAV_SAMPLE;
+                  } else if (currType == WAV_SAMPLE) {
                     newType = MIDI;
                   } else if (currType == MIDI) {
                     newType = CV_GATE;
@@ -4021,8 +4439,8 @@ void handleSwitchStates(bool discard) {
                     newType = CV_TRIG;
                   }
 
-                  // reset layer to 0
-                  current_layer_selected = 0;
+                  // reset page to 0
+                  current_page_selected = 0;
 
                   changeTrackSoundType(current_selected_track, newType);
 
@@ -4086,6 +4504,7 @@ void handleSwitchStates(bool discard) {
                     break;
                   
                   case 3:
+                    Serial.println("here");
                     setLEDPWM(17, 0);
                     setLEDPWM(18, 25);
                     setLEDPWM(19, 0);
@@ -4135,7 +4554,7 @@ void handleSwitchStates(bool discard) {
                 if (current_UI_mode == TRACK_WRITE && kpd.key[i].kchar == SOUND_SETUP_BTN_CHAR) {
                   Serial.println("draw setup screen!");
                 } else if (current_UI_mode == TRACK_WRITE && kpd.key[i].kchar == 'c') {
-                  // moved layer traversal to main encoder
+                  // TODO: impl layer mechanic
                 }
               }
 
@@ -4151,7 +4570,7 @@ void handleSwitchStates(bool discard) {
 
                 current_selected_step = getKeyStepNum(kpd.key[i].kchar)-1;
 
-                TRACK_STEP heldStep = _seq_state.seq.banks[0].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
+                TRACK_STEP heldStep = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
 
                 // only toggle held step ON if initially in the OFF position,
                 // so that holding / param locking doesn't turn the step off
@@ -4197,7 +4616,7 @@ void handleSwitchStates(bool discard) {
                 track_held_for_selection = -1;
                 clearAllStepLEDs();
 
-                current_layer_selected = 0;
+                current_page_selected = 0;
 
                 current_UI_mode = TRACK_WRITE; // force track write mode when leaving track / track select action
                 previous_UI_mode = TRACK_WRITE;
