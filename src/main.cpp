@@ -697,7 +697,7 @@ float hp_vol_cur = 0.5;
 
 // Sequencer data
 
-#define MAXIMUM_SEQUENCER_STEPS 16
+#define MAXIMUM_SEQUENCER_STEPS 64
 #define MAXIMUM_SEQUENCER_TRACKS 16
 #define MAXIMUM_SEQUENCER_PATTERNS 16
 #define MAXIMUM_SEQUENCER_BANKS 1
@@ -798,7 +798,16 @@ typedef struct
 typedef struct
 {
   BANK banks[MAXIMUM_SEQUENCER_BANKS];
-} SEQUENCER;
+} SEQUENCER_EXTERNAL;
+
+FLASHMEM SEQUENCER_EXTERNAL _seq_external;
+
+typedef struct
+{
+  PATTERN pattern;
+} SEQUENCER_HEAP;
+
+SEQUENCER_HEAP _seq_heap;
 
 enum SEQUENCER_PLAYBACK_STATE {
   STOPPED = 0,
@@ -808,7 +817,6 @@ enum SEQUENCER_PLAYBACK_STATE {
 
 typedef struct
 {
-  SEQUENCER seq;
   SEQUENCER_PLAYBACK_STATE playback_state = STOPPED;
   int8_t current_step = 1;
 } SEQUENCER_STATE;
@@ -957,9 +965,51 @@ void handleHeadphoneAdjustment(void);
 void handleEncoderSetTempo();
 void handleAddToStepStack(uint32_t tick, int track, int step);
 void noteOffForAllSounds(void);
-PATTERN getCurrentSelectedPattern(void);
-TRACK getCurrentSelectedTrack(void);
-TRACK_STEP getCurrentSelectedTrackStep(void);
+
+TRACK getHeapTrack(int track);
+TRACK_STEP getHeapStep(int track, int step);
+PATTERN getHeapCurrentSelectedPattern(void);
+TRACK getHeapCurrentSelectedTrack(void);
+TRACK_STEP getHeapCurrentSelectedTrackStep(void);
+
+TRACK getHeapTrack(int track)
+{
+  return _seq_heap.pattern.tracks[track];
+}
+
+TRACK_STEP getHeapStep(int track, int step)
+{
+  return _seq_heap.pattern.tracks[track].steps[step];
+}
+
+PATTERN getHeapCurrentSelectedPattern()
+{
+  return _seq_heap.pattern;
+}
+
+TRACK getHeapCurrentSelectedTrack(void)
+{
+  return _seq_heap.pattern.tracks[current_selected_track];
+}
+
+TRACK_STEP getHeapCurrentSelectedTrackStep(void)
+{
+  return _seq_heap.pattern.tracks[current_selected_track].steps[current_selected_step];
+}
+
+void swapSequencerMemoryForPattern(int newBank, int newPattern)
+{
+  PATTERN currPatternData = _seq_heap.pattern;
+  PATTERN newPatternData = _seq_external.banks[newBank].patterns[newPattern];
+
+  // swap memory data
+  _seq_external.banks[current_selected_bank].patterns[current_selected_pattern] = currPatternData;
+  _seq_heap.pattern = newPatternData;
+
+  // update currently selected vars
+  current_selected_bank = newBank;
+  current_selected_pattern = newPattern;
+}
 
 typedef struct
 {
@@ -1191,10 +1241,9 @@ void noteOffForAllSounds(void)
 {
   for (int t = 0; t < 4; t++)
   {
-    TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t];
+    TRACK currTrack = getHeapTrack(t);
   
-    if (currTrack.track_type == TRACK_TYPE::SUBTRACTIVE_SYNTH) {
-      //voices[track].filterEnv.releaseNoteOn(10);
+    if (currTrack.track_type == SUBTRACTIVE_SYNTH) {
       comboVoices[t].ampEnv.noteOff();
       comboVoices[t].filterEnv.noteOff();
     } else {
@@ -1213,7 +1262,7 @@ void initTrackSounds()
   // configure combo voice audio objects
   for (int v = 0; v < COMBO_VOICE_COUNT; v++) {    
     // TODO: eventually need to restore all sounds for all patterns and their tracks?
-    TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[v];
+    TRACK currTrack = getHeapTrack(v);
 
     // init mono RAW sample
     comboVoices[v].rSample.setPlaybackRate(currTrack.sample_play_rate);
@@ -1265,7 +1314,7 @@ void initTrackSounds()
   // configure sample voice audio objects
   for (int v = 0; v < SAMPLE_VOICE_COUNT; v++) {
     // TODO: eventually need to restore all sounds for all patterns and their tracks?
-    TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[v];
+    TRACK currTrack = getHeapTrack(v);
 
     // init mono RAW sample
     sampleVoices[v].rSample.setPlaybackRate(currTrack.sample_play_rate);
@@ -1338,7 +1387,8 @@ void initTrackSounds()
 void changeSampleTrackSoundType(uint8_t t, TRACK_TYPE newType);
 void changeSampleTrackSoundType(uint8_t t, TRACK_TYPE newType)
 {
-  TRACK_TYPE currType = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type;
+  TRACK currTrack = getHeapTrack(t);
+  TRACK_TYPE currType = currTrack.track_type;
 
   if (currType == newType) return;
 
@@ -1347,18 +1397,18 @@ void changeSampleTrackSoundType(uint8_t t, TRACK_TYPE newType)
   }
 
   if (newType == RAW_SAMPLE) {
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = RAW_SAMPLE;
+    _seq_heap.pattern.tracks[t].track_type = RAW_SAMPLE;
   } else if (newType == WAV_SAMPLE) {
     // only create buffers for stereo samples when needed
     sampleVoices[t-4].wSample.createBuffer(2048, AudioBuffer::inExt);
 
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = WAV_SAMPLE;
+    _seq_heap.pattern.tracks[t].track_type = WAV_SAMPLE;
   } else if (newType == MIDI) {
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = MIDI;
+    _seq_heap.pattern.tracks[t].track_type = MIDI;
   } else if (newType == CV_GATE) {
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = CV_GATE;
+    _seq_heap.pattern.tracks[t].track_type = CV_GATE;
   }else if (newType == CV_TRIG) {
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = CV_TRIG;
+    _seq_heap.pattern.tracks[t].track_type = CV_TRIG;
   }
 }
 
@@ -1370,7 +1420,8 @@ void changeTrackSoundType(uint8_t t, TRACK_TYPE newType)
   }
 
   ComboVoice trackVoice = comboVoices[t];
-  TRACK_TYPE currType = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type;
+  TRACK currTrack = getHeapTrack(t);
+  TRACK_TYPE currType = currTrack.track_type;
 
   if (currType == newType) return;
 
@@ -1379,14 +1430,14 @@ void changeTrackSoundType(uint8_t t, TRACK_TYPE newType)
   }
 
   if (newType == RAW_SAMPLE) {
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = RAW_SAMPLE;
+   _seq_heap.pattern.tracks[t].track_type = RAW_SAMPLE;
 
     // turn sample volume all the way up
     trackVoice.mix.gain(0, 1);
     // turn synth volume all the way down
     trackVoice.mix.gain(1, 0); // synth
   } else if (newType == WAV_SAMPLE) {
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = WAV_SAMPLE;
+   _seq_heap.pattern.tracks[t].track_type = WAV_SAMPLE;
 
     // only create buffers for stereo samples when needed
     trackVoice.wSample.createBuffer(2048, AudioBuffer::inExt);
@@ -1396,9 +1447,9 @@ void changeTrackSoundType(uint8_t t, TRACK_TYPE newType)
     // turn synth volumes all the way down
     trackVoice.mix.gain(1, 0); // synth
   } else if (newType == SUBTRACTIVE_SYNTH) {
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = SUBTRACTIVE_SYNTH;
+   _seq_heap.pattern.tracks[t].track_type = SUBTRACTIVE_SYNTH;
 
-    TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t];
+    TRACK currTrack = getHeapTrack(t);
 
     // turn sample volume all the way down
     trackVoice.mix.gain(0, 0);
@@ -1411,19 +1462,19 @@ void changeTrackSoundType(uint8_t t, TRACK_TYPE newType)
     trackVoice.ampEnv.sustain(currTrack.amp_sustain);
     trackVoice.ampEnv.release(currTrack.amp_release);
   } else if (newType == MIDI) {
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = MIDI;
+   _seq_heap.pattern.tracks[t].track_type = MIDI;
 
     // turn all audio for this track voice down
     trackVoice.mix.gain(0, 0); // mono sample
     trackVoice.mix.gain(1, 0); // ladder
   } else if (newType == CV_GATE) {
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = CV_GATE;
+   _seq_heap.pattern.tracks[t].track_type = CV_GATE;
 
     // turn all audio for this track voice down
     trackVoice.mix.gain(0, 0); // mono sample
     trackVoice.mix.gain(1, 0); // ladder
   }else if (newType == CV_TRIG) {
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[t].track_type = CV_TRIG;
+   _seq_heap.pattern.tracks[t].track_type = CV_TRIG;
 
     // turn all audio for this track voice down
     trackVoice.mix.gain(0, 0); // mono sample
@@ -1567,7 +1618,6 @@ void parseRootForRawSamples(void)
         strcpy(usableSampleNames[currentFileIndex], entry.name());
 
         ++rawSamplesAvailable;
-
         ++currentFileIndex;
       }
     }
@@ -1697,102 +1747,105 @@ void setup() {
   uClock.setTempo(120);
   //uClock.shuffle();
 
-  Serial.println("Now fill sequencer with some example data");
+  Serial.println("Now fill sequencer in-heap with some example data");
 
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].waveform = SAW;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].raw_sample_id = 0;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].wav_sample_id = 0;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[0].state = TRACK_STEP_STATE::ON;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[0].note = 0;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[0].octave = 4;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[0].length = 4;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[1].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[2].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[3].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[4].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[5].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[6].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[7].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[8].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[9].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[10].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[11].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[12].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[13].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[14].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[0].steps[15].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[0].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
+  _seq_heap.pattern.tracks[0].waveform = SAW;
+  _seq_heap.pattern.tracks[0].raw_sample_id = 0;
+  _seq_heap.pattern.tracks[0].wav_sample_id = 0;
+  _seq_heap.pattern.tracks[0].steps[0].state = TRACK_STEP_STATE::ON;
+  _seq_heap.pattern.tracks[0].steps[0].note = 0;
+  _seq_heap.pattern.tracks[0].steps[0].octave = 4;
+  _seq_heap.pattern.tracks[0].steps[0].length = 4;
+  _seq_heap.pattern.tracks[0].steps[1].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[0].steps[2].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[0].steps[3].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[0].steps[4].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[0].steps[5].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[0].steps[6].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[0].steps[7].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[0].steps[8].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[0].steps[9].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[0].steps[10].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[0].steps[11].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[0].steps[12].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[0].steps[13].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[0].steps[14].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[0].steps[15].state = TRACK_STEP_STATE::OFF;
 
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].waveform = SAW;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].raw_sample_id = 0;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].wav_sample_id = 0;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[0].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[1].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[2].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[3].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[4].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[5].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[6].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[7].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[8].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[9].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[10].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[11].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[12].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[13].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[14].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[1].steps[15].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[1].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
+  _seq_heap.pattern.tracks[1].waveform = SAW;
+  _seq_heap.pattern.tracks[1].raw_sample_id = 0;
+  _seq_heap.pattern.tracks[1].wav_sample_id = 0;
+  _seq_heap.pattern.tracks[1].steps[0].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[1].steps[1].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[1].steps[2].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[1].steps[3].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[1].steps[4].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[1].steps[5].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[1].steps[6].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[1].steps[7].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[1].steps[8].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[1].steps[9].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[1].steps[10].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[1].steps[11].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[1].steps[12].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[1].steps[13].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[1].steps[14].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[1].steps[15].state = TRACK_STEP_STATE::OFF;
 
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].waveform = SAW;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].raw_sample_id = 0;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].wav_sample_id = 0;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[0].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[1].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[2].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[3].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[4].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[5].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[6].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[7].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[8].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[9].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[10].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[11].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[12].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[13].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[14].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[2].steps[15].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[2].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
+  _seq_heap.pattern.tracks[2].waveform = SAW;
+  _seq_heap.pattern.tracks[2].raw_sample_id = 0;
+  _seq_heap.pattern.tracks[2].wav_sample_id = 0;
+  _seq_heap.pattern.tracks[2].steps[0].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[2].steps[1].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[2].steps[2].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[2].steps[3].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[2].steps[4].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[2].steps[5].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[2].steps[6].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[2].steps[7].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[2].steps[8].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[2].steps[9].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[2].steps[10].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[2].steps[11].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[2].steps[12].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[2].steps[13].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[2].steps[14].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[2].steps[15].state = TRACK_STEP_STATE::OFF;
 
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].waveform = SAW;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].raw_sample_id = 0;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].wav_sample_id = 0;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[0].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[1].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[2].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[3].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[4].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[5].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[6].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[7].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[8].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[9].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[10].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[11].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[12].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[13].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[14].state = TRACK_STEP_STATE::OFF;
-  _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[3].steps[15].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[3].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
+  _seq_heap.pattern.tracks[3].waveform = SAW;
+  _seq_heap.pattern.tracks[3].raw_sample_id = 0;
+  _seq_heap.pattern.tracks[3].wav_sample_id = 0;
+  _seq_heap.pattern.tracks[3].steps[0].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[3].steps[1].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[3].steps[2].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[3].steps[3].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[3].steps[4].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[3].steps[5].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[3].steps[6].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[3].steps[7].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[3].steps[8].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[3].steps[9].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[3].steps[10].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[3].steps[11].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[3].steps[12].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[3].steps[13].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[3].steps[14].state = TRACK_STEP_STATE::OFF;
+  _seq_heap.pattern.tracks[3].steps[15].state = TRACK_STEP_STATE::OFF;
 
   current_selected_pattern = 0;
   current_selected_track = 0;
 
   Serial.println("Done filling test sequencer out");
 
-  Serial.print("sizeof sequencer: ");
-  Serial.print(sizeof(_seq_state));
+  Serial.print("sizeof sequencer heap: ");
+  Serial.print(sizeof(_seq_heap));
+
+  Serial.print(" sizeof sequencer ext: ");
+  Serial.print(sizeof(_seq_external));
 
   Serial.print(" sizeof step stack: ");
   Serial.print(sizeof(_step_stack));
@@ -1954,11 +2007,12 @@ std::string getDisplayNote(void)
   std::string outputStr;
 
   if (current_UI_mode == SUBMITTING_STEP_VALUE) {
-    TRACK_STEP currTrackStep = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
+    //TRACK_STEP currTrackStep = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
+    TRACK_STEP currTrackStep = getHeapCurrentSelectedTrackStep();
     outputStr += baseNoteToStr[currTrackStep.note];
     outputStr += std::to_string(currTrackStep.octave);
   } else {
-    TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+    TRACK currTrack = getHeapCurrentSelectedTrack();
     outputStr += baseNoteToStr[currTrack.note];
     outputStr += std::to_string(currTrack.octave);
   }
@@ -2035,7 +2089,7 @@ std::map<TRACK_TYPE, std::map<int, std::string>> trackCurrPageNameMap = {
 std::string getCurrPageNameForTrack(void);
 std::string getCurrPageNameForTrack(void)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
   
   std::string outputStr = trackCurrPageNameMap[currTrack.track_type][current_page_selected];
 
@@ -2045,7 +2099,7 @@ std::string getCurrPageNameForTrack(void)
 std::string getLoopTypeName(void);
 std::string getLoopTypeName(void)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
 
   std::string outputStr;
 
@@ -2079,7 +2133,7 @@ SOUND_CONTROL_MODS getSubtractiveSynthControlModData()
 {
   SOUND_CONTROL_MODS mods;
 
-  TRACK track = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK track = getHeapCurrentSelectedTrack();
 
   switch (current_page_selected)
   {
@@ -2090,7 +2144,7 @@ SOUND_CONTROL_MODS getSubtractiveSynthControlModData()
     mods.dName = "PRB";
 
     if (current_UI_mode == SUBMITTING_STEP_VALUE) {
-      TRACK_STEP step = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
+      TRACK_STEP step = getHeapCurrentSelectedTrackStep();
 
       mods.aValue = std::to_string(step.length); // TODO: use 1/16 etc display
     } else {
@@ -2098,7 +2152,7 @@ SOUND_CONTROL_MODS getSubtractiveSynthControlModData()
     }
 
     if (current_UI_mode == SUBMITTING_STEP_VALUE) {
-      TRACK_STEP step = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
+      TRACK_STEP step = getHeapCurrentSelectedTrackStep();
 
       mods.bValue = std::to_string(step.velocity); // TODO: use 1/16 etc display
     } else {
@@ -2209,7 +2263,7 @@ SOUND_CONTROL_MODS getRawSampleControlModData()
 {
   SOUND_CONTROL_MODS mods;
 
-  TRACK track = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK track = getHeapCurrentSelectedTrack();
 
   switch (current_page_selected)
   {
@@ -2285,7 +2339,7 @@ SOUND_CONTROL_MODS getWavSampleControlModData()
 {
   SOUND_CONTROL_MODS mods;
 
-  TRACK track = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK track = getHeapCurrentSelectedTrack();
 
   switch (current_page_selected)
   {
@@ -2313,7 +2367,7 @@ SOUND_CONTROL_MODS getMidiControlModData()
 {
   SOUND_CONTROL_MODS mods;
 
-  TRACK track = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK track = getHeapCurrentSelectedTrack();
 
   switch (current_page_selected)
   {
@@ -2341,7 +2395,7 @@ SOUND_CONTROL_MODS getCvGateControlModData()
 {
   SOUND_CONTROL_MODS mods;
 
-  TRACK track = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK track = getHeapCurrentSelectedTrack();
 
   switch (current_page_selected)
   {
@@ -2369,7 +2423,7 @@ SOUND_CONTROL_MODS getCvTrigControlModData()
 {
   SOUND_CONTROL_MODS mods;
 
-  TRACK track = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK track = getHeapCurrentSelectedTrack();
 
   switch (current_page_selected)
   {
@@ -2397,7 +2451,7 @@ SOUND_CONTROL_MODS getControlModDataForTrack()
 {
   SOUND_CONTROL_MODS mods;
 
-  TRACK track = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK track = getHeapCurrentSelectedTrack();
   
   switch (track.track_type)
   {
@@ -2480,7 +2534,7 @@ void drawControlMods(void)
 void drawPageNumIndicators(void);
 void drawPageNumIndicators(void)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
   
   int pageNumBasedStartX = 81 - (3 * trackPageNumMap[currTrack.track_type]);
   int pageTabPosY = 56;
@@ -2560,7 +2614,7 @@ void drawSequencerScreen()
   if (current_UI_mode == PATTERN_WRITE) {
     // implement pattern main context area
   } else if (current_UI_mode == TRACK_WRITE || current_UI_mode == TRACK_SEL || current_UI_mode == SUBMITTING_STEP_VALUE) {
-    TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+    TRACK currTrack = getHeapCurrentSelectedTrack();
     TRACK_TYPE currTrackType = currTrack.track_type;
 
     // draw track meta type box
@@ -2657,7 +2711,7 @@ void drawSetTempoOverlay(void)
 void triggerSubtractiveSynthNoteOn(uint8_t t, uint8_t note);
 void triggerSubtractiveSynthNoteOn(uint8_t t, uint8_t note)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
 
   AudioNoInterrupts();
   float foundBaseFreq = noteToFreqArr[note];
@@ -2688,7 +2742,7 @@ void triggerSubtractiveSynthNoteOn(uint8_t t, uint8_t note)
 void triggerRawSampleNoteOn(uint8_t t, uint8_t note);
 void triggerRawSampleNoteOn(uint8_t t, uint8_t note)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
   int tOffset = t-4;
 
   if (t < 4) {
@@ -2770,7 +2824,7 @@ void triggerRawSampleNoteOn(uint8_t t, uint8_t note)
 void triggerWavSampleNoteOn(uint8_t t, uint8_t note);
 void triggerWavSampleNoteOn(uint8_t t, uint8_t note)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
   int tOffset = t-4;
 
   if (t < 4) {
@@ -2783,7 +2837,7 @@ void triggerWavSampleNoteOn(uint8_t t, uint8_t note)
 }
 
 void triggerTrackManually(uint8_t t, uint8_t note) {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
 
   if (currTrack.track_type == RAW_SAMPLE) {
     triggerRawSampleNoteOn(t, note);
@@ -2797,7 +2851,7 @@ void triggerTrackManually(uint8_t t, uint8_t note) {
 void triggerAllStepsForGlobalStep(uint32_t tick)
 {
   int8_t currGlobalStep = _seq_state.current_step - 1; // get zero-based global step
-  PATTERN currentPattern = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern];
+  PATTERN currentPattern = getHeapCurrentSelectedPattern();
 
   const int MAX_PATTERN_TRACK_SIZE = 16; // TODO: make this a define later
 
@@ -2816,8 +2870,8 @@ bool checked_remaining_seq_notes = false;
 void handleRawSampleNoteOnForTrackStep(int track, int step);
 void handleRawSampleNoteOnForTrackStep(int track, int step)
 {
-  TRACK trackToUse = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[track];
-  TRACK_STEP stepToUse = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[track].steps[step];
+  TRACK trackToUse = getHeapTrack(track);
+  TRACK_STEP stepToUse = getHeapStep(track, step);
 
   if (track > 3) {
     int tOffset = track-4;
@@ -2898,7 +2952,7 @@ void handleRawSampleNoteOnForTrackStep(int track, int step)
 void handleWavSampleNoteOnForTrackStep(int track, int step);
 void handleWavSampleNoteOnForTrackStep(int track, int step)
 {
-  TRACK trackToUse = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[track];
+  TRACK trackToUse = getHeapTrack(track);
 
   if (track > 3) {
     int tOffset = track-4;
@@ -2914,8 +2968,8 @@ void handleWavSampleNoteOnForTrackStep(int track, int step)
 void handleSubtractiveSynthNoteOnForTrackStep(int track, int step);
 void handleSubtractiveSynthNoteOnForTrackStep(int track, int step)
 {
-  TRACK trackToUse = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[track];
-  TRACK_STEP stepToUse = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[track].steps[step];
+  TRACK trackToUse = getHeapTrack(track);
+  TRACK_STEP stepToUse = getHeapStep(track, step);
 
   AudioNoInterrupts();
   float foundBaseFreq = noteToFreqArr[stepToUse.note];
@@ -2946,7 +3000,7 @@ void handleSubtractiveSynthNoteOnForTrackStep(int track, int step)
 void handleNoteOnForTrackStep(int track, int step);
 void handleNoteOnForTrackStep(int track, int step)
 {
-  TRACK trackToUse = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[track];
+  TRACK trackToUse = getHeapTrack(track);
 
   if (trackToUse.track_type == RAW_SAMPLE) {
     handleRawSampleNoteOnForTrackStep(track, step);
@@ -2960,7 +3014,7 @@ void handleNoteOnForTrackStep(int track, int step)
 void handleNoteOffForTrackStep(int track, int step);
 void handleNoteOffForTrackStep(int track, int step)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[track];
+  TRACK currTrack = getHeapTrack(track);
 
   if (currTrack.track_type == SUBTRACTIVE_SYNTH) {
     comboVoices[track].ampEnv.noteOff();
@@ -2977,9 +3031,7 @@ void handleNoteOffForTrackStep(int track, int step)
 
 void setDisplayStateForAllStepLEDs(void)
 {
-  BANK currentBank = _seq_state.seq.banks[current_selected_bank]; // TODO: make curr bank index a globally tracked var
-  PATTERN currentPattern = currentBank.patterns[current_selected_pattern]; // TODO: make curr pattern index a globally tracked var
-  TRACK currTrack = currentPattern.tracks[current_selected_track]; // TODO: make curr pattern index a globally tracked var
+  TRACK currTrack = getHeapCurrentSelectedTrack();
 
   const int MAX_TRACK_LEDS_SIZE = 17;
   for (int l = 1; l < MAX_TRACK_LEDS_SIZE; l++) {
@@ -3001,8 +3053,7 @@ void setDisplayStateForPatternActiveTracksLEDs(bool enable)
 {
   int8_t currGlobalStep = _seq_state.current_step - 1; // get zero-based step
 
-  BANK currentBank = _seq_state.seq.banks[current_selected_bank]; // TODO: make curr bank index a globally tracked var
-  PATTERN currentPattern = currentBank.patterns[current_selected_pattern];
+  PATTERN currentPattern = getHeapCurrentSelectedPattern();
 
   const int MAX_PATTERN_TRACK_SIZE = 17;
   for (int t = 1; t < MAX_PATTERN_TRACK_SIZE; t++) {
@@ -3064,8 +3115,8 @@ void handleRemoveFromStepStack(uint32_t tick)
 
 void handleAddToStepStack(uint32_t tick, int track, int step)
 {
-  TRACK trackToUse = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[track];
-  TRACK_STEP stepToUse = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[track].steps[step];
+  TRACK trackToUse = getHeapTrack(track);
+  TRACK_STEP stepToUse = getHeapStep(track, step);
 
   for ( uint8_t i = 0; i < STEP_STACK_SIZE; i++ ) {
     if ( _step_stack[i].length == -1 ) {
@@ -3087,7 +3138,8 @@ void handle_bpm_step(uint32_t tick)
   int8_t curr_step_char = stepCharMap[_seq_state.current_step];
   uint8_t keyLED = getKeyLED(curr_step_char);
 
-  int currPatternLastStep = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].last_step;
+  PATTERN currPattern = getHeapCurrentSelectedPattern();
+  int currPatternLastStep = currPattern.last_step;
 
   // This handles displaying the BPM for the start button led
   // on qtr note. Check for odd step number to make sure not lit on backbeat qtr note.
@@ -3257,25 +3309,24 @@ void toggleSelectedStep(uint8_t step)
   Serial.print("adjStep: ");
   Serial.println(adjStep);
 
-  TRACK_STEP_STATE currStepState = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].state;
+  TRACK currTrack = getHeapCurrentSelectedTrack();
+  TRACK_STEP_STATE currStepState = currTrack.steps[adjStep].state;
 
   Serial.print("currStepState: ");
   Serial.println(currStepState == TRACK_STEP_STATE::ACCENTED ? "accented" : (currStepState == TRACK_STEP_STATE::ON ? "on" : "off"));
 
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
-
   // TODO: implement accent state for MIDI, CV/Trig, Sample, Synth track types?
   if (currStepState == TRACK_STEP_STATE::OFF) {
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::ON;
+    _seq_heap.pattern.tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::ON;
     // copy track properties to steps
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].note = currTrack.note;
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].octave = currTrack.octave;
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].velocity = currTrack.velocity;
+    _seq_heap.pattern.tracks[current_selected_track].steps[adjStep].note = currTrack.note;
+    _seq_heap.pattern.tracks[current_selected_track].steps[adjStep].octave = currTrack.octave;
+    _seq_heap.pattern.tracks[current_selected_track].steps[adjStep].velocity = currTrack.velocity;
   } else if (currStepState == TRACK_STEP_STATE::ON) {
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::ACCENTED;
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].velocity = 100; // TODO: use a "global accent" value here
+    _seq_heap.pattern.tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::ACCENTED;
+    _seq_heap.pattern.tracks[current_selected_track].steps[adjStep].velocity = 100; // TODO: use a "global accent" value here
   } else if (currStepState == TRACK_STEP_STATE::ACCENTED) {
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::OFF;
   }
 }
 
@@ -3304,14 +3355,14 @@ void handleEncoderSetTempo()
 void updateTrackLength(int diff);
 void updateTrackLength(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
 
   // length adj
   int currLen = currTrack.length;
   int newLen = currLen + diff;
 
   if (current_UI_mode == SUBMITTING_STEP_VALUE) {
-    TRACK_STEP currStep = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
+    TRACK_STEP currStep = getHeapCurrentSelectedTrackStep();
 
     currLen = currStep.length;
     newLen = currLen + diff;
@@ -3319,11 +3370,11 @@ void updateTrackLength(int diff)
 
   if (!(newLen < 0 && newLen > 64) && (newLen != currLen)) {
     if (current_UI_mode == SUBMITTING_STEP_VALUE) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step].length = newLen;
+      _seq_heap.pattern.tracks[current_selected_track].steps[current_selected_step].length = newLen;
     } else {
       // TODO: see if track length is even needed?
       // if it is, just copy current track length to all steps in track 
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].length = newLen;
+      _seq_heap.pattern.tracks[current_selected_track].length = newLen;
     }
 
     drawSequencerScreen();
@@ -3333,7 +3384,7 @@ void updateTrackLength(int diff)
 void updateSubtractiveSynthWaveform(int diff);
 void updateSubtractiveSynthWaveform(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
 
   int newWaveform = (waveformFindMap[(int)currTrack.waveform]) + diff;
 
@@ -3345,7 +3396,8 @@ void updateSubtractiveSynthWaveform(int diff)
 
   int waveformSel = waveformSelMap[newWaveform];
 
-  _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].waveform = waveformSel;
+  _seq_heap.pattern.tracks[current_selected_track].waveform = waveformSel;
+
   comboVoices[current_selected_track].osca.begin(waveformSel);
   comboVoices[current_selected_track].oscb.begin(waveformSel);
 
@@ -3355,12 +3407,12 @@ void updateSubtractiveSynthWaveform(int diff)
 void updateSubtractiveSynthNoiseAmt(int diff);
 void updateSubtractiveSynthNoiseAmt(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
   float currNoise = currTrack.noise;
   float newNoise = currTrack.noise + (diff * 0.05);
 
   if (!(newNoise < 0.01 || newNoise > 1.0) && newNoise != currNoise) {
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].noise = newNoise;
+    _seq_heap.pattern.tracks[current_selected_track].noise = newNoise;
 
     AudioNoInterrupts();
     comboVoices[current_selected_track].noise.amplitude(newNoise);
@@ -3373,7 +3425,7 @@ void updateSubtractiveSynthNoiseAmt(int diff)
 void updateSubtractiveSynthFilterEnvAttack(int diff);
 void updateSubtractiveSynthFilterEnvAttack(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
 
   float currAtt = currTrack.filter_attack;
 
@@ -3387,7 +3439,7 @@ void updateSubtractiveSynthFilterEnvAttack(int diff)
   float newAtt = currTrack.filter_attack + (diff * mult);
 
   if (!(newAtt < 0 || newAtt > 11880) && newAtt != currAtt) {
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].filter_attack = newAtt;
+    _seq_heap.pattern.tracks[current_selected_track].filter_attack = newAtt;
 
     AudioNoInterrupts();
     comboVoices[current_selected_track].filterEnv.attack(newAtt);
@@ -3400,7 +3452,7 @@ void updateSubtractiveSynthFilterEnvAttack(int diff)
 void updateTrackAmpEnvAttack(int diff);
 void updateTrackAmpEnvAttack(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
 
   float currAtt = currTrack.amp_attack;
 
@@ -3414,7 +3466,7 @@ void updateTrackAmpEnvAttack(int diff)
   float newAtt = currTrack.amp_attack + (diff * mult);
 
   if (!(newAtt < 1 || newAtt > 11880) && newAtt != currAtt) {
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].amp_attack = newAtt;
+    _seq_heap.pattern.tracks[current_selected_track].amp_attack = newAtt;
 
     AudioNoInterrupts();
     comboVoices[current_selected_track].ampEnv.attack(newAtt);
@@ -3427,13 +3479,13 @@ void updateTrackAmpEnvAttack(int diff)
 void updateComboTrackLevel(int diff);
 void updateComboTrackLevel(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
 
   float currLvl = currTrack.level;
   float newLvl = currTrack.level + (diff * 0.1);
 
   if (!(newLvl < -0.1 || newLvl > 1.1) && newLvl != currLvl) {
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].level = newLvl;
+    _seq_heap.pattern.tracks[current_selected_track].level = newLvl;
 
     AudioNoInterrupts();
     comboVoices[current_selected_track].leftSubMix.gain(0, newLvl);
@@ -3477,14 +3529,14 @@ void handleEncoderSubtractiveSynthModA(int diff)
 void handleEncoderSubtractiveSynthModB(int diff);
 void handleEncoderSubtractiveSynthModB(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
 
   if (current_page_selected == 0) {
     float currVel = currTrack.velocity;
     float newVel = currTrack.velocity + diff;
 
     if (!(newVel < 1 || newVel > 100) && newVel != currVel) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].velocity = newVel;
+      _seq_heap.pattern.tracks[current_selected_track].velocity = newVel;
 
       // AudioNoInterrupts();
       // voices[current_selected_track].leftCtrl.gain(newVel * 0.01);
@@ -3503,7 +3555,7 @@ void handleEncoderSubtractiveSynthModB(int diff)
         note_to_use = note_on_keyboard;
       }
 
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].detune = newDetune;
+      _seq_heap.pattern.tracks[current_selected_track].detune = newDetune;
 
       // if seq is running, don't adjust detune in realtime:
       if (_seq_state.playback_state != RUNNING) {          
@@ -3532,7 +3584,7 @@ void handleEncoderSubtractiveSynthModB(int diff)
     float newCutoff = currTrack.cutoff + (diff * mult);
 
     if (!(newCutoff < 1 || newCutoff > 3000) && newCutoff != currCutoff) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].cutoff = newCutoff;
+      _seq_heap.pattern.tracks[current_selected_track].cutoff = newCutoff;
 
       AudioNoInterrupts();
       comboVoices[current_selected_track].lfilter.frequency(newCutoff);
@@ -3553,7 +3605,7 @@ void handleEncoderSubtractiveSynthModB(int diff)
     float newDecay = currTrack.filter_decay + (diff * mult);
 
     if (!(newDecay < 0 || newDecay > 11880) && newDecay != currDecay) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].filter_decay = newDecay;
+      _seq_heap.pattern.tracks[current_selected_track].filter_decay = newDecay;
 
       AudioNoInterrupts();
       comboVoices[current_selected_track].filterEnv.decay(newDecay);
@@ -3574,7 +3626,7 @@ void handleEncoderSubtractiveSynthModB(int diff)
     float newDecay = currTrack.amp_decay + (diff * mult);
 
     if (!(newDecay < 0 || newDecay > 11880) && newDecay != currDecay) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].amp_decay = newDecay;
+      _seq_heap.pattern.tracks[current_selected_track].amp_decay = newDecay;
 
       AudioNoInterrupts();
       comboVoices[current_selected_track].ampEnv.decay(newDecay);
@@ -3587,7 +3639,7 @@ void handleEncoderSubtractiveSynthModB(int diff)
     float newPan = currTrack.pan + (diff * 0.1);
 
     if (!(newPan < -1.0 || newPan > 1.0) && newPan != currPan) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].pan = newPan;
+      _seq_heap.pattern.tracks[current_selected_track].pan = newPan;
 
       float newGainL = 1.0;
       if (newPan < 0) {
@@ -3612,7 +3664,7 @@ void handleEncoderSubtractiveSynthModB(int diff)
 void handleEncoderSubtractiveSynthModC(int diff);
 void handleEncoderSubtractiveSynthModC(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
 
   if (current_page_selected == 0) {
     // probability
@@ -3621,8 +3673,8 @@ void handleEncoderSubtractiveSynthModC(int diff)
     float newFine = currFine + diff;
 
     if (!(newFine < -50.0 || newFine > 50.0) && newFine != currFine) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].fine = newFine;
-      TRACK_STEP currStep = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
+      _seq_heap.pattern.tracks[current_selected_track].fine = newFine;
+      TRACK_STEP currStep = _seq_heap.pattern.tracks[current_selected_track].steps[current_selected_step];
 
       // TODO: also use step note
       uint8_t note_to_use = currTrack.note;
@@ -3635,13 +3687,13 @@ void handleEncoderSubtractiveSynthModC(int diff)
       // if seq running, don't adjust fine freq in realtime:
       if (_seq_state.playback_state != RUNNING) {
         float foundBaseFreq = noteToFreqArr[note_to_use];
-      float octaveFreqA = (foundBaseFreq + (currTrack.fine * 0.01)) * (pow(2, keyboardOctave));
+        float octaveFreqA = (foundBaseFreq + (currTrack.fine * 0.01)) * (pow(2, keyboardOctave));
       
-      AudioNoInterrupts();
+        AudioNoInterrupts();
 
-      comboVoices[current_selected_track].osca.frequency(octaveFreqA);
+        comboVoices[current_selected_track].osca.frequency(octaveFreqA);
 
-      AudioInterrupts();
+        AudioInterrupts();
       }
 
       drawSequencerScreen();
@@ -3659,7 +3711,7 @@ void handleEncoderSubtractiveSynthModC(int diff)
     float newRes = currTrack.res + (diff * mult * 0.01);
 
     if (!(newRes < -0.01 || newRes > 1.9) && newRes != currRes) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].res = newRes;
+      _seq_heap.pattern.tracks[current_selected_track].res = newRes;
 
       AudioNoInterrupts();
       comboVoices[current_selected_track].lfilter.resonance(newRes);
@@ -3672,7 +3724,7 @@ void handleEncoderSubtractiveSynthModC(int diff)
     float newSus = currTrack.filter_sustain + (diff * 0.01);
 
     if (!(newSus < 0 || newSus > 1.0) && newSus != curSus) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].filter_sustain = newSus;
+      _seq_heap.pattern.tracks[current_selected_track].filter_sustain = newSus;
 
       AudioNoInterrupts();
       comboVoices[current_selected_track].filterEnv.sustain(newSus);
@@ -3685,7 +3737,7 @@ void handleEncoderSubtractiveSynthModC(int diff)
     float newSus = currTrack.amp_sustain + (diff * 0.01);
 
     if (!(newSus < 0 || newSus > 1.0) && newSus != curSus) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].amp_sustain = newSus;
+      _seq_heap.pattern.tracks[current_selected_track].amp_sustain = newSus;
 
       AudioNoInterrupts();
       comboVoices[current_selected_track].ampEnv.sustain(newSus);
@@ -3701,7 +3753,7 @@ void handleEncoderSubtractiveSynthModC(int diff)
 void handleEncoderSubtractiveSynthModD(int diff);
 void handleEncoderSubtractiveSynthModD(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
 
   if (current_page_selected == 0) { // first page
     // probability
@@ -3710,7 +3762,7 @@ void handleEncoderSubtractiveSynthModD(int diff)
     float newWidth = currWidth + (diff * 0.01);
 
     if (!(newWidth < 0.01 || newWidth > 1.0) && newWidth != currWidth) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].width = newWidth;
+      _seq_heap.pattern.tracks[current_selected_track].width = newWidth;
       comboVoices[current_selected_track].osca.pulseWidth(newWidth);
       comboVoices[current_selected_track].oscb.pulseWidth(newWidth);
 
@@ -3729,7 +3781,7 @@ void handleEncoderSubtractiveSynthModD(int diff)
     float newFilterAmt = currTrack.filterenvamt + (diff * mult * 0.005);
 
     if (!(newFilterAmt < -1.0 || newFilterAmt > 1.0) && newFilterAmt != currFilterAmt) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].filterenvamt = newFilterAmt;
+      _seq_heap.pattern.tracks[current_selected_track].filterenvamt = newFilterAmt;
 
       AudioNoInterrupts();
       comboVoices[current_selected_track].dc.amplitude(newFilterAmt);
@@ -3750,7 +3802,7 @@ void handleEncoderSubtractiveSynthModD(int diff)
     float newRel = currTrack.filter_release + (diff * mult);
 
     if (!(newRel < 0 || newRel > 11880) && newRel != curRel) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].filter_release = newRel;
+      _seq_heap.pattern.tracks[current_selected_track].filter_release = newRel;
 
       AudioNoInterrupts();
       comboVoices[current_selected_track].filterEnv.release(newRel);
@@ -3771,7 +3823,7 @@ void handleEncoderSubtractiveSynthModD(int diff)
     float newRel = currTrack.amp_release + (diff * mult);
 
     if (!(newRel < 0 || newRel > 11880) && newRel != curRel) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].amp_release = newRel;
+      _seq_heap.pattern.tracks[current_selected_track].amp_release = newRel;
 
       AudioNoInterrupts();
       comboVoices[current_selected_track].ampEnv.release(newRel);
@@ -3787,7 +3839,7 @@ void handleEncoderSubtractiveSynthModD(int diff)
 void handleEncoderRawSampleModA(int diff);
 void handleEncoderRawSampleModA(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
 
   if (current_page_selected == 0) {
     int newSampleId = currTrack.raw_sample_id + diff;
@@ -3807,7 +3859,7 @@ void handleEncoderRawSampleModA(int diff)
     Serial.print("newSampleId post: ");
     Serial.println(newSampleId);
 
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].raw_sample_id = newSampleId;
+    _seq_heap.pattern.tracks[current_selected_track].raw_sample_id = newSampleId;
 
     drawSequencerScreen();
   } else if (current_page_selected == 1) {
@@ -3830,12 +3882,12 @@ void handleEncoderRawSampleModA(int diff)
     Serial.println(newLoopType);
 
     if (newLoopType == 2) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].chromatic_enabled = true;
+      _seq_heap.pattern.tracks[current_selected_track].chromatic_enabled = true;
     } else {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].chromatic_enabled = false;
+      _seq_heap.pattern.tracks[current_selected_track].chromatic_enabled = false;
     }
 
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].looptype = newLoopType;
+    _seq_heap.pattern.tracks[current_selected_track].looptype = newLoopType;
 
     drawSequencerScreen();
   } else if (current_page_selected == 2) {
@@ -3851,7 +3903,7 @@ void handleEncoderRawSampleModA(int diff)
     float newAtt = currTrack.amp_attack + (diff * mult);
 
     if (!(newAtt < 1 || newAtt > 11880) && newAtt != currAtt) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].amp_attack = newAtt;
+      _seq_heap.pattern.tracks[current_selected_track].amp_attack = newAtt;
 
       if (current_selected_track > 3) {
         AudioNoInterrupts();
@@ -3870,7 +3922,7 @@ void handleEncoderRawSampleModA(int diff)
     float newLvl = currTrack.level + (diff * 0.1);
 
     if (!(newLvl < -0.1 || newLvl > 1.1) && newLvl != currLvl) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].level = newLvl;
+      _seq_heap.pattern.tracks[current_selected_track].level = newLvl;
 
       if (current_selected_track > 3) {
         AudioNoInterrupts();
@@ -3896,7 +3948,7 @@ void handleEncoderRawSampleModA(int diff)
 void handleEncoderRawSampleModB(int diff);
 void handleEncoderRawSampleModB(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
 
   if (current_page_selected == 0) {
     // sample speed adj
@@ -3910,7 +3962,7 @@ void handleEncoderRawSampleModB(int diff)
         newSpeed = 0.1;
       }
 
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].sample_play_rate = newSpeed;
+      _seq_heap.pattern.tracks[current_selected_track].sample_play_rate = newSpeed;
       
       if (current_selected_track > 3) {
         AudioNoInterrupts();
@@ -3937,7 +3989,7 @@ void handleEncoderRawSampleModB(int diff)
     uint32_t newLoopStart = currLoopStart + (diff * mult);
 
     if (!(newLoopStart < 0) && newLoopStart != currLoopStart) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].loopstart = newLoopStart;
+      _seq_heap.pattern.tracks[current_selected_track].loopstart = newLoopStart;
 
       drawSequencerScreen();
     }
@@ -3954,7 +4006,7 @@ void handleEncoderRawSampleModB(int diff)
     float newDecay = currTrack.amp_decay + (diff * mult);
 
     if (!(newDecay < 0 || newDecay > 11880) && newDecay != currDecay) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].amp_decay = newDecay;
+      _seq_heap.pattern.tracks[current_selected_track].amp_decay = newDecay;
 
       if (current_selected_track > 3) {
         AudioNoInterrupts();
@@ -3973,7 +4025,7 @@ void handleEncoderRawSampleModB(int diff)
     float newPan = currTrack.pan + (diff * 0.1);
 
     if (!(newPan < -1.0 || newPan > 1.0) && newPan != currPan) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].pan = newPan;
+      _seq_heap.pattern.tracks[current_selected_track].pan = newPan;
 
       float newGainL = 1.0;
       if (newPan < 0) {
@@ -4005,7 +4057,7 @@ void handleEncoderRawSampleModB(int diff)
 void handleEncoderRawSampleModC(int diff);
 void handleEncoderRawSampleModC(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
 
   if (current_page_selected == 0) {
     // n/a
@@ -4023,7 +4075,7 @@ void handleEncoderRawSampleModC(int diff)
     
 
     if (!(newLoopFinish < 0) && newLoopFinish != currLoopFinish) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].loopfinish = newLoopFinish;
+      _seq_heap.pattern.tracks[current_selected_track].loopfinish = newLoopFinish;
 
       drawSequencerScreen();
     }
@@ -4032,7 +4084,7 @@ void handleEncoderRawSampleModC(int diff)
     float newSus = currTrack.amp_sustain + (diff * 0.01);
 
     if (!(newSus < 0 || newSus > 1.0) && newSus != curSus) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].amp_sustain = newSus;
+      _seq_heap.pattern.tracks[current_selected_track].amp_sustain = newSus;
 
       if (current_selected_track > 3) {
         AudioNoInterrupts();
@@ -4054,14 +4106,14 @@ void handleEncoderRawSampleModC(int diff)
 void handleEncoderRawSampleModD(int diff);
 void handleEncoderRawSampleModD(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
 
   if (current_page_selected == 0) {
     uint8_t currBitrate = currTrack.bitrate;
     uint8_t newBitrate = currBitrate + diff;
 
     if (!(newBitrate < 1 || newBitrate > 16) && newBitrate != currBitrate) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].bitrate = newBitrate;
+      _seq_heap.pattern.tracks[current_selected_track].bitrate = newBitrate;
 
       if (current_selected_track > 3) {
         AudioNoInterrupts();
@@ -4099,7 +4151,7 @@ void handleEncoderRawSampleModD(int diff)
 
     play_start playStartSel = playStartSelMap[newPlayStart];
 
-    _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].playstart = playStartSel;
+    _seq_heap.pattern.tracks[current_selected_track].playstart = playStartSel;
 
     drawSequencerScreen();
   } else if (current_page_selected == 2) {
@@ -4115,7 +4167,7 @@ void handleEncoderRawSampleModD(int diff)
     float newRel = currTrack.amp_release + (diff * mult);
 
     if (!(newRel < 0 || newRel > 11880) && newRel != curRel) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].amp_release = newRel;
+      _seq_heap.pattern.tracks[current_selected_track].amp_release = newRel;
     
       if (current_selected_track > 3) {
         AudioNoInterrupts();
@@ -4138,7 +4190,7 @@ void handleEncoderRawSampleModD(int diff)
 void handleEncoderWavSampleModA(int diff);
 void handleEncoderWavSampleModA(int diff)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
 
   int newSampleId = currTrack.wav_sample_id + diff;
 
@@ -4148,7 +4200,7 @@ void handleEncoderWavSampleModA(int diff)
     newSampleId = 0;
   }
 
-  _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].wav_sample_id = newSampleId;
+  _seq_heap.pattern.tracks[current_selected_track].wav_sample_id = newSampleId;
 
   drawSequencerScreen();
 }
@@ -4174,7 +4226,7 @@ void handleEncoderWavSampleModD(int diff)
 void handleEncoderSetTrackMods(void);
 void handleEncoderSetTrackMods(void)
 {
-  TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+  TRACK currTrack = getHeapCurrentSelectedTrack();
 
   const int modCount = 4;
   for (int m = 0; m < modCount; m++)
@@ -4234,7 +4286,7 @@ void handleEncoderTraversePages(void)
     int newPage = current_page_selected + diff;
 
     if (newPage != current_page_selected) {
-      TRACK currTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+      TRACK currTrack = getHeapCurrentSelectedTrack();
       int maxPagesForCurrTrack = trackPageNumMap[currTrack.track_type];
 
       if (maxPagesForCurrTrack == 1) {
@@ -4302,7 +4354,7 @@ void handleKeyboardStates(void) {
       released = true;
 
       if (current_UI_mode != UI_MODE::SUBMITTING_STEP_VALUE) {
-        TRACK currSelTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+        TRACK currSelTrack = getHeapCurrentSelectedTrack();
 
         if (keyboardNotesHeld == 0) {
           if (current_selected_track > 3) {
@@ -4350,17 +4402,17 @@ void handleKeyboardStates(void) {
   // released a key button, so modify a step's note number if also holding a step button
   if (released && invertedNoteNumber > -1) {
     if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step].note = invertedNoteNumber;
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step].octave = keyboardOctave;
+      _seq_heap.pattern.tracks[current_selected_track].steps[current_selected_step].note = invertedNoteNumber;
+      _seq_heap.pattern.tracks[current_selected_track].steps[current_selected_step].octave = keyboardOctave;
 
       drawSequencerScreen();
     } else if (current_UI_mode == TRACK_SEL) {
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].note = invertedNoteNumber;
-      _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].octave = keyboardOctave;
+      _seq_heap.pattern.tracks[current_selected_track].note = invertedNoteNumber;
+      _seq_heap.pattern.tracks[current_selected_track].octave = keyboardOctave;
 
       drawSequencerScreen();
     } else {
-      TRACK currSelTrack = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track];
+      TRACK currSelTrack = getHeapCurrentSelectedTrack();
 
       if (keyboardNotesHeld == 0) {
         if (current_selected_track > 3) {
@@ -4417,7 +4469,7 @@ void handleSwitchStates(bool discard) {
                   clearAllStepLEDs();
                   displayCurrentlySelectedTrack();
                 } else if (current_UI_mode == TRACK_SEL && kpd.key[i].kchar == SOUND_SETUP_BTN_CHAR) {
-                  TRACK_TYPE currType = _seq_state.seq.banks[current_selected_bank].patterns[0].tracks[current_selected_track].track_type;
+                  TRACK_TYPE currType = _seq_heap.pattern.tracks[current_selected_track].track_type;
                   
                   Serial.print("changing ");
                   Serial.print(current_selected_track+1);
@@ -4570,7 +4622,7 @@ void handleSwitchStates(bool discard) {
 
                 current_selected_step = getKeyStepNum(kpd.key[i].kchar)-1;
 
-                TRACK_STEP heldStep = _seq_state.seq.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[current_selected_step];
+                TRACK_STEP heldStep = _seq_heap.pattern.tracks[current_selected_track].steps[current_selected_step];
 
                 // only toggle held step ON if initially in the OFF position,
                 // so that holding / param locking doesn't turn the step off
