@@ -15,6 +15,10 @@
 #include <TeensyVariablePlayback.h>
 #include "flashloader.h"
 #include <ResponsiveAnalogRead.h>
+#include <LittleFS.h>
+#include <TimeLib.h>
+
+time_t RTCTime;
 
 /*
   Fontname: -aaron-bitocra7-Medium-R-Normal--7-60-75-75-C-40-ISO8859-1
@@ -800,7 +804,7 @@ typedef struct
   BANK banks[MAXIMUM_SEQUENCER_BANKS];
 } SEQUENCER_EXTERNAL;
 
-FLASHMEM SEQUENCER_EXTERNAL _seq_external;
+EXTMEM SEQUENCER_EXTERNAL _seq_external;
 
 typedef struct
 {
@@ -837,6 +841,46 @@ typedef struct
 #define STEP_STACK_SIZE 1024
 STACK_STEP_DATA _step_stack[STEP_STACK_SIZE];
 
+// Project structure
+
+LittleFS_QSPIFlash myfs;
+bool project_initialized = false;
+
+typedef struct
+{
+  char directory[MAX_SAMPLE_NAME_LENGTH];
+  char filename[MAX_SAMPLE_NAME_LENGTH];
+} PROJECT_RAW_SAMPLE;
+
+typedef struct
+{
+  char directory[MAX_SAMPLE_NAME_LENGTH];
+  char filename[MAX_SAMPLE_NAME_LENGTH];
+} PROJECT_WAV_SAMPLE;
+
+enum CLOCK_TYPE {
+  DIN_MIDI,
+  USB_MIDI,
+};
+
+typedef struct
+{
+  bool receive = false;
+  bool send = false;
+  CLOCK_TYPE receive_port;
+  CLOCK_TYPE send_port;
+} PROJECT_CLOCK_SETTINGS;
+
+typedef struct
+{
+  // PROJECT_RAW_SAMPLE raw_sample_pool[MAX_USABLE_SAMPLE_IDS];
+  // PROJECT_WAV_SAMPLE wav_sample_pool[MAX_USABLE_WAV_SAMPLE_IDS];
+  PROJECT_CLOCK_SETTINGS clock_settings;
+  char name[22];
+} PROJECT;
+
+PROJECT current_project;
+
 const int numChannels = 1; // 1 for mono, 2 for stereo...
 
 enum UI_MODE {
@@ -847,7 +891,10 @@ enum UI_MODE {
   TRACK_WRITE,
   TRACK_SEL,
   SET_TEMPO,
-  SUBMITTING_STEP_VALUE
+  SUBMITTING_STEP_VALUE,
+  PROJECT_INITIALIZE,
+  PROJECT_BUSY,
+  CHANGE_SETUP
 };
 
 UI_MODE previous_UI_mode = PATTERN_WRITE; // the default mode
@@ -965,6 +1012,71 @@ void handleHeadphoneAdjustment(void);
 void handleEncoderSetTempo();
 void handleAddToStepStack(uint32_t tick, int track, int step);
 void noteOffForAllSounds(void);
+void swapSequencerMemoryForPattern(int newBank, int newPattern);
+void drawGenericOverlayFrame(void);
+void drawErrorMessage(std::string message);
+void drawSetupScreen();
+void saveProject();
+std::string strldz(std::string inputStr, const int zeroNum);
+std::string getNewProjectName();
+time_t getTeensy3Time();
+
+time_t getTeensy3Time() {
+  return Teensy3Clock.get();
+}
+
+std::string getNewProjectName()
+{
+  std::string newProjectName = "project_";
+  
+  newProjectName += std::to_string(year());
+
+  if (month() < 10) {
+    newProjectName += strldz(std::to_string(month()),2);
+  } else {
+    newProjectName += std::to_string(month());
+  }
+
+  if (day() < 10) {
+    newProjectName += strldz(std::to_string(day()),2);
+  } else {
+    newProjectName += std::to_string(day());
+  }
+
+  if (hour() < 10) {
+    newProjectName += strldz(std::to_string(hour()),2);
+  } else {
+    newProjectName += std::to_string(hour());
+  }
+
+  if (minute() < 10) {
+    newProjectName += strldz(std::to_string(minute()),2);
+  } else {
+    newProjectName += std::to_string(minute());
+  }
+
+  if (second() < 10) {
+    newProjectName += strldz(std::to_string(second()),2);
+  } else {
+    newProjectName += std::to_string(second());
+  }
+
+  return newProjectName;
+}
+
+std::string new_project_name;
+
+void drawErrorMessage(std::string message)
+{
+  u8g2.clearBuffer();
+
+  drawGenericOverlayFrame();
+
+  u8g2.drawStr(37, 6, "ERROR!");
+  u8g2.drawStr(10, 22, message.c_str());
+
+  u8g2.sendBuffer();
+}
 
 TRACK getHeapTrack(int track);
 TRACK_STEP getHeapStep(int track, int step);
@@ -1075,6 +1187,10 @@ std::string getTrackTypeNameStr(TRACK_TYPE type)
 
 // Internal clock handlers
 void ClockOut96PPQN(uint32_t tick) {
+  if (!project_initialized) {
+    return;
+  }
+
   // Send MIDI_CLOCK to external gears
   //usbMIDI.sendRealTime(usbMIDI.Clock);
 
@@ -1082,10 +1198,18 @@ void ClockOut96PPQN(uint32_t tick) {
 }
 
 void onClockStart() {
+  if (!project_initialized) {
+    return;
+  }
+
   //usbMIDI.sendRealTime(usbMIDI.Start);
 }
 
 void onClockStop() {
+  if (!project_initialized) {
+    return;
+  }
+
   //usbMIDI.sendRealTime(usbMIDI.Stop);
 
   noteOffForAllSounds();
@@ -1412,6 +1536,84 @@ void changeSampleTrackSoundType(uint8_t t, TRACK_TYPE newType)
   }
 }
 
+void configureSampleVoiceSettingsOnLoad(int t);
+void configureSampleVoiceSettingsOnLoad(int t)
+{
+  TRACK track = getHeapTrack(t);
+
+  if (track.track_type == WAV_SAMPLE) {
+    // only create buffers for stereo samples when needed
+    sampleVoices[t-4].wSample.createBuffer(2048, AudioBuffer::inExt);
+
+    _seq_heap.pattern.tracks[t].track_type = WAV_SAMPLE;
+  }
+}
+
+void configureVoiceSettingsOnLoad(void);
+void configureVoiceSettingsOnLoad(void)
+{
+  for (int t=0; t<MAXIMUM_SEQUENCER_TRACKS; t++) {
+    if (t > 3) {
+      configureSampleVoiceSettingsOnLoad(t);
+      continue;
+    }
+
+    ComboVoice trackVoice = comboVoices[t];
+
+    if (_seq_heap.pattern.tracks[t].track_type == RAW_SAMPLE) {
+      _seq_heap.pattern.tracks[t].track_type = RAW_SAMPLE;
+
+      // turn sample volume all the way up
+      trackVoice.mix.gain(0, 1);
+      // turn synth volume all the way down
+      trackVoice.mix.gain(1, 0); // synth
+    } else if (_seq_heap.pattern.tracks[t].track_type == WAV_SAMPLE) {
+      _seq_heap.pattern.tracks[t].track_type = WAV_SAMPLE;
+
+      // only create buffers for stereo samples when needed
+      trackVoice.wSample.createBuffer(2048, AudioBuffer::inExt);
+
+      // turn sample volume all the way up
+      trackVoice.mix.gain(0, 1);
+      // turn synth volumes all the way down
+      trackVoice.mix.gain(1, 0); // synth
+    } else if (_seq_heap.pattern.tracks[t].track_type == SUBTRACTIVE_SYNTH) {
+      _seq_heap.pattern.tracks[t].track_type = SUBTRACTIVE_SYNTH;
+
+      TRACK currTrack = getHeapTrack(t);
+
+      // turn sample volume all the way down
+      trackVoice.mix.gain(0, 0);
+      // turn synth volumes all the way up
+      trackVoice.mix.gain(1, 1); // ladder
+
+      // TESTING: revert amp env to normal synth setting
+      trackVoice.ampEnv.attack(currTrack.amp_attack);
+      trackVoice.ampEnv.decay(currTrack.amp_decay);
+      trackVoice.ampEnv.sustain(currTrack.amp_sustain);
+      trackVoice.ampEnv.release(currTrack.amp_release);
+    } else if (_seq_heap.pattern.tracks[t].track_type == MIDI) {
+      _seq_heap.pattern.tracks[t].track_type = MIDI;
+
+      // turn all audio for this track voice down
+      trackVoice.mix.gain(0, 0); // mono sample
+      trackVoice.mix.gain(1, 0); // ladder
+    } else if (_seq_heap.pattern.tracks[t].track_type == CV_GATE) {
+      _seq_heap.pattern.tracks[t].track_type = CV_GATE;
+
+      // turn all audio for this track voice down
+      trackVoice.mix.gain(0, 0); // mono sample
+      trackVoice.mix.gain(1, 0); // ladder
+    }else if (_seq_heap.pattern.tracks[t].track_type == CV_TRIG) {
+      _seq_heap.pattern.tracks[t].track_type = CV_TRIG;
+
+      // turn all audio for this track voice down
+      trackVoice.mix.gain(0, 0); // mono sample
+      trackVoice.mix.gain(1, 0); // ladder
+    }
+  }
+}
+
 void changeTrackSoundType(uint8_t t, TRACK_TYPE newType)
 {
   if (t > 3) {
@@ -1506,9 +1708,6 @@ bool isWavFile(const char* filename);
 bool isWavFile(const char* filename) {
   int8_t len = strlen(filename);
 
-  Serial.print("strlen: ");
-  Serial.println(len);
-
   bool result = false;
   String fStr = filename;
 
@@ -1563,9 +1762,6 @@ void parseRootForWavSamples(void)
 bool isRawFile(const char* filename);
 bool isRawFile(const char* filename) {
   int8_t len = strlen(filename);
-
-  Serial.print("strlen: ");
-  Serial.println(len);
 
   bool result = false;
   String fStr = filename;
@@ -1626,6 +1822,369 @@ void parseRootForRawSamples(void)
   }
 }
 
+void initSequencer(bool useTestData);
+void initSequencer(bool useTestData)
+{
+  if (useTestData) {
+    Serial.println("Now fill sequencer in-heap with some example data");
+
+    _seq_heap.pattern.tracks[0].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
+    _seq_heap.pattern.tracks[0].waveform = SAW;
+    _seq_heap.pattern.tracks[0].raw_sample_id = 0;
+    _seq_heap.pattern.tracks[0].wav_sample_id = 0;
+    _seq_heap.pattern.tracks[0].steps[0].state = TRACK_STEP_STATE::ON;
+    _seq_heap.pattern.tracks[0].steps[0].note = 0;
+    _seq_heap.pattern.tracks[0].steps[0].octave = 4;
+    _seq_heap.pattern.tracks[0].steps[0].length = 4;
+    _seq_heap.pattern.tracks[0].steps[1].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[0].steps[2].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[0].steps[3].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[0].steps[4].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[0].steps[5].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[0].steps[6].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[0].steps[7].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[0].steps[8].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[0].steps[9].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[0].steps[10].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[0].steps[11].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[0].steps[12].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[0].steps[13].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[0].steps[14].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[0].steps[15].state = TRACK_STEP_STATE::OFF;
+
+    _seq_heap.pattern.tracks[1].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
+    _seq_heap.pattern.tracks[1].waveform = SAW;
+    _seq_heap.pattern.tracks[1].raw_sample_id = 0;
+    _seq_heap.pattern.tracks[1].wav_sample_id = 0;
+    _seq_heap.pattern.tracks[1].steps[0].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[1].steps[1].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[1].steps[2].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[1].steps[3].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[1].steps[4].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[1].steps[5].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[1].steps[6].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[1].steps[7].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[1].steps[8].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[1].steps[9].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[1].steps[10].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[1].steps[11].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[1].steps[12].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[1].steps[13].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[1].steps[14].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[1].steps[15].state = TRACK_STEP_STATE::OFF;
+
+    _seq_heap.pattern.tracks[2].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
+    _seq_heap.pattern.tracks[2].waveform = SAW;
+    _seq_heap.pattern.tracks[2].raw_sample_id = 0;
+    _seq_heap.pattern.tracks[2].wav_sample_id = 0;
+    _seq_heap.pattern.tracks[2].steps[0].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[2].steps[1].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[2].steps[2].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[2].steps[3].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[2].steps[4].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[2].steps[5].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[2].steps[6].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[2].steps[7].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[2].steps[8].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[2].steps[9].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[2].steps[10].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[2].steps[11].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[2].steps[12].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[2].steps[13].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[2].steps[14].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[2].steps[15].state = TRACK_STEP_STATE::OFF;
+
+    _seq_heap.pattern.tracks[3].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
+    _seq_heap.pattern.tracks[3].waveform = SAW;
+    _seq_heap.pattern.tracks[3].raw_sample_id = 0;
+    _seq_heap.pattern.tracks[3].wav_sample_id = 0;
+    _seq_heap.pattern.tracks[3].steps[0].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[3].steps[1].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[3].steps[2].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[3].steps[3].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[3].steps[4].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[3].steps[5].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[3].steps[6].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[3].steps[7].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[3].steps[8].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[3].steps[9].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[3].steps[10].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[3].steps[11].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[3].steps[12].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[3].steps[13].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[3].steps[14].state = TRACK_STEP_STATE::OFF;
+    _seq_heap.pattern.tracks[3].steps[15].state = TRACK_STEP_STATE::OFF;
+
+    Serial.println("Done filling test sequencer out");
+  }
+
+  if (!useTestData){
+    project_initialized = true;
+    current_UI_mode = PATTERN_WRITE;
+  }
+
+  current_selected_pattern = 0;
+  current_selected_track = 0;
+
+  Serial.print("sizeof sequencer heap: ");
+  Serial.print(sizeof(_seq_heap));
+
+  Serial.print(" sizeof sequencer ext: ");
+  Serial.print(sizeof(_seq_external));
+
+  Serial.print(" sizeof step stack: ");
+  Serial.print(sizeof(_step_stack));
+
+  Serial.print(" comboVoices: ");
+  Serial.println(sizeof(comboVoices));
+
+  Serial.print(" sampleVoices: ");
+  Serial.println(sizeof(sampleVoices));
+
+  if (!useTestData){
+    if (current_UI_mode == TRACK_WRITE) {
+      setDisplayStateForAllStepLEDs();
+    }
+
+    drawSequencerScreen();
+  }
+}
+
+void drawHatchedBackground();
+void drawHatchedBackground() {    
+  int leftBoundX = 0;
+  int rightBoundX = 128;
+  int topBoundX = 0;
+  int bottomBoundX = 64;
+
+  int pixelRows = 64;
+  int pixelCols = 128;
+
+  // initialize row template
+  int t[128];
+  int spacing = 4;
+
+  // fill up template
+  for (int i=0; i<128; i++) {
+      if (i == 0 || (i % spacing == 0)) {
+          t[i] = 1;
+      } else {
+          t[i] = 0;
+      }
+  }
+
+  for (int r = 0; r < pixelRows; r++) {
+    if (r != 0) {
+      //Rotate the given array one time toward right    
+      for(int i = 0; i < 1; i++){    
+        int j;
+        int last;  
+          
+        //Stores the last element of array    
+        last = t[127];
+        
+        for(j = 127; j > 0; j--){
+          //Shift element of array by one    
+          t[j] = t[j-1];    
+        }    
+        //Last element of array will be added to the start of array.    
+        t[0] = last;    
+      } 
+    }
+    
+    for (int c = 0; c < pixelCols; c++) {
+      if (t[c] == 1) {
+        u8g2.drawPixel(leftBoundX + c, topBoundX + r);
+      }
+    }
+  }
+}
+
+void saveProject()
+{
+  current_UI_mode = UI_MODE::PROJECT_BUSY;
+
+  int maxWidth = 128;
+  int maxHeight = 64;
+
+  int creatingBoxWidth = 50;
+  int creatingBoxHeight = 20;
+  int creatingBoxStartX = (maxWidth / 2) - (creatingBoxWidth / 2);
+  int creatingBoxStartY = (maxHeight / 2) - (creatingBoxHeight / 2);
+  int creatingBoxMsgStartX = creatingBoxStartX+8;
+  int creatingBoxMsgStartY = creatingBoxStartY+6;
+
+  drawHatchedBackground();
+
+  u8g2.setColorIndex((u_int8_t)0);
+  u8g2.drawBox(creatingBoxStartX-3, creatingBoxStartY-3, creatingBoxWidth+6, creatingBoxHeight+6);
+  u8g2.setColorIndex((u_int8_t)1);
+
+  // show project creation status indicator?
+  u8g2.drawFrame(creatingBoxStartX, creatingBoxStartY, creatingBoxWidth, creatingBoxHeight);
+  u8g2.drawStr(creatingBoxMsgStartX, creatingBoxMsgStartY, "SAVING!");
+
+  delay(100);
+
+  std::string currProjectFilename = "/";
+  currProjectFilename += current_project.name;
+  currProjectFilename += ".txt";
+
+  File currProjectFile = myfs.open(currProjectFilename.c_str(), FILE_WRITE);
+  currProjectFile.write((byte *)&current_project, sizeof(current_project));
+  currProjectFile.close();
+
+  delay(100);
+
+  // push current heap memory to PSRAM
+  _seq_external.banks[current_selected_bank].patterns[current_selected_pattern] = _seq_heap.pattern;
+  
+  String seqFilename = "/";
+  seqFilename += current_project.name;
+  seqFilename += "_seq.bin";
+
+  Serial.print("seqFilename: ");
+  Serial.println(seqFilename);
+
+  File seqFileW = SD.open(seqFilename.c_str(), FILE_WRITE);
+  seqFileW.truncate();
+  seqFileW.write((byte *)&_seq_external, sizeof(_seq_external));
+  seqFileW.close();
+
+  initSequencer(false);
+}
+
+void loadLatestProject();
+void loadLatestProject()
+{
+  File projectListFile = myfs.open("/project_list.txt", FILE_READ);
+  String projectListFileContents = projectListFile.readString();
+  projectListFile.close();
+
+  String latestProjectFilename = "/";
+  latestProjectFilename += projectListFileContents;
+  latestProjectFilename += ".txt";
+
+  File latestProjectFile = myfs.open(latestProjectFilename.c_str(), FILE_READ);  
+  if (latestProjectFile.available()) {    
+    latestProjectFile.read((byte *)&current_project, sizeof(current_project));
+    latestProjectFile.close();
+  }
+
+  String seqFilename = "/";
+  seqFilename += current_project.name;
+  seqFilename += "_seq.bin";
+
+  int fSize = 0;
+  
+  File seqFile = SD.open(seqFilename.c_str(), FILE_READ);
+  fSize = seqFile.size();
+
+  if (fSize > 0) {
+    // copy sequencer data from SD card to PSRAM
+    seqFile.read((byte *)&_seq_external, sizeof(_seq_external));
+    seqFile.close();
+
+    delay(500);
+
+    // copy first pattern from PSRAM to Heap
+    _seq_heap.pattern = _seq_external.banks[0].patterns[0];
+
+    delay(100);
+    
+    configureVoiceSettingsOnLoad();
+
+    initSequencer(false);
+  } else {
+    drawErrorMessage("Sequencer data could not be found!");
+  }
+}
+
+void initProject();
+void initProject()
+{
+  current_UI_mode = UI_MODE::PROJECT_BUSY;
+
+  int maxWidth = 128;
+  int maxHeight = 64;
+
+  int creatingBoxWidth = 50;
+  int creatingBoxHeight = 20;
+  int creatingBoxStartX = (maxWidth / 2) - (creatingBoxWidth / 2);
+  int creatingBoxStartY = (maxHeight / 2) - (creatingBoxHeight / 2);
+  int creatingBoxMsgStartX = creatingBoxStartX+8;
+  int creatingBoxMsgStartY = creatingBoxStartY+6;
+
+  drawHatchedBackground();
+
+  u8g2.setColorIndex((u_int8_t)0);
+  u8g2.drawBox(creatingBoxStartX-3, creatingBoxStartY-3, creatingBoxWidth+6, creatingBoxHeight+6);
+  u8g2.setColorIndex((u_int8_t)1);
+
+  // show project creation status indicator?
+  u8g2.drawFrame(creatingBoxStartX, creatingBoxStartY, creatingBoxWidth, creatingBoxHeight);
+  u8g2.drawStr(creatingBoxMsgStartX, creatingBoxMsgStartY, "CREATING!");
+
+  u8g2.sendBuffer();
+
+  strcpy(current_project.name, new_project_name.c_str());
+
+  File newProjectListFile = myfs.open("/project_list.txt", FILE_WRITE);
+  newProjectListFile.print(new_project_name.c_str());
+  newProjectListFile.close();
+
+  delay(100);
+
+  std::string newProjectFilename = "/";
+  newProjectFilename += new_project_name;
+  newProjectFilename += ".txt";
+
+  File newProjectFile = myfs.open(newProjectFilename.c_str(), FILE_WRITE);
+  newProjectFile.write((byte *)&current_project, sizeof(current_project));
+  newProjectFile.close();
+
+  delay(100);
+
+  // TODO: fully initialize sequencer data in PSRAM with non random data
+  initSequencer(true);
+  _seq_external.banks[0].patterns[0] = _seq_heap.pattern;
+
+  String seqFilename = "/";
+  seqFilename += current_project.name;
+  seqFilename += "_seq.bin";
+
+  File seqFileW = SD.open(seqFilename.c_str(), FILE_WRITE);
+  seqFileW.write((byte *)&_seq_external, sizeof(_seq_external));
+  seqFileW.close();
+
+  delay(100);
+
+  initSequencer(false);
+}
+
+void drawInitProject();
+void drawInitProject()
+{
+  u8g2.clearBuffer();
+
+  drawGenericOverlayFrame();
+
+  std::string createProjStr = "CREATE PROJECT";
+  u8g2.drawStr(37, 6, createProjStr.c_str());
+
+  std::string nameFieldStr = "NAME: ";
+
+  nameFieldStr += new_project_name;
+
+  u8g2.drawStr(10, 22, nameFieldStr.c_str());
+
+  u8g2.drawFrame(106, 49, 17, 11);
+  u8g2.drawStr(109, 51, "SEL");
+  u8g2.drawStr(10, 52, "CONFIRM?");
+
+  u8g2.sendBuffer();
+}
+
 void loadRawSamplesFromSdCard(void);
 void loadRawSamplesFromSdCard(void)
 {  
@@ -1644,6 +2203,19 @@ void loadRawSamplesFromSdCard(void)
   }
 }
 
+void wipeProject(void);
+void wipeProject(void)
+{
+  Serial.println("wiping known project data!");
+
+  String seqFilename = "/";
+  seqFilename += current_project.name;
+  seqFilename += "_seq.bin";
+
+  SD.remove(seqFilename.c_str()); 
+  myfs.quickFormat();
+}
+
 void setup() {
   Serial.begin(9600);
 
@@ -1651,15 +2223,26 @@ void setup() {
     Serial.print(CrashReport);
   }
 
+  setSyncProvider(getTeensy3Time);
+  if(timeStatus()!= timeSet) 
+     Serial.println("Unable to sync with the RTC");
+  else
+     Serial.println("RTC has set the system time");    
+
+  new_project_name = getNewProjectName();  
+  Serial.println("set project name");
+
   // Audio connections require memory to work.  For more
   // detailed information, see the MemoryAndCpuUsage example
   AudioMemory(50);
+  Serial.println("buffered audio mem");
 
   // Comment these out if not using the audio adaptor board.
   // This may wait forever if the SDA & SCL pins lack
   // pullup resistors
   sgtl5000_1.enable();
   sgtl5000_1.volume(0.8);
+  Serial.println("enabled sgtl");
 
   SPI.setMOSI(SDCARD_MOSI_PIN);
   SPI.setSCK(SDCARD_SCK_PIN);
@@ -1670,25 +2253,45 @@ void setup() {
       delay(500);
     }
   }
+  Serial.println("setup SD card");
+
+  if (!myfs.begin()) {
+    // stop here, but print a message repetitively
+    while (1) {
+      Serial.println("Error starting QSPI");
+      delay(500);
+    }
+  }
+  Serial.println("setup QSPI flash");
+
+  current_UI_mode = PROJECT_BUSY;
+
+  // discard any dirty reads
+  handleSwitchStates(true);
+  Serial.println("handled switch states during project busy");
 
   initTrackSounds();
+  Serial.println("init'd track sounds");
 
   // prepare sample names to be occupied
   initUsableSampleNames();
+  Serial.println("init'd usable sample names");
 
   // IMPORTANT: DO THIS AFTER SD IS INITIALIZED ABOVE
   // load short project mono samples into PSRAM
   loadRawSamplesFromSdCard();
-
   parseRootForWavSamples();
+  Serial.println("prepared samples");
   
   delay(25);
 
   Wire1.begin();
+  Serial.println("started Wire1");
 
   SPI1.begin();
   SPI1.setMOSI(DAC_MOSI);
   SPI1.setSCK(DAC_SCK);
+  Serial.println("started DAC SPI");
 
   pinMode(CS1, OUTPUT); // CS
   digitalWrite(CS1, HIGH);
@@ -1700,12 +2303,19 @@ void setup() {
   digitalWrite(CS4, HIGH);
 
   initDACs();
+  Serial.println("init'd DACs");
 
   tlc.begin();
   if (tlc5947_oe >= 0) {
     pinMode(tlc5947_oe, OUTPUT);
     digitalWrite(tlc5947_oe, LOW);
   }
+  Serial.println("began TLC driver");
+
+  for (int i=0; i<25; i++) {
+    setLEDPWM(i, 0); // sets all 24 outputs to no brightness
+  }
+  Serial.println("init'd LEDs");
 
   // Default address is 0x5A, if tied to 3.3V its 0x5B
   // If tied to SDA its 0x5C and if SCL then 0x5D
@@ -1713,27 +2323,19 @@ void setup() {
     Serial.println("MPR121 not found, check wiring?");
     while (1);
   }
+  Serial.println("began MPR121");
 
   // init display
   u8g2.begin();
+  Serial.println("began u8g2");
 
   // initialize encoders
   initEncoders();
+  Serial.println("init'd uencoders");
 
   kpd.setHoldTime(150);
 
-  for (int i=0; i<25; i++) {
-    setLEDPWM(i, 0); // sets all 24 outputs to no brightness
-  }
-
   delay(100);
-
-  // discard any dirty reads
-  handleSwitchStates(true);
-
-  u8g2_prepare();
-
-  initMain();
 
   // Setup our clock system
   // Inits the clock
@@ -1746,118 +2348,26 @@ void setup() {
   // Set the clock BPM to 120 BPM
   uClock.setTempo(120);
   //uClock.shuffle();
+  Serial.println("init'd uClock");
 
-  Serial.println("Now fill sequencer in-heap with some example data");
+  u8g2_prepare();
+  initMain();
+  Serial.println("init'd main screen");
 
-  _seq_heap.pattern.tracks[0].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
-  _seq_heap.pattern.tracks[0].waveform = SAW;
-  _seq_heap.pattern.tracks[0].raw_sample_id = 0;
-  _seq_heap.pattern.tracks[0].wav_sample_id = 0;
-  _seq_heap.pattern.tracks[0].steps[0].state = TRACK_STEP_STATE::ON;
-  _seq_heap.pattern.tracks[0].steps[0].note = 0;
-  _seq_heap.pattern.tracks[0].steps[0].octave = 4;
-  _seq_heap.pattern.tracks[0].steps[0].length = 4;
-  _seq_heap.pattern.tracks[0].steps[1].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[0].steps[2].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[0].steps[3].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[0].steps[4].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[0].steps[5].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[0].steps[6].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[0].steps[7].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[0].steps[8].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[0].steps[9].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[0].steps[10].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[0].steps[11].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[0].steps[12].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[0].steps[13].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[0].steps[14].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[0].steps[15].state = TRACK_STEP_STATE::OFF;
+  delay(1000);
 
-  _seq_heap.pattern.tracks[1].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
-  _seq_heap.pattern.tracks[1].waveform = SAW;
-  _seq_heap.pattern.tracks[1].raw_sample_id = 0;
-  _seq_heap.pattern.tracks[1].wav_sample_id = 0;
-  _seq_heap.pattern.tracks[1].steps[0].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[1].steps[1].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[1].steps[2].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[1].steps[3].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[1].steps[4].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[1].steps[5].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[1].steps[6].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[1].steps[7].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[1].steps[8].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[1].steps[9].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[1].steps[10].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[1].steps[11].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[1].steps[12].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[1].steps[13].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[1].steps[14].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[1].steps[15].state = TRACK_STEP_STATE::OFF;
+  Serial.println("handling project save/load");
 
-  _seq_heap.pattern.tracks[2].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
-  _seq_heap.pattern.tracks[2].waveform = SAW;
-  _seq_heap.pattern.tracks[2].raw_sample_id = 0;
-  _seq_heap.pattern.tracks[2].wav_sample_id = 0;
-  _seq_heap.pattern.tracks[2].steps[0].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[2].steps[1].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[2].steps[2].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[2].steps[3].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[2].steps[4].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[2].steps[5].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[2].steps[6].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[2].steps[7].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[2].steps[8].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[2].steps[9].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[2].steps[10].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[2].steps[11].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[2].steps[12].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[2].steps[13].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[2].steps[14].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[2].steps[15].state = TRACK_STEP_STATE::OFF;
-
-  _seq_heap.pattern.tracks[3].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
-  _seq_heap.pattern.tracks[3].waveform = SAW;
-  _seq_heap.pattern.tracks[3].raw_sample_id = 0;
-  _seq_heap.pattern.tracks[3].wav_sample_id = 0;
-  _seq_heap.pattern.tracks[3].steps[0].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[3].steps[1].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[3].steps[2].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[3].steps[3].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[3].steps[4].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[3].steps[5].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[3].steps[6].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[3].steps[7].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[3].steps[8].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[3].steps[9].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[3].steps[10].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[3].steps[11].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[3].steps[12].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[3].steps[13].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[3].steps[14].state = TRACK_STEP_STATE::OFF;
-  _seq_heap.pattern.tracks[3].steps[15].state = TRACK_STEP_STATE::OFF;
-
-  current_selected_pattern = 0;
-  current_selected_track = 0;
-
-  Serial.println("Done filling test sequencer out");
-
-  Serial.print("sizeof sequencer heap: ");
-  Serial.print(sizeof(_seq_heap));
-
-  Serial.print(" sizeof sequencer ext: ");
-  Serial.print(sizeof(_seq_external));
-
-  Serial.print(" sizeof step stack: ");
-  Serial.print(sizeof(_step_stack));
-
-  Serial.print(" comboVoices: ");
-  Serial.println(sizeof(comboVoices));
-
-  Serial.print(" sampleVoices: ");
-  Serial.println(sizeof(sampleVoices));
-
-  if (current_UI_mode == TRACK_WRITE) {
-    setDisplayStateForAllStepLEDs();
+  // TODO: load project data from external flash memory
+  File projectListFile = myfs.open("/project_list.txt", FILE_READ);
+  if (!projectListFile.available()) {
+    current_UI_mode = UI_MODE::PROJECT_INITIALIZE;
+    drawInitProject();
+  } else {
+    projectListFile.close();
+    // load project here
+    loadLatestProject();
+    //wipeProject();
   }
 }
 
@@ -1883,13 +2393,8 @@ void initMain()
   u8g2.setFontRefHeightExtendedText();
 
   u8g2.sendBuffer();
-
-  delay(1000);
-
-  drawSequencerScreen();
 }
 
-std::string strldz(std::string inputStr, const int zeroNum);
 std::string strldz(std::string inputStr, const int zeroNum)
 {
   std::string outputStr;
@@ -2680,7 +3185,6 @@ void drawSequencerScreen()
   u8g2.sendBuffer();
 }
 
-void drawGenericOverlayFrame(void);
 void drawGenericOverlayFrame(void)
 {
   u8g2.setColorIndex((u_int8_t)0);
@@ -2704,6 +3208,28 @@ void drawSetTempoOverlay(void)
 
   u8g2.drawStr(tempoValX + (tempoVal > 99 ? 0 : 4), 31, tempoValStr.c_str());
   u8g2.setFont(small_font);
+
+  u8g2.sendBuffer();
+}
+
+void drawSetupScreen()
+{
+  drawGenericOverlayFrame();
+
+  std::string setupStr = "SAVE PROJECT";
+  u8g2.drawStr(37, 6, setupStr.c_str());
+
+  std::string nameFieldStr = "NAME: ";
+
+  nameFieldStr += current_project.name;
+
+  u8g2.drawStr(10, 22, nameFieldStr.c_str());
+
+  u8g2.drawFrame(86, 49, 17, 11);
+  u8g2.drawStr(89, 51, "SEL");
+  u8g2.drawFrame(106, 49, 17, 11);
+  u8g2.drawStr(109, 51, "ESC");
+  u8g2.drawStr(10, 52, "CONFIRM?");
 
   u8g2.sendBuffer();
 }
@@ -4309,10 +4835,14 @@ void handleEncoderTraversePages(void)
 }
 
 void handleEncoderStates() {
+  if (!project_initialized) {
+    return;
+  }
+
   // slow this down from being called every loop when in set tempo mode
-  if (!(elapsed % 50) && current_UI_mode == SET_TEMPO) {
+  if (!(elapsed % 25) && current_UI_mode == SET_TEMPO) {
     handleEncoderSetTempo();
-  } else if (!(elapsed % 50) && (current_UI_mode == TRACK_WRITE || current_UI_mode == SUBMITTING_STEP_VALUE)) {
+  } else if (!(elapsed % 25) && (current_UI_mode == TRACK_WRITE || current_UI_mode == SUBMITTING_STEP_VALUE)) {
     if (current_UI_mode == TRACK_WRITE) {
       handleEncoderTraversePages();
     }
@@ -4322,6 +4852,10 @@ void handleEncoderStates() {
 }
 
 void handleKeyboardStates(void) {
+  if (!project_initialized) {
+    return;
+  }
+
   // Get the currently touched pads
   currtouched = cap.touched();
 
@@ -4446,6 +4980,18 @@ void handleSwitchStates(bool discard) {
               Serial.print("button pressed: ");
               Serial.println(kpd.key[i].kchar);
 
+              if (current_UI_mode != PROJECT_INITIALIZE  && current_UI_mode != PROJECT_BUSY && !project_initialized) {
+                drawErrorMessage("PROJECT NOT INITIALIZED!");
+
+                return;
+              } else if (current_UI_mode == PROJECT_INITIALIZE && !project_initialized) {
+                if (kpd.key[i].kchar == 'i') { // select
+                  initProject();
+                }
+              } else if (current_UI_mode == PROJECT_BUSY && !project_initialized) {
+                return;
+              }
+
               if (!function_started) {
                 // track select
                 if (kpd.key[i].kchar == 'c') {
@@ -4507,6 +5053,11 @@ void handleSwitchStates(bool discard) {
                   displayCurrentlySelectedPattern();
                 } else if (current_UI_mode == PATTERN_SEL && btnCharIsATrack(kpd.key[i].kchar)) {
                   uint8_t selPattern = getKeyStepNum(kpd.key[i].kchar)-1; // zero-based
+
+                  // TODO: if sequencer is running, queue next pattern after current playing bar ends
+                  swapSequencerMemoryForPattern(0, selPattern);
+
+                  // Now change current pattern global var
                   current_selected_pattern = selPattern;
 
                   Serial.print("marking pressed pattern selection (zero-based): ");
@@ -4603,10 +5154,15 @@ void handleSwitchStates(bool discard) {
               else {
                 Serial.println("triggering function!");
                 // change track sound type
-                if (current_UI_mode == TRACK_WRITE && kpd.key[i].kchar == SOUND_SETUP_BTN_CHAR) {
+                if ((current_UI_mode == TRACK_WRITE || current_UI_mode == PATTERN_WRITE) && kpd.key[i].kchar == SOUND_SETUP_BTN_CHAR) {
                   Serial.println("draw setup screen!");
+
+                  previous_UI_mode = current_UI_mode;
+                  current_UI_mode = CHANGE_SETUP;
+
+                  drawSetupScreen();
                 } else if (current_UI_mode == TRACK_WRITE && kpd.key[i].kchar == 'c') {
-                  // TODO: impl layer mechanic
+                  // TODO: impl AB layer switching mechanic
                 }
               }
 
@@ -4614,6 +5170,10 @@ void handleSwitchStates(bool discard) {
             }
           case HOLD:
             {
+              if (!project_initialized) {
+                return;
+              }
+
               // param lock step
               if (current_UI_mode == TRACK_WRITE && btnCharIsATrack(kpd.key[i].kchar)) {
                 // editing a step value / parameter locking this step
@@ -4654,6 +5214,10 @@ void handleSwitchStates(bool discard) {
             }
           case RELEASED:
             {
+              if (!project_initialized) {
+                return;
+              }
+
               // track select / write release
               if (current_UI_mode == TRACK_SEL && kpd.key[i].kchar == 'c' && track_held_for_selection == -1) {      
                 current_UI_mode = TRACK_WRITE; // force track write mode when leaving track / track select action
@@ -4713,6 +5277,27 @@ void handleSwitchStates(bool discard) {
 
                 drawSequencerScreen();
               } 
+
+              else if ( current_UI_mode == CHANGE_SETUP) {
+                if (kpd.key[i].kchar == 'i') { // select
+                  saveProject();
+                } else if (kpd.key[i].kchar == 'j') {
+                  auto leavingUI = current_UI_mode;
+                  auto newUI = previous_UI_mode;
+
+                  current_UI_mode = newUI;
+                  previous_UI_mode = leavingUI;
+
+                  Serial.print("current UI: ");
+                  Serial.println(current_UI_mode);
+
+                  Serial.println("leaving function!");
+
+                  function_started = false;
+
+                  drawSequencerScreen();
+                }
+              }
 
               // param lock release
               else if (current_UI_mode == SUBMITTING_STEP_VALUE && btnCharIsATrack(kpd.key[i].kchar)) {
