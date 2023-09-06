@@ -747,8 +747,6 @@ typedef struct
 {
   TRACK_TYPE track_type = RAW_SAMPLE;
   TRACK_STEP steps[MAXIMUM_SEQUENCER_STEPS];
-  uint16_t samplerate = 44100;
-  uint8_t sample_dir = 0;
   uint8_t raw_sample_id = 0;
   uint8_t wav_sample_id = 0;
   uint8_t waveform = WAVEFORM_TYPE::SAW;
@@ -757,7 +755,7 @@ typedef struct
   uint8_t octave = 4; // 4 - middle C (C4)
   int8_t detune = -7;
   int8_t fine = 0;
-  int8_t microtiming = 0; // 1 = 100ms
+  int8_t microtiming = 0;
   uint8_t length = 4; // 1 = 1/64 step len
   uint8_t bitrate = 16;
   uint8_t velocity = 50; // 1 - 100%
@@ -1013,6 +1011,7 @@ void handleEncoderSetTempo();
 void handleAddToStepStack(uint32_t tick, int track, int step);
 void noteOffForAllSounds(void);
 void swapSequencerMemoryForPattern(int newBank, int newPattern);
+void drawHatchedBackground();
 void drawGenericOverlayFrame(void);
 void drawErrorMessage(std::string message);
 void drawSetupScreen();
@@ -1822,182 +1821,82 @@ void parseRootForRawSamples(void)
   }
 }
 
-void initSequencer(bool useTestData);
-void initSequencer(bool useTestData)
+void initExternalSequencer(void);
+void initExternalSequencer(void)
 {
-  if (useTestData) {
-    Serial.println("Now fill sequencer in-heap with some example data");
+  for (int b = 0; b < MAXIMUM_SEQUENCER_BANKS; b++)
+  {
+    for (int p = 0; p < MAXIMUM_SEQUENCER_PATTERNS; p++)
+    {
+      _seq_external.banks[b].patterns[p].last_step = DEFAULT_LAST_STEP;
 
-    _seq_heap.pattern.tracks[0].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
-    _seq_heap.pattern.tracks[0].waveform = SAW;
-    _seq_heap.pattern.tracks[0].raw_sample_id = 0;
-    _seq_heap.pattern.tracks[0].wav_sample_id = 0;
-    _seq_heap.pattern.tracks[0].steps[0].state = TRACK_STEP_STATE::ON;
-    _seq_heap.pattern.tracks[0].steps[0].note = 0;
-    _seq_heap.pattern.tracks[0].steps[0].octave = 4;
-    _seq_heap.pattern.tracks[0].steps[0].length = 4;
-    _seq_heap.pattern.tracks[0].steps[1].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[0].steps[2].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[0].steps[3].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[0].steps[4].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[0].steps[5].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[0].steps[6].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[0].steps[7].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[0].steps[8].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[0].steps[9].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[0].steps[10].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[0].steps[11].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[0].steps[12].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[0].steps[13].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[0].steps[14].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[0].steps[15].state = TRACK_STEP_STATE::OFF;
+      for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+      {
+        _seq_external.banks[b].patterns[p].tracks[t].track_type = RAW_SAMPLE;
+        _seq_external.banks[b].patterns[p].tracks[t].raw_sample_id = 0;
+        _seq_external.banks[b].patterns[p].tracks[t].wav_sample_id = 0;
+        _seq_external.banks[b].patterns[p].tracks[t].waveform = WAVEFORM_TYPE::SAW;
+        _seq_external.banks[b].patterns[p].tracks[t].last_step = DEFAULT_LAST_STEP;
+        _seq_external.banks[b].patterns[p].tracks[t].note = 0;
+        _seq_external.banks[b].patterns[p].tracks[t].octave = 4;
+        _seq_external.banks[b].patterns[p].tracks[t].detune = 0;
+        _seq_external.banks[b].patterns[p].tracks[t].fine = 0;
+        _seq_external.banks[b].patterns[p].tracks[t].microtiming = 0;
+        _seq_external.banks[b].patterns[p].tracks[t].length = 4;
+        _seq_external.banks[b].patterns[p].tracks[t].bitrate = 16;
+        _seq_external.banks[b].patterns[p].tracks[t].velocity = 50;
+        _seq_external.banks[b].patterns[p].tracks[t].probability = 100;
+        _seq_external.banks[b].patterns[p].tracks[t].channel = 1;
+        _seq_external.banks[b].patterns[p].tracks[t].looptype = 0;
+        _seq_external.banks[b].patterns[p].tracks[t].loopstart = 0;
+        _seq_external.banks[b].patterns[p].tracks[t].loopfinish = 5000;
+        _seq_external.banks[b].patterns[p].tracks[t].playstart = play_start_sample;
+        _seq_external.banks[b].patterns[p].tracks[t].level = 0.7;
+        _seq_external.banks[b].patterns[p].tracks[t].pan = 0;
+        _seq_external.banks[b].patterns[p].tracks[t].sample_play_rate = 1.0;
+        _seq_external.banks[b].patterns[p].tracks[t].width = 0.5;
+        _seq_external.banks[b].patterns[p].tracks[t].oscalevel = 1;
+        _seq_external.banks[b].patterns[p].tracks[t].oscblevel = 0.5;
+        _seq_external.banks[b].patterns[p].tracks[t].cutoff = 1600;
+        _seq_external.banks[b].patterns[p].tracks[t].res = 0;
+        _seq_external.banks[b].patterns[p].tracks[t].filter_attack = 0;
+        _seq_external.banks[b].patterns[p].tracks[t].filter_decay = 1000;
+        _seq_external.banks[b].patterns[p].tracks[t].filter_sustain = 1.0;
+        _seq_external.banks[b].patterns[p].tracks[t].filter_release = 5000;
+        _seq_external.banks[b].patterns[p].tracks[t].amp_attack = 0;
+        _seq_external.banks[b].patterns[p].tracks[t].amp_decay = 1000;
+        _seq_external.banks[b].patterns[p].tracks[t].amp_sustain = 1.0;
+        _seq_external.banks[b].patterns[p].tracks[t].amp_release = 5000;
+        _seq_external.banks[b].patterns[p].tracks[t].noise = 0;
+        _seq_external.banks[b].patterns[p].tracks[t].chromatic_enabled = false;
 
-    _seq_heap.pattern.tracks[1].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
-    _seq_heap.pattern.tracks[1].waveform = SAW;
-    _seq_heap.pattern.tracks[1].raw_sample_id = 0;
-    _seq_heap.pattern.tracks[1].wav_sample_id = 0;
-    _seq_heap.pattern.tracks[1].steps[0].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[1].steps[1].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[1].steps[2].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[1].steps[3].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[1].steps[4].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[1].steps[5].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[1].steps[6].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[1].steps[7].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[1].steps[8].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[1].steps[9].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[1].steps[10].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[1].steps[11].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[1].steps[12].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[1].steps[13].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[1].steps[14].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[1].steps[15].state = TRACK_STEP_STATE::OFF;
-
-    _seq_heap.pattern.tracks[2].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
-    _seq_heap.pattern.tracks[2].waveform = SAW;
-    _seq_heap.pattern.tracks[2].raw_sample_id = 0;
-    _seq_heap.pattern.tracks[2].wav_sample_id = 0;
-    _seq_heap.pattern.tracks[2].steps[0].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[2].steps[1].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[2].steps[2].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[2].steps[3].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[2].steps[4].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[2].steps[5].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[2].steps[6].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[2].steps[7].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[2].steps[8].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[2].steps[9].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[2].steps[10].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[2].steps[11].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[2].steps[12].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[2].steps[13].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[2].steps[14].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[2].steps[15].state = TRACK_STEP_STATE::OFF;
-
-    _seq_heap.pattern.tracks[3].track_type = TRACK_TYPE::SUBTRACTIVE_SYNTH;
-    _seq_heap.pattern.tracks[3].waveform = SAW;
-    _seq_heap.pattern.tracks[3].raw_sample_id = 0;
-    _seq_heap.pattern.tracks[3].wav_sample_id = 0;
-    _seq_heap.pattern.tracks[3].steps[0].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[3].steps[1].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[3].steps[2].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[3].steps[3].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[3].steps[4].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[3].steps[5].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[3].steps[6].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[3].steps[7].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[3].steps[8].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[3].steps[9].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[3].steps[10].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[3].steps[11].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[3].steps[12].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[3].steps[13].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[3].steps[14].state = TRACK_STEP_STATE::OFF;
-    _seq_heap.pattern.tracks[3].steps[15].state = TRACK_STEP_STATE::OFF;
-
-    Serial.println("Done filling test sequencer out");
+        // now fill in steps
+        for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
+        {
+          _seq_external.banks[b].patterns[p].tracks[t].steps[s].length = 4;
+          _seq_external.banks[b].patterns[p].tracks[t].steps[s].note = 0;
+          _seq_external.banks[b].patterns[p].tracks[t].steps[s].octave = 4;
+          _seq_external.banks[b].patterns[p].tracks[t].steps[s].velocity = 50;
+          _seq_external.banks[b].patterns[p].tracks[t].steps[s].microtiming = 0;
+          _seq_external.banks[b].patterns[p].tracks[t].steps[s].probability = 100;
+          _seq_external.banks[b].patterns[p].tracks[t].steps[s].state = TRACK_STEP_STATE::OFF;
+        }
+      }
+    }
   }
+}
 
-  if (!useTestData){
-    project_initialized = true;
-    current_UI_mode = PATTERN_WRITE;
-  }
+void prepareSequencer(void);
+void prepareSequencer(void)
+{
+  project_initialized = true;
 
   current_selected_pattern = 0;
   current_selected_track = 0;
 
-  Serial.print("sizeof sequencer heap: ");
-  Serial.print(sizeof(_seq_heap));
+  current_UI_mode = PATTERN_WRITE;
 
-  Serial.print(" sizeof sequencer ext: ");
-  Serial.print(sizeof(_seq_external));
-
-  Serial.print(" sizeof step stack: ");
-  Serial.print(sizeof(_step_stack));
-
-  Serial.print(" comboVoices: ");
-  Serial.println(sizeof(comboVoices));
-
-  Serial.print(" sampleVoices: ");
-  Serial.println(sizeof(sampleVoices));
-
-  if (!useTestData){
-    if (current_UI_mode == TRACK_WRITE) {
-      setDisplayStateForAllStepLEDs();
-    }
-
-    drawSequencerScreen();
-  }
-}
-
-void drawHatchedBackground();
-void drawHatchedBackground() {    
-  int leftBoundX = 0;
-  int rightBoundX = 128;
-  int topBoundX = 0;
-  int bottomBoundX = 64;
-
-  int pixelRows = 64;
-  int pixelCols = 128;
-
-  // initialize row template
-  int t[128];
-  int spacing = 4;
-
-  // fill up template
-  for (int i=0; i<128; i++) {
-      if (i == 0 || (i % spacing == 0)) {
-          t[i] = 1;
-      } else {
-          t[i] = 0;
-      }
-  }
-
-  for (int r = 0; r < pixelRows; r++) {
-    if (r != 0) {
-      //Rotate the given array one time toward right    
-      for(int i = 0; i < 1; i++){    
-        int j;
-        int last;  
-          
-        //Stores the last element of array    
-        last = t[127];
-        
-        for(j = 127; j > 0; j--){
-          //Shift element of array by one    
-          t[j] = t[j-1];    
-        }    
-        //Last element of array will be added to the start of array.    
-        t[0] = last;    
-      } 
-    }
-    
-    for (int c = 0; c < pixelCols; c++) {
-      if (t[c] == 1) {
-        u8g2.drawPixel(leftBoundX + c, topBoundX + r);
-      }
-    }
-  }
+  drawSequencerScreen();
 }
 
 void saveProject()
@@ -2051,7 +1950,10 @@ void saveProject()
   seqFileW.write((byte *)&_seq_external, sizeof(_seq_external));
   seqFileW.close();
 
-  initSequencer(false);
+  // TODO: can prob remove this, the current pattern in heap should reflect the current pattern in PSRAM
+  _seq_heap.pattern = _seq_external.banks[current_selected_bank].patterns[current_selected_pattern];
+
+  Serial.println("done saving project!");
 }
 
 void loadLatestProject();
@@ -2093,8 +1995,7 @@ void loadLatestProject()
     delay(100);
     
     configureVoiceSettingsOnLoad();
-
-    initSequencer(false);
+    prepareSequencer();
   } else {
     drawErrorMessage("Sequencer data could not be found!");
   }
@@ -2145,9 +2046,7 @@ void initProject()
 
   delay(100);
 
-  // TODO: fully initialize sequencer data in PSRAM with non random data
-  initSequencer(true);
-  _seq_external.banks[0].patterns[0] = _seq_heap.pattern;
+  initExternalSequencer();
 
   String seqFilename = "/";
   seqFilename += current_project.name;
@@ -2157,9 +2056,13 @@ void initProject()
   seqFileW.write((byte *)&_seq_external, sizeof(_seq_external));
   seqFileW.close();
 
+  _seq_heap.pattern = _seq_external.banks[0].patterns[0];
+
   delay(100);
 
-  initSequencer(false);
+  configureVoiceSettingsOnLoad();
+
+  prepareSequencer();
 }
 
 void drawInitProject();
@@ -2270,18 +2173,12 @@ void setup() {
   handleSwitchStates(true);
   Serial.println("handled switch states during project busy");
 
-  initTrackSounds();
-  Serial.println("init'd track sounds");
-
   // prepare sample names to be occupied
   initUsableSampleNames();
   Serial.println("init'd usable sample names");
 
-  // IMPORTANT: DO THIS AFTER SD IS INITIALIZED ABOVE
-  // load short project mono samples into PSRAM
-  loadRawSamplesFromSdCard();
-  parseRootForWavSamples();
-  Serial.println("prepared samples");
+  initTrackSounds();
+  Serial.println("init'd track sounds");
   
   delay(25);
 
@@ -2357,7 +2254,7 @@ void setup() {
   delay(1000);
 
   Serial.println("handling project save/load");
-
+  
   // TODO: load project data from external flash memory
   File projectListFile = myfs.open("/project_list.txt", FILE_READ);
   if (!projectListFile.available()) {
@@ -2369,6 +2266,12 @@ void setup() {
     loadLatestProject();
     //wipeProject();
   }
+
+  // IMPORTANT: DO THIS AFTER SD IS INITIALIZED ABOVE
+  // load short project mono samples into PSRAM
+  loadRawSamplesFromSdCard();
+  parseRootForWavSamples();
+  Serial.println("prepared samples");
 }
 
 void loop(void)
@@ -5281,6 +5184,18 @@ void handleSwitchStates(bool discard) {
               else if ( current_UI_mode == CHANGE_SETUP) {
                 if (kpd.key[i].kchar == 'i') { // select
                   saveProject();
+
+                  auto leavingUI = current_UI_mode;
+                  auto newUI = previous_UI_mode;
+
+                  current_UI_mode = newUI;
+                  previous_UI_mode = leavingUI;
+
+                  Serial.println("leaving function!");
+
+                  function_started = false;
+
+                  drawSequencerScreen();
                 } else if (kpd.key[i].kchar == 'j') {
                   auto leavingUI = current_UI_mode;
                   auto newUI = previous_UI_mode;
@@ -5441,6 +5356,55 @@ void handleHeadphoneAdjustment(void)
       // Serial.println(newValue);
 
       sgtl5000_1.volume(hp_vol_cur);
+    }
+  }
+}
+
+void drawHatchedBackground() {    
+  int leftBoundX = 0;
+  int rightBoundX = 128;
+  int topBoundX = 0;
+  int bottomBoundX = 64;
+
+  int pixelRows = 64;
+  int pixelCols = 128;
+
+  // initialize row template
+  int t[128];
+  int spacing = 4;
+
+  // fill up template
+  for (int i=0; i<128; i++) {
+      if (i == 0 || (i % spacing == 0)) {
+          t[i] = 1;
+      } else {
+          t[i] = 0;
+      }
+  }
+
+  for (int r = 0; r < pixelRows; r++) {
+    if (r != 0) {
+      //Rotate the given array one time toward right    
+      for(int i = 0; i < 1; i++){    
+        int j;
+        int last;  
+          
+        //Stores the last element of array    
+        last = t[127];
+        
+        for(j = 127; j > 0; j--){
+          //Shift element of array by one    
+          t[j] = t[j-1];    
+        }    
+        //Last element of array will be added to the start of array.    
+        t[0] = last;    
+      } 
+    }
+    
+    for (int c = 0; c < pixelCols; c++) {
+      if (t[c] == 1) {
+        u8g2.drawPixel(leftBoundX + c, topBoundX + r);
+      }
     }
   }
 }
