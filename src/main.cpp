@@ -819,8 +819,16 @@ enum SEQUENCER_PLAYBACK_STATE {
 
 typedef struct
 {
-  SEQUENCER_PLAYBACK_STATE playback_state = STOPPED;
   int8_t current_step = 1;
+  int8_t current_bar = 1;
+} TRACK_CURRENT_STEP_STATE;
+
+typedef struct
+{
+  SEQUENCER_PLAYBACK_STATE playback_state = STOPPED;
+  TRACK_CURRENT_STEP_STATE current_track_steps[MAXIMUM_SEQUENCER_TRACKS];
+  int8_t current_step = 1;
+  int8_t current_bar = 1;
 } SEQUENCER_STATE;
 
 SEQUENCER_STATE _seq_state;
@@ -902,6 +910,8 @@ int8_t current_selected_bank = 0; // default to 0 (first)
 int8_t current_selected_pattern = 0; // default to 0 (first)
 int8_t current_selected_track = 0; // default to 0 (first)
 int8_t current_selected_step = -1; // default to -1 (none)
+
+int8_t current_step_page = 1;
 
 #define FUNCTION_BTN_CHAR 'r'
 #define SOUND_SETUP_BTN_CHAR '0'
@@ -986,10 +996,10 @@ void writeToDAC(int chip, int chan, int val);
 void initDACs(void);
 const char* getKeyStr(char idx);
 u_int8_t getKeyStepNum(char idx);
-uint8_t getKeyLED(char idx);
+int8_t getKeyLED(char idx);
 void toggleSequencerPlayback(char btn);
 void handle_bpm_step(uint32_t tick);
-void triggerAllStepsForGlobalStep(uint32_t tick);
+void triggerAllStepsForAllTracks(uint32_t tick);
 void initMain(void);
 void drawSequencerScreen(void);
 void drawSetTempoOverlay(void);
@@ -1016,6 +1026,9 @@ void drawGenericOverlayFrame(void);
 void drawErrorMessage(std::string message);
 void drawSetupScreen();
 void saveProject();
+void displayPageLEDs(int currentBar = -1);
+void displayCurrentOctaveLEDs();
+void clearPageLEDs();
 std::string strldz(std::string inputStr, const int zeroNum);
 std::string getNewProjectName();
 time_t getTeensy3Time();
@@ -1901,7 +1914,14 @@ void prepareSequencer(void)
 
 void saveProject()
 {
-  current_UI_mode = UI_MODE::PROJECT_BUSY;
+  // bool paused = false;
+  // if (_seq_state.playback_state == RUNNING) {
+  //   uClock.pause();
+  //   paused = true;
+  //   _seq_state.playback_state = PAUSED;
+  // }
+
+  current_UI_mode = PROJECT_BUSY;
 
   int maxWidth = 128;
   int maxHeight = 64;
@@ -1929,7 +1949,10 @@ void saveProject()
   currProjectFilename += current_project.name;
   currProjectFilename += ".txt";
 
-  File currProjectFile = myfs.open(currProjectFilename.c_str(), FILE_WRITE);
+  Serial.println("Write current project text file to SD card!");
+
+  File currProjectFile = SD.open(currProjectFilename.c_str(), FILE_WRITE);
+  currProjectFile.truncate();
   currProjectFile.write((byte *)&current_project, sizeof(current_project));
   currProjectFile.close();
 
@@ -1942,8 +1965,7 @@ void saveProject()
   seqFilename += current_project.name;
   seqFilename += "_seq.bin";
 
-  Serial.print("seqFilename: ");
-  Serial.println(seqFilename);
+  Serial.println("Write current project sequencer data binary file to SD card!");
 
   File seqFileW = SD.open(seqFilename.c_str(), FILE_WRITE);
   seqFileW.truncate();
@@ -1954,6 +1976,11 @@ void saveProject()
   _seq_heap.pattern = _seq_external.banks[current_selected_bank].patterns[current_selected_pattern];
 
   Serial.println("done saving project!");
+
+  // if (paused) {
+  //   uClock.pause(); // unpause
+  //   _seq_state.playback_state = RUNNING;
+  // }
 }
 
 void loadLatestProject();
@@ -1987,17 +2014,24 @@ void loadLatestProject()
     seqFile.read((byte *)&_seq_external, sizeof(_seq_external));
     seqFile.close();
 
-    delay(500);
+    delay(100);
 
     // copy first pattern from PSRAM to Heap
     _seq_heap.pattern = _seq_external.banks[0].patterns[0];
 
     delay(100);
     
+    initTrackSounds();
+
+    delay(50);
+
     configureVoiceSettingsOnLoad();
+
+    delay(50);
+
     prepareSequencer();
   } else {
-    drawErrorMessage("Sequencer data could not be found!");
+    drawErrorMessage("Sequencer data not found!");
   }
 }
 
@@ -2030,6 +2064,9 @@ void initProject()
 
   strcpy(current_project.name, new_project_name.c_str());
 
+  // keep a file in flash memory to keep track of available projects
+  // and keep the latest project modified at top if the list
+  // so that it always opens first when the unit turns on
   File newProjectListFile = myfs.open("/project_list.txt", FILE_WRITE);
   newProjectListFile.print(new_project_name.c_str());
   newProjectListFile.close();
@@ -2040,7 +2077,9 @@ void initProject()
   newProjectFilename += new_project_name;
   newProjectFilename += ".txt";
 
-  File newProjectFile = myfs.open(newProjectFilename.c_str(), FILE_WRITE);
+  Serial.println("Saving new project text file to SD card!");
+
+  File newProjectFile = SD.open(newProjectFilename.c_str(), FILE_WRITE);
   newProjectFile.write((byte *)&current_project, sizeof(current_project));
   newProjectFile.close();
 
@@ -2051,6 +2090,8 @@ void initProject()
   String seqFilename = "/";
   seqFilename += current_project.name;
   seqFilename += "_seq.bin";
+
+  Serial.println("Saving new project sequencer data binary file to SD card!");
 
   File seqFileW = SD.open(seqFilename.c_str(), FILE_WRITE);
   seqFileW.write((byte *)&_seq_external, sizeof(_seq_external));
@@ -2251,8 +2292,6 @@ void setup() {
   initMain();
   Serial.println("init'd main screen");
 
-  delay(1000);
-
   Serial.println("handling project save/load");
   
   // TODO: load project data from external flash memory
@@ -2285,17 +2324,96 @@ void loop(void)
   handleEncoderStates();
 }
 
+#define STARS 500
+
+float star_x[STARS], star_y[STARS], star_z[STARS]; 
+
+void initStar(int i) {
+  star_x[i] = random(-100, 100);
+  star_y[i] = random(-100, 100);
+  star_z[i] = random(100, 500);
+}
+
+void showStarfield(bool showLogo, bool showFooter, int shrinkAmt) {
+  int x,y;
+  int centrex,centrey;
+  
+  centrex = 128 / 2;
+  centrey = 64 / 2; 
+
+  // centrex = (128 / 2) - shrinkAmt;
+  // centrey = (64 / 2) - shrinkAmt; 
+  
+  for (int i = 0; i < STARS; i++) {
+    star_z[i] = star_z[i] - 7;
+
+    int mult = 100 - shrinkAmt;
+
+    x = star_x[i] / star_z[i] * (mult < 0 ? 0 : mult) + centrex;
+    y = star_y[i] / star_z[i] * (mult < 0 ? 0 : mult) + centrey;
+
+    if(
+        (x < 0)  ||        (x > 128) || 
+        (y < 0)  ||        (y > 64) ||
+        (star_z[i] < 1)      
+      )      initStar(i);
+
+    if (mult >= 0) {
+      u8g2.drawPixel(x, y);
+    }
+  }
+
+  if (showLogo) {
+    int boxWidth = 60;
+    int boxHeight = 30;
+    u8g2.setColorIndex((u_int8_t)0);
+    u8g2.drawBox((128 / 2) - (boxWidth / 2), (64 / 2) - (boxHeight / 2), boxWidth, boxHeight);
+    u8g2.setColorIndex((u_int8_t)1);
+    u8g2.setFont(bitocra13_c); // u8g2_font_8x13_mr
+    u8g2.drawStr(52, 24, "xr-1");
+  }
+
+  if (showFooter) {
+    int fBoxWidth = 60;
+    int fBoxHeight = 10;
+    u8g2.setColorIndex((u_int8_t)0);
+    u8g2.drawBox((128 / 2) - (fBoxWidth / 2), 48, fBoxWidth, fBoxHeight);
+    u8g2.setColorIndex((u_int8_t)1);
+    u8g2.setFont(small_font); // u8g2_font_6x10_tf
+    u8g2.setFontRefHeightExtendedText();
+    u8g2.drawStr(38, 49, "audio enjoyer");
+  }
+} 
+
 void initMain()
 {
   u8g2.clearBuffer();
 
-  u8g2.setFont(bitocra13_c); // u8g2_font_8x13_mr
-  u8g2.drawStr( 48, 24, "xr-1");
+  for (int i = 0; i < STARS; i++) 
+    initStar(i);
+
+  uint32_t starfieldElapsed = 0;
+  int shrinkAmt = 0;
+  while (true)
+  {
+    u8g2.clearBuffer();
+    if (starfieldElapsed > 20) {
+      ++shrinkAmt;
+    }
+
+    showStarfield((starfieldElapsed > 20 ? true : false), (starfieldElapsed > 40 ? true : false), shrinkAmt);
+    u8g2.sendBuffer();
+
+    delay(10);
+
+    ++starfieldElapsed;
+    if (starfieldElapsed >= 125) { // 1.25s
+      break;
+    }
+  }
 
   u8g2.setFont(small_font); // u8g2_font_6x10_tf
   u8g2.setFontRefHeightExtendedText();
-
-  u8g2.sendBuffer();
 }
 
 std::string strldz(std::string inputStr, const int zeroNum)
@@ -2645,9 +2763,8 @@ SOUND_CONTROL_MODS getSubtractiveSynthControlModData()
   case 5: // OUTPUT
     mods.aName = "LVL";
     mods.bName = "PAN";
-    mods.cName = "--"; // fx send?
-    mods.dName = "--"; // fx return?
-
+    mods.cName = "STP";
+    mods.dName = "--"; // fx send?
 
     mods.aValue = std::to_string((float)round(track.level * 100) / 100);
     mods.aValue = mods.aValue.substr(0,3);
@@ -2655,8 +2772,10 @@ SOUND_CONTROL_MODS getSubtractiveSynthControlModData()
     mods.bValue = std::to_string((float)round(track.pan * 100) / 100);
     mods.bValue = mods.bValue.substr(0,3);
 
-    mods.cValue = "--";
+    mods.cValue = std::to_string(track.last_step);
+
     mods.dValue = "--";
+
     break;
   
   default:
@@ -2722,8 +2841,8 @@ SOUND_CONTROL_MODS getRawSampleControlModData()
   case 3: // OUTPUT
     mods.aName = "LVL";
     mods.bName = "PAN";
-    mods.cName = "--"; // fx send?
-    mods.dName = "--"; // fx return?
+    mods.cName = "STP";
+    mods.dName = "--"; // fx send?
 
     mods.aValue = std::to_string((float)round(track.level * 100) / 100);
     mods.aValue = mods.aValue.substr(0,3);
@@ -2731,7 +2850,7 @@ SOUND_CONTROL_MODS getRawSampleControlModData()
     mods.bValue = std::to_string((float)round(track.pan * 100) / 100);
     mods.bValue = mods.bValue.substr(0,3);
 
-    mods.cValue = "--";
+    mods.cValue = std::to_string(track.last_step);
     mods.dValue = "--";
     break;
   
@@ -2894,6 +3013,26 @@ SOUND_CONTROL_MODS getControlModDataForTrack()
   return mods;
 }
 
+SOUND_CONTROL_MODS getControlModDataForPattern();
+SOUND_CONTROL_MODS getControlModDataForPattern()
+{
+  SOUND_CONTROL_MODS mods;
+
+  PATTERN pattern = getHeapCurrentSelectedPattern();
+
+  mods.aName = "STP";
+  mods.bName = "--";
+  mods.cName = "--";
+  mods.dName = "--";
+
+  mods.aValue = std::to_string(pattern.last_step); // TODO: use 1/16 etc display
+  mods.bValue = "--";
+  mods.cValue = "--";
+  mods.dValue = "--";
+
+  return mods;
+}
+
 void drawControlMods(void);
 void drawControlMods(void)
 {
@@ -2927,6 +3066,33 @@ void drawControlMods(void)
   // u8g2.setColorIndex((u_int8_t)1);
 
   SOUND_CONTROL_MODS mods = getControlModDataForTrack();
+
+  u8g2.drawStr(1+ctrlModHeaderStartX+2,ctrlModHeaderY+1, mods.aName.c_str());
+  u8g2.drawStr(2+ctrlModHeaderStartX+2+(ctrlModSpacerMult*1),ctrlModHeaderY+1, mods.bName.c_str());
+  u8g2.drawStr(3+ctrlModHeaderStartX+2+(ctrlModSpacerMult*2),ctrlModHeaderY+1, mods.cName.c_str());
+  u8g2.drawStr(4+ctrlModHeaderStartX+2+(ctrlModSpacerMult*3),ctrlModHeaderY+1, mods.dName.c_str());
+  
+  u8g2.drawStr(36,ctrlModHeaderY+15, mods.aValue.c_str());
+  u8g2.drawStr(60,ctrlModHeaderY+15, mods.bValue.c_str());
+  u8g2.drawStr(84,ctrlModHeaderY+15, mods.cValue.c_str());
+  u8g2.drawStr(112,ctrlModHeaderY+15, mods.dValue.c_str());
+}
+
+void drawPatternControlMods(void);
+void drawPatternControlMods(void)
+{
+  int ctrlModHeaderY = 20;
+  int ctrlModHeaderBoxSize = 9;
+  int ctrlModHeaderStartX = 29;
+  int ctrlModSpacerMult = 25;
+
+  // draw control mod indicators (a,b,c,d)
+  u8g2.drawLine(ctrlModHeaderStartX,30,128,30);
+  u8g2.drawLine(21+ctrlModHeaderStartX,20,21+ctrlModHeaderStartX,52);
+  u8g2.drawLine(22+ctrlModHeaderStartX+(ctrlModSpacerMult*1),20,22+ctrlModHeaderStartX+(ctrlModSpacerMult*1),52);
+  u8g2.drawLine(24+ctrlModHeaderStartX+(ctrlModSpacerMult*2),20,24+ctrlModHeaderStartX+(ctrlModSpacerMult*2),52);
+
+  SOUND_CONTROL_MODS mods = getControlModDataForPattern();
 
   u8g2.drawStr(1+ctrlModHeaderStartX+2,ctrlModHeaderY+1, mods.aName.c_str());
   u8g2.drawStr(2+ctrlModHeaderStartX+2+(ctrlModSpacerMult*1),ctrlModHeaderY+1, mods.bName.c_str());
@@ -3020,7 +3186,28 @@ void drawSequencerScreen()
   }
 
   if (current_UI_mode == PATTERN_WRITE) {
-    // implement pattern main context area
+    PATTERN currPattern = getHeapCurrentSelectedPattern();
+
+    // draw pattern header box
+    u8g2.setColorIndex((u_int8_t)1);
+    u8g2.drawBox(0,9,128,9);
+    u8g2.setColorIndex((u_int8_t)0);
+    std::string patternHeaderStr = "EDIT PATTERN";
+    u8g2.drawStr(2, 10, patternHeaderStr.c_str());
+    u8g2.setColorIndex((u_int8_t)1);
+
+    // draw pattern main icon area
+    std::string patternNumStr = strldz(std::to_string(current_selected_pattern+1), 2);
+    u8g2.setFont(bitocra13_c);
+    u8g2.drawStr(8, 26, patternNumStr.c_str());
+    u8g2.setFont(bitocra7_c);
+
+    // draw control mod area
+    drawPatternControlMods();
+
+    u8g2.drawLine(0,52,128,52);
+    u8g2.drawStr(0,56,"MAIN");
+
   } else if (current_UI_mode == TRACK_WRITE || current_UI_mode == TRACK_SEL || current_UI_mode == SUBMITTING_STEP_VALUE) {
     TRACK currTrack = getHeapCurrentSelectedTrack();
     TRACK_TYPE currTrackType = currTrack.track_type;
@@ -3086,6 +3273,8 @@ void drawSequencerScreen()
   }
 
   u8g2.sendBuffer();
+
+  // displayPageLEDs();
 }
 
 void drawGenericOverlayFrame(void)
@@ -3277,19 +3466,18 @@ void triggerTrackManually(uint8_t t, uint8_t note) {
   }
 }
 
-void triggerAllStepsForGlobalStep(uint32_t tick)
+void triggerAllStepsForAllTracks(uint32_t tick)
 {
-  int8_t currGlobalStep = _seq_state.current_step - 1; // get zero-based global step
   PATTERN currentPattern = getHeapCurrentSelectedPattern();
 
-  const int MAX_PATTERN_TRACK_SIZE = 16; // TODO: make this a define later
+  for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++) {
+    int8_t currTrackStep = _seq_state.current_track_steps[t].current_step - 1; // get zero-based track step number
 
-  for (int t = 0; t < MAX_PATTERN_TRACK_SIZE; t++) {
     TRACK currTrack = currentPattern.tracks[t];
-    TRACK_STEP currTrackStep = currTrack.steps[currGlobalStep];
+    TRACK_STEP currTrackStepData = currTrack.steps[currTrackStep];
 
-    if ((currTrackStep.state == TRACK_STEP_STATE::ON) || (currTrackStep.state == TRACK_STEP_STATE::ACCENTED)) {
-      handleAddToStepStack(tick, t, currGlobalStep);
+    if ((currTrackStepData.state == TRACK_STEP_STATE::ON) || (currTrackStepData.state == TRACK_STEP_STATE::ACCENTED)) {
+      handleAddToStepStack(tick, t, currTrackStep);
     }
   }
 }
@@ -3464,12 +3652,33 @@ void setDisplayStateForAllStepLEDs(void)
 
   const int MAX_TRACK_LEDS_SIZE = 17;
   for (int l = 1; l < MAX_TRACK_LEDS_SIZE; l++) {
-    TRACK_STEP currTrackStepForLED = currTrack.steps[l-1];
+    int stepToUse = l;
+
+    // todo: check if current track has last_step > 16
+    // if so, use proper offset to get correct step state for current page
+    if (current_step_page == 2) {
+      stepToUse += 16;
+    } else if (current_step_page == 3) {
+      stepToUse += 32;
+    } else if (current_step_page == 4) {
+      stepToUse += 48;
+    }
+
+    TRACK_STEP currTrackStepForLED = currTrack.steps[stepToUse-1];
     int8_t curr_led_char = stepCharMap[l];
-    uint8_t keyLED = getKeyLED(curr_led_char);
+    int8_t keyLED = getKeyLED(curr_led_char);
+
+    if (stepToUse > currTrack.last_step) {
+      setLEDPWM(keyLED, 0);
+      continue;
+    }
 
     if (currTrackStepForLED.state == TRACK_STEP_STATE::OFF) {
-      setLEDPWM(keyLED, 0);
+      if (keyLED < 0) {
+        Serial.println("could not find key LED!");
+      } else {
+        setLEDPWM(keyLED, 0);
+      }
     } else if (currTrackStepForLED.state == TRACK_STEP_STATE::ON) {
       setLEDPWM(keyLED, 512); // 256 might be better
     } else if (currTrackStepForLED.state == TRACK_STEP_STATE::ACCENTED) {
@@ -3480,20 +3689,23 @@ void setDisplayStateForAllStepLEDs(void)
 
 void setDisplayStateForPatternActiveTracksLEDs(bool enable)
 {
-  int8_t currGlobalStep = _seq_state.current_step - 1; // get zero-based step
-
   PATTERN currentPattern = getHeapCurrentSelectedPattern();
 
   const int MAX_PATTERN_TRACK_SIZE = 17;
   for (int t = 1; t < MAX_PATTERN_TRACK_SIZE; t++) {
     TRACK currTrack = currentPattern.tracks[t-1];
     int8_t curr_led_char = stepCharMap[t];
-    uint8_t keyLED = getKeyLED(curr_led_char);
+    int8_t keyLED = getKeyLED(curr_led_char);
+    int8_t currTrackStep = _seq_state.current_track_steps[t-1].current_step;
     
-    TRACK_STEP currTrackStepForLED = currTrack.steps[currGlobalStep];
+    TRACK_STEP currTrackStepForLED = currTrack.steps[currTrackStep-1];
 
     if (currTrackStepForLED.state == TRACK_STEP_STATE::OFF) {
-      setLEDPWM(keyLED, 0);
+      if (keyLED < 0) {
+        Serial.println("could not find key LED!");
+      } else {
+        setLEDPWM(keyLED, 0);
+      }
     } else if (currTrackStepForLED.state == TRACK_STEP_STATE::ON || currTrackStepForLED.state == TRACK_STEP_STATE::ACCENTED) {
       setLEDPWM(keyLED, enable ? 4095 : 0);
     }
@@ -3503,17 +3715,25 @@ void setDisplayStateForPatternActiveTracksLEDs(bool enable)
 void displayCurrentlySelectedPattern(void)
 {
   int8_t curr_led_char = stepCharMap[current_selected_pattern+1];
-  uint8_t keyLED = getKeyLED(curr_led_char);
+  int8_t keyLED = getKeyLED(curr_led_char);
 
-  setLEDPWM(keyLED, 4095);
+  if (keyLED < 0) {
+    Serial.println("could not find key LED - 4!");
+  } else {
+    setLEDPWM(keyLED, 4095);
+  }
 }
 
 void displayCurrentlySelectedTrack(void)
 {
   int8_t curr_led_char = stepCharMap[current_selected_track+1];
-  uint8_t keyLED = getKeyLED(curr_led_char);
-  
-  setLEDPWM(keyLED, 4095);
+  int8_t keyLED = getKeyLED(curr_led_char);
+
+  if (keyLED < 0) {
+    Serial.println("could not find key LED - 5!");
+  } else {
+    setLEDPWM(keyLED, 4095);
+  }
 }
 
 void clearAllStepLEDs(void)
@@ -3560,20 +3780,115 @@ void handleAddToStepStack(uint32_t tick, int track, int step)
   }
 }
 
+void clearPageLEDs()
+{
+  setLEDPWM(17, 0);
+  setLEDPWM(18, 0);
+  setLEDPWM(19, 0);
+  setLEDPWM(20, 0);
+}
+
+void displayPageLEDs(int currentBar)
+{
+  bool blinkCurrentPage = _seq_state.playback_state == RUNNING && currentBar != -1;
+
+  TRACK currTrack = getHeapCurrentSelectedTrack();
+
+  uint16_t pageOneBrightnessMin = (current_step_page == 1) ? 50 : 5;
+  uint16_t pageTwoBrightnessMin = (current_step_page == 2) ? 50 : (currTrack.last_step > 16 ? 5 : 0);
+  uint16_t pageThreeBrightnessMin = (current_step_page == 3) ? 50 : (currTrack.last_step > 32 ? 5 : 0);
+  uint16_t pageFourBrightnessMin = (current_step_page == 4) ? 50 : (currTrack.last_step > 48 ? 5 : 0);
+
+  uint16_t pageOneBrightnessMax = blinkCurrentPage && (currentBar == 1) ? pageOneBrightnessMin + 100 : pageOneBrightnessMin;
+  uint16_t pageTwoBrightnessMax = blinkCurrentPage && (currentBar == 2) ? pageTwoBrightnessMin + 100 : pageTwoBrightnessMin;
+  uint16_t pageThreeBrightnessMax = blinkCurrentPage && (currentBar == 3) ? pageThreeBrightnessMin + 100 : pageThreeBrightnessMin;
+  uint16_t pageFourBrightnessMax = blinkCurrentPage && (currentBar == 4) ? pageFourBrightnessMin + 100 : pageFourBrightnessMin;
+  
+  setLEDPWM(17, pageOneBrightnessMax);
+  setLEDPWM(18, pageTwoBrightnessMax);
+  setLEDPWM(19, pageThreeBrightnessMax);
+  setLEDPWM(20, pageFourBrightnessMax);
+}
+
+void updateCurrentPatternStepState(void);
+void updateCurrentPatternStepState(void)
+{
+  PATTERN currPattern = getHeapCurrentSelectedPattern();
+
+  int currPatternLastStep = currPattern.last_step;
+
+  if (_seq_state.current_step <= currPatternLastStep) {
+    if (_seq_state.current_step < currPatternLastStep) {
+      if (!((_seq_state.current_step+1) % 16)) { // TODO: make this bar division configurable
+        ++_seq_state.current_bar;
+      }
+
+      ++_seq_state.current_step; // advance current step for sequencer
+    } else {
+      _seq_state.current_step = 1; // reset current step
+      _seq_state.current_bar = 1; // reset current bar
+    }
+  }
+}
+
+void updateAllTrackStepStates(void);
+void updateAllTrackStepStates(void)
+{
+  for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+  {
+    TRACK track = _seq_heap.pattern.tracks[t];
+    int trackLastStep = track.last_step;
+    int8_t track_current_step = _seq_state.current_track_steps[t].current_step;
+
+    if (track_current_step <= trackLastStep) {
+      if (track_current_step < trackLastStep) {
+        if (!((track_current_step+1) % 16)) { // TODO: make this bar division configurable
+          ++_seq_state.current_track_steps[t].current_bar;
+        }
+
+        ++_seq_state.current_track_steps[t].current_step; // advance current step for track
+      } else {
+        _seq_state.current_track_steps[t].current_step = 1; // reset current step for track
+        _seq_state.current_track_steps[t].current_bar = 1; // reset current bar for track
+      }
+    }
+  }
+}
+
 void handle_bpm_step(uint32_t tick)
 {
+  int8_t currentSelectedPatternCurrentStep = _seq_state.current_step;
+  int8_t currentSelectedTrackCurrentStep = _seq_state.current_track_steps[current_selected_track].current_step;
+  int8_t currentSelectedTrackCurrentBar = _seq_state.current_track_steps[current_selected_track].current_bar;
+
+  if (current_UI_mode == TRACK_WRITE) {
+    if (!(tick % 6)) {
+      bool isOnStraightQtrNote = (currentSelectedTrackCurrentStep == 1 || !((currentSelectedTrackCurrentStep-1) % 4));
+
+      if (isOnStraightQtrNote) {
+        displayPageLEDs(currentSelectedTrackCurrentBar);
+      }
+    }
+  }
+  
+  int curr_step_paged = currentSelectedTrackCurrentStep;
+  if (current_step_page == 2 && curr_step_paged > 16 && curr_step_paged <= 32) {
+    curr_step_paged -= 16;
+  } else if (current_step_page == 3 && curr_step_paged > 32 && curr_step_paged <= 48) {
+    curr_step_paged -= 32;
+  } else if (current_step_page == 4 && curr_step_paged > 48 && curr_step_paged <= 64) {
+    curr_step_paged -= 48;
+  }
+
   // This method handles advancing the sequencer
   // and displaying the start btn and step btn BPM LEDs
-  int8_t curr_step_char = stepCharMap[_seq_state.current_step];
-  uint8_t keyLED = getKeyLED(curr_step_char);
-
-  PATTERN currPattern = getHeapCurrentSelectedPattern();
-  int currPatternLastStep = currPattern.last_step;
+  int8_t curr_step_char = stepCharMap[curr_step_paged];
+  int8_t keyLED = getKeyLED(curr_step_char);
 
   // This handles displaying the BPM for the start button led
   // on qtr note. Check for odd step number to make sure not lit on backbeat qtr note.
   if (!(tick % 6)) {
-    bool isOnStraightBeat = (_seq_state.current_step == 1 || !((_seq_state.current_step-1) % 4));
+    bool isOnStraightBeat = (currentSelectedPatternCurrentStep == 1 || !((currentSelectedPatternCurrentStep-1) % 4));
     if (isOnStraightBeat) {
       setLEDPWM(23, 4095); // each straight quarter note start button led ON
     }
@@ -3591,7 +3906,7 @@ void handle_bpm_step(uint32_t tick)
 
     // TODO: move out of 16th step !(tick % (6)) condition
     // so we can check for microtiming adjustments at the 96ppqn scale
-    triggerAllStepsForGlobalStep(tick);
+    triggerAllStepsForAllTracks(tick);
 
     if (current_UI_mode == PATTERN_SEL) {
       clearAllStepLEDs();
@@ -3600,45 +3915,79 @@ void handle_bpm_step(uint32_t tick)
       clearAllStepLEDs();
       displayCurrentlySelectedTrack();
     } else if (current_UI_mode == TRACK_WRITE) {
+      bool transitionStepLEDs = (
+        (current_step_page == 1 && currentSelectedTrackCurrentStep <= 16) || 
+        (current_step_page == 2 && currentSelectedTrackCurrentStep > 16 && currentSelectedTrackCurrentStep <= 32) ||
+        (current_step_page == 3 && currentSelectedTrackCurrentStep > 32 && currentSelectedTrackCurrentStep <= 48) ||
+        (current_step_page == 4 && currentSelectedTrackCurrentStep > 48 && currentSelectedTrackCurrentStep <= 64)
+      );
 
-      // show sequencer running LEDs for all other modes?
-      if (_seq_state.current_step > 1) {
-        uint8_t prevKeyLED = getKeyLED(stepCharMap[_seq_state.current_step-1]);
-        setLEDPWM(prevKeyLED, 0); // turn prev sixteenth led OFF
-      } else if (_seq_state.current_step == 1) {
-        uint8_t prevKeyLED = getKeyLED(stepCharMap[16]);
-        setLEDPWM(prevKeyLED, 0); // turn prev sixteenth led OFF
-      }
-    
-      setLEDPWM(keyLED, 4095); // turn sixteenth led ON
-    }
+      bool turnOffLastLED = (
+        (current_step_page == 1 && currentSelectedTrackCurrentStep == 1) || 
+        (current_step_page == 2 && currentSelectedTrackCurrentStep == 16) ||
+        (current_step_page == 3 && currentSelectedTrackCurrentStep == 32) ||
+        (current_step_page == 4 && currentSelectedTrackCurrentStep == 48)
+      );
 
-    if (_seq_state.current_step <= currPatternLastStep) {
-      if (_seq_state.current_step < currPatternLastStep) {
-        ++_seq_state.current_step; // advance current step for sequencer
+      if (currentSelectedTrackCurrentStep > 1) {
+        if (transitionStepLEDs) {
+            uint8_t prevKeyLED = getKeyLED(stepCharMap[curr_step_paged-1]);
+            setLEDPWM(prevKeyLED, 0); // turn prev sixteenth led OFF
+        }
       } else {
-        _seq_state.current_step = 1; // reset current step
+        if (turnOffLastLED) {
+          TRACK currTrack = getHeapCurrentSelectedTrack();
+          int currTrackLastStep = currTrack.last_step;
+          if (currTrackLastStep > 16) {
+            currTrackLastStep -= 16;
+          }
+
+          uint8_t prevKeyLED = getKeyLED(stepCharMap[currTrackLastStep]);
+          setLEDPWM(prevKeyLED, 0); // turn prev sixteenth led OFF
+        }
+      }
+
+      if (transitionStepLEDs) {
+        setLEDPWM(keyLED, 4095); // turn sixteenth led ON
       }
     }
+
+    updateCurrentPatternStepState();
+    updateAllTrackStepStates();
   } else if ( !(tick % bpm_blink_timer) ) {
-    if (current_UI_mode != PATTERN_SEL || current_UI_mode != TRACK_SEL) {
-      setLEDPWM(keyLED, 0); // turn 16th and start OFF
-    }
+    // remove this?
+    // if (current_UI_mode != PATTERN_SEL || current_UI_mode != TRACK_SEL) {
+    //   if (keyLED < 0) {
+    //     Serial.println("could not find key LED - 6!");
+    //   } else {
+    //     setLEDPWM(keyLED, 0); // turn 16th and start OFF
+    //   }
+    // }
 
     if (current_UI_mode == PATTERN_WRITE) {
       setDisplayStateForPatternActiveTracksLEDs(false);
     } else if (current_UI_mode == TRACK_WRITE || current_UI_mode == SUBMITTING_STEP_VALUE) {
       setDisplayStateForAllStepLEDs();
+      displayPageLEDs(-1);
     }
   }
 
   // every 1/4 step log memory usage
   if (!(tick % 24)) {
-    Serial.print("Memory: ");
-    Serial.print(AudioMemoryUsage());
-    Serial.print(",");
-    Serial.print(AudioMemoryUsageMax());
-    Serial.println();
+    // Serial.print("Memory: ");
+    // Serial.print(AudioMemoryUsage());
+    // Serial.print(",");
+    // Serial.print(AudioMemoryUsageMax());
+    // Serial.println();
+  }
+}
+
+void rewindAllCurrentStepsForAllTracks(void);
+void rewindAllCurrentStepsForAllTracks(void)
+{
+  for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+  {
+    _seq_state.current_track_steps[t].current_step = 1;
   }
 }
 
@@ -3653,6 +4002,7 @@ void toggleSequencerPlayback(char btn)
       uClock.pause();
       
       setLEDPWMDouble(23, 0, keyLED, 0);
+      displayPageLEDs(-1);
 
       if (current_UI_mode == UI_MODE::TRACK_WRITE) {
         setDisplayStateForAllStepLEDs(); // TODO: wrap with "if in track view display step LED state" conditional, etc
@@ -3666,6 +4016,10 @@ void toggleSequencerPlayback(char btn)
     } else if (btn == 'w') {
       // Stopped, so reset sequencer to FIRST step in pattern
       _seq_state.current_step = 1;
+      _seq_state.current_bar = 1;
+
+      rewindAllCurrentStepsForAllTracks();
+
       _seq_state.playback_state = STOPPED;
       uClock.stop();
 
@@ -3686,6 +4040,10 @@ void toggleSequencerPlayback(char btn)
   } else if (btn == 'w') {
     // Stopped, so reset sequencer to FIRST step in pattern
     _seq_state.current_step = 1;
+    _seq_state.current_bar = 1;
+
+    rewindAllCurrentStepsForAllTracks();
+
     _seq_state.playback_state = STOPPED;
     uClock.stop();
     
@@ -3704,12 +4062,15 @@ const char* getKeyStr(char idx) {
   return charCharsMap[idx];
 }
 
-uint8_t getKeyLED(char idx) {
+int8_t getKeyLED(char idx) {
   if (charLEDMap.count(idx) != 0) {
     return charLEDMap[idx];
   }
 
-  return 17;
+  // Serial.print("key LED not found for idx: ");
+  // Serial.println(idx);
+
+  return -1;
 }
 
 bool btnCharIsATrack(char btnChar) {
@@ -3733,7 +4094,19 @@ uint8_t getKeyStepNum(char idx)
 
 void toggleSelectedStep(uint8_t step)
 {
-  uint8_t adjStep = step-1; // get zero based step num
+  int stepToUse = step;
+
+  // todo: check if current track has last_step > 16
+  // if so, use proper offset to get correct step state for current page
+  if (current_step_page == 2) {
+    stepToUse += 16;
+  } else if (current_step_page == 3) {
+    stepToUse += 32;
+  } else if (current_step_page == 4) {
+    stepToUse += 48;
+  }
+
+  uint8_t adjStep = stepToUse-1; // get zero based step num
 
   Serial.print("adjStep: ");
   Serial.println(adjStep);
@@ -4175,7 +4548,27 @@ void handleEncoderSubtractiveSynthModC(int diff)
       drawSequencerScreen();
     }
   } else if (current_page_selected == 5) {
-    // n/a
+    int currLastStep = currTrack.last_step;
+    int newLastStep = currTrack.last_step + diff;
+
+    // make sure track last step doesn't exceed pattern's
+    PATTERN currPattern = getHeapCurrentSelectedPattern();
+
+    // TODO: try to re-align current playing track step with pattern step if able
+
+    if (newLastStep < 1) {
+      newLastStep = 1;
+    } else if (newLastStep > currPattern.last_step) {
+      newLastStep = currPattern.last_step;
+    }
+
+    if (newLastStep != currLastStep) {
+      _seq_heap.pattern.tracks[current_selected_track].last_step = newLastStep;
+
+      displayPageLEDs();
+      setDisplayStateForAllStepLEDs();
+      drawSequencerScreen();
+    }
   }
 }
 
@@ -4528,7 +4921,27 @@ void handleEncoderRawSampleModC(int diff)
       drawSequencerScreen();
     }
   } else if (current_page_selected == 3) {
-    // n/a
+    int currLastStep = currTrack.last_step;
+    int newLastStep = currTrack.last_step + diff;
+
+    // make sure track last step doesn't exceed pattern's
+    PATTERN currPattern = getHeapCurrentSelectedPattern();
+
+    // TODO: try to re-align current playing track step with pattern step if able
+
+    if (newLastStep < 1) {
+      newLastStep = 1;
+    } else if (newLastStep > currPattern.last_step) {
+      newLastStep = currPattern.last_step;
+    }
+
+    if (newLastStep != currLastStep) {
+      _seq_heap.pattern.tracks[current_selected_track].last_step = newLastStep;
+
+      displayPageLEDs();
+      setDisplayStateForAllStepLEDs();
+      drawSequencerScreen();
+    }
   }
 }
 
@@ -4610,10 +5023,9 @@ void handleEncoderRawSampleModD(int diff)
 
       drawSequencerScreen();
     }
-  }else if (current_page_selected == 3) {
+  } else if (current_page_selected == 3) {
     // n/a
   }
-  
 }
 
 void handleEncoderWavSampleModA(int diff);
@@ -4648,6 +5060,54 @@ void handleEncoderWavSampleModC(int diff)
 
 void handleEncoderWavSampleModD(int diff);
 void handleEncoderWavSampleModD(int diff)
+{
+  //
+}
+
+// Pattern mods
+
+void handleEncoderPatternModA(int diff);
+void handleEncoderPatternModA(int diff)
+{
+  PATTERN currPattern = getHeapCurrentSelectedPattern();
+
+  int currLastStep = currPattern.last_step;
+  int newLastStep = currPattern.last_step + diff;
+
+  if (newLastStep < 1) {
+    newLastStep = 1;
+  } else if (newLastStep > MAXIMUM_SEQUENCER_STEPS) { // use max step as a #define later
+    newLastStep = MAXIMUM_SEQUENCER_STEPS;
+  }
+
+  if (newLastStep != currLastStep) {
+    _seq_heap.pattern.last_step = newLastStep;
+
+    for (int t=0; t<MAXIMUM_SEQUENCER_TRACKS; t++) {
+      // set track's last_step to match pattern if track last_step is greater than pattern's
+      if (_seq_heap.pattern.tracks[t].last_step > newLastStep) {
+        _seq_heap.pattern.tracks[t].last_step = newLastStep;
+      }
+    }
+
+    drawSequencerScreen();
+  }
+}
+
+void handleEncoderPatternModB(int diff);
+void handleEncoderPatternModB(int diff)
+{
+  //
+}
+
+void handleEncoderPatternModC(int diff);
+void handleEncoderPatternModC(int diff)
+{
+  //
+}
+
+void handleEncoderPatternModD(int diff);
+void handleEncoderPatternModD(int diff)
 {
   //
 }
@@ -4737,14 +5197,47 @@ void handleEncoderTraversePages(void)
   }
 }
 
+void handleEncoderSetPatternMods(void);
+void handleEncoderSetPatternMods(void)
+{
+  PATTERN currPattern = getHeapCurrentSelectedPattern();
+
+  const int modCount = 4;
+  for (int m = 0; m < modCount; m++)
+  {
+    int modEncoderIdx = m+1;
+
+    encoder_currValues[modEncoderIdx] = encoder_getValue(encoder_addrs[modEncoderIdx]);
+
+    if(encoder_currValues[modEncoderIdx] != encoder_lastValues[modEncoderIdx]) {
+      int diff = encoder_currValues[modEncoderIdx] - encoder_lastValues[modEncoderIdx];
+
+      if (m == 0) {
+          handleEncoderPatternModA(diff);
+        } else if (m == 1) {
+          handleEncoderPatternModB(diff);
+        } else if (m == 2) {
+          handleEncoderPatternModC(diff);
+        } else if (m == 3) {
+          handleEncoderPatternModD(diff);
+        }
+
+      encoder_lastValues[modEncoderIdx] = encoder_currValues[modEncoderIdx];
+    }
+  }
+}
+
 void handleEncoderStates() {
   if (!project_initialized) {
+    Serial.println("Not handling encoder states, project is not initialized!");
     return;
   }
 
   // slow this down from being called every loop when in set tempo mode
   if (!(elapsed % 25) && current_UI_mode == SET_TEMPO) {
     handleEncoderSetTempo();
+  } else if (!(elapsed % 25) && current_UI_mode == PATTERN_WRITE) {
+    handleEncoderSetPatternMods();
   } else if (!(elapsed % 25) && (current_UI_mode == TRACK_WRITE || current_UI_mode == SUBMITTING_STEP_VALUE)) {
     if (current_UI_mode == TRACK_WRITE) {
       handleEncoderTraversePages();
@@ -4979,78 +5472,23 @@ void handleSwitchStates(bool discard) {
                   toggleSequencerPlayback(kpd.key[i].kchar);
                   drawSequencerScreen();
                 }
-                // octave
+                // page
                 else if (kpd.key[i].kchar == '9' || kpd.key[i].kchar == '3') {
                   Serial.print("btn: ");
                   Serial.println(kpd.key[i].kchar);
 
-                  // 1-7 octave range e.g. [1,2,3,4,5,6,7]
-                  // LEDs 17-20
                   if (kpd.key[i].kchar == '3') {
-                    keyboardOctave = min(7, keyboardOctave+1);
+                    current_step_page = min(4, current_step_page+1);
 
                   } else if (kpd.key[i].kchar == '9') {
-                    keyboardOctave = max(1, keyboardOctave-1);
+                    current_step_page = max(1, current_step_page-1);
                   }
 
-                  switch (keyboardOctave)
-                  {
-                  case 1:
-                    setLEDPWM(17, 100);
-                    setLEDPWM(18, 25);
-                    setLEDPWM(19, 0);
-                    setLEDPWM(20, 0);
-                    break;
-                  
-                  case 2:
-                    setLEDPWM(17, 25);
-                    setLEDPWM(18, 25);
-                    setLEDPWM(19, 0);
-                    setLEDPWM(20, 0);
-                    break;
-                  
-                  case 3:
-                    Serial.println("here");
-                    setLEDPWM(17, 0);
-                    setLEDPWM(18, 25);
-                    setLEDPWM(19, 0);
-                    setLEDPWM(20, 0);
-                    break;
-                  
-                  case 4:
-                    setLEDPWM(17, 0);
-                    setLEDPWM(18, 0);
-                    setLEDPWM(19, 0);
-                    setLEDPWM(20, 0);
-                    break;
-                  
-                  case 5:
-                    setLEDPWM(17, 0);
-                    setLEDPWM(18, 0);
-                    setLEDPWM(19, 25);
-                    setLEDPWM(20, 0);
-                    break;
-                  
-                  case 6:
-                    setLEDPWM(17, 0);
-                    setLEDPWM(18, 0);
-                    setLEDPWM(19, 25);
-                    setLEDPWM(20, 25);
-                    break;
-                  
-                  case 7:
-                    setLEDPWM(17, 0);
-                    setLEDPWM(18, 0);
-                    setLEDPWM(19, 25);
-                    setLEDPWM(20, 100);
-                    break;
-                  
-                  default:
-                    break;
-                  }
+                  displayPageLEDs();
+                  setDisplayStateForAllStepLEDs();
 
-                  Serial.print("Updated octave to: ");
-                  Serial.println(keyboardOctave);
+                  Serial.print("Updated page to: ");
+                  Serial.println(current_step_page);
                 }
               }
               // function handling
@@ -5066,6 +5504,25 @@ void handleSwitchStates(bool discard) {
                   drawSetupScreen();
                 } else if (current_UI_mode == TRACK_WRITE && kpd.key[i].kchar == 'c') {
                   // TODO: impl AB layer switching mechanic
+                } 
+                // octave
+                else if (kpd.key[i].kchar == '9' || kpd.key[i].kchar == '3') {
+                  Serial.print("btn: ");
+                  Serial.println(kpd.key[i].kchar);
+
+                  // 1-7 octave range e.g. [1,2,3,4,5,6,7]
+                  // LEDs 17-20
+                  if (kpd.key[i].kchar == '3') {
+                    keyboardOctave = min(7, keyboardOctave+1);
+
+                  } else if (kpd.key[i].kchar == '9') {
+                    keyboardOctave = max(1, keyboardOctave-1);
+                  }
+
+                  displayCurrentOctaveLEDs();
+
+                  Serial.print("Updated octave to: ");
+                  Serial.println(keyboardOctave);
                 }
               }
 
@@ -5126,6 +5583,7 @@ void handleSwitchStates(bool discard) {
                 current_UI_mode = TRACK_WRITE; // force track write mode when leaving track / track select action
                 previous_UI_mode = TRACK_WRITE;
 
+                displayPageLEDs();
                 setDisplayStateForAllStepLEDs();
                 drawSequencerScreen();
               } else if (current_UI_mode == TRACK_SEL && btnCharIsATrack(kpd.key[i].kchar) && ((getKeyStepNum(kpd.key[i].kchar)-1) == track_held_for_selection)) {   
@@ -5140,6 +5598,7 @@ void handleSwitchStates(bool discard) {
                 current_UI_mode = TRACK_WRITE; // force track write mode when leaving track / track select action
                 previous_UI_mode = TRACK_WRITE;
 
+                displayPageLEDs();
                 setDisplayStateForAllStepLEDs();
                 drawSequencerScreen();
               } else if (current_UI_mode == TRACK_WRITE && btnCharIsATrack(kpd.key[i].kchar) && track_held_for_selection == -1) {   
@@ -5156,6 +5615,7 @@ void handleSwitchStates(bool discard) {
                 current_UI_mode = PATTERN_WRITE; // force patt write mode when leaving patt / patt select action
                 previous_UI_mode = PATTERN_WRITE;
 
+                clearPageLEDs();
                 clearAllStepLEDs();
                 drawSequencerScreen();
               } else if (current_UI_mode == PATTERN_SEL && btnCharIsATrack(kpd.key[i].kchar) && ((getKeyStepNum(kpd.key[i].kchar)-1) == patt_held_for_selection)) {   
@@ -5179,8 +5639,18 @@ void handleSwitchStates(bool discard) {
                 current_UI_mode = previous_UI_mode;
 
                 drawSequencerScreen();
-              } 
+              }
 
+              // set octave release
+              else if (kpd.key[i].kchar == '9' || kpd.key[i].kchar == '3') {
+                current_UI_mode = previous_UI_mode;
+                function_started = false;
+                
+                // revert LEDs to page display
+                // displayPageLEDs();
+              }
+
+              // setup screen release
               else if ( current_UI_mode == CHANGE_SETUP) {
                 if (kpd.key[i].kchar == 'i') { // select
                   saveProject();
@@ -5406,5 +5876,64 @@ void drawHatchedBackground() {
         u8g2.drawPixel(leftBoundX + c, topBoundX + r);
       }
     }
+  }
+}
+
+void displayCurrentOctaveLEDs()
+{
+  switch (keyboardOctave)
+  {
+  case 1:
+    setLEDPWM(17, 100);
+    setLEDPWM(18, 25);
+    setLEDPWM(19, 0);
+    setLEDPWM(20, 0);
+    break;
+  
+  case 2:
+    setLEDPWM(17, 25);
+    setLEDPWM(18, 25);
+    setLEDPWM(19, 0);
+    setLEDPWM(20, 0);
+    break;
+  
+  case 3:
+    Serial.println("here");
+    setLEDPWM(17, 0);
+    setLEDPWM(18, 25);
+    setLEDPWM(19, 0);
+    setLEDPWM(20, 0);
+    break;
+  
+  case 4:
+    setLEDPWM(17, 0);
+    setLEDPWM(18, 0);
+    setLEDPWM(19, 0);
+    setLEDPWM(20, 0);
+    break;
+  
+  case 5:
+    setLEDPWM(17, 0);
+    setLEDPWM(18, 0);
+    setLEDPWM(19, 25);
+    setLEDPWM(20, 0);
+    break;
+  
+  case 6:
+    setLEDPWM(17, 0);
+    setLEDPWM(18, 0);
+    setLEDPWM(19, 25);
+    setLEDPWM(20, 25);
+    break;
+  
+  case 7:
+    setLEDPWM(17, 0);
+    setLEDPWM(18, 0);
+    setLEDPWM(19, 25);
+    setLEDPWM(20, 100);
+    break;
+  
+  default:
+    break;
   }
 }
