@@ -849,7 +849,6 @@ STACK_STEP_DATA _step_stack[STEP_STACK_SIZE];
 
 // Project structure
 
-LittleFS_QSPIFlash myfs;
 bool project_initialized = false;
 
 typedef struct
@@ -1986,7 +1985,7 @@ void saveProject()
 void loadLatestProject();
 void loadLatestProject()
 {
-  File projectListFile = myfs.open("/project_list.txt", FILE_READ);
+  File projectListFile = SD.open("/project_list.txt", FILE_READ);
   String projectListFileContents = projectListFile.readString();
   projectListFile.close();
 
@@ -1994,7 +1993,7 @@ void loadLatestProject()
   latestProjectFilename += projectListFileContents;
   latestProjectFilename += ".txt";
 
-  File latestProjectFile = myfs.open(latestProjectFilename.c_str(), FILE_READ);  
+  File latestProjectFile = SD.open(latestProjectFilename.c_str(), FILE_READ);  
   if (latestProjectFile.available()) {    
     latestProjectFile.read((byte *)&current_project, sizeof(current_project));
     latestProjectFile.close();
@@ -2066,8 +2065,8 @@ void initProject()
 
   // keep a file in flash memory to keep track of available projects
   // and keep the latest project modified at top if the list
-  // so that it always opens first when the unit turns on
-  File newProjectListFile = myfs.open("/project_list.txt", FILE_WRITE);
+  // so that it always opens first when the unit turns on?
+  File newProjectListFile = SD.open("/project_list.txt", FILE_WRITE);
   newProjectListFile.print(new_project_name.c_str());
   newProjectListFile.close();
 
@@ -2157,7 +2156,14 @@ void wipeProject(void)
   seqFilename += "_seq.bin";
 
   SD.remove(seqFilename.c_str()); 
-  myfs.quickFormat();
+
+  String projFilename = "/";
+  projFilename += current_project.name;
+  projFilename += ".txt";
+
+  SD.remove(projFilename.c_str()); 
+
+  SD.remove("/project_list.txt");
 }
 
 void setup() {
@@ -2198,15 +2204,6 @@ void setup() {
     }
   }
   Serial.println("setup SD card");
-
-  if (!myfs.begin()) {
-    // stop here, but print a message repetitively
-    while (1) {
-      Serial.println("Error starting QSPI");
-      delay(500);
-    }
-  }
-  Serial.println("setup QSPI flash");
 
   current_UI_mode = PROJECT_BUSY;
 
@@ -2285,7 +2282,6 @@ void setup() {
   uClock.setOnClockStopOutput(onClockStop);
   // Set the clock BPM to 120 BPM
   uClock.setTempo(120);
-  //uClock.shuffle();
   Serial.println("init'd uClock");
 
   u8g2_prepare();
@@ -2294,8 +2290,7 @@ void setup() {
 
   Serial.println("handling project save/load");
   
-  // TODO: load project data from external flash memory
-  File projectListFile = myfs.open("/project_list.txt", FILE_READ);
+  File projectListFile = SD.open("/project_list.txt", FILE_READ);
   if (!projectListFile.available()) {
     current_UI_mode = UI_MODE::PROJECT_INITIALIZE;
     drawInitProject();
@@ -5538,9 +5533,18 @@ void handleSwitchStates(bool discard) {
               if (current_UI_mode == TRACK_WRITE && btnCharIsATrack(kpd.key[i].kchar)) {
                 // editing a step value / parameter locking this step
                 previous_UI_mode = TRACK_WRITE;
-                current_UI_mode = SUBMITTING_STEP_VALUE;  
+                current_UI_mode = SUBMITTING_STEP_VALUE;
 
-                current_selected_step = getKeyStepNum(kpd.key[i].kchar)-1;
+                uint8_t stepToUse = getKeyStepNum(kpd.key[i].kchar);
+                if (current_step_page == 2) {
+                  stepToUse += 16;
+                } else if (current_step_page == 3) {
+                  stepToUse += 32;
+                } else if (current_step_page == 4) {
+                  stepToUse += 48;
+                }
+
+                current_selected_step = stepToUse-1;
 
                 TRACK_STEP heldStep = _seq_heap.pattern.tracks[current_selected_track].steps[current_selected_step];
 
