@@ -882,6 +882,7 @@ typedef struct
   // PROJECT_WAV_SAMPLE wav_sample_pool[MAX_USABLE_WAV_SAMPLE_IDS];
   PROJECT_CLOCK_SETTINGS clock_settings;
   char name[22];
+  float tempo = 120.0;
 } PROJECT;
 
 PROJECT current_project;
@@ -1913,13 +1914,6 @@ void prepareSequencer(void)
 
 void saveProject()
 {
-  // bool paused = false;
-  // if (_seq_state.playback_state == RUNNING) {
-  //   uClock.pause();
-  //   paused = true;
-  //   _seq_state.playback_state = PAUSED;
-  // }
-
   current_UI_mode = PROJECT_BUSY;
 
   int maxWidth = 128;
@@ -1975,11 +1969,6 @@ void saveProject()
   _seq_heap.pattern = _seq_external.banks[current_selected_bank].patterns[current_selected_pattern];
 
   Serial.println("done saving project!");
-
-  // if (paused) {
-  //   uClock.pause(); // unpause
-  //   _seq_state.playback_state = RUNNING;
-  // }
 }
 
 void loadLatestProject();
@@ -1997,6 +1986,13 @@ void loadLatestProject()
   if (latestProjectFile.available()) {    
     latestProjectFile.read((byte *)&current_project, sizeof(current_project));
     latestProjectFile.close();
+  } else {
+    // handle project object evolution gracefully?
+    File latestProjectFile2 = SD.open(latestProjectFilename.c_str(), FILE_WRITE);  
+    latestProjectFile2.truncate();
+    strcpy(current_project.name, projectListFileContents.c_str());
+    latestProjectFile2.write((byte *)&current_project, sizeof(current_project));
+    latestProjectFile2.close();
   }
 
   String seqFilename = "/";
@@ -2009,6 +2005,8 @@ void loadLatestProject()
   fSize = seqFile.size();
 
   if (fSize > 0) {
+    uClock.setTempo(current_project.tempo);
+
     // copy sequencer data from SD card to PSRAM
     seqFile.read((byte *)&_seq_external, sizeof(_seq_external));
     seqFile.close();
@@ -2362,21 +2360,21 @@ void showStarfield(bool showLogo, bool showFooter, int shrinkAmt) {
     int boxWidth = 60;
     int boxHeight = 30;
     u8g2.setColorIndex((u_int8_t)0);
-    u8g2.drawBox((128 / 2) - (boxWidth / 2), (64 / 2) - (boxHeight / 2), boxWidth, boxHeight);
+    u8g2.drawBox((128 / 2) - (boxWidth / 2), (64 / 2) - (boxHeight / 2) - 6, boxWidth, boxHeight);
     u8g2.setColorIndex((u_int8_t)1);
     u8g2.setFont(bitocra13_c); // u8g2_font_8x13_mr
-    u8g2.drawStr(52, 24, "xr-1");
+    u8g2.drawStr(52, 18, "xr-1");
   }
 
   if (showFooter) {
     int fBoxWidth = 60;
     int fBoxHeight = 10;
     u8g2.setColorIndex((u_int8_t)0);
-    u8g2.drawBox((128 / 2) - (fBoxWidth / 2), 48, fBoxWidth, fBoxHeight);
+    u8g2.drawBox((128 / 2) - (fBoxWidth / 2), 42, fBoxWidth, fBoxHeight);
     u8g2.setColorIndex((u_int8_t)1);
     u8g2.setFont(small_font); // u8g2_font_6x10_tf
     u8g2.setFontRefHeightExtendedText();
-    u8g2.drawStr(38, 49, "audio enjoyer");
+    u8g2.drawStr(38, 43, "audio enjoyer");
   }
 } 
 
@@ -3856,7 +3854,7 @@ void handle_bpm_step(uint32_t tick)
   int8_t currentSelectedTrackCurrentStep = _seq_state.current_track_steps[current_selected_track].current_step;
   int8_t currentSelectedTrackCurrentBar = _seq_state.current_track_steps[current_selected_track].current_bar;
 
-  if (current_UI_mode == TRACK_WRITE) {
+  if (current_UI_mode == TRACK_WRITE && !function_started) {
     if (!(tick % 6)) {
       bool isOnStraightQtrNote = (currentSelectedTrackCurrentStep == 1 || !((currentSelectedTrackCurrentStep-1) % 4));
 
@@ -3963,7 +3961,7 @@ void handle_bpm_step(uint32_t tick)
       setDisplayStateForPatternActiveTracksLEDs(false);
     } else if (current_UI_mode == TRACK_WRITE || current_UI_mode == SUBMITTING_STEP_VALUE) {
       setDisplayStateForAllStepLEDs();
-      displayPageLEDs(-1);
+      if (!function_started) displayPageLEDs(-1);
     }
   }
 
@@ -4141,6 +4139,7 @@ void handleEncoderSetTempo()
     if (!(newTempo < 30 || newTempo > 300)) {
       if ((newTempo - currTempo >= 1) || (currTempo - newTempo) >= 1) {
         uClock.setTempo(newTempo);
+        current_project.tempo = newTempo;
         drawSetTempoOverlay();
       }
     }
@@ -5572,6 +5571,8 @@ void handleSwitchStates(bool discard) {
               else if (kpd.key[i].kchar == FUNCTION_BTN_CHAR) {
                 Serial.println("starting function!");
                 function_started = true;
+
+                displayCurrentOctaveLEDs();
               }
 
               break;
@@ -5637,6 +5638,8 @@ void handleSwitchStates(bool discard) {
               
               // tempo set release
               else if (current_UI_mode == SET_TEMPO) {
+                saveProject();
+
                 Serial.print(" reverting set tempo mode, entering: ");
                 Serial.println(previous_UI_mode);
                 // revert back to a prior write mode, not a hold mode
@@ -5647,8 +5650,8 @@ void handleSwitchStates(bool discard) {
 
               // set octave release
               else if (kpd.key[i].kchar == '9' || kpd.key[i].kchar == '3') {
-                current_UI_mode = previous_UI_mode;
-                function_started = false;
+                // current_UI_mode = previous_UI_mode;
+                // function_started = false;
                 
                 // revert LEDs to page display
                 // displayPageLEDs();
