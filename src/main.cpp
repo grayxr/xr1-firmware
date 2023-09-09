@@ -10,6 +10,7 @@
 #include <map>
 #include <string>
 #include <Audio.h>
+#include <AudioConfig.h>
 #include <SD.h>
 #include <SerialFlash.h>
 #include <TeensyVariablePlayback.h>
@@ -17,478 +18,9 @@
 #include <ResponsiveAnalogRead.h>
 #include <LittleFS.h>
 #include <TimeLib.h>
+#include <Fonts.h>
 
 time_t RTCTime;
-
-/*
-  Fontname: -aaron-bitocra7-Medium-R-Normal--7-60-75-75-C-40-ISO8859-1
-  Copyright: Aaron Christianson 2011
-  Glyphs: 160/192
-  BBX Build Mode: 0
-*/
-const uint8_t bitocra7_c[1268] U8G2_FONT_SECTION("bitocra7_c") = 
-  "\240\0\2\3\3\3\2\4\4\4\7\0\377\5\377\5\377\0\361\1\335\4\327 \5\200\316\0!\6\351\310"
-  "L\1\42\7\223\313DR\0#\7\253\310D\255\0$\11\263\307E\65@E\0%\10\253\310\304P\66"
-  "\24&\12\254\310I\61\24Ia\24'\6\322\313L\0(\7\362\307I\231\1)\10\362\307\204QJ\2"
-  "*\7\243\311ES\6+\7\233\311ES\4,\6\322\307H\1-\5\213\312\14.\5\311\310\4/\11"
-  "\263\307\246\302(\14\1\60\7\253\310P*\2\61\7\253\310\210Y\3\62\7\253\310\214\345\0\63\7\253\310"
-  "\214\221H\64\10\253\310D\22\231\0\65\7\253\310\220#\1\66\7\253\310H!E\67\10\253\310\214Q\230"
-  "\2\70\7\253\310I\26\1\71\7\253\310Pd$:\6\331\310D\1;\7\342\307\304\200\24<\11\253\310"
-  "Fi \6\2=\7\233\311\314\300\0>\12\253\310\304@\14DI\0\77\12\263\307\214Q\30\203\21\0"
-  "@\10\254\310\224Q\64\25A\7\253\310MR\25B\7\253\310H\22\3C\7\253\310\215\311\1D\10\253"
-  "\310H\221j\2E\7\253\310\220R\70F\10\253\310\220R\30\2G\7\253\310\215\221DH\10\253\310D"
-  "R%\5I\10\253\310Laj\0J\7\253\310\211\241DK\11\253\310D\322\24I\1L\7\253\310\204"
-  "\231\3M\7\253\310\34\223\24N\7\253\310D\7\25O\7\253\310M*\2P\7\253\310Pe\10Q\10"
-  "\263\307M\252Q\0R\10\253\310PS$\5S\7\253\310\215#\1T\10\253\310La\26\0U\7\253"
-  "\310DZ\4V\10\253\310D\252)\4W\7\253\310D\322\61X\10\253\310DR\226\24Y\11\253\310D"
-  "\22\25F\0Z\10\253\310\214Qr\0[\7\263\307TZ\3\134\12\263\307\204\61\20\306@\30]\7\263"
-  "\307LZ\5^\5\223\313e_\5\214\307\20`\6\322\313H\1a\6\243\310\211\7b\7\253\310\204\224"
-  "Dc\7\243\310\215\341\0d\7\253\310V\22\1e\6\243\310\234\3f\7\253\310\215d\10g\7\253\307"
-  "P$\1h\10\253\310\204\224*\0i\10\263\310\305\220\230\32j\11\273\307\306\220\30J\4k\10\253\310"
-  "\204\321$%l\7\253\310\210\231\2m\7\243\310\34S\0n\7\243\310P\252\0o\7\243\310P\22\1"
-  "p\7\253\307Pe\10q\7\253\307Pd\2r\7\243\310\220I\0s\7\243\310\320@\1t\7\352\310"
-  "DS$u\7\243\310D*\2v\10\243\310D\22\25\1w\7\243\310D\307\0x\10\243\310DYR"
-  "\0y\7\253\307D\22Iz\7\243\310L\324\0{\10\263\307I\221\230\24|\5\351\310\24}\12\263\307"
-  "\210\241\24F\22\0~\6\233\311\226\0\177\10\253\310\205Q$\21\300\11\263\310\304@\70U\1\301\10\263"
-  "\310F\341T\5\302\10\263\310eMU\0\303\13\264\310ER(\245\246\24\0\304\11\263\310D\321$U"
-  "\1\305\7\263\310\345U\5\306\10\254\310Q\251*\22\307\10\263\307\215\311I\0\310\11\263\310\304@T\205"
-  "\3\311\10\263\310FQ\25\16\312\10\263\310\245\254p\0\313\10\263\310D\245\24\16\314\12\263\310\304@\64"
-  "\205\321\0\315\11\263\310F\321\24F\3\316\10\263\310\245\250\60\32\317\10\263\310DT\230\32\320\11\254\310"
-  "\211\321\224%\1\321\11\264\310ER\326*\5\322\11\263\310\304@DI\4\323\10\263\310F\21%\21\324"
-  "\10\263\310\245*\211\0\325\12\264\310ER\64\345\232\0\326\10\263\310D\225\212\0\327\6\233\311D\71\330"
-  "\10\273\307\36\321\21\2\331\11\263\310\304@\24\251\10\332\10\263\310F)\25\1\333\7\263\310\245\264\10\334"
-  "\11\263\310D\61\20\251\10\335\11\263\310F)*\214\0\336\7\253\310\204T\11\337\11\263\307HR$\225"
-  "\0\340\10\263\310\304@(\36\341\7\263\310F\241x\342\7\263\310e\211\7\343\13\264\310ER(\3\321"
-  "\12\0\344\10\263\310D\61$\36\345\7\263\310\345\6\16\346\7\244\310\215\25\1\347\7\253\307\215\341$\350"
-  "\10\263\310\304@t\16\351\7\263\310F\321\71\352\10\263\310\245\216p\0\353\10\263\310D\61p\16\354\11"
-  "\263\310\304@$\246\6\355\10\263\310F\221\230\32\356\10\263\310\245\306\324\0\357\11\263\310D\61 \246\6"
-  "\360\12\264\310\305\220RJM\0\361\12\264\310ER\64\345\13\0\362\11\263\310\304@DI\4\363\10\263"
-  "\310F\21%\21\364\10\263\310\245*\211\0\365\12\264\310ER\64\345\232\0\366\11\263\310D\61@I\4"
-  "\367\11\253\310\305\320\14E\0\370\7\263\307\36'\0\371\11\263\310\304@\24\251\10\372\10\263\310F)\25"
-  "\1\373\10\263\310e\3\221D\374\11\263\310D\61\20\251\10\375\10\273\307F)\211$\376\10\263\307\204\341"
-  "\31\2\377\12\273\307D\61\20I$\1\0\0\0\4\377\377\0";
-
-/*
-  Fontname: -aaron-bitocra13full-Medium-R-Normal--13-130-84-84-C-90-ISO8859-1
-  Copyright: OLF 1.1 Aaron Christianson, 2011
-  Glyphs: 189/277
-  BBX Build Mode: 0
-*/
-const uint8_t bitocra13_c[1988] U8G2_FONT_SECTION("bitocra13_c") = 
-  "\275\0\3\3\3\4\3\5\4\7\15\0\376\10\376\11\377\1@\2\245\7\247 \5\0\356\7!\7A\303"
-  "GE\0\42\10\233\332GD%\0#\12-\306OJ%\245\222\2$\14=\302W\310\22*EL!"
-  "\0%\12\65\302\207h\42\322\62\22&\20F\302\317(\34\214\304B\21Y$\26\232\4'\7\32\333\17"
-  "\5\0(\11\323\276W$)o\11)\12\323\276G,)/I\0*\13\65\306WJ\312h\222)\4"
-  "+\12-\306W\60T\12\206\0,\7\243\272\307(\3-\6\15\316G\1.\6\22\303\7\1/\16U"
-  "\276gZ\60\26\214\5c\301 \0\60\14E\302\207M%\42\211\310d\6\61\11\304\302\207,/)\5"
-  "\62\11E\302G\61xL,\63\11E\302G\61\205\230h\64\17E\302G\60\24\11EB\221Z\60\5"
-  "\0\65\11E\302\207\61XL\64\66\12E\302\307(\230h\223\31\67\13E\302G\61M\244\26\214\1\70"
-  "\13E\302\17%\24\11\335\324\14\71\11E\302\207Mf\314\64:\7\62\303\7\221\0;\11\303\272\207D"
-  "\16\30e<\10=\302\237H\243\6=\7\34\306\7\221\0>\11=\302\207P\223\66\0\77\16U\276\207"
-  "M\26\14\215\202qP\60\4@\16N\302\307Q\30\215VD\21Q\344\0A\11E\302OM\333M\26"
-  "B\14E\302\7%\24\11Elj\6C\10E\302O\61\217\5D\21F\302G)\26\211Eb\221X"
-  "$\26\211Y\0E\12E\302\207\61H\11&\26F\12E\302\207\61H\11f\4G\11E\302O\61\323"
-  "LfH\12E\302GL\333M-\0I\11E\302G)\230\247\2J\11E\302\327\60G\231\1K\12"
-  "E\302GL[%\246\26L\10E\302G\60\37\13M\14E\302Glr\210Dd\332\2N\15E\302"
-  "GL\66\242HH\63Y\0O\10E\302\207Mo\6P\17F\302\207%\26\211Eb\21R\64\21\0"
-  "Q\13M\276OM\333H\22)\12R\21F\302\207%\26\211Eb\21R,\22\213\304\2S\11E\302"
-  "O\61\261\30\64T\12E\302\207%)\230'\0U\10E\302GL\337\14V\14E\302GL\323D\62"
-  "\222\5\1W\13E\302GL\227\310!\62\13X\14E\302GL-\62\232\304\324\2Y\14E\302GL"
-  "m\42\231\5\223\0Z\12E\302G\61&\322\26,[\24U\276\207%\24\11EB\221P$\24\11E"
-  "B\221P\1\134\16U\276G\60\32\214\6\243\301h\60\0]\24U\276G)\22\212\204\42\241H(\22"
-  "\212\204\42\241\210\1^\11%\322Wl\42\231\5_\6\16\302\207\1`\7\232\332GD\22a\10\65\302"
-  "\17\361&\63b\12M\302G\60\321\246\315\0c\10\65\302O\61c\1d\11M\302g\342M\233\1e"
-  "\10\65\302\207Mv,f\12\314\302\17-\255\226\15\0g\11E\272\207M\315\30\64h\12M\302G\60"
-  "\321\246[\0i\11\303\302OP\224\313\0j\12T\272_X\226\233\250\0k\13M\302G\60M\255\22"
-  "S\13l\10\313\302\207(\77\11m\15\65\302\207%\42\211H\42\62Y\0n\10\65\302\207M\267\0o"
-  "\10\65\302\207M\233\1p\11E\272\207M\355\230\10q\11E\272\207M\315\230\1r\11\65\302\207M\230"
-  "\21\0s\10\65\302O\221\32\64t\12\314\302G,\255\226\251\0u\10\65\302GL\67\3v\13\65\302"
-  "GLm\42\231\205\0w\14\65\302GL%\42\211H\42\6x\14\65\302GL\26\31Mb\262\0y"
-  "\11E\272GL\233\61hz\11\65\302G\61\244\24,{\13T\276\227$\226$\313Q\0|\7Q\277"
-  "\307a\0}\14T\276\207\60\226&\212e\21\1~\11\35\312\307D\22\221\14\241\7A\303\207\244\0\242"
-  "\17E\302_\250\24I\212\204\42\61J\14\0\243\13E\302\327$\230F\12\306\12\244\13\66\302G\60B"
-  "\312\211\22\14\245\16E\302Gl\42\231\305f\261Y\10\0\246\7Q\277\307a\0\247\16F\302\27%:"
-  "\212\205b\241i\204\4\250\7\214\346G(\0\251\20\77\306\327,%$\221\304D\222\264\330\10\0\252\7"
-  ",\316\317\314T\253\10\35\316OH\224\1\254\7\35\302G\61\1\256\16\77\306\327,%\62Q\222\344\26"
-  "\33\1\257\6\214\336\7\1\260\7\244\326GIT\261\13=\302W\60T\12\306\1\5\262\7,\322\7\315"
-  "F\263\10,\322\7-\62+\264\7\22\343\217\4\0\265\15E\272GLmr\210D\204A\0\266\20M"
-  "\276\317\205%\42\11EB\221P$\24\11\267\6\22\313\7\1\270\7\233\302O\214\0\271\11\64\316\207,"
-  "KJ\1\272\12\244\326\217$$\212H\0\273\11\35\316G(I\24\1\274\16V\302\207\64\343(\26\211"
-  "Eb\323\4\275\15W\302\207\70\353\34@\216\321\302\4\276\17V\302\7\65\66\15Qb\221X$\66M"
-  "\277\16U\276W\60\16\12\206F\301\230\314\0\300\13U\302O\64V\323v\223\5\301\12U\302_ZM"
-  "\333M\26\302\15]\302W,\22\7\324\264\335d\1\303\14]\302W$;\240\246\355&\13\304\13U\302"
-  "O:\240\246\355&\13\305\15]\302W,\22\213\325\264\335d\1\306\20G\302\317)\26\212\205&\241\30"
-  "-\24\13\21\307\13U\272O\61\217\265\230\4\0\310\14U\302O\64d\14R\202\211\5\311\13U\302_"
-  "\222\61H\11&\26\312\15]\302W,\22\66\6)\301\304\2\313\13U\302O\262\61H\11&\26\314\13"
-  "U\302O\64T\12\346\251\0\315\12U\302_R)\230\247\2\316\13]\302W,\22.\5\363T\317\12"
-  "U\302Or)\230\247\2\320\17F\302G)\26\211U\322\42\261H\314\2\321\16U\302W$\67\331\210"
-  "\42!\315d\1\322\12U\302O\64d\323\233\1\323\11U\302_\222Mo\6\324\13]\302W,\22\266"
-  "\351\315\0\325\12]\302W$\263Mo\6\326\11U\302O\262Mo\6\327\7\233\316G$\7\330\15U"
-  "\276\347i%\42\211\214FG\0\331\12U\302O\64\24\323\67\3\332\11U\302_RL\337\14\333\13]"
-  "\302W,\22\216\351\233\1\334\11U\302OrL\337\14\335\15U\302_RLm\42\231\5\223\0\336\13"
-  "M\302G\60hS;\6\1\337\20]\272\317$\24\11EB\221\230N\303 \0\340\13M\302W\64\16"
-  " \336d\6\341\12M\302_:\204x\223\31\342\14M\302W,\22\7\20o\62\3\343\13M\302W$"
-  ";\200x\223\31\344\12E\302O:\200x\223\31\345\15U\302\227(%\24\22\21o\62\3\346\13\67\302"
-  "\217-T\22\225b\7\347\12E\272O\61c-&\1\350\12E\302O\64d\223\35\13\351\11E\302_"
-  "\222Mv,\352\13M\302W,\22\266\311\216\5\353\11E\302O\262Mv,\354\12\313\302G,(\312"
-  "e\0\355\12\313\302W$(\312e\0\356\11\313\302O\66Q.\3\357\12\303\302G$&\312e\0\360"
-  "\13M\302WT$\15\336d\6\361\12M\302W$\263M\267\0\362\11E\302O\64d\323f\363\11E"
-  "\302_\222M\233\1\364\12M\302W,\22\266i\63\365\12M\302W$\263M\233\1\366\11E\302O\262"
-  "M\233\1\367\12-\306W\34P\7\204\0\370\12E\276\347ib\31\35\1\371\12E\302O\64\24\323\315"
-  "\0\372\11E\302_RL\67\3\373\12M\302W,\22\216\351f\374\11E\302OrL\67\3\375\12U"
-  "\272_RL\233\61h\376\13M\272G\60hS;\6\1\377\12U\272OrL\233\61h\0\0\0\4"
-  "\377\377\0";
-
-// GUItool: begin automatically generated code
-AudioSynthNoiseWhite     vnoise3;        //xy=390,865
-AudioSynthNoiseWhite     vnoise2;        //xy=392,605
-AudioSynthNoiseWhite     vnoise4;        //xy=390,1114
-AudioSynthNoiseWhite     vnoise1;        //xy=394,356
-AudioSynthWaveformDc     vdc2;           //xy=393,650
-AudioSynthWaveformDc     vdc3;           //xy=392,910
-AudioSynthWaveform voscb2;         //xy=394,557
-AudioSynthWaveform voscb3;         //xy=393,817
-AudioSynthWaveformDc     vdc4;           //xy=392,1160
-AudioSynthWaveform vosca2;         //xy=395,512
-AudioSynthWaveform vosca3;         //xy=394,772
-AudioSynthWaveform voscb4;         //xy=393,1067
-AudioSynthWaveformDc     vdc1;           //xy=396,401
-AudioSynthWaveform vosca4;         //xy=394,1022
-AudioSynthWaveform voscb1;         //xy=397,308
-AudioSynthWaveform vosca1;         //xy=398,263
-AudioEffectEnvelope      vfilterenv2;    //xy=556,588
-AudioMixer4              voscmix2;       //xy=557,532
-AudioMixer4              voscmix3;       //xy=556,791
-AudioMixer4              voscmix4;       //xy=556,1041
-AudioEffectEnvelope      vfilterenv3;    //xy=556.857105255127,848.9999847412109
-AudioEffectEnvelope      vfilterenv1;    //xy=559,342
-AudioMixer4              voscmix1;       //xy=560,283
-AudioEffectEnvelope      vfilterenv4;    //xy=559,1097
-AudioPlayArrayResmp  vmsample1;  //xy=726.0000305175781,243.6666603088379
-AudioPlayArrayResmp  vmsample2; //xy=730.0000305175781,492.00000953674316
-AudioPlayArrayResmp  vmsample3; //xy=730.0000305175781,749.0000085830688
-AudioPlayArrayResmp  vmsample4; //xy=730.0000076293945,1000.6666650772095
-AudioFilterLadder        vlfilter1;      //xy=736.0000915527344,296.3333549499512
-AudioFilterLadder        vlfilter2; //xy=739.999927520752,544.1667289733887
-AudioFilterLadder        vlfilter3;      //xy=741.0000305175781,803.6666793823242
-AudioFilterLadder        vlfilter4;      //xy=740.9999885559082,1053.6666288375854
-AudioPlayArrayResmp  vmsample8; //xy=864.6666145324707,1867.6665539741516
-AudioPlayArrayResmp  vmsample5; //xy=871.166675567627,1300.999927997589
-AudioPlayArrayResmp  vmsample7; //xy=871.3333015441895,1667.6665539741516
-AudioPlayArrayResmp  vmsample6; //xy=874.666675567627,1490.999927997589
-AudioMixer4              vmix2;          //xy=887,531
-AudioMixer4              vmix3;          //xy=886,791
-AudioMixer4              vmix4;          //xy=886,1041
-AudioMixer4              vmix1;          //xy=890,282
-AudioPlayArrayResmp  vmsample16; //xy=880.6666145324707,3962.6665539741516
-AudioPlayArrayResmp  vmsample13; //xy=887.166675567627,3395.999927997589
-AudioPlayArrayResmp  vmsample15; //xy=887.3333015441895,3762.6665539741516
-AudioPlayArrayResmp  vmsample14; //xy=890.666675567627,3585.999927997589
-AudioPlayArrayResmp  vmsample12; //xy=908.1666145324707,2927.6665539741516
-AudioPlayArrayResmp  vmsample9; //xy=914.666675567627,2360.999927997589
-AudioPlayArrayResmp  vmsample11; //xy=914.8333015441895,2727.6665539741516
-AudioPlayArrayResmp  vmsample10; //xy=918.166675567627,2550.999927997589
-AudioEffectEnvelope      venv3;          //xy=1023,790
-AudioEffectEnvelope      venv2;          //xy=1025,530
-AudioEffectEnvelope      venv4;          //xy=1023,1040
-AudioEffectEnvelope      venv8; //xy=1019.9999389648438,1866.6666259765625
-AudioEffectEnvelope      venv1;          //xy=1028,281
-AudioEffectEnvelope      venv5; //xy=1026.5,1300
-AudioEffectEnvelope      venv7; //xy=1026.6666259765625,1666.6666259765625
-AudioEffectEnvelope      venv6; //xy=1030,1490
-AudioEffectEnvelope      venv16; //xy=1035.9999389648438,3961.6666259765625
-AudioEffectEnvelope      venv13; //xy=1042.5,3395
-AudioEffectEnvelope      venv15; //xy=1042.6666259765625,3761.6666259765625
-AudioEffectEnvelope      venv14; //xy=1046,3585
-AudioEffectEnvelope      venv12; //xy=1063.4999389648438,2926.6666259765625
-AudioEffectEnvelope      venv9; //xy=1070,2360
-AudioEffectEnvelope      venv11; //xy=1070.1666259765625,2726.6666259765625
-AudioEffectEnvelope      venv10; //xy=1073.5,2550
-AudioPlayWAVstereo       vssample2;      //xy=1172,457
-AudioPlayWAVstereo       vssample3;      //xy=1171,716
-AudioPlayWAVstereo       vssample8; //xy=1166.9999389648438,1793.6666259765625
-AudioPlayWAVstereo       vssample4;      //xy=1171,966
-AudioPlayWAVstereo       vssample1;      //xy=1175,208
-AudioPlayWAVstereo       vssample5; //xy=1173.5,1227
-AudioPlayWAVstereo       vssample7; //xy=1173.6666259765625,1593.6666259765625
-AudioAmplifier           vleft3;         //xy=1177,772
-AudioAmplifier           vleft8; //xy=1172.9999389648438,1848.6666259765625
-AudioAmplifier           vleft2;         //xy=1179,512
-AudioAmplifier           vleft4;         //xy=1177,1022
-AudioAmplifier           vright3;        //xy=1178,811
-AudioAmplifier           vleft1;         //xy=1181,263
-AudioAmplifier           vright2;        //xy=1180,551
-AudioAmplifier           vright4;        //xy=1178,1060
-AudioAmplifier           vright8; //xy=1174.9999389648438,1887.6666259765625
-AudioPlayWAVstereo       vssample6; //xy=1177,1417
-AudioAmplifier           vright1;        //xy=1183,302
-AudioAmplifier           vleft5; //xy=1179.5,1282
-AudioAmplifier           vleft7; //xy=1179.6666259765625,1648.6666259765625
-AudioAmplifier           vright5; //xy=1181.5,1321
-AudioAmplifier           vright7; //xy=1181.6666259765625,1687.6666259765625
-AudioAmplifier           vleft6; //xy=1183,1472
-AudioAmplifier           vright6; //xy=1185,1511
-AudioPlayWAVstereo       vssample16; //xy=1182.9999389648438,3888.6666259765625
-AudioPlayWAVstereo       vssample13; //xy=1189.5,3322
-AudioPlayWAVstereo       vssample15; //xy=1189.6666259765625,3688.6666259765625
-AudioAmplifier           vleft16; //xy=1188.9999389648438,3943.6666259765625
-AudioAmplifier           vright16; //xy=1190.9999389648438,3982.6666259765625
-AudioPlayWAVstereo       vssample14; //xy=1193,3512
-AudioAmplifier           vleft13; //xy=1195.5,3377
-AudioAmplifier           vleft15; //xy=1195.6666259765625,3743.6666259765625
-AudioAmplifier           vright13; //xy=1197.5,3416
-AudioAmplifier           vright15; //xy=1197.6666259765625,3782.6666259765625
-AudioAmplifier           vleft14; //xy=1199,3567
-AudioAmplifier           vright14; //xy=1201,3606
-AudioPlayWAVstereo       vssample12; //xy=1210.4999389648438,2853.6666259765625
-AudioPlayWAVstereo       vssample9; //xy=1217,2287
-AudioPlayWAVstereo       vssample11; //xy=1217.1666259765625,2653.6666259765625
-AudioAmplifier           vleft12; //xy=1216.4999389648438,2908.6666259765625
-AudioAmplifier           vright12; //xy=1218.4999389648438,2947.6666259765625
-AudioPlayWAVstereo       vssample10; //xy=1220.5,2477
-AudioAmplifier           vleft9; //xy=1223,2342
-AudioAmplifier           vleft11; //xy=1223.1666259765625,2708.6666259765625
-AudioAmplifier           vright9; //xy=1225,2381
-AudioAmplifier           vright11; //xy=1225.1666259765625,2747.6666259765625
-AudioAmplifier           vleft10; //xy=1226.5,2532
-AudioAmplifier           vright10; //xy=1228.5,2571
-AudioMixer4              vsubmixr4;      //xy=1379.6667213439941,1071.9999599456787
-AudioMixer4              vsubmixl4;      //xy=1381.333351135254,1001.6666660308838
-AudioMixer4              vsubmixl3;      //xy=1383.0001373291016,764.3333435058594
-AudioMixer4              vsubmixr3;      //xy=1384.666763305664,833.666618347168
-AudioMixer4              vsubmixl8; //xy=1383.5714073181152,1851.238042831421
-AudioMixer4              vsubmixr8; //xy=1384.2380332946777,1923.238039970398
-AudioMixer4              vsubmixl1;      //xy=1391.5714683532715,265.5714168548584
-AudioMixer4              vsubmixr1;      //xy=1392.238094329834,337.57141399383545
-AudioMixer4              vsubmixl5; //xy=1390.0714683532715,1284.5714168548584
-AudioMixer4              vsubmixr5; //xy=1390.738094329834,1356.5714139938354
-AudioMixer4              vsubmixl7; //xy=1390.238094329834,1651.238042831421
-AudioMixer4              vsubmixl2;      //xy=1395.2379722595215,510.2857246398926
-AudioMixer4              vsubmixr2;      //xy=1395.2381744384766,581.047568321228
-AudioMixer4              vsubmixr7; //xy=1390.9047203063965,1723.238039970398
-AudioMixer4              vsubmixl6; //xy=1393.5714683532715,1474.5714168548584
-AudioMixer4              vsubmixr6; //xy=1394.238094329834,1546.5714139938354
-AudioMixer4              vsubmixl16; //xy=1399.5714073181152,3946.238042831421
-AudioMixer4              vsubmixr16; //xy=1400.2380332946777,4018.238039970398
-AudioMixer4              vsubmixl13; //xy=1406.0714683532715,3379.5714168548584
-AudioMixer4              vsubmixr13; //xy=1406.738094329834,3451.5714139938354
-AudioMixer4              vsubmixl15; //xy=1406.238094329834,3746.238042831421
-AudioMixer4              vsubmixr15; //xy=1406.9047203063965,3818.238039970398
-AudioMixer4              vsubmixl14; //xy=1409.5714683532715,3569.5714168548584
-AudioMixer4              vsubmixr14; //xy=1410.238094329834,3641.5714139938354
-AudioMixer4              vsubmixl12; //xy=1427.0714073181152,2911.238042831421
-AudioMixer4              vsubmixr12; //xy=1427.7380332946777,2983.238039970398
-AudioMixer4              vsubmixr9; //xy=1434.238094329834,2416.5714139938354
-AudioMixer4              vsubmixl11; //xy=1433.738094329834,2711.238042831421
-AudioMixer4              vsubmixr11; //xy=1434.4047203063965,2783.238039970398
-AudioMixer4              vsubmixl10; //xy=1437.0714683532715,2534.5714168548584
-AudioMixer4              vsubmixl9; //xy=1437.857063293457,2341.7143173217773
-AudioMixer4              vsubmixr10; //xy=1437.738094329834,2606.5714139938354
-AudioMixer4              mixerLeft2; //xy=1859.1666984558105,1580.8333568572998
-AudioMixer4              mixerRight4; //xy=1851.642807006836,3732.6428833007812
-AudioMixer4              mixerLeft4; //xy=1852.5,3652.5
-AudioMixer4              mixerRight2; //xy=1861.642734527588,1657.6428089141846
-AudioMixer4              mixerLeft1;  //xy=1895.0000534057617,614.9999885559082
-AudioMixer4              mixerRight3; //xy=1889.1428604125977,2710.1428718566895
-AudioMixer4              mixerLeft3; //xy=1890.0000534057617,2629.999988555908
-AudioMixer4              mixerRight1; //xy=1899.9761505126953,695.1428909301758
-AudioMixer4              mainMixerLeft;         //xy=2425.833595275879,2078.3334159851074
-AudioMixer4              mainMixerRight;         //xy=2429.1665992736816,2153.3335819244385
-AudioOutputI2S           i2s1;           //xy=2602.880558013916,2109.166506767273
-
-AudioConnection          patchCord1(vnoise3, 0, voscmix3, 2);
-AudioConnection          patchCord2(vnoise2, 0, voscmix2, 2);
-AudioConnection          patchCord3(vnoise4, 0, voscmix4, 2);
-AudioConnection          patchCord4(vnoise1, 0, voscmix1, 2);
-AudioConnection          patchCord5(vdc2, vfilterenv2);
-AudioConnection          patchCord6(vdc3, vfilterenv3);
-AudioConnection          patchCord7(voscb2, 0, voscmix2, 1);
-AudioConnection          patchCord8(voscb3, 0, voscmix3, 1);
-AudioConnection          patchCord9(vdc4, vfilterenv4);
-AudioConnection          patchCord10(vosca2, 0, voscmix2, 0);
-AudioConnection          patchCord11(vosca3, 0, voscmix3, 0);
-AudioConnection          patchCord12(voscb4, 0, voscmix4, 1);
-AudioConnection          patchCord13(vdc1, vfilterenv1);
-AudioConnection          patchCord14(vosca4, 0, voscmix4, 0);
-AudioConnection          patchCord15(voscb1, 0, voscmix1, 1);
-AudioConnection          patchCord16(vosca1, 0, voscmix1, 0);
-AudioConnection          patchCord17(vfilterenv2, 0, vlfilter2, 1);
-AudioConnection          patchCord18(vfilterenv2, 0, vlfilter2, 2);
-AudioConnection          patchCord19(voscmix2, 0, vlfilter2, 0);
-AudioConnection          patchCord20(voscmix3, 0, vlfilter3, 0);
-AudioConnection          patchCord21(voscmix4, 0, vlfilter4, 0);
-AudioConnection          patchCord22(vfilterenv3, 0, vlfilter3, 1);
-AudioConnection          patchCord23(vfilterenv3, 0, vlfilter3, 2);
-AudioConnection          patchCord24(vfilterenv1, 0, vlfilter1, 1);
-AudioConnection          patchCord25(vfilterenv1, 0, vlfilter1, 2);
-AudioConnection          patchCord26(voscmix1, 0, vlfilter1, 0);
-AudioConnection          patchCord27(vfilterenv4, 0, vlfilter4, 1);
-AudioConnection          patchCord28(vfilterenv4, 0, vlfilter4, 2);
-AudioConnection          patchCord29(vmsample1, 0, vmix1, 0);
-AudioConnection          patchCord30(vmsample2, 0, vmix2, 0);
-AudioConnection          patchCord31(vmsample3, 0, vmix3, 0);
-AudioConnection          patchCord32(vmsample4, 0, vmix4, 0);
-AudioConnection          patchCord33(vlfilter1, 0, vmix1, 1);
-AudioConnection          patchCord34(vlfilter2, 0, vmix2, 1);
-AudioConnection          patchCord35(vlfilter3, 0, vmix3, 1);
-AudioConnection          patchCord36(vlfilter4, 0, vmix4, 1);
-AudioConnection          patchCord37(vmsample8, venv8);
-AudioConnection          patchCord38(vmsample5, venv5);
-AudioConnection          patchCord39(vmsample7, venv7);
-AudioConnection          patchCord40(vmsample6, venv6);
-AudioConnection          patchCord41(vmix2, venv2);
-AudioConnection          patchCord42(vmix3, venv3);
-AudioConnection          patchCord43(vmix4, venv4);
-AudioConnection          patchCord44(vmix1, venv1);
-AudioConnection          patchCord45(vmsample16, venv16);
-AudioConnection          patchCord46(vmsample13, venv13);
-AudioConnection          patchCord47(vmsample15, venv15);
-AudioConnection          patchCord48(vmsample14, venv14);
-AudioConnection          patchCord49(vmsample12, venv12);
-AudioConnection          patchCord50(vmsample9, venv9);
-AudioConnection          patchCord51(vmsample11, venv11);
-AudioConnection          patchCord52(vmsample10, venv10);
-AudioConnection          patchCord53(venv3, vleft3);
-AudioConnection          patchCord54(venv3, vright3);
-AudioConnection          patchCord55(venv2, vleft2);
-AudioConnection          patchCord56(venv2, vright2);
-AudioConnection          patchCord57(venv4, vleft4);
-AudioConnection          patchCord58(venv4, vright4);
-AudioConnection          patchCord59(venv8, vleft8);
-AudioConnection          patchCord60(venv8, vright8);
-AudioConnection          patchCord61(venv1, vleft1);
-AudioConnection          patchCord62(venv1, vright1);
-AudioConnection          patchCord63(venv5, vleft5);
-AudioConnection          patchCord64(venv5, vright5);
-AudioConnection          patchCord65(venv7, vleft7);
-AudioConnection          patchCord66(venv7, vright7);
-AudioConnection          patchCord67(venv6, vleft6);
-AudioConnection          patchCord68(venv6, vright6);
-AudioConnection          patchCord69(venv16, vleft16);
-AudioConnection          patchCord70(venv16, vright16);
-AudioConnection          patchCord71(venv13, vleft13);
-AudioConnection          patchCord72(venv13, vright13);
-AudioConnection          patchCord73(venv15, vleft15);
-AudioConnection          patchCord74(venv15, vright15);
-AudioConnection          patchCord75(venv14, vleft14);
-AudioConnection          patchCord76(venv14, vright14);
-AudioConnection          patchCord77(venv12, vleft12);
-AudioConnection          patchCord78(venv12, vright12);
-AudioConnection          patchCord79(venv9, vleft9);
-AudioConnection          patchCord80(venv9, vright9);
-AudioConnection          patchCord81(venv11, vleft11);
-AudioConnection          patchCord82(venv11, vright11);
-AudioConnection          patchCord83(venv10, vleft10);
-AudioConnection          patchCord84(venv10, vright10);
-AudioConnection          patchCord85(vssample2, 0, vsubmixl2, 0);
-AudioConnection          patchCord86(vssample2, 1, vsubmixr2, 0);
-AudioConnection          patchCord87(vssample3, 0, vsubmixl3, 0);
-AudioConnection          patchCord88(vssample3, 1, vsubmixr3, 0);
-AudioConnection          patchCord89(vssample8, 0, vsubmixl8, 0);
-AudioConnection          patchCord90(vssample8, 1, vsubmixr8, 0);
-AudioConnection          patchCord91(vssample4, 0, vsubmixl4, 0);
-AudioConnection          patchCord92(vssample4, 1, vsubmixr4, 0);
-AudioConnection          patchCord93(vssample1, 0, vsubmixl1, 0);
-AudioConnection          patchCord94(vssample1, 1, vsubmixr1, 0);
-AudioConnection          patchCord95(vssample5, 0, vsubmixl5, 0);
-AudioConnection          patchCord96(vssample5, 1, vsubmixr5, 0);
-AudioConnection          patchCord97(vssample7, 0, vsubmixl7, 0);
-AudioConnection          patchCord98(vssample7, 1, vsubmixr7, 0);
-AudioConnection          patchCord99(vleft3, 0, vsubmixl3, 1);
-AudioConnection          patchCord100(vleft8, 0, vsubmixl8, 1);
-AudioConnection          patchCord101(vleft2, 0, vsubmixl2, 1);
-AudioConnection          patchCord102(vleft4, 0, vsubmixl4, 1);
-AudioConnection          patchCord103(vright3, 0, vsubmixr3, 1);
-AudioConnection          patchCord104(vleft1, 0, vsubmixl1, 1);
-AudioConnection          patchCord105(vright2, 0, vsubmixr2, 1);
-AudioConnection          patchCord106(vright4, 0, vsubmixr4, 1);
-AudioConnection          patchCord107(vright8, 0, vsubmixr8, 1);
-AudioConnection          patchCord108(vssample6, 0, vsubmixl6, 0);
-AudioConnection          patchCord109(vssample6, 1, vsubmixr6, 0);
-AudioConnection          patchCord110(vright1, 0, vsubmixr1, 1);
-AudioConnection          patchCord111(vleft5, 0, vsubmixl5, 1);
-AudioConnection          patchCord112(vleft7, 0, vsubmixl7, 1);
-AudioConnection          patchCord113(vright5, 0, vsubmixr5, 1);
-AudioConnection          patchCord114(vright7, 0, vsubmixr7, 1);
-AudioConnection          patchCord115(vleft6, 0, vsubmixl6, 1);
-AudioConnection          patchCord116(vright6, 0, vsubmixr6, 1);
-AudioConnection          patchCord117(vssample16, 0, vsubmixl16, 0);
-AudioConnection          patchCord118(vssample16, 1, vsubmixr16, 0);
-AudioConnection          patchCord119(vssample13, 0, vsubmixl13, 0);
-AudioConnection          patchCord120(vssample13, 1, vsubmixr13, 0);
-AudioConnection          patchCord121(vssample15, 0, vsubmixl15, 0);
-AudioConnection          patchCord122(vssample15, 1, vsubmixr15, 0);
-AudioConnection          patchCord123(vleft16, 0, vsubmixl16, 1);
-AudioConnection          patchCord124(vright16, 0, vsubmixr16, 1);
-AudioConnection          patchCord125(vssample14, 0, vsubmixl14, 0);
-AudioConnection          patchCord126(vssample14, 1, vsubmixr14, 0);
-AudioConnection          patchCord127(vleft13, 0, vsubmixl13, 1);
-AudioConnection          patchCord128(vleft15, 0, vsubmixl15, 1);
-AudioConnection          patchCord129(vright13, 0, vsubmixr13, 1);
-AudioConnection          patchCord130(vright15, 0, vsubmixr15, 1);
-AudioConnection          patchCord131(vleft14, 0, vsubmixl14, 1);
-AudioConnection          patchCord132(vright14, 0, vsubmixr14, 1);
-AudioConnection          patchCord133(vssample12, 0, vsubmixl12, 0);
-AudioConnection          patchCord134(vssample12, 1, vsubmixr12, 0);
-AudioConnection          patchCord135(vssample9, 0, vsubmixl9, 0);
-AudioConnection          patchCord136(vssample9, 1, vsubmixr9, 0);
-AudioConnection          patchCord137(vssample11, 0, vsubmixl11, 0);
-AudioConnection          patchCord138(vssample11, 1, vsubmixr11, 0);
-AudioConnection          patchCord139(vleft12, 0, vsubmixl12, 1);
-AudioConnection          patchCord140(vright12, 0, vsubmixr12, 1);
-AudioConnection          patchCord141(vssample10, 0, vsubmixl10, 0);
-AudioConnection          patchCord142(vssample10, 1, vsubmixr10, 0);
-AudioConnection          patchCord143(vleft9, 0, vsubmixl9, 1);
-AudioConnection          patchCord144(vleft11, 0, vsubmixl11, 1);
-AudioConnection          patchCord145(vright9, 0, vsubmixr9, 1);
-AudioConnection          patchCord146(vright11, 0, vsubmixr11, 1);
-AudioConnection          patchCord147(vleft10, 0, vsubmixl10, 1);
-AudioConnection          patchCord148(vright10, 0, vsubmixr10, 1);
-AudioConnection          patchCord149(vsubmixr4, 0, mixerRight1, 3);
-AudioConnection          patchCord150(vsubmixl4, 0, mixerLeft1, 3);
-AudioConnection          patchCord151(vsubmixl3, 0, mixerLeft1, 2);
-AudioConnection          patchCord152(vsubmixr3, 0, mixerRight1, 2);
-AudioConnection          patchCord153(vsubmixl8, 0, mixerLeft2, 3);
-AudioConnection          patchCord154(vsubmixr8, 0, mixerRight2, 3);
-AudioConnection          patchCord155(vsubmixl1, 0, mixerLeft1, 0);
-AudioConnection          patchCord156(vsubmixr1, 0, mixerRight1, 0);
-AudioConnection          patchCord157(vsubmixl5, 0, mixerLeft2, 0);
-AudioConnection          patchCord158(vsubmixr5, 0, mixerRight2, 0);
-AudioConnection          patchCord159(vsubmixl7, 0, mixerLeft2, 2);
-AudioConnection          patchCord160(vsubmixl2, 0, mixerLeft1, 1);
-AudioConnection          patchCord161(vsubmixr2, 0, mixerRight1, 1);
-AudioConnection          patchCord162(vsubmixr7, 0, mixerRight2, 2);
-AudioConnection          patchCord163(vsubmixl6, 0, mixerLeft2, 1);
-AudioConnection          patchCord164(vsubmixr6, 0, mixerRight2, 1);
-AudioConnection          patchCord165(vsubmixl16, 0, mixerLeft4, 3);
-AudioConnection          patchCord166(vsubmixr16, 0, mixerRight4, 3);
-AudioConnection          patchCord167(vsubmixl13, 0, mixerLeft4, 0);
-AudioConnection          patchCord168(vsubmixr13, 0, mixerRight4, 0);
-AudioConnection          patchCord169(vsubmixl15, 0, mixerLeft4, 2);
-AudioConnection          patchCord170(vsubmixr15, 0, mixerRight4, 2);
-AudioConnection          patchCord171(vsubmixl14, 0, mixerLeft4, 1);
-AudioConnection          patchCord172(vsubmixr14, 0, mixerRight4, 1);
-AudioConnection          patchCord173(vsubmixl12, 0, mixerLeft3, 3);
-AudioConnection          patchCord174(vsubmixr12, 0, mixerRight3, 3);
-AudioConnection          patchCord175(vsubmixr9, 0, mixerRight3, 0);
-AudioConnection          patchCord176(vsubmixl11, 0, mixerLeft3, 2);
-AudioConnection          patchCord177(vsubmixr11, 0, mixerRight3, 2);
-AudioConnection          patchCord178(vsubmixl10, 0, mixerLeft3, 1);
-AudioConnection          patchCord179(vsubmixl9, 0, mixerLeft3, 0);
-AudioConnection          patchCord180(vsubmixr10, 0, mixerRight3, 1);
-AudioConnection          patchCord181(mixerLeft2, 0, mainMixerLeft, 1);
-AudioConnection          patchCord182(mixerRight4, 0, mainMixerRight, 3);
-AudioConnection          patchCord183(mixerLeft4, 0, mainMixerLeft, 3);
-AudioConnection          patchCord184(mixerRight2, 0, mainMixerRight, 1);
-AudioConnection          patchCord185(mixerLeft1, 0, mainMixerLeft, 0);
-AudioConnection          patchCord186(mixerRight3, 0, mainMixerRight, 2);
-AudioConnection          patchCord187(mixerLeft3, 0, mainMixerLeft, 2);
-AudioConnection          patchCord188(mixerRight1, 0, mainMixerRight, 0);
-AudioConnection          patchCord189(mainMixerLeft, 0, i2s1, 0);
-AudioConnection          patchCord190(mainMixerRight, 0, i2s1, 1);
-
-AudioControlSGTL5000     sgtl5000_1;     //xy=2609.095317840576,2062.7380781173706
-// GUItool: end automatically generated code
 
 unsigned long lastSamplePlayed = 0;
 
@@ -553,7 +85,7 @@ const char* keyCharsMap[ROWS][COLS] = {
 };
 
 std::map<char, const char*> charCharsMap = {
-  { 'a', "BANK" },
+  { 'a', "PERFORM" },
   { 'b', "PATTERN" },
   { 'c', "TRACK" },
   { 'd', "MAIN" },
@@ -784,6 +316,8 @@ typedef struct
   float amp_release = 500;
   float noise = 0;
   bool chromatic_enabled = false;
+  bool muted = false;
+  bool soloing = false;
 } TRACK;
 
 typedef struct
@@ -900,7 +434,12 @@ enum UI_MODE {
   SUBMITTING_STEP_VALUE,
   PROJECT_INITIALIZE,
   PROJECT_BUSY,
-  CHANGE_SETUP
+  CHANGE_SETUP,
+  PERFORM_SEL,
+  PERFORM_TAP,
+  PERFORM_MUTE,
+  PERFORM_SOLO,
+  PERFORM_RATCHET,
 };
 
 UI_MODE previous_UI_mode = PATTERN_WRITE; // the default mode
@@ -913,6 +452,17 @@ int8_t current_selected_step = -1; // default to -1 (none)
 
 int8_t current_step_page = 1;
 
+typedef struct 
+{
+  int bank = -1;
+  int number = -1;
+} QUEUED_PATTERN;
+
+QUEUED_PATTERN _queued_pattern;
+
+int draw_queue_blink = -1;
+bool dequeue_pattern = false;
+
 #define FUNCTION_BTN_CHAR 'r'
 #define SOUND_SETUP_BTN_CHAR '0'
 
@@ -921,6 +471,7 @@ bool track_sel_btn_held = false;
 
 int8_t patt_held_for_selection = -1;
 int8_t track_held_for_selection = -1; // default to -1 (none)
+int8_t perf_held_for_selection = -1;
 
 const uint8_t backwardsNoteNumbers[13] = {
   12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
@@ -978,6 +529,12 @@ std::map<play_start, int> playStartFindMap = {
   {play_start_loop, 1},
 };
 
+typedef struct
+{
+  float left;
+  float right;
+} PANNED_AMOUNTS;
+
 const uint8_t *small_font = bitocra7_c; // u8g2_font_trixel_square_tf
 
 elapsedMillis elapsed;
@@ -1001,7 +558,7 @@ void toggleSequencerPlayback(char btn);
 void handle_bpm_step(uint32_t tick);
 void triggerAllStepsForAllTracks(uint32_t tick);
 void initMain(void);
-void drawSequencerScreen(void);
+void drawSequencerScreen(bool queueBlink = false);
 void drawSetTempoOverlay(void);
 void setDisplayStateForAllStepLEDs(void);
 void setDisplayStateForPatternActiveTracksLEDs(bool enable);
@@ -1028,10 +585,22 @@ void drawSetupScreen();
 void saveProject();
 void displayPageLEDs(int currentBar = -1);
 void displayCurrentOctaveLEDs();
+void displayPerformModeLEDs(void);
+void displayMuteLEDs(void);
+void handleSoloForTrack(uint8_t track, bool undoSoloing);
 void clearPageLEDs();
+void changeSampleTrackSoundType(uint8_t t, TRACK_TYPE newType);
+void configureVoiceSettingsOnLoad(void);
+void configureSampleVoiceSettingsOnLoad(int t);
 std::string strldz(std::string inputStr, const int zeroNum);
 std::string getNewProjectName();
 time_t getTeensy3Time();
+PANNED_AMOUNTS getStereoPanValues(float pan);
+TRACK getHeapTrack(int track);
+TRACK_STEP getHeapStep(int track, int step);
+PATTERN getHeapCurrentSelectedPattern(void);
+TRACK getHeapCurrentSelectedTrack(void);
+TRACK_STEP getHeapCurrentSelectedTrackStep(void);
 
 time_t getTeensy3Time() {
   return Teensy3Clock.get();
@@ -1090,12 +659,6 @@ void drawErrorMessage(std::string message)
   u8g2.sendBuffer();
 }
 
-TRACK getHeapTrack(int track);
-TRACK_STEP getHeapStep(int track, int step);
-PATTERN getHeapCurrentSelectedPattern(void);
-TRACK getHeapCurrentSelectedTrack(void);
-TRACK_STEP getHeapCurrentSelectedTrackStep(void);
-
 TRACK getHeapTrack(int track)
 {
   return _seq_heap.pattern.tracks[track];
@@ -1133,15 +696,16 @@ void swapSequencerMemoryForPattern(int newBank, int newPattern)
   // update currently selected vars
   current_selected_bank = newBank;
   current_selected_pattern = newPattern;
+
+  initTrackSounds();
+  configureVoiceSettingsOnLoad();
 }
 
-typedef struct
+void queuePatternPlay(int selPattern)
 {
-  float left;
-  float right;
-} PANNED_AMOUNTS;
 
-PANNED_AMOUNTS getStereoPanValues(float pan);
+}
+
 PANNED_AMOUNTS getStereoPanValues(float pan)
 {
   PANNED_AMOUNTS amounts;
@@ -1520,7 +1084,6 @@ void initTrackSounds()
   mainMixerRight.gain(3, 1);
 }
 
-void changeSampleTrackSoundType(uint8_t t, TRACK_TYPE newType);
 void changeSampleTrackSoundType(uint8_t t, TRACK_TYPE newType)
 {
   TRACK currTrack = getHeapTrack(t);
@@ -1548,7 +1111,6 @@ void changeSampleTrackSoundType(uint8_t t, TRACK_TYPE newType)
   }
 }
 
-void configureSampleVoiceSettingsOnLoad(int t);
 void configureSampleVoiceSettingsOnLoad(int t)
 {
   TRACK track = getHeapTrack(t);
@@ -1561,7 +1123,6 @@ void configureSampleVoiceSettingsOnLoad(int t)
   }
 }
 
-void configureVoiceSettingsOnLoad(void);
 void configureVoiceSettingsOnLoad(void)
 {
   for (int t=0; t<MAXIMUM_SEQUENCER_TRACKS; t++) {
@@ -1882,6 +1443,8 @@ void initExternalSequencer(void)
         _seq_external.banks[b].patterns[p].tracks[t].amp_release = 5000;
         _seq_external.banks[b].patterns[p].tracks[t].noise = 0;
         _seq_external.banks[b].patterns[p].tracks[t].chromatic_enabled = false;
+        _seq_external.banks[b].patterns[p].tracks[t].muted = false;
+        _seq_external.banks[b].patterns[p].tracks[t].soloing = false;
 
         // now fill in steps
         for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
@@ -1987,7 +1550,7 @@ void loadLatestProject()
     latestProjectFile.read((byte *)&current_project, sizeof(current_project));
     latestProjectFile.close();
   } else {
-    // handle project object evolution gracefully?
+    // handle project object evolution more gracefully than this?
     File latestProjectFile2 = SD.open(latestProjectFilename.c_str(), FILE_WRITE);  
     latestProjectFile2.truncate();
     strcpy(current_project.name, projectListFileContents.c_str());
@@ -2306,6 +1869,31 @@ void setup() {
   Serial.println("prepared samples");
 }
 
+void handleQueueActions(void);
+void handleQueueActions(void)
+{
+  if (draw_queue_blink > -1) {
+    if (draw_queue_blink == 1) {
+      drawSequencerScreen(true);
+    } else if (draw_queue_blink == 0) {
+      drawSequencerScreen(false);
+    }
+  }
+
+  if (dequeue_pattern) {
+    dequeue_pattern = false;
+        
+    swapSequencerMemoryForPattern(_queued_pattern.bank, _queued_pattern.number);
+    
+    // reset queue flags
+    _queued_pattern.bank = -1;
+    _queued_pattern.number = -1;
+    draw_queue_blink = -1;
+
+    drawSequencerScreen();
+  }
+}
+
 void loop(void)
 {
   analog.update();
@@ -2315,6 +1903,8 @@ void loop(void)
   handleSwitchStates(false);
   handleKeyboardStates();
   handleEncoderStates();
+
+  handleQueueActions();
 }
 
 #define STARS 500
@@ -2382,19 +1972,30 @@ void initMain()
 {
   u8g2.clearBuffer();
 
-  for (int i = 0; i < STARS; i++) 
+  for (int i = 0; i < STARS; i++) {
     initStar(i);
+  }
 
   uint32_t starfieldElapsed = 0;
+
   int shrinkAmt = 0;
+
   while (true)
   {
     u8g2.clearBuffer();
+
     if (starfieldElapsed > 20) {
-      ++shrinkAmt;
+      int mult = 1;
+
+      if (starfieldElapsed > 50) mult = 3;
+
+      shrinkAmt = shrinkAmt + (1 * mult);
+
+      // ++shrinkAmt;
     }
 
     showStarfield((starfieldElapsed > 20 ? true : false), (starfieldElapsed > 40 ? true : false), shrinkAmt);
+
     u8g2.sendBuffer();
 
     delay(10);
@@ -2421,10 +2022,11 @@ std::string strldz(std::string inputStr, const int zeroNum)
   return outputStr;
 }
 
-void drawMenuHeader(std::string inputStr, int8_t value, int8_t startX);
-void drawMenuHeader(std::string inputStr, int8_t value, int8_t startX)
+void drawMenuHeader(std::string inputStr, int8_t value, int8_t startX, bool hideNum);
+void drawMenuHeader(std::string inputStr, int8_t value, int8_t startX, bool hideNum)
 {
-  inputStr += strldz(std::to_string(value), 2);
+  if (!hideNum) inputStr += strldz(std::to_string(value), 2);
+
   u8g2.drawStr(startX, 0, inputStr.c_str());
 }
 
@@ -3037,26 +2639,10 @@ void drawControlMods(void)
   // draw control mod indicators (a,b,c,d)
   u8g2.drawLine(ctrlModHeaderStartX,30,128,30);
 
-  u8g2.drawLine(21+ctrlModHeaderStartX,20,21+ctrlModHeaderStartX,52);
-  u8g2.drawLine(22+ctrlModHeaderStartX+(ctrlModSpacerMult*1),20,22+ctrlModHeaderStartX+(ctrlModSpacerMult*1),52);
-  u8g2.drawLine(24+ctrlModHeaderStartX+(ctrlModSpacerMult*2),20,24+ctrlModHeaderStartX+(ctrlModSpacerMult*2),52);
-  //u8g2.drawLine(20+ctrlModHeaderStartX+(ctrlModSpacerMult*3),20,20+ctrlModHeaderStartX+(ctrlModSpacerMult*3),52);
-  
-  // u8g2.setColorIndex((u_int8_t)1);
-  // u8g2.drawBox(ctrlModHeaderStartX,ctrlModHeaderY,ctrlModHeaderBoxSize,ctrlModHeaderBoxSize);
-  // u8g2.drawBox(ctrlModHeaderStartX+(ctrlModSpacerMult*1),ctrlModHeaderY,ctrlModHeaderBoxSize,ctrlModHeaderBoxSize);
-  // u8g2.drawBox(ctrlModHeaderStartX+(ctrlModSpacerMult*2),ctrlModHeaderY,ctrlModHeaderBoxSize,ctrlModHeaderBoxSize);
-  // u8g2.drawBox(ctrlModHeaderStartX+(ctrlModSpacerMult*3),ctrlModHeaderY,ctrlModHeaderBoxSize,ctrlModHeaderBoxSize);
-  // u8g2.drawLine(ctrlModHeaderStartX,20,29,52);
-  // u8g2.drawLine(ctrlModHeaderStartX+(ctrlModSpacerMult*1),20,ctrlModHeaderStartX+(ctrlModSpacerMult*1),52);
-  // u8g2.drawLine(ctrlModHeaderStartX+(ctrlModSpacerMult*2),20,ctrlModHeaderStartX+(ctrlModSpacerMult*2),52);
-  // u8g2.drawLine(ctrlModHeaderStartX+(ctrlModSpacerMult*3),20,ctrlModHeaderStartX+(ctrlModSpacerMult*3),52);
-  // u8g2.setColorIndex((u_int8_t)0);
-  // u8g2.drawStr(ctrlModHeaderStartX+3,ctrlModHeaderY+1, "a");
-  // u8g2.drawStr(ctrlModHeaderStartX+3+(ctrlModSpacerMult*1),ctrlModHeaderY+1, "b");
-  // u8g2.drawStr(ctrlModHeaderStartX+3+(ctrlModSpacerMult*2),ctrlModHeaderY+1, "c");
-  // u8g2.drawStr(ctrlModHeaderStartX+3+(ctrlModSpacerMult*3),ctrlModHeaderY+1, "d");
-  // u8g2.setColorIndex((u_int8_t)1);
+  u8g2.drawLine(ctrlModHeaderStartX,20,ctrlModHeaderStartX,52);
+  u8g2.drawLine(25+ctrlModHeaderStartX,20,25+ctrlModHeaderStartX,52);
+  u8g2.drawLine(25+ctrlModHeaderStartX+(ctrlModSpacerMult*1),20,25+ctrlModHeaderStartX+(ctrlModSpacerMult*1),52);
+  u8g2.drawLine(25+ctrlModHeaderStartX+(ctrlModSpacerMult*2),20,25+ctrlModHeaderStartX+(ctrlModSpacerMult*2),52);
 
   SOUND_CONTROL_MODS mods = getControlModDataForTrack();
 
@@ -3081,9 +2667,11 @@ void drawPatternControlMods(void)
 
   // draw control mod indicators (a,b,c,d)
   u8g2.drawLine(ctrlModHeaderStartX,30,128,30);
-  u8g2.drawLine(21+ctrlModHeaderStartX,20,21+ctrlModHeaderStartX,52);
-  u8g2.drawLine(22+ctrlModHeaderStartX+(ctrlModSpacerMult*1),20,22+ctrlModHeaderStartX+(ctrlModSpacerMult*1),52);
-  u8g2.drawLine(24+ctrlModHeaderStartX+(ctrlModSpacerMult*2),20,24+ctrlModHeaderStartX+(ctrlModSpacerMult*2),52);
+
+  u8g2.drawLine(ctrlModHeaderStartX,20,ctrlModHeaderStartX,52);
+  u8g2.drawLine(25+ctrlModHeaderStartX,20,25+ctrlModHeaderStartX,52);
+  u8g2.drawLine(25+ctrlModHeaderStartX+(ctrlModSpacerMult*1),20,25+ctrlModHeaderStartX+(ctrlModSpacerMult*1),52);
+  u8g2.drawLine(25+ctrlModHeaderStartX+(ctrlModSpacerMult*2),20,25+ctrlModHeaderStartX+(ctrlModSpacerMult*2),52);
 
   SOUND_CONTROL_MODS mods = getControlModDataForPattern();
 
@@ -3138,31 +2726,9 @@ void drawPageNumIndicators(void)
   }
 }
 
-void drawSequencerScreen()
+void drawSequencerScreen(bool queueBlink)
 {
   u8g2.clearBuffer();
-
-  drawMenuHeader("BNK:", 1, 0);
-
-  if (current_UI_mode == UI_MODE::PATTERN_WRITE) {
-    u8g2.setColorIndex((u_int8_t)1);
-    u8g2.drawBox(26,0,29,7);
-    u8g2.setColorIndex((u_int8_t)0);
-    drawMenuHeader("PTN:", current_selected_pattern+1, 29);
-    u8g2.setColorIndex((u_int8_t)1);
-  } else {
-    drawMenuHeader("PTN:", current_selected_pattern+1, 29);
-  }
-
-  if (current_UI_mode == TRACK_WRITE || current_UI_mode == TRACK_SEL || current_UI_mode == SUBMITTING_STEP_VALUE) {
-    u8g2.setColorIndex((u_int8_t)1);
-    u8g2.drawBox(55,0,29,7);
-    u8g2.setColorIndex((u_int8_t)0);
-    drawMenuHeader("TRK:", current_selected_track+1, 58);
-    u8g2.setColorIndex((u_int8_t)1);
-  } else {
-    drawMenuHeader("TRK:", current_selected_track+1, 58);
-  }
 
   std::string bpmStr = strldz(std::to_string((uint8_t)uClock.getTempo()), 3);
   u8g2.drawStr(104, 0, bpmStr.c_str());
@@ -3178,14 +2744,60 @@ void drawSequencerScreen()
     u8g2.drawBox(transportIconStartX+3,1,2,5);
   }
 
+  if (current_UI_mode == PERFORM_TAP) {
+    u8g2.drawStr(0, 0, "TAP MODE");
+    u8g2.sendBuffer();
+    return;
+  } else if (current_UI_mode == PERFORM_MUTE) {
+    u8g2.drawStr(0, 0, "MUTE MODE");
+    u8g2.sendBuffer();
+    return;
+  } else if (current_UI_mode == PERFORM_SOLO) {
+    u8g2.drawStr(0, 0, "SOLO MODE");
+    u8g2.sendBuffer();
+    return;
+  } else if (current_UI_mode == PERFORM_RATCHET) {
+    u8g2.drawStr(0, 0, "RATCHET MODE");
+    u8g2.sendBuffer();
+    return;
+  }
+
+  drawMenuHeader("BNK:", 1, 0, false);
+
+  int ptnNumber = current_selected_pattern+1;
+  if (_queued_pattern.number > -1) {
+    ptnNumber = _queued_pattern.number+1;
+  }
+
+  if (current_UI_mode == UI_MODE::PATTERN_WRITE) {
+    u8g2.setColorIndex((u_int8_t)1);
+    u8g2.drawBox(26,0,29,7);
+    u8g2.setColorIndex((u_int8_t)0);
+    drawMenuHeader("PTN:", ptnNumber, 29, queueBlink);
+    u8g2.setColorIndex((u_int8_t)1);
+  } else if (current_UI_mode == TRACK_WRITE || current_UI_mode == TRACK_SEL || current_UI_mode == SUBMITTING_STEP_VALUE) {
+    drawMenuHeader("PTN:", ptnNumber, 29, queueBlink);
+  }
+
+  if (current_UI_mode == TRACK_WRITE || current_UI_mode == TRACK_SEL || current_UI_mode == SUBMITTING_STEP_VALUE) {
+    u8g2.setColorIndex((u_int8_t)1);
+    u8g2.drawBox(55,0,29,7);
+    u8g2.setColorIndex((u_int8_t)0);
+    drawMenuHeader("TRK:", current_selected_track+1, 58, false);
+    u8g2.setColorIndex((u_int8_t)1);
+  } 
+  // else {
+  //   drawMenuHeader("TRK:", current_selected_track+1, 58, false);
+  // }
+
   if (current_UI_mode == PATTERN_WRITE) {
-    PATTERN currPattern = getHeapCurrentSelectedPattern();
+    //PATTERN currPattern = getHeapCurrentSelectedPattern();
 
     // draw pattern header box
     u8g2.setColorIndex((u_int8_t)1);
     u8g2.drawBox(0,9,128,9);
     u8g2.setColorIndex((u_int8_t)0);
-    std::string patternHeaderStr = "EDIT PATTERN";
+    std::string patternHeaderStr = "PATTERN EDIT";
     u8g2.drawStr(2, 10, patternHeaderStr.c_str());
     u8g2.setColorIndex((u_int8_t)1);
 
@@ -3322,7 +2934,7 @@ void drawSetupScreen()
 void triggerSubtractiveSynthNoteOn(uint8_t t, uint8_t note);
 void triggerSubtractiveSynthNoteOn(uint8_t t, uint8_t note)
 {
-  TRACK currTrack = getHeapCurrentSelectedTrack();
+  TRACK currTrack = getHeapCurrentSelectedPattern().tracks[t];
 
   AudioNoInterrupts();
   float foundBaseFreq = noteToFreqArr[note];
@@ -3353,7 +2965,7 @@ void triggerSubtractiveSynthNoteOn(uint8_t t, uint8_t note)
 void triggerRawSampleNoteOn(uint8_t t, uint8_t note);
 void triggerRawSampleNoteOn(uint8_t t, uint8_t note)
 {
-  TRACK currTrack = getHeapCurrentSelectedTrack();
+  TRACK currTrack = getHeapCurrentSelectedPattern().tracks[t];
   int tOffset = t-4;
 
   if (t < 4) {
@@ -3435,7 +3047,7 @@ void triggerRawSampleNoteOn(uint8_t t, uint8_t note)
 void triggerWavSampleNoteOn(uint8_t t, uint8_t note);
 void triggerWavSampleNoteOn(uint8_t t, uint8_t note)
 {
-  TRACK currTrack = getHeapCurrentSelectedTrack();
+  TRACK currTrack = getHeapCurrentSelectedPattern().tracks[t];
   int tOffset = t-4;
 
   if (t < 4) {
@@ -3448,7 +3060,10 @@ void triggerWavSampleNoteOn(uint8_t t, uint8_t note)
 }
 
 void triggerTrackManually(uint8_t t, uint8_t note) {
-  TRACK currTrack = getHeapCurrentSelectedTrack();
+  Serial.print("provided track: ");
+  Serial.println(t);
+
+  TRACK currTrack = getHeapCurrentSelectedPattern().tracks[t];
 
   if (currTrack.track_type == RAW_SAMPLE) {
     triggerRawSampleNoteOn(t, note);
@@ -3469,7 +3084,7 @@ void triggerAllStepsForAllTracks(uint32_t tick)
     TRACK currTrack = currentPattern.tracks[t];
     TRACK_STEP currTrackStepData = currTrack.steps[currTrackStep];
 
-    if ((currTrackStepData.state == TRACK_STEP_STATE::ON) || (currTrackStepData.state == TRACK_STEP_STATE::ACCENTED)) {
+    if (!currTrack.muted && ((currTrackStepData.state == TRACK_STEP_STATE::ON) || (currTrackStepData.state == TRACK_STEP_STATE::ACCENTED))) {
       handleAddToStepStack(tick, t, currTrackStep);
     }
   }
@@ -3612,6 +3227,10 @@ void handleNoteOnForTrackStep(int track, int step)
 {
   TRACK trackToUse = getHeapTrack(track);
 
+  if (trackToUse.muted) {
+    return;
+  }
+
   if (trackToUse.track_type == RAW_SAMPLE) {
     handleRawSampleNoteOnForTrackStep(track, step);
   } else if (trackToUse.track_type == WAV_SAMPLE) {
@@ -3623,6 +3242,24 @@ void handleNoteOnForTrackStep(int track, int step)
 
 void handleNoteOffForTrackStep(int track, int step);
 void handleNoteOffForTrackStep(int track, int step)
+{
+  TRACK currTrack = getHeapTrack(track);
+
+  if (currTrack.track_type == SUBTRACTIVE_SYNTH) {
+    comboVoices[track].ampEnv.noteOff();
+    comboVoices[track].filterEnv.noteOff();
+  } else {
+    if (track > 3) {
+      int tOffset = track-4;
+      sampleVoices[tOffset].ampEnv.noteOff();
+    } else {
+      comboVoices[track].ampEnv.noteOff();
+    }
+  }
+}
+
+void handleNoteOffForTrack(int track);
+void handleNoteOffForTrack(int track)
 {
   TRACK currTrack = getHeapTrack(track);
 
@@ -3736,6 +3373,51 @@ void clearAllStepLEDs(void)
   }
 }
 
+void displayPerformModeLEDs(void)
+{
+  for (int s = 12; s < 16; s++) {
+    setLEDPWM(stepLEDPins[s], 4095);
+  }
+}
+
+void displayMuteLEDs(void)
+{
+  PATTERN currPattern = getHeapCurrentSelectedPattern();
+
+  for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+  {
+    if (!currPattern.tracks[t].muted) {
+      setLEDPWM(stepLEDPins[t], 0);
+    } else {
+      setLEDPWM(stepLEDPins[t], 4095);
+    }
+  }
+}
+
+void handleSoloForTrack(uint8_t track, bool undoSoloing)
+{
+  for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+  {
+    if (undoSoloing) {
+      _seq_heap.pattern.tracks[t].soloing = false;
+      _seq_heap.pattern.tracks[t].muted = false;
+      setLEDPWM(stepLEDPins[t], 0);
+
+      continue;
+    }
+
+    if (t == track) {
+      _seq_heap.pattern.tracks[t].soloing = true;
+      _seq_heap.pattern.tracks[t].muted = false;
+      setLEDPWM(stepLEDPins[t], 4095);
+    } else {
+      _seq_heap.pattern.tracks[t].soloing = false;
+      _seq_heap.pattern.tracks[t].muted = true;
+      setLEDPWM(stepLEDPins[t], 0);
+    }
+  }
+}
+
 void handleRemoveFromStepStack(uint32_t tick);
 void handleRemoveFromStepStack(uint32_t tick)
 {
@@ -3761,7 +3443,7 @@ void handleAddToStepStack(uint32_t tick, int track, int step)
   TRACK_STEP stepToUse = getHeapStep(track, step);
 
   for ( uint8_t i = 0; i < STEP_STACK_SIZE; i++ ) {
-    if ( _step_stack[i].length == -1 ) {
+    if (!trackToUse.muted && _step_stack[i].length == -1 ) {
       _step_stack[i].trackNum = track;
       _step_stack[i].stepNum = step;
       _step_stack[i].length = stepToUse.length > 0 ? stepToUse.length : trackToUse.length;
@@ -3820,6 +3502,11 @@ void updateCurrentPatternStepState(void)
     } else {
       _seq_state.current_step = 1; // reset current step
       _seq_state.current_bar = 1; // reset current bar
+
+      if (_queued_pattern.bank > -1 && _queued_pattern.number > -1) {
+        // nullify pattern queue
+        dequeue_pattern = true;
+      }
     }
   }
 }
@@ -3847,6 +3534,8 @@ void updateAllTrackStepStates(void)
     }
   }
 }
+
+bool toggled_queue_ind_off = false;
 
 void handle_bpm_step(uint32_t tick)
 {
@@ -3895,6 +3584,10 @@ void handle_bpm_step(uint32_t tick)
   if ( !(tick % (6)) ) {
     if (current_UI_mode == PATTERN_WRITE) {
       setDisplayStateForPatternActiveTracksLEDs(true);
+    }
+
+    if (_queued_pattern.bank > -1 && _queued_pattern.number > -1) {
+      draw_queue_blink = 0;
     }
 
     // TODO: move out of 16th step !(tick % (6)) condition
@@ -3972,6 +3665,11 @@ void handle_bpm_step(uint32_t tick)
     // Serial.print(",");
     // Serial.print(AudioMemoryUsageMax());
     // Serial.println();
+
+    // blink queued bank / pattern
+    if (_queued_pattern.bank > -1 && _queued_pattern.number > -1) {
+      draw_queue_blink = 1;
+    }
   }
 }
 
@@ -5246,6 +4944,11 @@ void handleKeyboardStates(void) {
     return;
   }
 
+  // TODO: remove
+  if (_queued_pattern.bank > -1 || _queued_pattern.number > -1) {
+    return;
+  }
+
   // Get the currently touched pads
   currtouched = cap.touched();
 
@@ -5444,22 +5147,26 @@ void handleSwitchStates(bool discard) {
                 } else if (current_UI_mode == PATTERN_SEL && btnCharIsATrack(kpd.key[i].kchar)) {
                   uint8_t selPattern = getKeyStepNum(kpd.key[i].kchar)-1; // zero-based
 
-                  // TODO: if sequencer is running, queue next pattern after current playing bar ends
-                  swapSequencerMemoryForPattern(0, selPattern);
+                  if (_seq_state.playback_state == RUNNING) {
+                    _queued_pattern.bank = current_selected_bank;
+                    _queued_pattern.number = selPattern;
 
-                  // Now change current pattern global var
-                  current_selected_pattern = selPattern;
+                    previous_UI_mode = PATTERN_SEL;
+                    current_UI_mode = PATTERN_WRITE;
+                  } else {
+                    swapSequencerMemoryForPattern(current_selected_bank, selPattern);
 
-                  Serial.print("marking pressed pattern selection (zero-based): ");
-                  Serial.println(selPattern);
+                    Serial.print("marking pressed pattern selection (zero-based): ");
+                    Serial.println(selPattern);
 
-                  patt_held_for_selection = selPattern;
+                    patt_held_for_selection = selPattern;
 
-                  previous_UI_mode = PATTERN_SEL;
-                  current_UI_mode = PATTERN_SEL;
+                    previous_UI_mode = PATTERN_SEL;
+                    current_UI_mode = PATTERN_SEL;
 
-                  clearAllStepLEDs();
-                  displayCurrentlySelectedPattern();
+                    clearAllStepLEDs();
+                    displayCurrentlySelectedPattern();
+                  }
                 } 
                 // start/pause or stop
                 else if (kpd.key[i].kchar == 'q' || kpd.key[i].kchar == 'w') {
@@ -5483,6 +5190,60 @@ void handleSwitchStates(bool discard) {
 
                   Serial.print("Updated page to: ");
                   Serial.println(current_step_page);
+                }
+                // perform
+                else if (kpd.key[i].kchar == 'a') {
+                  Serial.println("enter perform select mode!");
+                  current_UI_mode = PERFORM_SEL;
+
+                  clearAllStepLEDs();
+                  displayPerformModeLEDs();
+                } else if (current_UI_mode == PERFORM_SEL && btnCharIsATrack(kpd.key[i].kchar) && getKeyStepNum(kpd.key[i].kchar) >= 13) {
+                  perf_held_for_selection = getKeyStepNum(kpd.key[i].kchar)-1;
+
+                  Serial.print("perf_held_for_selection: ");
+                  Serial.println(perf_held_for_selection);
+
+                  if (getKeyStepNum(kpd.key[i].kchar) == 13) { // enable tap mode
+                    previous_UI_mode = PATTERN_WRITE; // TODO: find better way to track UI mode before PERFORM_SEL
+                    current_UI_mode = PERFORM_TAP;
+
+                    clearAllStepLEDs();
+                    drawSequencerScreen();
+                  } else if (getKeyStepNum(kpd.key[i].kchar) == 14) { // enable mute mode
+                    previous_UI_mode = PATTERN_WRITE; // TODO: find better way to track UI mode before PERFORM_SEL
+                    current_UI_mode = PERFORM_MUTE;
+
+                    displayMuteLEDs();
+                    drawSequencerScreen();
+                  } else if (getKeyStepNum(kpd.key[i].kchar) == 15) { // enable solo mode
+                    previous_UI_mode = PATTERN_WRITE; // TODO: find better way to track UI mode before PERFORM_SEL
+                    current_UI_mode = PERFORM_SOLO;
+
+                    //displayMuteLEDs();
+                    clearAllStepLEDs();
+                    drawSequencerScreen();
+                  } else if (getKeyStepNum(kpd.key[i].kchar) == 16) { // enable ratchet mode
+                    previous_UI_mode = PATTERN_WRITE; // TODO: find better way to track UI mode before PERFORM_SEL
+                    current_UI_mode = PERFORM_RATCHET;
+
+                    //displayMuteLEDs();
+                    clearAllStepLEDs();
+                    drawSequencerScreen();
+                  }
+                } else if (current_UI_mode == PERFORM_TAP && btnCharIsATrack(kpd.key[i].kchar)) { // handle taps
+                
+                  triggerTrackManually(getKeyStepNum(kpd.key[i].kchar)-1, _seq_heap.pattern.tracks[getKeyStepNum(kpd.key[i].kchar)-1].note);
+
+                } else if (current_UI_mode == PERFORM_MUTE && btnCharIsATrack(kpd.key[i].kchar)) { // handle mutes
+                  bool currMuteState = _seq_heap.pattern.tracks[getKeyStepNum(kpd.key[i].kchar)-1].muted;
+
+                  _seq_heap.pattern.tracks[getKeyStepNum(kpd.key[i].kchar)-1].muted = (currMuteState ? false : true);
+
+                  displayMuteLEDs();
+                } else if (current_UI_mode == PERFORM_SOLO && btnCharIsATrack(kpd.key[i].kchar)) { // handle solos
+                  bool undoSoloing = _seq_heap.pattern.tracks[getKeyStepNum(kpd.key[i].kchar)-1].soloing;
+                  handleSoloForTrack(getKeyStepNum(kpd.key[i].kchar)-1, undoSoloing);
                 }
               }
               // function handling
@@ -5704,10 +5465,32 @@ void handleSwitchStates(bool discard) {
                 drawSequencerScreen();
               }
 
+              // perform mode select release
+              else if (kpd.key[i].kchar == 'a' && perf_held_for_selection == -1) {
+                // revert
+                current_UI_mode = PATTERN_WRITE;
+                previous_UI_mode = PERFORM_SEL;
+
+                clearAllStepLEDs();
+                drawSequencerScreen();
+              } else if (current_UI_mode == PERFORM_SEL && (kpd.key[i].kchar == 'a' || kpd.key[i].kchar == 'w' || btnCharIsATrack(kpd.key[i].kchar)) && ((getKeyStepNum(kpd.key[i].kchar)-1) == perf_held_for_selection)) {
+                Serial.println("reverting perf_held_for_selection");
+
+                perf_held_for_selection = -1;
+              } else if (current_UI_mode == PERFORM_TAP && btnCharIsATrack(kpd.key[i].kchar)) {
+                Serial.println("handling note Off for tapped track");
+
+                handleNoteOffForTrack(getKeyStepNum(kpd.key[i].kchar)-1);
+              }
+
               // function stop
               else if (function_started && kpd.key[i].kchar == FUNCTION_BTN_CHAR) {
                 Serial.println("leaving function!");
                 function_started = false;
+
+                if (current_UI_mode == TRACK_WRITE) {
+                  displayPageLEDs();
+                }
               }
 
               break;
