@@ -1,5 +1,10 @@
+#ifndef AudioConfig_h
+#define AudioConfig_h
+
 #include <Arduino.h>
+#include <Config.h>
 #include <Audio.h>
+#include <SerialFlash.h>
 #include <TeensyVariablePlayback.h>
 
 // GUItool: begin automatically generated code
@@ -353,3 +358,146 @@ AudioConnection          patchCord190(mainMixerRight, 0, i2s1, 1);
 AudioControlSGTL5000     sgtl5000_1;     //xy=2609.095317840576,2062.7380781173706
 // GUItool: end automatically generated code
 
+newdigate::audiosample *samples[MAX_PROJECT_RAW_SAMPLES];
+
+class ComboVoice
+{
+  public:
+    AudioPlayWAVstereo          &wSample;
+    AudioPlayArrayResmp         &rSample;
+    AudioSynthWaveform          &osca;
+    AudioSynthWaveform          &oscb;
+    AudioSynthNoiseWhite        &noise;
+    AudioMixer4                 &oscMix;
+    AudioSynthWaveformDc        &dc;
+    AudioFilterLadder           &lfilter;
+    AudioEffectEnvelope         &filterEnv;
+    AudioMixer4                 &mix;
+    AudioEffectEnvelope         &ampEnv;
+    AudioAmplifier              &leftCtrl;
+    AudioAmplifier              &rightCtrl;
+    AudioMixer4                 &leftSubMix;
+    AudioMixer4                 &rightSubMix;
+ 
+    ComboVoice(
+      AudioPlayWAVstereo          &wSample,
+      AudioPlayArrayResmp         &rSample,
+      AudioSynthWaveform          &osca,
+      AudioSynthWaveform          &oscb,
+      AudioSynthNoiseWhite        &noise,
+      AudioMixer4                 &oscMix,
+      AudioSynthWaveformDc        &dc,
+      AudioFilterLadder           &lfilter,
+      AudioEffectEnvelope         &filterEnv,
+      AudioMixer4                 &mix,
+      AudioEffectEnvelope         &ampEnv,
+      AudioAmplifier              &leftCtrl,
+      AudioAmplifier              &rightCtrl,
+      AudioMixer4                 &leftSubMix,
+      AudioMixer4                 &rightSubMix
+    ) : wSample {wSample},
+        rSample {rSample},
+        osca {osca},
+        oscb {oscb},
+        noise {noise},
+        oscMix {oscMix},
+        dc {dc},
+        lfilter {lfilter},
+        filterEnv {filterEnv},
+        mix {mix},
+        ampEnv {ampEnv},
+        leftCtrl {leftCtrl},
+        rightCtrl {rightCtrl},
+        leftSubMix {leftSubMix},
+        rightSubMix {rightSubMix}
+    {
+      //
+    }
+};
+
+class SampleVoice
+{
+  public:
+    AudioPlayWAVstereo          &wSample;
+    AudioPlayArrayResmp         &rSample;
+    AudioEffectEnvelope         &ampEnv;
+    AudioAmplifier              &leftCtrl;
+    AudioAmplifier              &rightCtrl;
+    AudioMixer4                 &leftSubMix;
+    AudioMixer4                 &rightSubMix;
+ 
+    SampleVoice(
+      AudioPlayWAVstereo          &wSample,
+      AudioPlayArrayResmp         &rSample,
+      AudioEffectEnvelope         &ampEnv,
+      AudioAmplifier              &leftCtrl,
+      AudioAmplifier              &rightCtrl,
+      AudioMixer4                 &leftSubMix,
+      AudioMixer4                 &rightSubMix
+    ) : wSample {wSample},
+        rSample {rSample},
+        ampEnv {ampEnv},
+        leftCtrl {leftCtrl},
+        rightCtrl {rightCtrl},
+        leftSubMix {leftSubMix},
+        rightSubMix {rightSubMix}
+    {
+      //
+    }
+};
+
+ComboVoice comboVoices[COMBO_VOICE_COUNT] = {
+  ComboVoice(
+    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1
+  ),
+  ComboVoice(
+    vssample2,vmsample2,vosca2,voscb2,vnoise2,voscmix2,vdc2,vlfilter2,vfilterenv2,vmix2,venv2,vleft2,vright2,vsubmixl2,vsubmixr2
+  ),
+  ComboVoice(
+    vssample3,vmsample3,vosca3,voscb3,vnoise3,voscmix3,vdc3,vlfilter3,vfilterenv3,vmix3,venv3,vleft3,vright3,vsubmixl3,vsubmixr3
+  ),
+  ComboVoice(
+    vssample4,vmsample4,vosca4,voscb4,vnoise4,voscmix4,vdc4,vlfilter4,vfilterenv4,vmix4,venv4,vleft4,vright4,vsubmixl4,vsubmixr4
+  ),
+};
+
+SampleVoice sampleVoices[SAMPLE_VOICE_COUNT] = {
+  SampleVoice(
+    vssample5,vmsample5,venv5,vleft5,vright5,vsubmixl5,vsubmixr5
+  ),
+  SampleVoice(
+    vssample6,vmsample6,venv6,vleft6,vright6,vsubmixl6,vsubmixr6
+  ),
+  SampleVoice(
+    vssample7,vmsample7,venv7,vleft7,vright7,vsubmixl7,vsubmixr7
+  ),
+  SampleVoice(
+    vssample8,vmsample8,venv8,vleft8,vright8,vsubmixl8,vsubmixr8
+  ),
+  SampleVoice(
+    vssample9,vmsample9,venv9,vleft9,vright9,vsubmixl9,vsubmixr9
+  ),
+  SampleVoice(
+    vssample10,vmsample10,venv10,vleft10,vright10,vsubmixl10,vsubmixr10
+  ),
+  SampleVoice(
+    vssample11,vmsample11,venv11,vleft11,vright11,vsubmixl11,vsubmixr11
+  ),
+  SampleVoice(
+    vssample12,vmsample12,venv12,vleft12,vright12,vsubmixl12,vsubmixr12
+  ),
+  SampleVoice(
+    vssample13,vmsample13,venv13,vleft13,vright13,vsubmixl13,vsubmixr13
+  ),
+  SampleVoice(
+    vssample14,vmsample14,venv14,vleft14,vright14,vsubmixl14,vsubmixr14
+  ),
+  SampleVoice(
+    vssample15,vmsample15,venv15,vleft15,vright15,vsubmixl15,vsubmixr15
+  ),
+  SampleVoice(
+    vssample16,vmsample16,venv16,vleft16,vright16,vsubmixl16,vsubmixr16
+  ),
+};
+
+#endif /* AudioConfig_h */
