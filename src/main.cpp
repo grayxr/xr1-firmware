@@ -135,7 +135,9 @@ void clearAllStepLEDs(void);
 void clearPageLEDs();
 
 void handle_bpm_step(uint32_t tick);
+void handle_sixteenth_step(uint32_t tick);
 void ClockOut96PPQN(uint32_t tick);
+void ClockOut16PPQN(uint32_t tick);
 void onClockStart();
 void onClockStop();
 
@@ -290,6 +292,8 @@ void setup() {
   uClock.init();
   // Set the callback function for the clock output to send MIDI Sync message.
   uClock.setClock96PPQNOutput(ClockOut96PPQN);
+  // Set the callback function for the 16th step ticks
+  uClock.setClock16PPQNOutput(ClockOut16PPQN);
   // Set the callback function for MIDI Start and Stop messages.
   uClock.setOnClockStartOutput(onClockStart);  
   uClock.setOnClockStopOutput(onClockStop);
@@ -345,6 +349,15 @@ void loop(void)
 
   handleQueueActions();
 }
+
+// if swing enabled, pause every other 16th note for x amt of ppqn
+
+bool proceed = false;
+bool swingEnabled = true;
+bool startSwingCounter = false;
+int swingMaxPPQN = 3;
+int swingCurrPPQN = 0;
+long tNow;
 
 // Internal clock handlers
 void ClockOut96PPQN(uint32_t tick) {
@@ -3342,6 +3355,18 @@ void updateAllTrackStepStates(void)
   }
 }
 
+void ClockOut16PPQN(uint32_t tick)
+{
+  //handle_sixteenth_step(tick);
+}
+
+void handle_sixteenth_step(uint32_t tick)
+{
+  // TODO: move out of 16th step !(tick % (6)) condition
+  // so we can check for microtiming adjustments at the 96ppqn scale
+  triggerAllStepsForAllTracks(tick);
+}
+
 void handle_bpm_step(uint32_t tick)
 {
   int8_t currentSelectedPatternCurrentStep = _seq_state.current_step;
@@ -3397,8 +3422,6 @@ void handle_bpm_step(uint32_t tick)
       draw_queue_blink = 0;
     }
 
-    // TODO: move out of 16th step !(tick % (6)) condition
-    // so we can check for microtiming adjustments at the 96ppqn scale
     triggerAllStepsForAllTracks(tick);
 
     if (current_UI_mode == PATTERN_SEL) {
@@ -3448,15 +3471,6 @@ void handle_bpm_step(uint32_t tick)
     updateCurrentPatternStepState();
     updateAllTrackStepStates();
   } else if ( !(tick % bpm_blink_timer) ) {
-    // remove this?
-    // if (current_UI_mode != PATTERN_SEL || current_UI_mode != TRACK_SEL) {
-    //   if (keyLED < 0) {
-    //     Serial.println("could not find key LED - 6!");
-    //   } else {
-    //     setLEDPWM(keyLED, 0); // turn 16th and start OFF
-    //   }
-    // }
-
     if (current_UI_mode == PATTERN_WRITE) {
       setDisplayStateForPatternActiveTracksLEDs(false);
     } else if (current_UI_mode == TRACK_WRITE || current_UI_mode == SUBMITTING_STEP_VALUE) {
