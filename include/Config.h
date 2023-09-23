@@ -18,6 +18,8 @@
 
 #define FIRMWARE_VERSION "0.1.0"
 
+#define LOG_METRICS_ENABLED false
+
 #define DISPLAY_MAX_WIDTH 128
 #define DISPLAY_MAX_HEIGHT 64
 
@@ -596,6 +598,7 @@ std::map<uint8_t, uint8_t> keyed_ratchet_divisions = {
 bool function_started = false;
 bool track_sel_btn_held = false;
 
+int8_t bnk_held_for_selection = -1;
 int8_t patt_held_for_selection = -1;
 int8_t track_held_for_selection = -1; // default to -1 (none)
 int8_t perf_held_for_selection = -1;
@@ -693,6 +696,14 @@ std::map<TRACK_TYPE, std::map<int, std::string>> trackCurrPageNameMap = {
   }},
 };
 
+enum SOUND_CONTROL_MOD_TYPE
+{
+  DEFAULT = 0,
+  RANGE,
+  BAR,
+  DIAL,
+};
+
 typedef struct
 {
   std::string aName;
@@ -703,6 +714,14 @@ typedef struct
   std::string bValue;
   std::string cValue;
   std::string dValue;
+  float aFloatValue;
+  float bFloatValue;
+  float cFloatValue;
+  float dFloatValue;
+  SOUND_CONTROL_MOD_TYPE aType;
+  SOUND_CONTROL_MOD_TYPE bType;
+  SOUND_CONTROL_MOD_TYPE cType;
+  SOUND_CONTROL_MOD_TYPE dType;
 } SOUND_CONTROL_MODS;
 
 std::map<int, loop_type> loopTypeSelMap = {
