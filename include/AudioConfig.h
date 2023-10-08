@@ -7,6 +7,12 @@
 #include <SerialFlash.h>
 #include <TeensyVariablePlayback.h>
 
+#include <Audio.h>
+#include <Wire.h>
+#include <SPI.h>
+#include <SD.h>
+#include <SerialFlash.h>
+
 // GUItool: begin automatically generated code
 AudioSynthNoiseWhite     vnoise3;        //xy=390,865
 AudioSynthNoiseWhite     vnoise2;        //xy=392,605
@@ -160,9 +166,16 @@ AudioMixer4              mixerLeft1;  //xy=1895.0000534057617,614.9999885559082
 AudioMixer4              mixerRight3; //xy=1889.1428604125977,2710.1428718566895
 AudioMixer4              mixerLeft3; //xy=1890.0000534057617,2629.999988555908
 AudioMixer4              mixerRight1; //xy=1899.9761505126953,695.1428909301758
-AudioMixer4              mainMixerLeft;         //xy=2425.833595275879,2078.3334159851074
-AudioMixer4              mainMixerRight;         //xy=2429.1665992736816,2153.3335819244385
-AudioOutputI2S           i2s1;           //xy=2602.880558013916,2109.166506767273
+AudioMixer4              mainMixerLeft;         //xy=2377.5001792907715,2080.0001640319824
+AudioMixer4              mainMixerRight;         //xy=2380.8331031799316,2151.6668338775635
+AudioInputI2S            i2s2;           //xy=2400.000419616699,2333.333345413208
+AudioAnalyzePeak         peak_left;          //xy=2406.666679382324,2285.000177383423
+AudioAnalyzePeak         peak_right; //xy=2410.000015258789,2384.999855041504
+AudioMixer4              inputMixerLeft;         //xy=2606.6663665771484,2303.3330993652344
+AudioMixer4              inputMixerRight; //xy=2608.333351135254,2378.3333463668823
+AudioMixer4              OutputMixerLeft; //xy=2866.6664505004883,2251.6665935516357
+AudioMixer4              OutputMixerRight; //xy=2871.6666107177734,2323.3333435058594
+AudioOutputI2S           i2s1;           //xy=3062.880729675293,2294.166513442993
 
 AudioConnection          patchCord1(vnoise3, 0, voscmix3, 2);
 AudioConnection          patchCord2(vnoise2, 0, voscmix2, 2);
@@ -352,11 +365,20 @@ AudioConnection          patchCord185(mixerLeft1, 0, mainMixerLeft, 0);
 AudioConnection          patchCord186(mixerRight3, 0, mainMixerRight, 2);
 AudioConnection          patchCord187(mixerLeft3, 0, mainMixerLeft, 2);
 AudioConnection          patchCord188(mixerRight1, 0, mainMixerRight, 0);
-AudioConnection          patchCord189(mainMixerLeft, 0, i2s1, 0);
-AudioConnection          patchCord190(mainMixerRight, 0, i2s1, 1);
+AudioConnection          patchCord189(mainMixerLeft, 0, OutputMixerLeft, 0);
+AudioConnection          patchCord190(mainMixerRight, 0, OutputMixerRight, 0);
+AudioConnection          patchCord191(i2s2, 0, inputMixerLeft, 0);
+AudioConnection          patchCord192(i2s2, 0, peak_left, 0);
+AudioConnection          patchCord193(i2s2, 1, inputMixerRight, 0);
+AudioConnection          patchCord194(i2s2, 1, peak_right, 0);
+AudioConnection          patchCord195(inputMixerLeft, 0, OutputMixerLeft, 1);
+AudioConnection          patchCord196(inputMixerRight, 0, OutputMixerRight, 1);
+AudioConnection          patchCord197(OutputMixerLeft, 0, i2s1, 0);
+AudioConnection          patchCord198(OutputMixerRight, 0, i2s1, 1);
 
-AudioControlSGTL5000     sgtl5000_1;     //xy=2609.095317840576,2062.7380781173706
+AudioControlSGTL5000     sgtl5000_1;     //xy=3069.094924926758,2246.0713777542114
 // GUItool: end automatically generated code
+
 
 newdigate::audiosample *samples[MAX_PROJECT_RAW_SAMPLES];
 

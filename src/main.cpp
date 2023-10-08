@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <SPI.h>
+#include <MIDI.h>
 #include <Wire.h>
 #include <SD.h>
 #include <Adafruit_TLC5947.h>
@@ -15,6 +16,7 @@
 #include <map>
 #include <string>
 
+void logMetrics(void);
 void initMain(void);
 void u8g2_prepare(void);
 void initEncoders(void);
@@ -26,9 +28,11 @@ bool btnCharIsATrack(char btnChar);
 void toggleSequencerPlayback(char btn);
 void toggleSelectedStep(uint8_t step);
 void initTrackSounds(void);
+void initSoundsForTrack(int t);
 void changeTrackSoundType(uint8_t track, TRACK_TYPE newType);
 void changeSampleTrackSoundType(uint8_t t, TRACK_TYPE newType);
 void swapSequencerMemoryForPattern(int newBank, int newPattern);
+void configureVoiceSettingsForTrack(int t);
 void configureVoiceSettingsOnLoad(void);
 void configureSampleVoiceSettingsOnLoad(int t);
 void initUsableSampleNames(void);
@@ -49,6 +53,7 @@ void parseRootForWavSamples(void);
 void parseRootForRawSamples(void);
 void rewindAllCurrentStepsForAllTracks(void);
 void triggerTrackManually(uint8_t t, uint8_t note);
+void triggerCvGateNoteOn(uint8_t t, uint8_t note);
 void triggerSubtractiveSynthNoteOn(uint8_t t, uint8_t note);
 void triggerRawSampleNoteOn(uint8_t t, uint8_t note);
 void triggerWavSampleNoteOn(uint8_t t, uint8_t note);
@@ -67,9 +72,12 @@ void handleSoloForTrack(uint8_t track, bool undoSoloing);
 void handleRawSampleNoteOnForTrack(int track);
 void handleWavSampleNoteOnForTrack(int track);
 void handleSubtractiveSynthNoteOnForTrack(int track);
+void handleCvGateNoteOnForTrack(int track);
 void handleRawSampleNoteOnForTrackStep(int track, int step);
 void handleWavSampleNoteOnForTrackStep(int track, int step);
 void handleSubtractiveSynthNoteOnForTrackStep(int track, int step);
+void handleMIDINoteOnForTrackStep(int track, int step);
+void handleCvGateNoteOnForTrackStep(int track, int step);
 void handleNoteOnForTrack(int track);
 void handleNoteOnForTrackStep(int track, int step);
 void handleNoteOffForTrackStep(int track, int step);
@@ -87,6 +95,10 @@ void handleEncoderWavSampleModA(int diff);
 void handleEncoderWavSampleModB(int diff);
 void handleEncoderWavSampleModC(int diff);
 void handleEncoderWavSampleModD(int diff);
+void handleEncoderCvGateModA(int diff);
+void handleEncoderCvGateModB(int diff);
+void handleEncoderCvGateModC(int diff);
+void handleEncoderCvGateModD(int diff);
 void handleEncoderPatternModA(int diff);
 void handleEncoderPatternModB(int diff);
 void handleEncoderPatternModC(int diff);
@@ -118,6 +130,7 @@ void drawSetupScreen();
 void drawControlMods(void);
 void drawPatternControlMods(void);
 void drawPageNumIndicators(void);
+void displayCurrentlySelectedBank(void);
 void displayCurrentlySelectedPattern(void);
 void displayCurrentlySelectedTrack(void);
 void displayInitializedPatternLEDs();
@@ -199,15 +212,21 @@ void setup() {
 
   // Audio connections require memory to work.  For more
   // detailed information, see the MemoryAndCpuUsage example
-  AudioMemory(25);
+  AudioMemory(50);
   Serial.println("buffered audio mem");
 
   // Comment these out if not using the audio adaptor board.
   // This may wait forever if the SDA & SCL pins lack
   // pullup resistors
   sgtl5000_1.enable();
-  sgtl5000_1.volume(0.8);
+  sgtl5000_1.inputSelect(AUDIO_INPUT_LINEIN);
+  sgtl5000_1.lineInLevel(0);
+  sgtl5000_1.volume(1.0);
+  sgtl5000_1.lineOutLevel(29);
   Serial.println("enabled sgtl");
+
+  MIDI.begin();
+  Serial.println("enabled MIDI");
 
   SPI.setMOSI(SDCARD_MOSI_PIN);
   SPI.setSCK(SDCARD_SCK_PIN);
@@ -299,13 +318,22 @@ void setup() {
   uClock.setOnClockStopOutput(onClockStop);
   // Set the clock BPM to 120 BPM
   uClock.setTempo(120);
+    // enable/disable shuffle
+  uClock.setShuffle(false);
+  // set a template for shuffle
+  //uClock.setShuffleTemplate(shuffle_off_tempo);
+  uClock.setShuffleTemplate(shuffle_templates[1]);
   Serial.println("init'd uClock");
 
   u8g2_prepare();
   initMain();
   Serial.println("init'd main screen");
 
+  delay(100);
+
   // wipeProject();
+  // Serial.println("wiped project! restart!");
+  // drawErrorMessage("wiped project, restart!");
   // return;
 
   File projectListFile = SD.open("/project_list.txt", FILE_READ);
@@ -337,17 +365,28 @@ void setup() {
   Serial.println("prepared samples");
 }
 
+void logMetrics(void)
+{
+  if (LOG_METRICS_ENABLED && !(elapsed % 1000)) {
+    Serial.print("Memory: ");
+    Serial.print(AudioMemoryUsage());
+    Serial.print(",");
+    Serial.print(AudioMemoryUsageMax());
+    Serial.println();
+  }
+}
+
 void loop(void)
 {
   analog.update();
+  
   handleHeadphoneAdjustment();
-
-  // handle hardware input states
   handleSwitchStates(false);
   handleKeyboardStates();
   handleEncoderStates();
-
   handleQueueActions();
+
+  logMetrics();
 }
 
 // if swing enabled, pause every other 16th note for x amt of ppqn
@@ -471,6 +510,8 @@ TRACK_STEP getHeapCurrentSelectedTrackStep(void)
 
 void swapSequencerMemoryForPattern(int newBank, int newPattern)
 {
+
+//AudioNoInterrupts();
   PATTERN currPatternData = _seq_heap.pattern;
   PATTERN newPatternData = _seq_external.banks[newBank].patterns[newPattern];
 
@@ -491,8 +532,18 @@ void swapSequencerMemoryForPattern(int newBank, int newPattern)
   // load any mods for new bank/pattern to SD
   loadPatternModsFromSdCard();
 
-  initTrackSounds();
-  configureVoiceSettingsOnLoad();
+  // TODO: initTrackSounds() is causing the audio glitching when changing patterns due to applying audio object
+  // changes for all 16 tracks at once.
+  // Maybe have each track re-init their own sound and voice settings individually as a new noteOn is triggered?
+  
+  //initTrackSounds();
+  //configureVoiceSettingsOnLoad();
+//AudioInterrupts();
+
+  // temp: trying this approach ^
+  for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++) {
+    _trkNeedsInit[t] = true;
+  }
 }
 
 PANNED_AMOUNTS getStereoPanValues(float pan)
@@ -570,6 +621,83 @@ void noteOffForAllSounds(void)
   }
 }
 
+void initSoundsForTrack(int t)
+{
+  AudioNoInterrupts();
+  // TODO: eventually need to restore all sounds for all patterns and their tracks?
+  TRACK currTrack = getHeapTrack(t);
+
+  if (t < 4) {
+    // init mono RAW sample
+    comboVoices[t].rSample.setPlaybackRate(currTrack.sample_play_rate);
+    comboVoices[t].rSample.enableInterpolation(true);
+
+    // init synth
+    comboVoices[t].osca.begin(currTrack.waveform);
+    comboVoices[t].osca.amplitude(currTrack.oscalevel);
+    comboVoices[t].osca.frequency(261.63); // C4 TODO: use find freq LUT with track note
+    comboVoices[t].osca.pulseWidth(currTrack.width);
+    comboVoices[t].oscb.begin(currTrack.waveform);
+    comboVoices[t].oscb.amplitude(currTrack.oscblevel);
+    comboVoices[t].oscb.frequency(261.63); // C3 TODO: use find freq LUT with track note + detune
+    comboVoices[t].oscb.pulseWidth(currTrack.width);
+    comboVoices[t].noise.amplitude(currTrack.noise);
+    comboVoices[t].oscMix.gain(0, 0.33);
+    comboVoices[t].oscMix.gain(1, 0.33);
+    comboVoices[t].oscMix.gain(2, 0.33);
+    comboVoices[t].dc.amplitude(currTrack.filterenvamt);
+    comboVoices[t].lfilter.frequency(currTrack.cutoff);
+    comboVoices[t].lfilter.resonance(currTrack.res);
+    comboVoices[t].lfilter.octaveControl(4);
+    comboVoices[t].filterEnv.attack(currTrack.filter_attack);
+    comboVoices[t].filterEnv.decay(currTrack.filter_decay);
+    comboVoices[t].filterEnv.sustain(currTrack.filter_sustain);
+    comboVoices[t].filterEnv.release(currTrack.filter_release);
+    comboVoices[t].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
+    comboVoices[t].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
+    comboVoices[t].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
+    comboVoices[t].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
+
+    // output
+    comboVoices[t].mix.gain(0, 1); // raw sample
+    comboVoices[t].mix.gain(1, 1); // synth
+
+    // mono to L&R
+    comboVoices[t].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+    comboVoices[t].rightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+
+    // Sub L&R mixers
+    comboVoices[t].leftSubMix.gain(0, currTrack.level); // wav sample left
+    comboVoices[t].leftSubMix.gain(1, currTrack.level); // raw sample / synth left
+    comboVoices[t].rightSubMix.gain(0, currTrack.level); // wav sample right
+    comboVoices[t].rightSubMix.gain(1, currTrack.level); // raw sample / synth right
+  } else {
+    // init mono RAW sample
+    sampleVoices[t].rSample.setPlaybackRate(currTrack.sample_play_rate);
+    sampleVoices[t].rSample.enableInterpolation(true);
+
+    sampleVoices[t].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
+    sampleVoices[t].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
+    sampleVoices[t].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
+    sampleVoices[t].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
+
+    // mono to L&R
+    sampleVoices[t].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+    sampleVoices[t].rightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+
+    // Sub L&R mixers
+    sampleVoices[t].leftSubMix.gain(0, currTrack.level); // wav sample left
+    sampleVoices[t].leftSubMix.gain(1, currTrack.level); // raw sample / synth left
+    sampleVoices[t].rightSubMix.gain(0, currTrack.level); // wav sample right
+    sampleVoices[t].rightSubMix.gain(1, currTrack.level); // raw sample / synth right
+  }
+
+  configureVoiceSettingsForTrack(t);
+
+  AudioInterrupts();
+  _trkNeedsInit[t] = false;
+}
+
 void initTrackSounds()
 {
   // configure combo voice audio objects
@@ -612,8 +740,8 @@ void initTrackSounds()
     comboVoices[v].mix.gain(1, 1); // synth
 
     // mono to L&R
-    comboVoices[v].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
-    comboVoices[v].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+    comboVoices[v].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+    comboVoices[v].rightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
 
     // Sub L&R mixers
     comboVoices[v].leftSubMix.gain(0, currTrack.level); // wav sample left
@@ -625,7 +753,7 @@ void initTrackSounds()
   // configure sample voice audio objects
   for (int v = 0; v < SAMPLE_VOICE_COUNT; v++) {
     // TODO: eventually need to restore all sounds for all patterns and their tracks?
-    TRACK currTrack = getHeapTrack(v);
+    TRACK currTrack = getHeapTrack(v+4); // offset by 4 since the 12 sample voices start at track 5
 
     // init mono RAW sample
     sampleVoices[v].rSample.setPlaybackRate(currTrack.sample_play_rate);
@@ -638,8 +766,8 @@ void initTrackSounds()
     //sampleVoices[v].ampEnv.releaseNoteOn(15);
 
     // mono to L&R
-    sampleVoices[v].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
-    sampleVoices[v].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+    sampleVoices[v].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+    sampleVoices[v].rightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
 
     // Sub L&R mixers
     sampleVoices[v].leftSubMix.gain(0, currTrack.level); // wav sample left
@@ -693,6 +821,16 @@ void initTrackSounds()
   mainMixerRight.gain(2, 1);
   mainMixerLeft.gain(3, 1);
   mainMixerRight.gain(3, 1);
+
+  // L&R input mixer
+  inputMixerLeft.gain(0, 0.25);
+  inputMixerRight.gain(0, 0.25);
+
+  // Main L&R output mixer
+  OutputMixerLeft.gain(0, 1);
+  OutputMixerRight.gain(0, 1);
+  OutputMixerLeft.gain(1, 1);
+  OutputMixerRight.gain(1, 1);
 }
 
 void changeSampleTrackSoundType(uint8_t t, TRACK_TYPE newType)
@@ -713,8 +851,8 @@ void changeSampleTrackSoundType(uint8_t t, TRACK_TYPE newType)
     sampleVoices[t-4].wSample.createBuffer(2048, AudioBuffer::inExt);
 
     _seq_heap.pattern.tracks[t].track_type = WAV_SAMPLE;
-  } else if (newType == MIDI) {
-    _seq_heap.pattern.tracks[t].track_type = MIDI;
+  } else if (newType == MIDI_OUT) {
+    _seq_heap.pattern.tracks[t].track_type = MIDI_OUT;
   } else if (newType == CV_GATE) {
     _seq_heap.pattern.tracks[t].track_type = CV_GATE;
   }else if (newType == CV_TRIG) {
@@ -731,6 +869,73 @@ void configureSampleVoiceSettingsOnLoad(int t)
     sampleVoices[t-4].wSample.createBuffer(2048, AudioBuffer::inExt);
 
     _seq_heap.pattern.tracks[t].track_type = WAV_SAMPLE;
+  }
+}
+
+void configureVoiceSettingsForTrack(int t)
+{
+  if (t > 3) {
+    SampleVoice trackVoice = sampleVoices[t-4];
+
+    if (_seq_heap.pattern.tracks[t].track_type == WAV_SAMPLE) {
+      // only create buffers for stereo samples when needed
+      trackVoice.wSample.createBuffer(2048, AudioBuffer::inExt);
+    }
+    return;
+  }
+
+  ComboVoice trackVoice = comboVoices[t];
+
+  if (_seq_heap.pattern.tracks[t].track_type == RAW_SAMPLE) {
+    _seq_heap.pattern.tracks[t].track_type = RAW_SAMPLE;
+
+    // turn sample volume all the way up
+    trackVoice.mix.gain(0, 1);
+    // turn synth volume all the way down
+    trackVoice.mix.gain(1, 0); // synth
+  } else if (_seq_heap.pattern.tracks[t].track_type == WAV_SAMPLE) {
+    _seq_heap.pattern.tracks[t].track_type = WAV_SAMPLE;
+
+    // only create buffers for stereo samples when needed
+    trackVoice.wSample.createBuffer(2048, AudioBuffer::inExt);
+
+    // turn sample volume all the way up
+    trackVoice.mix.gain(0, 1);
+    // turn synth volumes all the way down
+    trackVoice.mix.gain(1, 0); // synth
+  } else if (_seq_heap.pattern.tracks[t].track_type == SUBTRACTIVE_SYNTH) {
+    _seq_heap.pattern.tracks[t].track_type = SUBTRACTIVE_SYNTH;
+
+    TRACK currTrack = getHeapTrack(t);
+
+    // turn sample volume all the way down
+    trackVoice.mix.gain(0, 0);
+    // turn synth volumes all the way up
+    trackVoice.mix.gain(1, 1); // ladder
+
+    // TESTING: revert amp env to normal synth setting
+    trackVoice.ampEnv.attack(currTrack.amp_attack);
+    trackVoice.ampEnv.decay(currTrack.amp_decay);
+    trackVoice.ampEnv.sustain(currTrack.amp_sustain);
+    trackVoice.ampEnv.release(currTrack.amp_release);
+  } else if (_seq_heap.pattern.tracks[t].track_type == MIDI_OUT) {
+    _seq_heap.pattern.tracks[t].track_type = MIDI_OUT;
+
+    // turn all audio for this track voice down
+    trackVoice.mix.gain(0, 0); // mono sample
+    trackVoice.mix.gain(1, 0); // synth
+  } else if (_seq_heap.pattern.tracks[t].track_type == CV_GATE) {
+    _seq_heap.pattern.tracks[t].track_type = CV_GATE;
+
+    // turn all audio for this track voice down
+    trackVoice.mix.gain(0, 0); // mono sample
+    trackVoice.mix.gain(1, 0); // synth
+  }else if (_seq_heap.pattern.tracks[t].track_type == CV_TRIG) {
+    _seq_heap.pattern.tracks[t].track_type = CV_TRIG;
+
+    // turn all audio for this track voice down
+    trackVoice.mix.gain(0, 0); // mono sample
+    trackVoice.mix.gain(1, 0); // synth
   }
 }
 
@@ -776,8 +981,8 @@ void configureVoiceSettingsOnLoad(void)
       trackVoice.ampEnv.decay(currTrack.amp_decay);
       trackVoice.ampEnv.sustain(currTrack.amp_sustain);
       trackVoice.ampEnv.release(currTrack.amp_release);
-    } else if (_seq_heap.pattern.tracks[t].track_type == MIDI) {
-      _seq_heap.pattern.tracks[t].track_type = MIDI;
+    } else if (_seq_heap.pattern.tracks[t].track_type == MIDI_OUT) {
+      _seq_heap.pattern.tracks[t].track_type = MIDI_OUT;
 
       // turn all audio for this track voice down
       trackVoice.mix.gain(0, 0); // mono sample
@@ -847,8 +1052,8 @@ void changeTrackSoundType(uint8_t t, TRACK_TYPE newType)
     trackVoice.ampEnv.decay(currTrack.amp_decay);
     trackVoice.ampEnv.sustain(currTrack.amp_sustain);
     trackVoice.ampEnv.release(currTrack.amp_release);
-  } else if (newType == MIDI) {
-   _seq_heap.pattern.tracks[t].track_type = MIDI;
+  } else if (newType == MIDI_OUT) {
+   _seq_heap.pattern.tracks[t].track_type = MIDI_OUT;
 
     // turn all audio for this track voice down
     trackVoice.mix.gain(0, 0); // mono sample
@@ -1008,6 +1213,9 @@ void savePatternModsToSdCard(void)
   currentPatternModFilename += std::to_string(current_selected_pattern);
   currentPatternModFilename += "_mods.bin";
 
+  Serial.print("sizeof(_pattern_mods_mem): ");
+  Serial.println(sizeof(_pattern_mods_mem));
+
   File currentPatternModsFile = SD.open(currentPatternModFilename.c_str(), FILE_WRITE);
   currentPatternModsFile.truncate();
   currentPatternModsFile.write((byte *)&_pattern_mods_mem, sizeof(_pattern_mods_mem));
@@ -1044,6 +1252,8 @@ void initExternalSequencer(void)
     {
       _seq_external.banks[b].patterns[p].last_step = DEFAULT_LAST_STEP;
       _seq_external.banks[b].patterns[p].initialized = false;
+      _seq_external.banks[b].patterns[p].groove_amount = 0;
+      _seq_external.banks[b].patterns[p].groove_id = -1;
 
       if (p == 0) _seq_external.banks[b].patterns[p].initialized = true;
 
@@ -1172,7 +1382,7 @@ void saveProject()
   seqFileW.write((byte *)&_seq_external, sizeof(_seq_external));
   seqFileW.close();
 
-  // TODO: can prob remove this, the current pattern in heap should reflect the current pattern in PSRAM
+  // TODO: can prob remove this, the current pattern in heap should reflect the current pattern in DMAMEM
   _seq_heap.pattern = _seq_external.banks[current_selected_bank].patterns[current_selected_pattern];
 
   savePatternModsToSdCard();
@@ -1440,109 +1650,37 @@ void handleQueueActions(void)
   }
 }
 
-void initStar(int i) {
-  star_x[i] = random(-100, 100);
-  star_y[i] = random(-100, 100);
-  star_z[i] = random(100, 500);
-}
-
-void showStarfield(bool showLogo, bool showFooter, int shrinkAmt) {
-  int x,y;
-  int centrex,centrey;
-  
-  centrex = 128 / 2;
-  centrey = 64 / 2; 
-
-  // centrex = (128 / 2) - shrinkAmt;
-  // centrey = (64 / 2) - shrinkAmt; 
-  
-  for (int i = 0; i < STARS; i++) {
-    star_z[i] = star_z[i] - 7;
-
-    int mult = 100 - shrinkAmt;
-
-    x = star_x[i] / star_z[i] * (mult < 0 ? 0 : mult) + centrex;
-    y = star_y[i] / star_z[i] * (mult < 0 ? 0 : mult) + centrey;
-
-    if(
-        (x < 0)  ||        (x > 128) || 
-        (y < 0)  ||        (y > 64) ||
-        (star_z[i] < 1)      
-      )      initStar(i);
-
-    if (mult >= 0) {
-      u8g2.drawPixel(x, y);
-    }
-  }
-
-  if (showLogo) {
-    int boxWidth = 60;
-    int boxHeight = 30;
-    u8g2.setColorIndex((u_int8_t)0);
-    u8g2.drawBox((DISPLAY_MAX_WIDTH / 2) - (boxWidth / 2), (DISPLAY_MAX_HEIGHT / 2) - (boxHeight / 2) - 14, boxWidth, boxHeight);
-    u8g2.setColorIndex((u_int8_t)1);
-    u8g2.setFont(bitocra13_c); // u8g2_font_8x13_mr
-    u8g2.drawStr(52, 10, "xr-1");
-  }
-
-  if (showFooter) {
-    int fBoxWidth = 60;
-    int fBoxHeight = 10;
-    u8g2.setColorIndex((u_int8_t)0);
-    u8g2.drawBox((DISPLAY_MAX_WIDTH / 2) - (fBoxWidth / 2), 30, fBoxWidth, fBoxHeight);
-    u8g2.setColorIndex((u_int8_t)1);
-    u8g2.setFont(small_font); // u8g2_font_6x10_tf
-    u8g2.setFontRefHeightExtendedText();
-    u8g2.drawStr(38, 31, "audio enjoyer");
-
-    u8g2.setColorIndex((u_int8_t)0);
-    u8g2.drawBox((DISPLAY_MAX_WIDTH / 2) - (36 / 2), 47, 36, fBoxHeight);
-    u8g2.setColorIndex((u_int8_t)1);
-    u8g2.setFont(small_font); // u8g2_font_6x10_tf
-    u8g2.setFontRefHeightExtendedText();
-    std::string versionStr = "v";
-    versionStr += FIRMWARE_VERSION;
-    u8g2.drawStr(52, 49, versionStr.c_str());
-  }
-} 
-
 void initMain()
 {
   u8g2.clearBuffer();
 
-  for (int i = 0; i < STARS; i++) {
-    initStar(i);
-  }
+  int boxWidth = 60;
+  int boxHeight = 30;
+  u8g2.setColorIndex((u_int8_t)0);
+  u8g2.drawBox((DISPLAY_MAX_WIDTH / 2) - (boxWidth / 2), (DISPLAY_MAX_HEIGHT / 2) - (boxHeight / 2) - 16, boxWidth, boxHeight);
+  u8g2.setColorIndex((u_int8_t)1);
+  u8g2.setFont(bitocra13_c); // u8g2_font_8x13_mr
+  u8g2.drawStr(52, 8, "xr-1");
 
-  uint32_t starfieldElapsed = 0;
+  int fBoxWidth = 60;
+  int fBoxHeight = 10;
+  u8g2.setColorIndex((u_int8_t)0);
+  u8g2.drawBox((DISPLAY_MAX_WIDTH / 2) - (fBoxWidth / 2), 28, fBoxWidth, fBoxHeight);
+  u8g2.setColorIndex((u_int8_t)1);
+  u8g2.setFont(small_font); // u8g2_font_6x10_tf
+  u8g2.setFontRefHeightExtendedText();
+  u8g2.drawStr(38, 29, "audio enjoyer");
 
-  int shrinkAmt = 0;
+  u8g2.setColorIndex((u_int8_t)0);
+  u8g2.drawBox((DISPLAY_MAX_WIDTH / 2) - (36 / 2), 45, 36, fBoxHeight);
+  u8g2.setColorIndex((u_int8_t)1);
+  u8g2.setFont(small_font); // u8g2_font_6x10_tf
+  u8g2.setFontRefHeightExtendedText();
+  std::string versionStr = "v";
+  versionStr += FIRMWARE_VERSION;
+  u8g2.drawStr(52, 47, versionStr.c_str());
 
-  while (true)
-  {
-    u8g2.clearBuffer();
-
-    if (starfieldElapsed > 20) {
-      int mult = 1;
-
-      if (starfieldElapsed > 50) mult = 3;
-
-      shrinkAmt = shrinkAmt + (1 * mult);
-
-      // ++shrinkAmt;
-    }
-
-    showStarfield((starfieldElapsed > 20 ? true : false), (starfieldElapsed > 40 ? true : false), shrinkAmt);
-
-    u8g2.sendBuffer();
-
-    delay(10);
-
-    ++starfieldElapsed;
-    if (starfieldElapsed >= 125) { // 1.25s
-      break;
-    }
-  }
+  u8g2.sendBuffer();
 
   u8g2.setFont(small_font); // u8g2_font_6x10_tf
   u8g2.setFontRefHeightExtendedText();
@@ -1585,7 +1723,7 @@ std::string getTrackMetaStr(TRACK_TYPE type)
     outputStr = "WSAMPLE:";
     break;
   
-  case MIDI:
+  case MIDI_OUT:
     outputStr = "MIDI";
     break;
   
@@ -1698,9 +1836,15 @@ std::string getLoopTypeName(void)
 
   std::string outputStr;
 
-  if (loopTypeSelMap[currTrack.looptype] == loop_type::looptype_none) {
+  uint8_t looptypeToUse = currTrack.looptype;
+
+  if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
+    looptypeToUse = _pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].looptype;
+  }
+
+  if (loopTypeSelMap[looptypeToUse] == loop_type::looptype_none) {
     outputStr += "OFF";
-  } else if (loopTypeSelMap[currTrack.looptype] == loop_type::looptype_repeat) {
+  } else if (loopTypeSelMap[looptypeToUse] == loop_type::looptype_repeat) {
     if (currTrack.chromatic_enabled) {
       outputStr += "CHR";
     } else {
@@ -1720,60 +1864,67 @@ SOUND_CONTROL_MODS getSubtractiveSynthControlModData()
   switch (current_page_selected)
   {
   case 0: // MAIN
-    mods.aName = "LEN";
-    mods.bName = "VEL";
-    mods.cName = "uTM";
-    mods.dName = "PRB";
+    mods.aName = "LSTP";
+    mods.bName = "LEN";
+    mods.cName = "VELO";
+    mods.dName = "PROB";
+
+    mods.aValue = std::to_string(track.last_step);
 
     if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
-      mods.aValue = std::to_string(_pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].length);
-      // TODO: use 1/16 etc display
+      mods.bValue = std::to_string(_pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].length);
     } else {
-      mods.aValue = std::to_string(track.length);
-      // TODO: use 1/16 etc display
+      mods.bValue = std::to_string(track.length);
     }
 
     if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
-      mods.bValue = std::to_string(_pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].velocity);
+      mods.cValue = std::to_string(_pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].velocity);
     } else {
-      mods.bValue = std::to_string(track.velocity); // TODO: use 1/16 etc display
+      mods.cValue = std::to_string(track.velocity);
     }
 
-    mods.cValue = "100%"; // TODO: impl
     mods.dValue = "100%"; // TODO: impl
     break;
   
   case 1: // OSC
-    mods.aName = "WAV";
+    mods.aName = "WAVE";
     mods.bName = "DET";
-    mods.cName = "FIN";
+    mods.cName = "FINE";
     mods.dName = "WID";
 
-    mods.aValue = getWaveformName(track.waveform);
+    if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
+      mods.aValue = getWaveformName(_pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].waveform);
+    } else {
+      mods.aValue = getWaveformName(track.waveform);
+    }
+    //mods.aValue = getWaveformName(track.waveform);
+    
     mods.bValue = std::to_string(track.detune);
     mods.cValue = std::to_string(track.fine);
-    mods.dValue = std::to_string(track.width);
+
+    mods.dValue = std::to_string((float)round(track.width * 100) / 100);
+    mods.dValue = mods.dValue.substr(0,4);
     break;
   
   case 2: // FILTER
-    mods.aName = "NOI";
-    mods.bName = "FRQ";
-    mods.cName = "RES";
+    mods.aName = "NOIS";
+    mods.bName = "FREQ";
+    mods.cName = "RESO";
     mods.dName = "AMT";
 
     mods.aValue = std::to_string((float)round(track.noise * 100) / 100);
     mods.aValue = mods.aValue.substr(0,3);
 
-    mods.bValue = std::to_string(track.cutoff);
+    mods.bValue = std::to_string(round(track.cutoff));
     mods.bValue = mods.bValue.substr(0,5);
 
-    // mods.cValue = std::to_string((float)round(track.res * 100) / 100);
-    // mods.cValue = mods.cValue.substr(0,3);
+    mods.cValue = std::to_string((float)round(track.res * 100) / 100);
+    mods.cValue = mods.cValue.substr(0,4);
 
-    mods.cValue = std::to_string(track.res);
+    //mods.cValue = std::to_string(track.res);
 
     mods.dValue = std::to_string((float)round(track.filterenvamt * 100) / 100);
-    mods.dValue = mods.dValue.substr(0,3);
+    mods.dValue = mods.dValue.substr(0,4);
     break;
   
   case 3: // FILTER ENV
@@ -1817,17 +1968,17 @@ SOUND_CONTROL_MODS getSubtractiveSynthControlModData()
   case 5: // OUTPUT
     mods.aName = "LVL";
     mods.bName = "PAN";
-    mods.cName = "STP";
+    mods.cName = "--";
     mods.dName = "--"; // fx send?
 
-    mods.aValue = std::to_string((float)round(track.level * 100) / 100);
-    mods.aValue = mods.aValue.substr(0,3);
+    mods.aValue = std::to_string(round(track.level * 100));
 
     mods.bValue = std::to_string((float)round(track.pan * 100) / 100);
     mods.bValue = mods.bValue.substr(0,3);
+    mods.bFloatValue = track.pan;
+    mods.bType = RANGE;
 
-    mods.cValue = std::to_string(track.last_step);
-
+    mods.cValue = "--";
     mods.dValue = "--";
 
     break;
@@ -1848,29 +1999,63 @@ SOUND_CONTROL_MODS getRawSampleControlModData()
   switch (current_page_selected)
   {
   case 0: // MAIN
-    mods.aName = "FIL";
-    mods.bName = "SPD";
-    mods.cName = "--";
+    mods.aName = "L.STEP";
+    mods.bName = "FILE";
+    mods.cName = "SPEED";
     mods.dName = "--";
 
-    mods.aValue = std::to_string(track.raw_sample_id+1);
-    mods.bValue = getPlaybackSpeedStr(track.sample_play_rate);
-    mods.cValue = "--";
+    mods.aValue = std::to_string(track.last_step);
+    mods.bValue = std::to_string(track.raw_sample_id+1);
+
+    if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
+      mods.cValue = getPlaybackSpeedStr(_pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].sample_play_rate);
+    } else {
+      mods.cValue = getPlaybackSpeedStr(track.sample_play_rate);
+    }
+
     mods.dValue = "--";
     break;
   
   case 1: // LOOPING
-    mods.aName = "TYP";
-    mods.bName = "LST";
-    mods.cName = "LFI";
-    mods.dName = "PST";
+    {
+      mods.aName = "TYPE";
+      mods.bName = "START";
+      mods.cName = "FINISH";
+      mods.dName = "PLAYST";
 
-    mods.aValue = getLoopTypeName();
-    mods.bValue = std::to_string(track.loopstart);
-    mods.cValue = std::to_string(track.loopfinish);
-    mods.dValue = track.playstart == play_start::play_start_loop ? "LOP" : "SMP";
-    break;
-  
+      mods.aValue = getLoopTypeName();
+
+      uint32_t loopstartToUse = track.loopstart;
+
+      if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
+        loopstartToUse = _pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].loopstart;
+      }
+
+      std::string lsStr = std::to_string(loopstartToUse);      
+      lsStr += "ms";
+
+      mods.bValue = lsStr;
+
+      uint32_t loopfinishToUse = track.loopfinish;
+
+      if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
+        loopfinishToUse = _pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].loopfinish;
+      }
+
+      std::string lfStr = std::to_string(loopfinishToUse);      
+      lfStr += "ms";
+
+      mods.cValue = lfStr;
+
+      play_start playstartToUse = track.playstart;
+
+      if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
+        playstartToUse = _pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].playstart;
+      }
+
+      mods.dValue = playstartToUse == play_start::play_start_loop ? "LOOP" : "SAMPLE";
+      break;
+    }
   case 2: // AMP ENV
     mods.aName = "ATT";
     mods.bName = "DEC";
@@ -1892,18 +2077,20 @@ SOUND_CONTROL_MODS getRawSampleControlModData()
     break;
   
   case 3: // OUTPUT
-    mods.aName = "LVL";
+    mods.aName = "LEVEL";
     mods.bName = "PAN";
-    mods.cName = "STP";
+    mods.cName = "--";
     mods.dName = "--"; // fx send?
 
-    mods.aValue = std::to_string((float)round(track.level * 100) / 100);
-    mods.aValue = mods.aValue.substr(0,3);
+    mods.aValue = std::to_string(round(track.level * 100));
+    //mods.aValue = mods.aValue.substr(0,3);
 
     mods.bValue = std::to_string((float)round(track.pan * 100) / 100);
     mods.bValue = mods.bValue.substr(0,3);
+    mods.bFloatValue = track.pan;
+    mods.bType = RANGE;
 
-    mods.cValue = std::to_string(track.last_step);
+    mods.cValue = "--";
     mods.dValue = "--";
     break;
   
@@ -1923,14 +2110,14 @@ SOUND_CONTROL_MODS getWavSampleControlModData()
   switch (current_page_selected)
   {
   case 0: // MAIN
-    mods.aName = "FIL";
-    mods.bName = "POS";
-    mods.cName = "--";
+    mods.aName = "L.STEP";
+    mods.bName = "FILE";
+    mods.cName = "POS";
     mods.dName = "--";
 
-    mods.aValue = std::to_string(track.wav_sample_id+1);
-    mods.bValue = "0ms";
-    mods.cValue = "--";
+    mods.aValue = std::to_string(track.last_step);
+    mods.bValue = std::to_string(track.wav_sample_id+1);
+    mods.cValue = "0ms";
     mods.dValue = "--";
     break;
   
@@ -1950,15 +2137,15 @@ SOUND_CONTROL_MODS getMidiControlModData()
   switch (current_page_selected)
   {
   case 0: // MAIN
-    mods.aName = "LEN";
-    mods.bName = "VEL";
-    mods.cName = "CHN";
-    mods.dName = "PRB";
+    mods.aName = "LSTP";
+    mods.bName = "LEN";
+    mods.cName = "CHAN";
+    mods.dName = "VELO";
 
-    mods.aValue = std::to_string(track.length); // TODO : impl
-    mods.bValue = std::to_string(track.velocity); // TODO: impl
+    mods.aValue = std::to_string(track.last_step); // TODO : impl
+    mods.bValue = std::to_string(track.length); // TODO: impl
     mods.cValue = std::to_string(track.channel); // TODO: impl
-    mods.dValue = std::to_string(track.probability); // TODO: impl
+    mods.dValue = std::to_string(track.velocity); // TODO: impl
     break;
   
   default:
@@ -1977,15 +2164,21 @@ SOUND_CONTROL_MODS getCvGateControlModData()
   switch (current_page_selected)
   {
   case 0: // MAIN
-    mods.aName = "LEN";
-    mods.bName = "OUT";
-    mods.cName = "uTM";
-    mods.dName = "PRB";
+  {
+    mods.aName = "LSTP";
+    mods.bName = "LEN";
+    mods.cName = "OUT";
+    mods.dName = "PROB";
 
-    mods.aValue = std::to_string(track.length); // TODO : impl
-    mods.bValue = "1AB"; // TODO: impl
-    mods.cValue = "--"; // TODO: impl
-    mods.dValue = "100%"; // TODO: impl
+    mods.aValue = std::to_string(track.last_step);
+    mods.bValue = std::to_string(track.length);
+
+    std::string outputChanStr = std::to_string(track.channel);
+    outputChanStr += "AB";
+
+    mods.cValue = outputChanStr;
+    mods.dValue = "100%";
+  }
     break;
   
   default:
@@ -2004,15 +2197,15 @@ SOUND_CONTROL_MODS getCvTrigControlModData()
   switch (current_page_selected)
   {
   case 0: // MAIN
-    mods.aName = "--";
+    mods.aName = "LSTP";
     mods.bName = "OUT";
-    mods.cName = "uTM";
-    mods.dName = "PRB";
+    mods.cName = "PROB";
+    mods.dName = "--";
 
-    mods.aValue = "--";
+    mods.aValue = std::to_string(track.last_step);
     mods.bValue = "1AB"; // TODO: impl
-    mods.cValue = "--"; // TODO: impl
-    mods.dValue = "100%"; // TODO: impl
+    mods.cValue = "100%"; // TODO: impl
+    mods.dValue = "--"; // TODO: impl
     break;
   
   default:
@@ -2042,7 +2235,7 @@ SOUND_CONTROL_MODS getControlModDataForTrack()
     mods = getWavSampleControlModData();
     break;
   
-  case MIDI:
+  case MIDI_OUT:
     mods = getMidiControlModData();
     break;
   
@@ -2067,14 +2260,14 @@ SOUND_CONTROL_MODS getControlModDataForPattern()
 
   PATTERN pattern = getHeapCurrentSelectedPattern();
 
-  mods.aName = "STP";
-  mods.bName = "--";
-  mods.cName = "--";
+  mods.aName = "L.STEP";
+  mods.bName = "GROOVE";
+  mods.cName = "GR.AMT";
   mods.dName = "--";
 
-  mods.aValue = std::to_string(pattern.last_step); // TODO: use 1/16 etc display
-  mods.bValue = "--";
-  mods.cValue = "--";
+  mods.aValue = std::to_string(pattern.last_step);
+  mods.bValue = pattern.groove_id > -1 ? _grooves.configs[pattern.groove_id].name : "OFF";
+  mods.cValue = pattern.groove_id > -1 ? shuffle_name[pattern.groove_amount] : "--";
   mods.dValue = "--";
 
   return mods;
@@ -2171,111 +2364,248 @@ void drawPasteConfirmOverlay(std::string type, uint8_t num)
   u8g2.sendBuffer();
 }
 
-void drawControlMods(void)
+void drawControlModsForADSR(int att, int dec, float sus, int rel);
+void drawControlModsForADSR(int att, int dec, float sus, int rel)
+{
+  int ctrlModHeaderStartX = 1;
+  int adsrMaxTopPosY = 24;
+  int adsrMaxBottomPosY = 48;
+  int adsrMaxHeight = adsrMaxBottomPosY - adsrMaxTopPosY;
+
+  // attack
+  int attackStartPosX = ctrlModHeaderStartX;
+  int attackEndRawPosX = ctrlModHeaderStartX + (int) (0.025 * att);
+  int attackEndPosX = attackEndRawPosX;
+
+  u8g2.drawLine(attackStartPosX, adsrMaxBottomPosY, attackEndPosX, adsrMaxTopPosY);
+  
+  // decay and sustain
+  int sustainStartRawPosY = adsrMaxBottomPosY - (int) (31 * sus);
+  int sustainStartPosY = max(adsrMaxTopPosY, sustainStartRawPosY);
+
+  int decayEndRawPosX = attackEndPosX + (int) (0.05 * dec);
+  int decayEndPosX = decayEndRawPosX; // min(attackEndPosX+50, decayEndRawPosX);
+
+  int sustainEndPosX = decayEndPosX+20; // static x Pos
+
+  u8g2.drawLine(attackEndPosX, adsrMaxTopPosY, decayEndPosX, sustainStartPosY);
+  u8g2.drawLine(decayEndPosX, sustainStartPosY, sustainEndPosX, sustainStartPosY);
+  
+  // release
+  int releaseEndRawPosX = sustainEndPosX + (int) (0.01 * rel);
+  int releaseEndPosX = releaseEndRawPosX;
+  
+  u8g2.drawLine(sustainEndPosX, sustainStartPosY, releaseEndPosX, adsrMaxBottomPosY);
+}
+
+void drawExtendedControlMods(void);
+void drawExtendedControlMods(void)
 {
   int ctrlModHeaderY = 20;
-  int ctrlModHeaderBoxSize = 9;
-  int ctrlModHeaderStartX = 29;
-  int ctrlModSpacerMult = 25;
+  int ctrlModHeaderStartX = 0;
+  int ctrlModHeaderStartCenteredX = ((DISPLAY_MAX_WIDTH / 4) / 2);
+  int ctrlModSpaceWidth = (DISPLAY_MAX_WIDTH / 4);
 
-  // draw control mod indicators (a,b,c,d)
+  // header
   u8g2.drawLine(ctrlModHeaderStartX,30,128,30);
-
-  u8g2.drawLine(ctrlModHeaderStartX, 20, ctrlModHeaderStartX, 52);
-  u8g2.drawLine(25+ctrlModHeaderStartX, 20, 25+ctrlModHeaderStartX, 52);
-  u8g2.drawLine(25+ctrlModHeaderStartX+(ctrlModSpacerMult*1), 20, 25+ctrlModHeaderStartX+(ctrlModSpacerMult*1), 52);
-  u8g2.drawLine(25+ctrlModHeaderStartX+(ctrlModSpacerMult*2), 20, 25+ctrlModHeaderStartX+(ctrlModSpacerMult*2), 52);
+  // dividers
+  u8g2.drawLine(ctrlModSpaceWidth, 20, ctrlModSpaceWidth, 52);
+  u8g2.drawLine(ctrlModSpaceWidth+(ctrlModSpaceWidth*1), 20, ctrlModSpaceWidth+(ctrlModSpaceWidth*1), 52);
+  u8g2.drawLine(ctrlModSpaceWidth+(ctrlModSpaceWidth*2), 20, ctrlModSpaceWidth+(ctrlModSpaceWidth*2), 52);
 
   SOUND_CONTROL_MODS mods = getControlModDataForTrack();
 
-  int aPosX = ctrlModHeaderStartX+7;
-  int bPosX = ctrlModHeaderStartX+7+(ctrlModSpacerMult*1);
-  int cPosX = ctrlModHeaderStartX+7+(ctrlModSpacerMult*2);
-  int dPosX = ctrlModHeaderStartX+7+(ctrlModSpacerMult*3);
-
-  bPosX += mods.bName.length();
-  cPosX += mods.cName.length();
-  dPosX += mods.dName.length();
+  int aPosX = ctrlModHeaderStartCenteredX;
+  aPosX -= (mods.aName.length() > 0 ? u8g2.getStrWidth(mods.aName.c_str()) / 2 : 0);
+    
+  int bPosX = ctrlModHeaderStartCenteredX+(ctrlModSpaceWidth*1);
+  bPosX -= (mods.bName.length() > 0 ? u8g2.getStrWidth(mods.bName.c_str()) / 2 : 0);
+    
+  int cPosX = ctrlModHeaderStartCenteredX+(ctrlModSpaceWidth*2);
+  cPosX -= (mods.cName.length() > 0 ? u8g2.getStrWidth(mods.cName.c_str()) / 2 : 0);
+  
+  int dPosX = ctrlModHeaderStartCenteredX+(ctrlModSpaceWidth*3);
+  dPosX -= (mods.dName.length() > 0 ? u8g2.getStrWidth(mods.dName.c_str()) / 2 : 0);
 
   u8g2.drawStr(aPosX, ctrlModHeaderY+1, mods.aName.c_str());
   u8g2.drawStr(bPosX, ctrlModHeaderY+1, mods.bName.c_str());
   u8g2.drawStr(cPosX, ctrlModHeaderY+1, mods.cName.c_str());
   u8g2.drawStr(dPosX, ctrlModHeaderY+1, mods.dName.c_str());
   
-  int aValuePos = 40;
-  aValuePos -= mods.aValue.length();
+  int aValuePos = ctrlModHeaderStartCenteredX;
+  aValuePos -= (mods.aValue.length() > 0 ? u8g2.getStrWidth(mods.aValue.c_str()) / 2 : 0);
 
-  int bValuePos = 65;
-  bValuePos -= mods.bValue.length();
+  int bValuePos = ctrlModHeaderStartCenteredX+(ctrlModSpaceWidth*1);
+  bValuePos -= (mods.bValue.length() > 0 ? u8g2.getStrWidth(mods.bValue.c_str()) / 2 : 0);
 
-  int cValuePos = 88;
-  int dValuePos = 114;
+  int cValuePos = ctrlModHeaderStartCenteredX+(ctrlModSpaceWidth*2);
+  cValuePos -= (mods.cValue.length() > 0 ? u8g2.getStrWidth(mods.cValue.c_str()) / 2 : 0);
+
+  int dValuePos = ctrlModHeaderStartCenteredX+(ctrlModSpaceWidth*3);
+  dValuePos -= (mods.dValue.length() > 0 ? u8g2.getStrWidth(mods.dValue.c_str()) / 2 : 0);
   
-  u8g2.drawStr(aValuePos, ctrlModHeaderY+15, mods.aValue.c_str());
-  u8g2.drawStr(bValuePos, ctrlModHeaderY+15, mods.bValue.c_str());
-  u8g2.drawStr(cValuePos, ctrlModHeaderY+15, mods.cValue.c_str());
-  u8g2.drawStr(dValuePos, ctrlModHeaderY+15, mods.dValue.c_str());
+  u8g2.drawStr(aValuePos, ctrlModHeaderY+17, mods.aValue.c_str());
+
+  if (mods.bType == RANGE) {
+    int centerLineStartX = ctrlModHeaderStartX+(ctrlModSpaceWidth*1);
+    int rangeMiddleX = (centerLineStartX+(ctrlModSpaceWidth/2));
+    u8g2.drawVLine(centerLineStartX+6, ctrlModHeaderY+16, 9); // left range bound
+    u8g2.drawHLine(centerLineStartX+6, ctrlModHeaderY+20, ctrlModSpaceWidth-12); // range width
+    u8g2.drawVLine(rangeMiddleX, ctrlModHeaderY+16, 9); // range middle
+    u8g2.drawVLine(centerLineStartX+ctrlModSpaceWidth-6, ctrlModHeaderY+16, 9); // right range bound
+
+    // range pos cursor
+    int rangePosI = rangeMiddleX + (int)(mods.bFloatValue * 10);
+    u8g2.drawFilledEllipse(rangePosI, ctrlModHeaderY+20, 1, 2);
+  } else {
+    u8g2.drawStr(bValuePos, ctrlModHeaderY+17, mods.bValue.c_str());
+  }
+
+  u8g2.drawStr(cValuePos, ctrlModHeaderY+17, mods.cValue.c_str());
+  u8g2.drawStr(dValuePos, ctrlModHeaderY+17, mods.dValue.c_str());
+}
+
+void drawNormalControlMods(void);
+void drawNormalControlMods(void)
+{
+  int ctrlModHeaderY = 20;
+  int ctrlModHeaderStartX = 29;
+  int ctrlModHeaderStartCenteredX = (((DISPLAY_MAX_WIDTH - 29) / 4) / 2) + 29;
+  int ctrlModSpacerMult = 25;
+
+  // header
+  u8g2.drawLine(ctrlModHeaderStartX, 30, 128, 30);
+  // dividers
+  u8g2.drawLine(ctrlModHeaderStartX, 20, ctrlModHeaderStartX, 52);
+  u8g2.drawLine(ctrlModHeaderStartX+(ctrlModSpacerMult*1), 20, ctrlModHeaderStartX+(ctrlModSpacerMult*1), 52);
+  u8g2.drawLine(ctrlModHeaderStartX+(ctrlModSpacerMult*2), 20, ctrlModHeaderStartX+(ctrlModSpacerMult*2), 52);
+  u8g2.drawLine(ctrlModHeaderStartX+(ctrlModSpacerMult*3), 20, ctrlModHeaderStartX+(ctrlModSpacerMult*3), 52);
+
+  SOUND_CONTROL_MODS mods = getControlModDataForTrack();
+
+  int aPosX = ctrlModHeaderStartCenteredX;
+  aPosX -= (mods.aName.length() > 0 ? u8g2.getStrWidth(mods.aName.c_str()) / 2 : 0);
+    
+  int bPosX = ctrlModHeaderStartCenteredX+(ctrlModSpacerMult*1);
+  bPosX -= (mods.bName.length() > 0 ? u8g2.getStrWidth(mods.bName.c_str()) / 2 : 0);
+    
+  int cPosX = ctrlModHeaderStartCenteredX+(ctrlModSpacerMult*2);
+  cPosX -= (mods.cName.length() > 0 ? u8g2.getStrWidth(mods.cName.c_str()) / 2 : 0);
+  
+  int dPosX = ctrlModHeaderStartCenteredX+(ctrlModSpacerMult*3);
+  dPosX -= (mods.dName.length() > 0 ? u8g2.getStrWidth(mods.dName.c_str()) / 2 : 0);
+
+  u8g2.drawStr(aPosX, ctrlModHeaderY+1, mods.aName.c_str());
+  u8g2.drawStr(bPosX, ctrlModHeaderY+1, mods.bName.c_str());
+  u8g2.drawStr(cPosX, ctrlModHeaderY+1, mods.cName.c_str());
+  u8g2.drawStr(dPosX, ctrlModHeaderY+1, mods.dName.c_str());
+  
+  int aValuePos = ctrlModHeaderStartCenteredX;
+  aValuePos -= (mods.aValue.length() > 0 ? u8g2.getStrWidth(mods.aValue.c_str()) / 2 : 0);
+
+  int bValuePos = ctrlModHeaderStartCenteredX+(ctrlModSpacerMult*1);
+  bValuePos -= (mods.bValue.length() > 0 ? u8g2.getStrWidth(mods.bValue.c_str()) / 2 : 0);
+
+  int cValuePos = ctrlModHeaderStartCenteredX+(ctrlModSpacerMult*2);
+  cValuePos -= (mods.cValue.length() > 0 ? u8g2.getStrWidth(mods.cValue.c_str()) / 2 : 0);
+
+  int dValuePos = ctrlModHeaderStartCenteredX+(ctrlModSpacerMult*3);
+  dValuePos -= (mods.dValue.length() > 0 ? u8g2.getStrWidth(mods.dValue.c_str()) / 2 : 0);
+  
+  u8g2.drawStr(aValuePos, ctrlModHeaderY+17, mods.aValue.c_str());
+
+  if (mods.bType == RANGE) {
+    int centerLineStartX = ctrlModHeaderStartX+(ctrlModSpacerMult*1);
+    int rangeMiddleX = (centerLineStartX+(ctrlModSpacerMult/2));
+    u8g2.drawVLine(centerLineStartX+3, ctrlModHeaderY+16, 9); // left range bound
+    u8g2.drawHLine(centerLineStartX+3, ctrlModHeaderY+20, ctrlModSpacerMult-6); // range width
+    u8g2.drawVLine(rangeMiddleX, ctrlModHeaderY+16, 9); // range middle
+    u8g2.drawVLine(centerLineStartX+ctrlModSpacerMult-3, ctrlModHeaderY+16, 9); // right range bound
+
+    // range pos cursor
+    int rangePosI = rangeMiddleX + (int)(mods.bFloatValue * 10);
+    u8g2.drawFilledEllipse(rangePosI, ctrlModHeaderY+20, 1, 2);
+  } else {
+    u8g2.drawStr(bValuePos, ctrlModHeaderY+17, mods.bValue.c_str());
+  }
+
+  u8g2.drawStr(cValuePos, ctrlModHeaderY+17, mods.cValue.c_str());
+  u8g2.drawStr(dValuePos, ctrlModHeaderY+17, mods.dValue.c_str());
+}
+
+void drawControlMods(void)
+{
+  TRACK currTrack = getHeapCurrentSelectedTrack();
+
+  if (
+    (currTrack.track_type == RAW_SAMPLE && current_page_selected == 2) ||
+    (currTrack.track_type == SUBTRACTIVE_SYNTH && current_page_selected == 4)
+  ) {
+    drawControlModsForADSR(currTrack.amp_attack, currTrack.amp_decay, currTrack.amp_sustain, currTrack.amp_release);
+  } else if (currTrack.track_type == SUBTRACTIVE_SYNTH && current_page_selected == 3) {
+    drawControlModsForADSR(currTrack.filter_attack, currTrack.filter_decay, currTrack.filter_sustain, currTrack.filter_release);
+  } else if (
+    (currTrack.track_type == CV_TRIG) ||
+    (currTrack.track_type == WAV_SAMPLE) ||
+    (currTrack.track_type == RAW_SAMPLE && current_page_selected == 0) ||
+    (currTrack.track_type == RAW_SAMPLE && current_page_selected == 1) ||
+    (currTrack.track_type == RAW_SAMPLE && current_page_selected == 3)
+  ) {
+    drawExtendedControlMods();
+  } else {
+    drawNormalControlMods();
+  }
 }
 
 void drawPatternControlMods(void)
 {
   int ctrlModHeaderY = 20;
   int ctrlModHeaderBoxSize = 9;
-  int ctrlModHeaderStartX = 29;
-  int ctrlModSpacerMult = 25;
+  int ctrlModHeaderStartX = 0;
+  int ctrlModSpaceWidth = (DISPLAY_MAX_WIDTH / 4);
+  int ctrlModHeaderStartCenteredX = (DISPLAY_MAX_WIDTH / 4) / 2;
 
-  // draw control mod indicators (a,b,c,d)
-  u8g2.drawLine(ctrlModHeaderStartX,30,128,30);
+  u8g2.drawLine(ctrlModHeaderStartX, 30, 128, 30);
 
-  u8g2.drawLine(ctrlModHeaderStartX,20,ctrlModHeaderStartX,52);
-  u8g2.drawLine(25+ctrlModHeaderStartX,20,25+ctrlModHeaderStartX,52);
-  u8g2.drawLine(25+ctrlModHeaderStartX+(ctrlModSpacerMult*1),20,25+ctrlModHeaderStartX+(ctrlModSpacerMult*1),52);
-  u8g2.drawLine(25+ctrlModHeaderStartX+(ctrlModSpacerMult*2),20,25+ctrlModHeaderStartX+(ctrlModSpacerMult*2),52);
+  u8g2.drawLine(ctrlModHeaderStartX+(ctrlModSpaceWidth*1), 20, ctrlModHeaderStartX+(ctrlModSpaceWidth*1), 52);
+  u8g2.drawLine(ctrlModHeaderStartX+(ctrlModSpaceWidth*2), 20, ctrlModHeaderStartX+(ctrlModSpaceWidth*2), 52);
+  u8g2.drawLine(ctrlModHeaderStartX+(ctrlModSpaceWidth*3), 20, ctrlModHeaderStartX+(ctrlModSpaceWidth*3), 52);
 
   SOUND_CONTROL_MODS mods = getControlModDataForPattern();
 
-  int bMult = ctrlModSpacerMult;
-  if (mods.bName.length() == 3) {
-    bMult += 1;
-  }
-
-  int cMult = ctrlModSpacerMult;
-  if (mods.cName.length() == 3) {
-    cMult += 1;
-  }
-
-  int dMult = ctrlModSpacerMult;
-  if (mods.dName.length() == 3) {
-    dMult += 1;
-  }
-
-  u8g2.drawStr(1+ctrlModHeaderStartX+6, ctrlModHeaderY+1, mods.aName.c_str());
-  u8g2.drawStr(2+ctrlModHeaderStartX+6+(bMult*1), ctrlModHeaderY+1, mods.bName.c_str());
-  u8g2.drawStr(3+ctrlModHeaderStartX+6+(cMult*2), ctrlModHeaderY+1, mods.cName.c_str());
-  u8g2.drawStr(4+ctrlModHeaderStartX+6+(dMult*3), ctrlModHeaderY+1, mods.dName.c_str());
-
-  int aValuePos = 40;
-  if (mods.aValue.length() >= 2) {
-    aValuePos -= 2;
-  }
-
-  int bValuePos = 63;
-  int cValuePos = 89;
-  int dValuePos = 114;
-
-  // Serial.print("mods.aValue.length(): ");
-  // Serial.print(mods.aValue.length());
-  // Serial.print(" mods.bValue.length(): ");
-  // Serial.print(mods.bValue.length());
-  // Serial.print(" mods.cValue.length(): ");
-  // Serial.print(mods.cValue.length());
-  // Serial.print(" mods.dValue.length(): ");
-  // Serial.println(mods.dValue.length());
+  int aPosX = ctrlModHeaderStartCenteredX;
+  aPosX -= (mods.aName.length() > 0 ? u8g2.getStrWidth(mods.aName.c_str()) / 2 : 0);
+    
+  int bPosX = ctrlModHeaderStartCenteredX+(ctrlModSpaceWidth*1);
+  bPosX -= (mods.bName.length() > 0 ? u8g2.getStrWidth(mods.bName.c_str()) / 2 : 0);
+    
+  int cPosX = ctrlModHeaderStartCenteredX+(ctrlModSpaceWidth*2);
+  cPosX -= (mods.cName.length() > 0 ? u8g2.getStrWidth(mods.cName.c_str()) / 2 : 0);
   
-  u8g2.drawStr(aValuePos, ctrlModHeaderY+15, mods.aValue.c_str());
-  u8g2.drawStr(bValuePos, ctrlModHeaderY+15, mods.bValue.c_str());
-  u8g2.drawStr(cValuePos, ctrlModHeaderY+15, mods.cValue.c_str());
-  u8g2.drawStr(dValuePos, ctrlModHeaderY+15, mods.dValue.c_str());
+  int dPosX = ctrlModHeaderStartCenteredX+(ctrlModSpaceWidth*3);
+  dPosX -= (mods.dName.length() > 0 ? u8g2.getStrWidth(mods.dName.c_str()) / 2 : 0);
+
+  u8g2.drawStr(aPosX, ctrlModHeaderY+1, mods.aName.c_str());
+  u8g2.drawStr(bPosX, ctrlModHeaderY+1, mods.bName.c_str());
+  u8g2.drawStr(cPosX, ctrlModHeaderY+1, mods.cName.c_str());
+  u8g2.drawStr(dPosX, ctrlModHeaderY+1, mods.dName.c_str());
+
+  int aValuePos = ctrlModHeaderStartCenteredX;
+  aValuePos -= (mods.aValue.length() > 0 ? u8g2.getStrWidth(mods.aValue.c_str()) / 2 : 0);
+    
+  int bValuePos = ctrlModHeaderStartCenteredX+(ctrlModSpaceWidth*1);
+  bValuePos -= (mods.bValue.length() > 0 ? u8g2.getStrWidth(mods.bValue.c_str()) / 2 : 0);
+    
+  int cValuePos = ctrlModHeaderStartCenteredX+(ctrlModSpaceWidth*2);
+  cValuePos -= (mods.cValue.length() > 0 ? u8g2.getStrWidth(mods.cValue.c_str()) / 2 : 0);
+  
+  int dValuePos = ctrlModHeaderStartCenteredX+(ctrlModSpaceWidth*3);
+  dValuePos -= (mods.dValue.length() > 0 ? u8g2.getStrWidth(mods.dValue.c_str()) / 2 : 0);
+  
+  u8g2.drawStr(aValuePos, ctrlModHeaderY+17, mods.aValue.c_str());
+  u8g2.drawStr(bValuePos, ctrlModHeaderY+17, mods.bValue.c_str());
+  u8g2.drawStr(cValuePos, ctrlModHeaderY+17, mods.cValue.c_str());
+  u8g2.drawStr(dValuePos, ctrlModHeaderY+17, mods.dValue.c_str());
 }
 
 void drawPageNumIndicators(void)
@@ -2286,16 +2616,16 @@ void drawPageNumIndicators(void)
   int pageTabPosY = 56;
   int pageTabFooterNameStartX = 17;
 
+  u8g2.drawLine(0,52,128,52);
+  u8g2.drawStr(0,pageTabPosY, getCurrPageNameForTrack().c_str());
+
+  if (trackPageNumMap[currTrack.track_type] == 1) return;
+
   if (trackPageNumMap[currTrack.track_type] == 5) {
     pageTabFooterNameStartX -= 10;
   } else if (trackPageNumMap[currTrack.track_type] == 4) {
     pageTabFooterNameStartX -= 1;
-  } else if (trackPageNumMap[currTrack.track_type] == 1) {
-    pageTabFooterNameStartX += 30;
-  } 
-
-  u8g2.drawLine(0,52,128,52);
-  u8g2.drawStr(0,pageTabPosY, getCurrPageNameForTrack().c_str());
+  }
 
   int pageBoxStartX = (pageNumBasedStartX + 30) - (trackPageNumMap[currTrack.track_type] * 5);
   pageBoxStartX += 8 / (trackPageNumMap[currTrack.track_type]);
@@ -2337,37 +2667,186 @@ void drawSequencerScreen(bool queueBlink)
 
   if (current_UI_mode == PERFORM_TAP) {
     u8g2.drawStr(0, 0, "TAP MODE");
+    u8g2.drawLine(0, 10, DISPLAY_MAX_WIDTH, 10);
+
+    u8g2.drawStr(41, 15, "TAP A TRACK");
+
+    // middle trk icon
+    u8g2.drawFrame(49, 27, 30, 28);
+    u8g2.drawFrame(54, 31, 20, 19);
+    u8g2.drawFrame(60, 34, 8, 3);
+
+
     u8g2.sendBuffer();
     return;
   } else if (current_UI_mode == PERFORM_MUTE) {
     u8g2.drawStr(0, 0, "MUTE MODE");
+    u8g2.drawLine(0, 10, DISPLAY_MAX_WIDTH, 10);
+    
+    u8g2.drawStr(23, 15, "SELECT TRACKS TO MUTE");
+
+    // left trk icon
+    u8g2.drawLine(20, 27, 39, 27);
+    u8g2.drawLine(39, 27, 39, 55);
+    u8g2.drawLine(39, 55, 20, 55);
+    u8g2.drawLine(20, 31, 34, 31);
+    u8g2.drawLine(34, 31, 34, 50);
+    u8g2.drawLine(34, 50, 20, 50);
+    u8g2.drawBox(20, 34, 8, 3);
+
+    // middle trk icon
+    u8g2.drawFrame(49, 27, 30, 28);
+    u8g2.drawFrame(54, 31, 20, 19);
+    u8g2.drawBox(60, 34, 8, 3);
+
+    // right trk icon
+    u8g2.drawLine(107, 27, 88, 27);
+    u8g2.drawLine(88, 27, 88, 55);
+    u8g2.drawLine(88, 55, 107, 55);
+    u8g2.drawLine(107, 31, 93, 31);
+    u8g2.drawLine(93, 31, 93, 50);
+    u8g2.drawLine(93, 50, 107, 50);
+    u8g2.drawBox(100, 34, 8, 3);
+
     u8g2.sendBuffer();
     return;
   } else if (current_UI_mode == PERFORM_SOLO) {
     u8g2.drawStr(0, 0, "SOLO MODE");
+    u8g2.drawLine(0, 10, DISPLAY_MAX_WIDTH, 10);
+
+    u8g2.drawStr(23, 15, "SELECT TRACK TO SOLO");
+
+    // left trk icon
+    u8g2.drawLine(20, 27, 39, 27);
+    u8g2.drawLine(39, 27, 39, 55);
+    u8g2.drawLine(39, 55, 20, 55);
+    u8g2.drawLine(20, 31, 34, 31);
+    u8g2.drawLine(34, 31, 34, 50);
+    u8g2.drawLine(34, 50, 20, 50);
+
+    u8g2.drawLine(20, 34, 28, 34);
+    u8g2.drawLine(28, 34, 28, 37);
+    u8g2.drawLine(28, 37, 20, 37);
+
+    // middle trk icon
+    u8g2.drawFrame(49, 27, 30, 28);
+    u8g2.drawFrame(54, 31, 20, 19);
+    u8g2.drawBox(60, 34, 8, 3);
+
+    // right trk icon
+    u8g2.drawLine(107, 27, 88, 27);
+    u8g2.drawLine(88, 27, 88, 55);
+    u8g2.drawLine(88, 55, 107, 55);
+    u8g2.drawLine(107, 31, 93, 31);
+    u8g2.drawLine(93, 31, 93, 50);
+    u8g2.drawLine(93, 50, 107, 50);
+
+    u8g2.drawLine(107, 34, 100, 34);
+    u8g2.drawLine(100, 34, 100, 37);
+    u8g2.drawLine(100, 37, 107, 37);
+
     u8g2.sendBuffer();
     return;
   } else if (current_UI_mode == PERFORM_RATCHET) {
     u8g2.drawStr(0, 0, "RATCHET MODE");
+    u8g2.drawLine(0, 10, DISPLAY_MAX_WIDTH, 10);
+
+    if (ratcheting_track > -1) {
+      std::string rchTrkStr = "TRK:";
+      rchTrkStr += strldz(std::to_string(ratcheting_track+1), 2);
+      u8g2.drawStr(0, 12, rchTrkStr.c_str());
+    } else if (ratcheting_track == -1) {
+      u8g2.drawStr(3, 12, "HOLD A TRACK BUTTON TO RATCHET");
+    }
+
+    // draw keyboard
+    u8g2.drawFrame(10, 28, 107, 24);
+    u8g2.drawLine(25, 40, 25, 51);
+    u8g2.drawFrame(19, 28, 13, 12);
+    u8g2.drawLine(37, 40, 37, 51);
+    u8g2.drawLine(51, 28, 51, 51);
+    u8g2.drawFrame(31, 28, 12, 12);
+    u8g2.drawLine(65, 40, 65, 51);
+    u8g2.drawFrame(59, 28, 13, 12);
+    u8g2.drawLine(77, 40, 77, 51);
+    u8g2.drawFrame(71, 28, 13, 12);
+    u8g2.drawLine(89, 40, 89, 51);
+    u8g2.drawFrame(83, 28, 13, 12);
+    u8g2.drawLine(104, 28, 104, 51);
+
+    if (ratchet_division > 0) {
+      // ratchet_division = 24 = 96/24 = 4 = 1/4
+      uint8_t divDenominator = (96/ratchet_division);
+
+      std::string divStr = "1/";
+      divStr += std::to_string(divDenominator);
+
+      int xMult = 14;
+      int xMultB = 13;
+
+      // even divisions (bottom of keyboard)
+      if (ratchet_division == 24) { // 1/4
+        u8g2.drawTriangle(14, 60, 17, 55, 20, 60);
+        u8g2.drawStr(26, 54, divStr.c_str());
+      } else if (ratchet_division == 12) { // 1/8
+        u8g2.drawTriangle(14 + (xMult * 1), 60, 17 + (xMult * 1), 55, 20 + (xMult * 1), 60);
+        u8g2.drawStr(26 + (xMult * 1), 54, divStr.c_str());
+      } else if (ratchet_division == 6) { // 1/16
+        u8g2.drawTriangle(14 + (xMult * 2), 60, 17 + (xMult * 2), 55, 20 + (xMult * 2), 60);
+        u8g2.drawStr(26 + (xMult * 2), 54, divStr.c_str());
+      } else if (ratchet_division == 3) { // 1/32
+        u8g2.drawTriangle(14 + (xMult * 3), 60, 17 + (xMult * 3), 55, 20 + (xMult * 3), 60);
+        u8g2.drawStr(26 + (xMult * 3), 54, divStr.c_str());
+      } else if (ratchet_division == 2) { // 1/48
+        u8g2.drawTriangle(14 + (xMult * 4), 60, 17 + (xMult * 4), 55, 20 + (xMult * 4), 60);
+        u8g2.drawStr(26 + (xMult * 4), 54, divStr.c_str());
+      } else if (ratchet_division == 1) { // 1/96
+        u8g2.drawTriangle(14 + (xMult * 5), 60, 17 + (xMult * 5), 55, 20 + (xMult * 5), 60);
+        u8g2.drawStr(26 + (xMult * 5), 54, divStr.c_str());
+      }
+      // odd divisions (top of keyboard)
+      else if (ratchet_division == 16) { // 1/6
+        u8g2.drawTriangle(22, 21, 24, 25, 27, 21);
+        u8g2.drawStr(33, 19, divStr.c_str());
+      } else if (ratchet_division == 8) { // 1/12
+        u8g2.drawTriangle(22 + (xMultB * 1), 21, 24 + (xMultB * 1), 25, 27 + (xMultB * 1), 21);
+        u8g2.drawStr(33 + (xMultB * 1), 19, divStr.c_str());
+      } else if (ratchet_division == 4) { // 1/24
+        u8g2.drawTriangle(22 + (xMultB * 3), 21, 24 + (xMultB * 3), 25, 27 + (xMultB * 3), 21);
+        u8g2.drawStr(33 + (xMultB * 3), 19, divStr.c_str());
+      }
+    } else {
+      u8g2.drawStr(10, 54, "HOLD A RATCHET DIVISION KEY");
+    }
+
     u8g2.sendBuffer();
     return;
   }
 
-  drawMenuHeader("BNK:", 1, 0, false);
+  bool bnkBlink = false;
+  int bnkNumber = current_selected_bank+1;
+  if (_queued_pattern.bank > -1) {
+    bnkNumber = _queued_pattern.bank+1;
+    bnkBlink = (_queued_pattern.bank != current_selected_bank);
+  }
 
+  drawMenuHeader("BNK:", bnkNumber, 0, (queueBlink && bnkBlink));
+
+  bool ptnBlink = false;
   int ptnNumber = current_selected_pattern+1;
   if (_queued_pattern.number > -1) {
     ptnNumber = _queued_pattern.number+1;
+    ptnBlink = (_queued_pattern.number != current_selected_pattern);
   }
 
   if (current_UI_mode == UI_MODE::PATTERN_WRITE) {
     u8g2.setColorIndex((u_int8_t)1);
     u8g2.drawBox(26,0,29,7);
     u8g2.setColorIndex((u_int8_t)0);
-    drawMenuHeader("PTN:", ptnNumber, 29, queueBlink);
+    drawMenuHeader("PTN:", ptnNumber, 29, (queueBlink && ptnBlink));
     u8g2.setColorIndex((u_int8_t)1);
   } else if (current_UI_mode == TRACK_WRITE || current_UI_mode == TRACK_SEL || current_UI_mode == SUBMITTING_STEP_VALUE) {
-    drawMenuHeader("PTN:", ptnNumber, 29, queueBlink);
+    drawMenuHeader("PTN:", ptnNumber, 29, (queueBlink && ptnBlink));
   }
 
   if (current_UI_mode == TRACK_WRITE || current_UI_mode == TRACK_SEL || current_UI_mode == SUBMITTING_STEP_VALUE) {
@@ -2392,17 +2871,11 @@ void drawSequencerScreen(bool queueBlink)
     u8g2.drawStr(2, 10, patternHeaderStr.c_str());
     u8g2.setColorIndex((u_int8_t)1);
 
-    // draw pattern main icon area
-    std::string patternNumStr = strldz(std::to_string(current_selected_pattern+1), 2);
-    u8g2.setFont(bitocra13_c);
-    u8g2.drawStr(8, 26, patternNumStr.c_str());
-    u8g2.setFont(bitocra7_c);
-
     // draw control mod area
     drawPatternControlMods();
 
-    u8g2.drawLine(0,52,128,52);
-    u8g2.drawStr(0,56,"MAIN");
+    u8g2.drawLine(0, 52, 128, 52);
+    u8g2.drawStr(0, 56, "MAIN");
 
   } else if (current_UI_mode == TRACK_WRITE || current_UI_mode == TRACK_SEL || current_UI_mode == SUBMITTING_STEP_VALUE) {
     TRACK currTrack = getHeapCurrentSelectedTrack();
@@ -2410,7 +2883,7 @@ void drawSequencerScreen(bool queueBlink)
 
     // draw track meta type box
     int trackMetaStrX = 2;
-    if (currTrackType == SUBTRACTIVE_SYNTH || currTrackType == MIDI) {
+    if (currTrackType == SUBTRACTIVE_SYNTH || currTrackType == MIDI_OUT) {
       trackMetaStrX = 4;
     }
     u8g2.setColorIndex((u_int8_t)1);
@@ -2425,7 +2898,7 @@ void drawSequencerScreen(bool queueBlink)
       trackInfoStr += usableSampleNames[currTrack.raw_sample_id];
     } else if (currTrackType == RAW_SAMPLE || currTrackType == WAV_SAMPLE) {
       trackInfoStr += usableWavSampleNames[currTrack.wav_sample_id];
-    } else if (currTrackType == MIDI) {
+    } else if (currTrackType == MIDI_OUT) {
       trackInfoStr += "";
     } else if (currTrackType == CV_GATE || currTrackType == CV_TRIG) {
       trackInfoStr += "";
@@ -2436,25 +2909,23 @@ void drawSequencerScreen(bool queueBlink)
     u8g2.setColorIndex((u_int8_t)1);
 
     // draw track description / main icon area
-    if (currTrackType == RAW_SAMPLE || currTrackType == SUBTRACTIVE_SYNTH || currTrackType == MIDI || currTrackType == CV_GATE) {
-      u8g2.drawStr(6, 23, "NOTE");
-      u8g2.setFont(bitocra13_c);
-      u8g2.drawStr(8, 32, getDisplayNote().c_str());
-      u8g2.setFont(bitocra7_c);
-    } else if (currTrackType == WAV_SAMPLE) {
-      u8g2.drawLine(4,29,4,40);
-      u8g2.drawLine(4,40,22,40);
-      u8g2.drawLine(22,27,22,40);
-      u8g2.drawLine(14,27,22,27);
-      u8g2.drawLine(11,29,14,27);
-      u8g2.drawLine(4,29,11,29);
-      u8g2.drawStr(8,31, "uSD");
+    if (currTrackType == SUBTRACTIVE_SYNTH || currTrackType == MIDI_OUT || currTrackType == CV_GATE) {
+      if (
+        (currTrackType != SUBTRACTIVE_SYNTH) ||
+        ((currTrack.track_type == SUBTRACTIVE_SYNTH && current_page_selected != 3) &&
+        (currTrack.track_type == SUBTRACTIVE_SYNTH && current_page_selected != 4))
+      ) {
+        u8g2.drawStr(6, 23, "NOTE");
+        u8g2.setFont(bitocra13_c);
+        u8g2.drawStr(8, 32, getDisplayNote().c_str());
+        u8g2.setFont(bitocra7_c);
+      }
     } else if (currTrackType == CV_TRIG) {
-      u8g2.drawLine(3,42,14,42);
-      u8g2.drawLine(14,42,14,28);
-      u8g2.drawLine(14,28,19,28);
-      u8g2.drawLine(19,28,19,42);
-      u8g2.drawLine(19,42,24,42);
+      // u8g2.drawLine(3,42,14,42);
+      // u8g2.drawLine(14,42,14,28);
+      // u8g2.drawLine(14,28,19,28);
+      // u8g2.drawLine(19,28,19,42);
+      // u8g2.drawLine(19,42,24,42);
     }
 
     // draw control mod area
@@ -2505,12 +2976,40 @@ void drawSetupScreen()
   u8g2.drawStr(10, 22, nameFieldStr.c_str());
 
   u8g2.drawFrame(86, 49, 17, 11);
-  u8g2.drawStr(89, 51, "ESC");
+  u8g2.drawStr(89, 51, "SEL");
   u8g2.drawFrame(106, 49, 17, 11);
-  u8g2.drawStr(109, 51, "SEL");
+  u8g2.drawStr(109, 51, "ESC");
   u8g2.drawStr(10, 52, "CONFIRM?");
 
   u8g2.sendBuffer();
+}
+
+void triggerCvGateNoteOn(uint8_t t, uint8_t note)
+{
+  TRACK currTrack = getHeapCurrentSelectedPattern().tracks[t];
+
+  for(int i = 0; i < 128; i++) {
+    cvLevels[i] = i * 26;
+  }
+
+  uint8_t noteToUse = note;
+  uint8_t octaveToUse = keyboardOctave; // +1 ?
+
+  int midiNote = (noteToUse + (12 * (octaveToUse))); // C0 = 12
+
+  if (currTrack.channel == 1) {
+    writeToDAC(CS1, 0, cvLevels[midiNote]); // cv
+    writeToDAC(CS1, 1, 4095); // gate
+  } else if (currTrack.channel == 2)  {
+    writeToDAC(CS2, 0, cvLevels[midiNote]); // cv
+    writeToDAC(CS2, 1, 4095); // gate
+  } else if (currTrack.channel == 3) {
+    writeToDAC(CS3, 0, cvLevels[midiNote]); // cv
+    writeToDAC(CS3, 1, 4095); // gate
+  } else if (currTrack.channel == 4)  {
+    writeToDAC(CS4, 0, cvLevels[midiNote]); // cv
+    writeToDAC(CS4, 1, 4095); // gate
+  }
 }
 
 void triggerSubtractiveSynthNoteOn(uint8_t t, uint8_t note)
@@ -2525,8 +3024,8 @@ void triggerSubtractiveSynthNoteOn(uint8_t t, uint8_t note)
   comboVoices[t].osca.frequency(octaveFreqA);
   comboVoices[t].oscb.frequency(octaveFreqB);
 
-  comboVoices[t].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
-  comboVoices[t].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+  comboVoices[t].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+  comboVoices[t].rightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
 
   comboVoices[t].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
   comboVoices[t].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
@@ -2550,8 +3049,8 @@ void triggerRawSampleNoteOn(uint8_t t, uint8_t note)
 
   if (t < 4) {
   AudioNoInterrupts();
-    comboVoices[t].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
-    comboVoices[t].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+    comboVoices[t].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+    comboVoices[t].rightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
 
     comboVoices[t].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
     comboVoices[t].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
@@ -2586,8 +3085,8 @@ void triggerRawSampleNoteOn(uint8_t t, uint8_t note)
     }
   } else {
   AudioNoInterrupts();
-    sampleVoices[tOffset].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
-    sampleVoices[tOffset].rightCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+    sampleVoices[tOffset].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+    sampleVoices[tOffset].rightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
 
     sampleVoices[tOffset].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
     sampleVoices[tOffset].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
@@ -2648,6 +3147,8 @@ void triggerTrackManually(uint8_t t, uint8_t note)
     triggerWavSampleNoteOn(t, note);
   } else if (currTrack.track_type == SUBTRACTIVE_SYNTH) {
     triggerSubtractiveSynthNoteOn(t, note);
+  } else if (currTrack.track_type == CV_GATE) {
+    triggerCvGateNoteOn(t, note);
   }
 }
 
@@ -2692,8 +3193,8 @@ void handleRawSampleNoteOnForTrack(int track)
   if (track > 3) {
     int tOffset = track-4;
   AudioNoInterrupts();
-    sampleVoices[tOffset].leftCtrl.gain(getStereoPanValues(trackToUse.pan).left * (trackToUse.velocity * 0.01));
-    sampleVoices[tOffset].rightCtrl.gain(getStereoPanValues(trackToUse.pan).right * (trackToUse.velocity * 0.01));
+    sampleVoices[tOffset].leftCtrl.gain(getStereoPanValues(trackToUse.pan).right * (trackToUse.velocity * 0.01));
+    sampleVoices[tOffset].rightCtrl.gain(getStereoPanValues(trackToUse.pan).left * (trackToUse.velocity * 0.01));
 
     sampleVoices[tOffset].ampEnv.attack(trackToUse.amp_attack * (trackToUse.velocity * 0.01));
     sampleVoices[tOffset].ampEnv.decay(trackToUse.amp_decay * (trackToUse.velocity * 0.01));
@@ -2713,14 +3214,14 @@ void handleRawSampleNoteOnForTrack(int track)
     } else if (loopTypeSelMap[trackToUse.looptype] == looptype_repeat) {
       float loopFinishToUse = trackToUse.loopfinish;
 
-      if (trackToUse.chromatic_enabled) {
-        float foundBaseFreq = noteToFreqArr[trackToUse.note];
-        float octaveFreq = foundBaseFreq * (pow(2, keyboardOctave));
-        //float freq = 440.0 * powf(2.0, (12-69) / 12.0);
-        uint32_t numSamples = 44100 / octaveFreq;
+      // if (trackToUse.chromatic_enabled) {
+      //   float foundBaseFreq = noteToFreqArr[trackToUse.note];
+      //   float octaveFreq = foundBaseFreq * (pow(2, keyboardOctave));
+      //   //float freq = 440.0 * powf(2.0, (12-69) / 12.0);
+      //   uint32_t numSamples = 44100 / octaveFreq;
 
-        loopFinishToUse = numSamples;
-      }
+      //   loopFinishToUse = numSamples;
+      // }
 
       sampleVoices[tOffset].rSample.setPlayStart(trackToUse.playstart == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
       sampleVoices[tOffset].rSample.setLoopStart(trackToUse.loopstart);
@@ -2728,8 +3229,8 @@ void handleRawSampleNoteOnForTrack(int track)
     }
   } else {
   AudioNoInterrupts();
-    comboVoices[track].leftCtrl.gain(getStereoPanValues(trackToUse.pan).left * (trackToUse.velocity * 0.01));
-    comboVoices[track].rightCtrl.gain(getStereoPanValues(trackToUse.pan).right * (trackToUse.velocity * 0.01));
+    comboVoices[track].leftCtrl.gain(getStereoPanValues(trackToUse.pan).right * (trackToUse.velocity * 0.01));
+    comboVoices[track].rightCtrl.gain(getStereoPanValues(trackToUse.pan).left * (trackToUse.velocity * 0.01));
 
     comboVoices[track].ampEnv.attack(trackToUse.amp_attack * (trackToUse.velocity * 0.01));
     comboVoices[track].ampEnv.decay(trackToUse.amp_decay * (trackToUse.velocity * 0.01));
@@ -2749,14 +3250,14 @@ void handleRawSampleNoteOnForTrack(int track)
     } else if (loopTypeSelMap[trackToUse.looptype] == looptype_repeat) {
       float loopFinishToUse = trackToUse.loopfinish;
 
-      if (trackToUse.chromatic_enabled) {
-        float foundBaseFreq = noteToFreqArr[trackToUse.note];
-        float octaveFreq = foundBaseFreq * (pow(2, keyboardOctave));
-        //float freq = 440.0 * powf(2.0, (12-69) / 12.0);
-        uint32_t numSamples = 44100 / octaveFreq;
+      // if (trackToUse.chromatic_enabled) {
+      //   float foundBaseFreq = noteToFreqArr[trackToUse.note];
+      //   float octaveFreq = foundBaseFreq * (pow(2, keyboardOctave));
+      //   //float freq = 440.0 * powf(2.0, (12-69) / 12.0);
+      //   uint32_t numSamples = 44100 / octaveFreq;
 
-        loopFinishToUse = numSamples;
-      }
+      //   loopFinishToUse = numSamples;
+      // }
 
       comboVoices[track].rSample.setPlayStart(trackToUse.playstart == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
       comboVoices[track].rSample.setLoopStart(trackToUse.loopstart);
@@ -2792,8 +3293,8 @@ void handleSubtractiveSynthNoteOnForTrack(int track)
   comboVoices[track].osca.frequency(octaveFreqA);
   comboVoices[track].oscb.frequency(octaveFreqB);
 
-  comboVoices[track].leftCtrl.gain(getStereoPanValues(trackToUse.pan).left * (trackToUse.velocity * 0.01));
-  comboVoices[track].rightCtrl.gain(getStereoPanValues(trackToUse.pan).right * (trackToUse.velocity * 0.01));
+  comboVoices[track].leftCtrl.gain(getStereoPanValues(trackToUse.pan).right * (trackToUse.velocity * 0.01));
+  comboVoices[track].rightCtrl.gain(getStereoPanValues(trackToUse.pan).left * (trackToUse.velocity * 0.01));
 
   comboVoices[track].ampEnv.attack(trackToUse.amp_attack * (trackToUse.velocity * 0.01));
   comboVoices[track].ampEnv.decay(trackToUse.amp_decay * (trackToUse.velocity * 0.01));
@@ -2810,100 +3311,209 @@ void handleSubtractiveSynthNoteOnForTrack(int track)
   comboVoices[track].filterEnv.noteOn();
 }
 
+void handleMIDINoteOnForTrackStep(int track, int step)
+{
+  TRACK trackToUse = getHeapTrack(track);
+  TRACK_STEP stepToUse = getHeapStep(track, step);
+
+  MIDI.sendNoteOn(64, 100, 1);
+}
+
+void handleCvGateNoteOnForTrackStep(int track, int step)
+{
+  TRACK trackToUse = getHeapTrack(track);
+  TRACK_STEP stepToUse = getHeapStep(track, step);
+
+  Serial.print("cvLevel: ");
+  Serial.println("cvLevel: ");
+
+  uint8_t noteToUse = stepToUse.note;
+  uint8_t octaveToUse = stepToUse.octave;
+  if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[MOD_ATTRS::NOTE]) {
+    noteToUse = _pattern_mods_mem.tracks[track].steps[step].note;
+    //Serial.println(noteToUse);
+  }
+
+  if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[MOD_ATTRS::OCTAVE]) {
+    octaveToUse = _pattern_mods_mem.tracks[track].steps[step].octave;
+    //Serial.println(noteToUse);
+  }
+
+  for(int i = 0; i < 128; i++) {
+    cvLevels[i] = i * 26;
+  }
+
+  int midiNote = (noteToUse + (12 * (octaveToUse)));
+
+  Serial.print("midiNote: ");
+  Serial.print(midiNote);
+  Serial.print(" cvLevels[midiNote]: ");
+  Serial.println(cvLevels[midiNote]);
+
+  if (trackToUse.channel == 1) {
+    writeToDAC(CS1, 0, cvLevels[midiNote]); // cv
+    writeToDAC(CS1, 1, 4095); // gate
+  } else if (trackToUse.channel == 2)  {
+    writeToDAC(CS2, 0, cvLevels[midiNote]); // cv
+    writeToDAC(CS2, 1, 4095); // gate
+  } else if (trackToUse.channel == 3) {
+    writeToDAC(CS3, 0, cvLevels[midiNote]); // cv
+    writeToDAC(CS3, 1, 4095); // gate
+  } else if (trackToUse.channel == 4)  {
+    writeToDAC(CS4, 0, cvLevels[midiNote]); // cv
+    writeToDAC(CS4, 1, 4095); // gate
+  }
+}
+
+void handleCvGateNoteOnForTrack(int track)
+{
+  TRACK trackToUse = getHeapTrack(track);
+
+  for(int i = 0; i < 128; i++) {
+    cvLevels[i] = i * 26;
+  }
+
+  uint8_t noteToUse = trackToUse.note;
+  uint8_t octaveToUse = trackToUse.octave;
+
+  int midiNote = (noteToUse + (12 * (octaveToUse))); // use offset of 32 instead?
+
+  if (trackToUse.channel == 1) {
+    writeToDAC(CS1, 0, cvLevels[midiNote]); // cv
+    writeToDAC(CS1, 1, 4095); // gate
+  } else if (trackToUse.channel == 2)  {
+    writeToDAC(CS2, 0, cvLevels[midiNote]); // cv
+    writeToDAC(CS2, 1, 4095); // gate
+  } else if(trackToUse.channel == 3) {
+    writeToDAC(CS3, 0, cvLevels[midiNote]); // cv
+    writeToDAC(CS3, 1, 4095); // gate
+  } else if (trackToUse.channel == 4)  {
+    writeToDAC(CS4, 0, cvLevels[midiNote]); // cv
+    writeToDAC(CS4, 1, 4095); // gate
+  }
+}
+
 void handleRawSampleNoteOnForTrackStep(int track, int step)
 {
   TRACK trackToUse = getHeapTrack(track);
   TRACK_STEP stepToUse = getHeapStep(track, step);
 
   uint8_t noteToUse = stepToUse.note;
-  if (_pattern_mods_mem.tracks[current_selected_track].step_mod_flags[step].flags[3]) {
-    noteToUse = _pattern_mods_mem.tracks[current_selected_track].steps[step].note;
+  if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[MOD_ATTRS::NOTE]) {
+    noteToUse = _pattern_mods_mem.tracks[track].steps[step].note;
   }
 
   // uint8_t octaveToUse = stepToUse.octave;
-  // if (_pattern_mods_mem.tracks[current_selected_track].step_mod_flags[step].flags[4]) {
-  //   octaveToUse = _pattern_mods_mem.tracks[current_selected_track].steps[step].octave;
+  // if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[4]) {
+  //   octaveToUse = _pattern_mods_mem.tracks[track].steps[step].octave;
   // }
 
   uint8_t velocityToUse = trackToUse.velocity;
-  if (_pattern_mods_mem.tracks[current_selected_track].step_mod_flags[step].flags[6]) {
-    velocityToUse = _pattern_mods_mem.tracks[current_selected_track].steps[step].velocity;
+  if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[MOD_ATTRS::VELOCITY]) {
+    velocityToUse = _pattern_mods_mem.tracks[track].steps[step].velocity;
   } else {
     velocityToUse = stepToUse.velocity;
+  }
+
+  uint8_t looptypeToUse = trackToUse.looptype;
+  if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[MOD_ATTRS::LOOPTYPE]) {
+    looptypeToUse = _pattern_mods_mem.tracks[track].steps[step].looptype;
+  }
+
+  uint32_t loopstartToUse = trackToUse.loopstart;
+  if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[MOD_ATTRS::LOOPSTART]) {
+    loopstartToUse = _pattern_mods_mem.tracks[track].steps[step].loopstart;
+  }
+
+  uint32_t loopfinishToUse = trackToUse.loopfinish;
+  if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[MOD_ATTRS::LOOPFINISH]) {
+    loopfinishToUse = _pattern_mods_mem.tracks[track].steps[step].loopfinish;
+  }
+
+  uint8_t playstartToUse = trackToUse.playstart;
+  if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[MOD_ATTRS::PLAYSTART]) {
+    playstartToUse = _pattern_mods_mem.tracks[track].steps[step].playstart;
+  }
+
+  float speedToUse = trackToUse.sample_play_rate;
+  if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[MOD_ATTRS::SAMPLE_PLAY_RATE]) {
+    speedToUse = _pattern_mods_mem.tracks[track].steps[step].sample_play_rate;
   }
 
   if (track > 3) {
     int tOffset = track-4;
   AudioNoInterrupts();
-    sampleVoices[tOffset].leftCtrl.gain(getStereoPanValues(trackToUse.pan).left * (velocityToUse * 0.01));
-    sampleVoices[tOffset].rightCtrl.gain(getStereoPanValues(trackToUse.pan).right * (velocityToUse * 0.01));
+    sampleVoices[tOffset].leftCtrl.gain(getStereoPanValues(trackToUse.pan).right * (velocityToUse * 0.01));
+    sampleVoices[tOffset].rightCtrl.gain(getStereoPanValues(trackToUse.pan).left * (velocityToUse * 0.01));
 
     sampleVoices[tOffset].ampEnv.attack(trackToUse.amp_attack * (velocityToUse * 0.01));
     sampleVoices[tOffset].ampEnv.decay(trackToUse.amp_decay * (velocityToUse * 0.01));
     sampleVoices[tOffset].ampEnv.sustain(trackToUse.amp_sustain * (velocityToUse * 0.01));
     sampleVoices[tOffset].ampEnv.release(trackToUse.amp_release * (velocityToUse * 0.01));
+
+    sampleVoices[tOffset].rSample.setPlaybackRate(speedToUse);
   AudioInterrupts();
 
     sampleVoices[tOffset].ampEnv.noteOn();
     sampleVoices[tOffset].rSample.playRaw(samples[trackToUse.raw_sample_id]->sampledata, samples[trackToUse.raw_sample_id]->samplesize/2, numChannels);
 
     // always re-initialize loop type
-    sampleVoices[tOffset].rSample.setLoopType(loopTypeSelMap[trackToUse.looptype]);
+    sampleVoices[tOffset].rSample.setLoopType(loopTypeSelMap[looptypeToUse]);
 
-    if (loopTypeSelMap[trackToUse.looptype] == looptype_none) {
+    if (loopTypeSelMap[looptypeToUse] == looptype_none) {
       sampleVoices[tOffset].rSample.setPlayStart(play_start::play_start_sample);
       sampleVoices[tOffset].rSample.setLoopType(loop_type::looptype_none);
-    } else if (loopTypeSelMap[trackToUse.looptype] == looptype_repeat) {
-      float loopFinishToUse = trackToUse.loopfinish;
+    } else if (loopTypeSelMap[looptypeToUse] == looptype_repeat) {
 
-      if (trackToUse.chromatic_enabled) {
-        float foundBaseFreq = noteToFreqArr[noteToUse];
-        float octaveFreq = foundBaseFreq * (pow(2, keyboardOctave));
-        //float freq = 440.0 * powf(2.0, (12-69) / 12.0);
-        uint32_t numSamples = 44100 / octaveFreq;
+      // if (trackToUse.chromatic_enabled) {
+      //   float foundBaseFreq = noteToFreqArr[noteToUse];
+      //   float octaveFreq = foundBaseFreq * (pow(2, keyboardOctave));
+      //   //float freq = 440.0 * powf(2.0, (12-69) / 12.0);
+      //   uint32_t numSamples = 44100 / octaveFreq;
 
-        loopFinishToUse = numSamples;
-      }
+      //   loopFinishToUse = numSamples;
+      // }
 
-      sampleVoices[tOffset].rSample.setPlayStart(trackToUse.playstart == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
-      sampleVoices[tOffset].rSample.setLoopStart(trackToUse.loopstart);
-      sampleVoices[tOffset].rSample.setLoopFinish(loopFinishToUse);
+      sampleVoices[tOffset].rSample.setPlayStart(playstartToUse == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
+      sampleVoices[tOffset].rSample.setLoopStart(loopstartToUse);
+      sampleVoices[tOffset].rSample.setLoopFinish(loopfinishToUse);
     }
   } else {
   AudioNoInterrupts();
-    comboVoices[track].leftCtrl.gain(getStereoPanValues(trackToUse.pan).left * (velocityToUse * 0.01));
-    comboVoices[track].rightCtrl.gain(getStereoPanValues(trackToUse.pan).right * (velocityToUse * 0.01));
+    comboVoices[track].leftCtrl.gain(getStereoPanValues(trackToUse.pan).right * (velocityToUse * 0.01));
+    comboVoices[track].rightCtrl.gain(getStereoPanValues(trackToUse.pan).left * (velocityToUse * 0.01));
 
     comboVoices[track].ampEnv.attack(trackToUse.amp_attack * (velocityToUse * 0.01));
     comboVoices[track].ampEnv.decay(trackToUse.amp_decay * (velocityToUse * 0.01));
     comboVoices[track].ampEnv.sustain(trackToUse.amp_sustain * (velocityToUse * 0.01));
     comboVoices[track].ampEnv.release(trackToUse.amp_release * (velocityToUse * 0.01));
+
+    comboVoices[track].rSample.setPlaybackRate(speedToUse);
   AudioInterrupts();
 
     comboVoices[track].ampEnv.noteOn();
     comboVoices[track].rSample.playRaw(samples[trackToUse.raw_sample_id]->sampledata, samples[trackToUse.raw_sample_id]->samplesize/2, numChannels);
 
     // always re-initialize loop type
-    comboVoices[track].rSample.setLoopType(loopTypeSelMap[trackToUse.looptype]);
+    comboVoices[track].rSample.setLoopType(loopTypeSelMap[looptypeToUse]);
 
-    if (loopTypeSelMap[trackToUse.looptype] == looptype_none) {
+    if (loopTypeSelMap[looptypeToUse] == looptype_none) {
       comboVoices[track].rSample.setPlayStart(play_start::play_start_sample);
       comboVoices[track].rSample.setLoopType(loop_type::looptype_none);
-    } else if (loopTypeSelMap[trackToUse.looptype] == looptype_repeat) {
-      float loopFinishToUse = trackToUse.loopfinish;
+    } else if (loopTypeSelMap[looptypeToUse] == looptype_repeat) {
 
-      if (trackToUse.chromatic_enabled) {
-        float foundBaseFreq = noteToFreqArr[noteToUse];
-        float octaveFreq = foundBaseFreq * (pow(2, keyboardOctave));
-        //float freq = 440.0 * powf(2.0, (12-69) / 12.0);
-        uint32_t numSamples = 44100 / octaveFreq;
+      // if (trackToUse.chromatic_enabled) {
+      //   float foundBaseFreq = noteToFreqArr[noteToUse];
+      //   float octaveFreq = foundBaseFreq * (pow(2, keyboardOctave));
+      //   //float freq = 440.0 * powf(2.0, (12-69) / 12.0);
+      //   uint32_t numSamples = 44100 / octaveFreq;
 
-        loopFinishToUse = numSamples;
-      }
+      //   loopFinishToUse = numSamples;
+      // }
 
-      comboVoices[track].rSample.setPlayStart(trackToUse.playstart == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
-      comboVoices[track].rSample.setLoopStart(trackToUse.loopstart);
-      comboVoices[track].rSample.setLoopFinish(loopFinishToUse);
+      comboVoices[track].rSample.setPlayStart(playstartToUse == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
+      comboVoices[track].rSample.setLoopStart(loopstartToUse);
+      comboVoices[track].rSample.setLoopFinish(loopfinishToUse);
     }
   }
 }
@@ -2929,22 +3539,27 @@ void handleSubtractiveSynthNoteOnForTrackStep(int track, int step)
   TRACK_STEP stepToUse = getHeapStep(track, step);
 
   uint8_t noteToUse = stepToUse.note;
-  if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[3]) {
+  if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[MOD_ATTRS::NOTE]) {
     noteToUse = _pattern_mods_mem.tracks[track].steps[step].note;
-    Serial.println(noteToUse);
+    //Serial.println(noteToUse);
   }
 
   uint8_t octaveToUse = stepToUse.octave;
-  if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[4]) {
+  if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[MOD_ATTRS::OCTAVE]) {
     octaveToUse = _pattern_mods_mem.tracks[track].steps[step].octave;
-    Serial.println(octaveToUse);
+    //Serial.println(octaveToUse);
   }
   
   uint8_t velocityToUse = trackToUse.velocity;
-  if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[6]) {
+  if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[MOD_ATTRS::VELOCITY]) {
     velocityToUse = _pattern_mods_mem.tracks[track].steps[step].velocity;
   } else {
     velocityToUse = stepToUse.velocity;
+  }
+
+  uint8_t waveformToUse = trackToUse.waveform;
+  if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[MOD_ATTRS::WAVEFORM]) {
+    waveformToUse = _pattern_mods_mem.tracks[track].steps[step].waveform;
   }
 
   AudioNoInterrupts();
@@ -2952,11 +3567,14 @@ void handleSubtractiveSynthNoteOnForTrackStep(int track, int step)
   float octaveFreqA = (foundBaseFreq + (trackToUse.fine * 0.01)) * (pow(2, octaveToUse));
   float octaveFreqB = (foundBaseFreq * pow(2.0, (float)trackToUse.detune/12.0)) * (pow(2, octaveToUse));
 
+  comboVoices[track].osca.begin(waveformToUse);
+  comboVoices[track].oscb.begin(waveformToUse);
+  
   comboVoices[track].osca.frequency(octaveFreqA);
   comboVoices[track].oscb.frequency(octaveFreqB);
 
-  comboVoices[track].leftCtrl.gain(getStereoPanValues(trackToUse.pan).left * (velocityToUse * 0.01));
-  comboVoices[track].rightCtrl.gain(getStereoPanValues(trackToUse.pan).right * (velocityToUse * 0.01));
+  comboVoices[track].leftCtrl.gain(getStereoPanValues(trackToUse.pan).right * (velocityToUse * 0.01));
+  comboVoices[track].rightCtrl.gain(getStereoPanValues(trackToUse.pan).left * (velocityToUse * 0.01));
 
   comboVoices[track].ampEnv.attack(trackToUse.amp_attack * (velocityToUse * 0.01));
   comboVoices[track].ampEnv.decay(trackToUse.amp_decay * (velocityToUse * 0.01));
@@ -2983,6 +3601,8 @@ void handleNoteOnForTrack(int track)
     handleWavSampleNoteOnForTrack(track);
   } else if (trackToUse.track_type == SUBTRACTIVE_SYNTH) {
     handleSubtractiveSynthNoteOnForTrack(track);
+  } else if (trackToUse.track_type == CV_GATE) {
+    handleCvGateNoteOnForTrack(track);
   }
 }
 
@@ -2994,12 +3614,22 @@ void handleNoteOnForTrackStep(int track, int step)
     return;
   }
 
+  if (_trkNeedsInit[track]) {
+    Serial.print("init sounds for track: ");
+    Serial.println(track);
+    initSoundsForTrack(track);
+  }
+
   if (trackToUse.track_type == RAW_SAMPLE) {
     handleRawSampleNoteOnForTrackStep(track, step);
   } else if (trackToUse.track_type == WAV_SAMPLE) {
     handleWavSampleNoteOnForTrackStep(track, step);
   } else if (trackToUse.track_type == SUBTRACTIVE_SYNTH) {
     handleSubtractiveSynthNoteOnForTrackStep(track, step);
+  } else if (trackToUse.track_type == MIDI_OUT) {
+    handleMIDINoteOnForTrackStep(track, step);
+  } else if (trackToUse.track_type == CV_GATE) {
+    handleCvGateNoteOnForTrackStep(track, step);
   }
 }
 
@@ -3010,7 +3640,28 @@ void handleNoteOffForTrackStep(int track, int step)
   if (currTrack.track_type == SUBTRACTIVE_SYNTH) {
     comboVoices[track].ampEnv.noteOff();
     comboVoices[track].filterEnv.noteOff();
-  } else {
+  } 
+  
+  // fix
+  else if (currTrack.track_type == MIDI_OUT) {
+    MIDI.sendNoteOff(64, 100, 1);
+  } else if (currTrack.track_type == CV_GATE) {
+    if (currTrack.channel == 1) {
+      //writeToDAC(CS1, 0, cvLevels[midiNote]); // cv
+      writeToDAC(CS1, 1, 0); // gate
+    } else if (currTrack.channel == 2)  {
+      //writeToDAC(CS2, 0, cvLevels[midiNote]); // cv
+      writeToDAC(CS2, 1, 0); // gate
+    } else if(currTrack.channel == 3) {
+      //writeToDAC(CS3, 0, cvLevels[midiNote]); // cv
+      writeToDAC(CS3, 1, 0); // gate
+    } else if (currTrack.channel == 4)  {
+      //writeToDAC(CS4, 0, cvLevels[midiNote]); // cv
+      writeToDAC(CS4, 1, 0); // gate
+    }
+  } 
+  
+  else {
     if (track > 3) {
       int tOffset = track-4;
       sampleVoices[tOffset].ampEnv.noteOff();
@@ -3027,7 +3678,28 @@ void handleNoteOffForTrack(int track)
   if (currTrack.track_type == SUBTRACTIVE_SYNTH) {
     comboVoices[track].ampEnv.noteOff();
     comboVoices[track].filterEnv.noteOff();
-  } else {
+  } 
+  
+  // fix
+  else if (currTrack.track_type == MIDI_OUT) {
+    MIDI.sendNoteOff(64, 100, 1);
+  } else if (currTrack.track_type == CV_GATE) {
+    if (currTrack.channel == 1) {
+      //writeToDAC(CS1, 0, cvLevels[midiNote]); // cv
+      writeToDAC(CS1, 1, 0); // gate
+    } else if (currTrack.channel == 2)  {
+      //writeToDAC(CS2, 0, cvLevels[midiNote]); // cv
+      writeToDAC(CS2, 1, 0); // gate
+    } else if(currTrack.channel == 3) {
+      //writeToDAC(CS3, 0, cvLevels[midiNote]); // cv
+      writeToDAC(CS3, 1, 0); // gate
+    } else if (currTrack.channel == 4)  {
+      //writeToDAC(CS4, 0, cvLevels[midiNote]); // cv
+      writeToDAC(CS4, 1, 0); // gate
+    }
+  } 
+  
+  else {
     if (track > 3) {
       int tOffset = track-4;
       sampleVoices[tOffset].ampEnv.noteOff();
@@ -3099,6 +3771,17 @@ void setDisplayStateForPatternActiveTracksLEDs(bool enable)
       }
     } else if (currTrackStepForLED.state == TRACK_STEP_STATE::ON || currTrackStepForLED.state == TRACK_STEP_STATE::ACCENTED) {
       setLEDPWM(keyLED, enable ? 4095 : 0);
+    }
+  }
+}
+
+void displayCurrentlySelectedBank(void)
+{
+  for (int b = 0; b < MAXIMUM_SEQUENCER_BANKS; b++) {
+    if (b == current_selected_bank) {
+      setLEDPWM(stepLEDPins[b], 4095);
+    } else {
+      setLEDPWM(stepLEDPins[b], 512);
     }
   }
 }
@@ -3187,22 +3870,34 @@ void handleSoloForTrack(uint8_t track, bool undoSoloing)
 {
   for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
   {
-    if (undoSoloing) {
+    if (undoSoloing && current_tracks_soloed > 0 && t == track) {
+      --current_tracks_soloed;
+      _seq_heap.pattern.tracks[t].soloing = false;
+      _seq_heap.pattern.tracks[t].muted = true;
+      Serial.println("here1");
+      setLEDPWM(stepLEDPins[t], 0);
+    } 
+    
+    if (undoSoloing && current_tracks_soloed == 0) {
       _seq_heap.pattern.tracks[t].soloing = false;
       _seq_heap.pattern.tracks[t].muted = false;
+      Serial.println("here2");
       setLEDPWM(stepLEDPins[t], 0);
-
-      continue;
     }
 
+    if (undoSoloing) continue;
+
     if (t == track) {
+      ++current_tracks_soloed;
       _seq_heap.pattern.tracks[t].soloing = true;
       _seq_heap.pattern.tracks[t].muted = false;
       setLEDPWM(stepLEDPins[t], 4095);
-    } else {
+      Serial.println("here3");
+    } else if (!_seq_heap.pattern.tracks[t].soloing) {
       _seq_heap.pattern.tracks[t].soloing = false;
       _seq_heap.pattern.tracks[t].muted = true;
       setLEDPWM(stepLEDPins[t], 0);
+      Serial.println("here4");
     }
   }
 }
@@ -3229,7 +3924,7 @@ void handleAddToStepStack(uint32_t tick, int track, int step)
 {
   TRACK trackToUse = getHeapTrack(track);
 
-  bool lenStepModEnabled = _pattern_mods_mem.tracks[track].step_mod_flags[step].flags[5];
+  bool lenStepModEnabled = _pattern_mods_mem.tracks[track].step_mod_flags[step].flags[MOD_ATTRS::LENGTH];
   int lenStepMod = _pattern_mods_mem.tracks[track].steps[step].length;
 
   for ( uint8_t i = 0; i < STEP_STACK_SIZE; i++ ) {
@@ -3357,32 +4052,15 @@ void updateAllTrackStepStates(void)
 
 void ClockOut16PPQN(uint32_t tick)
 {
-  //handle_sixteenth_step(tick);
+  handle_sixteenth_step(tick);
 }
 
 void handle_sixteenth_step(uint32_t tick)
-{
-  // TODO: move out of 16th step !(tick % (6)) condition
-  // so we can check for microtiming adjustments at the 96ppqn scale
-  triggerAllStepsForAllTracks(tick);
-}
-
-void handle_bpm_step(uint32_t tick)
 {
   int8_t currentSelectedPatternCurrentStep = _seq_state.current_step;
   int8_t currentSelectedTrackCurrentStep = _seq_state.current_track_steps[current_selected_track].current_step;
   int8_t currentSelectedTrackCurrentBar = _seq_state.current_track_steps[current_selected_track].current_bar;
 
-  if (current_UI_mode == TRACK_WRITE && !function_started) {
-    if (!(tick % 6)) {
-      bool isOnStraightQtrNote = (currentSelectedTrackCurrentStep == 1 || !((currentSelectedTrackCurrentStep-1) % 4));
-
-      if (isOnStraightQtrNote) {
-        displayPageLEDs(currentSelectedTrackCurrentBar);
-      }
-    }
-  }
-  
   int curr_step_paged = currentSelectedTrackCurrentStep;
   if (current_step_page == 2 && curr_step_paged > 16 && curr_step_paged <= 32) {
     curr_step_paged -= 16;
@@ -3392,101 +4070,105 @@ void handle_bpm_step(uint32_t tick)
     curr_step_paged -= 48;
   }
 
+  bool isOnStraightQtrNote = (currentSelectedTrackCurrentStep == 1 || !((currentSelectedTrackCurrentStep-1) % 4));
+  
+  if (current_UI_mode == TRACK_WRITE && !function_started && isOnStraightQtrNote) {
+    displayPageLEDs(currentSelectedTrackCurrentBar);
+  }
+
+  if (isOnStraightQtrNote) {
+    setLEDPWM(23, 4095); // each straight quarter note start button led ON
+  }
+
   // This method handles advancing the sequencer
   // and displaying the start btn and step btn BPM LEDs
   int8_t curr_step_char = stepCharMap[curr_step_paged];
   int8_t keyLED = getKeyLED(curr_step_char);
 
-  // This handles displaying the BPM for the start button led
-  // on qtr note. Check for odd step number to make sure not lit on backbeat qtr note.
-  if (!(tick % 6)) {
-    bool isOnStraightBeat = (currentSelectedPatternCurrentStep == 1 || !((currentSelectedPatternCurrentStep-1) % 4));
-    if (isOnStraightBeat) {
-      setLEDPWM(23, 4095); // each straight quarter note start button led ON
+  if (current_UI_mode == PATTERN_WRITE) {
+    setDisplayStateForPatternActiveTracksLEDs(true);
+  }
+
+  // TODO: move out of 16th step !(tick % (6)) condition
+  // so we can check for microtiming adjustments at the 96ppqn scale
+  triggerAllStepsForAllTracks(tick);
+
+  if (current_UI_mode == PATTERN_SEL) {
+    clearAllStepLEDs();
+    displayCurrentlySelectedPattern();
+  } else if (current_UI_mode == TRACK_SEL) {
+    clearAllStepLEDs();
+    displayCurrentlySelectedTrack();
+  } else if (current_UI_mode == TRACK_WRITE) {
+    bool transitionStepLEDs = (
+      (current_step_page == 1 && currentSelectedTrackCurrentStep <= 16) || 
+      (current_step_page == 2 && currentSelectedTrackCurrentStep > 16 && currentSelectedTrackCurrentStep <= 32) ||
+      (current_step_page == 3 && currentSelectedTrackCurrentStep > 32 && currentSelectedTrackCurrentStep <= 48) ||
+      (current_step_page == 4 && currentSelectedTrackCurrentStep > 48 && currentSelectedTrackCurrentStep <= 64)
+    );
+
+    bool turnOffLastLED = (
+      (current_step_page == 1 && currentSelectedTrackCurrentStep == 1) || 
+      (current_step_page == 2 && currentSelectedTrackCurrentStep == 16) ||
+      (current_step_page == 3 && currentSelectedTrackCurrentStep == 32) ||
+      (current_step_page == 4 && currentSelectedTrackCurrentStep == 48)
+    );
+
+    if (currentSelectedTrackCurrentStep > 1) {
+      if (transitionStepLEDs) {
+          uint8_t prevKeyLED = getKeyLED(stepCharMap[curr_step_paged-1]);
+          setLEDPWM(prevKeyLED, 0); // turn prev sixteenth led OFF
+      }
+    } else {
+      if (turnOffLastLED) {
+        TRACK currTrack = getHeapCurrentSelectedTrack();
+        int currTrackLastStep = currTrack.last_step;
+        if (currTrackLastStep > 16) {
+          currTrackLastStep -= 16;
+        }
+
+        uint8_t prevKeyLED = getKeyLED(stepCharMap[currTrackLastStep]);
+        setLEDPWM(prevKeyLED, 0); // turn prev sixteenth led OFF
+      }
     }
-  } else if ( !(tick % bpm_blink_timer) ) {
+
+    if (transitionStepLEDs) {
+      setLEDPWM(keyLED, 4095); // turn sixteenth led ON
+    }
+  }
+
+  updateCurrentPatternStepState();
+  updateAllTrackStepStates();
+}
+
+void handle_bpm_step(uint32_t tick)
+{
+  if ((tick % 6) && !(tick % bpm_blink_timer) ) {
     setLEDPWM(23, 0); // turn start button led OFF
   }
 
-  triggerRatchetingTrack(tick);
-
-  handleRemoveFromStepStack(tick);
-
-  // This handles the sixteenth steps for all tracks
-  if ( !(tick % (6)) ) {
-    if (current_UI_mode == PATTERN_WRITE) {
-      setDisplayStateForPatternActiveTracksLEDs(true);
-    }
-
+  if (!(tick % 6)) {
     if (_queued_pattern.bank > -1 && _queued_pattern.number > -1) {
       draw_queue_blink = 0;
     }
+  }
 
-    triggerAllStepsForAllTracks(tick);
+  triggerRatchetingTrack(tick);
+  handleRemoveFromStepStack(tick);
 
-    if (current_UI_mode == PATTERN_SEL) {
-      clearAllStepLEDs();
-      displayCurrentlySelectedPattern();
-    } else if (current_UI_mode == TRACK_SEL) {
-      clearAllStepLEDs();
-      displayCurrentlySelectedTrack();
-    } else if (current_UI_mode == TRACK_WRITE) {
-      bool transitionStepLEDs = (
-        (current_step_page == 1 && currentSelectedTrackCurrentStep <= 16) || 
-        (current_step_page == 2 && currentSelectedTrackCurrentStep > 16 && currentSelectedTrackCurrentStep <= 32) ||
-        (current_step_page == 3 && currentSelectedTrackCurrentStep > 32 && currentSelectedTrackCurrentStep <= 48) ||
-        (current_step_page == 4 && currentSelectedTrackCurrentStep > 48 && currentSelectedTrackCurrentStep <= 64)
-      );
-
-      bool turnOffLastLED = (
-        (current_step_page == 1 && currentSelectedTrackCurrentStep == 1) || 
-        (current_step_page == 2 && currentSelectedTrackCurrentStep == 16) ||
-        (current_step_page == 3 && currentSelectedTrackCurrentStep == 32) ||
-        (current_step_page == 4 && currentSelectedTrackCurrentStep == 48)
-      );
-
-      if (currentSelectedTrackCurrentStep > 1) {
-        if (transitionStepLEDs) {
-            uint8_t prevKeyLED = getKeyLED(stepCharMap[curr_step_paged-1]);
-            setLEDPWM(prevKeyLED, 0); // turn prev sixteenth led OFF
-        }
-      } else {
-        if (turnOffLastLED) {
-          TRACK currTrack = getHeapCurrentSelectedTrack();
-          int currTrackLastStep = currTrack.last_step;
-          if (currTrackLastStep > 16) {
-            currTrackLastStep -= 16;
-          }
-
-          uint8_t prevKeyLED = getKeyLED(stepCharMap[currTrackLastStep]);
-          setLEDPWM(prevKeyLED, 0); // turn prev sixteenth led OFF
-        }
-      }
-
-      if (transitionStepLEDs) {
-        setLEDPWM(keyLED, 4095); // turn sixteenth led ON
-      }
-    }
-
-    updateCurrentPatternStepState();
-    updateAllTrackStepStates();
-  } else if ( !(tick % bpm_blink_timer) ) {
+  if ((tick % (6)) && !(tick % bpm_blink_timer) ) {
     if (current_UI_mode == PATTERN_WRITE) {
       setDisplayStateForPatternActiveTracksLEDs(false);
     } else if (current_UI_mode == TRACK_WRITE || current_UI_mode == SUBMITTING_STEP_VALUE) {
       setDisplayStateForAllStepLEDs();
-      if (!function_started) displayPageLEDs(-1);
+      if (!function_started) {
+        displayPageLEDs(-1);
+      }
     }
   }
 
   // every 1/4 step log memory usage
   if (!(tick % 24)) {
-    Serial.print("Memory: ");
-    Serial.print(AudioMemoryUsage());
-    Serial.print(",");
-    Serial.print(AudioMemoryUsageMax());
-    Serial.println();
-
     // blink queued bank / pattern
     if (_queued_pattern.bank > -1 && _queued_pattern.number > -1) {
       draw_queue_blink = 1;
@@ -3668,6 +4350,34 @@ void handleEncoderSetTempo()
   }
 }
 
+void updateTrackLastStep(int diff);
+void updateTrackLastStep(int diff)
+{
+  TRACK currTrack = getHeapCurrentSelectedTrack();
+
+  int currLastStep = currTrack.last_step;
+  int newLastStep = currTrack.last_step + diff;
+
+  // make sure track last step doesn't exceed pattern's
+  PATTERN currPattern = getHeapCurrentSelectedPattern();
+
+  // TODO: try to re-align current playing track step with pattern step if able
+
+  if (newLastStep < 1) {
+    newLastStep = 1;
+  } else if (newLastStep > currPattern.last_step) {
+    newLastStep = currPattern.last_step;
+  }
+
+  if (newLastStep != currLastStep) {
+    _seq_heap.pattern.tracks[current_selected_track].last_step = newLastStep;
+
+    displayPageLEDs(-1);
+    setDisplayStateForAllStepLEDs();
+    drawSequencerScreen(false);
+  }
+}
+
 void updateTrackLength(int diff)
 {
   TRACK currTrack = getHeapCurrentSelectedTrack();
@@ -3683,7 +4393,7 @@ void updateTrackLength(int diff)
 
   if (!(newLen < 0 && newLen > 64) && (newLen != currLen)) {
     if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
-      _pattern_mods_mem.tracks[current_selected_track].step_mod_flags[current_selected_step].flags[5] = true;
+      _pattern_mods_mem.tracks[current_selected_track].step_mod_flags[current_selected_step].flags[MOD_ATTRS::LENGTH] = true;
       _pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].length = newLen;
     } else {
       _seq_heap.pattern.tracks[current_selected_track].length = newLen;
@@ -3697,7 +4407,12 @@ void updateSubtractiveSynthWaveform(int diff)
 {
   TRACK currTrack = getHeapCurrentSelectedTrack();
 
-  int newWaveform = (waveformFindMap[(int)currTrack.waveform]) + diff;
+  int currWaveform = waveformFindMap[(int)currTrack.waveform];
+  if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
+    currWaveform = waveformFindMap[(int)_pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].waveform];
+  }
+
+  int newWaveform = currWaveform + diff;
 
   if (newWaveform < 0) {
     newWaveform = 5;
@@ -3708,7 +4423,7 @@ void updateSubtractiveSynthWaveform(int diff)
   int waveformSel = waveformSelMap[newWaveform];
 
   if (current_UI_mode == SUBMITTING_STEP_VALUE) {
-    _pattern_mods_mem.tracks[current_selected_track].step_mod_flags[current_selected_step].flags[5] = true;
+    _pattern_mods_mem.tracks[current_selected_track].step_mod_flags[current_selected_step].flags[MOD_ATTRS::WAVEFORM] = true;
     _pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].waveform = waveformSel;
   } else {
     _seq_heap.pattern.tracks[current_selected_track].waveform = waveformSel;
@@ -3751,8 +4466,9 @@ void updateSubtractiveSynthFilterEnvAttack(int diff)
   }
 
   float newAtt = currTrack.filter_attack + (diff * mult);
-
-  if (!(newAtt < 0 || newAtt > 11880) && newAtt != currAtt) {
+  
+  // real max attack = 11880
+  if (!(newAtt < 0 || newAtt > 1000) && newAtt != currAtt) {
     _seq_heap.pattern.tracks[current_selected_track].filter_attack = newAtt;
 
     AudioNoInterrupts();
@@ -3778,7 +4494,7 @@ void updateTrackAmpEnvAttack(int diff)
 
   float newAtt = currTrack.amp_attack + (diff * mult);
 
-  if (!(newAtt < 1 || newAtt > 11880) && newAtt != currAtt) {
+  if (!(newAtt < 1 || newAtt > 500) && newAtt != currAtt) {
     _seq_heap.pattern.tracks[current_selected_track].amp_attack = newAtt;
 
     AudioNoInterrupts();
@@ -3794,9 +4510,9 @@ void updateComboTrackLevel(int diff)
   TRACK currTrack = getHeapCurrentSelectedTrack();
 
   float currLvl = currTrack.level;
-  float newLvl = currTrack.level + (diff * 0.1);
+  float newLvl = currTrack.level + (diff * 0.01);
 
-  if (!(newLvl < -0.1 || newLvl > 1.1) && newLvl != currLvl) {
+  if (!(newLvl < 0.0 || newLvl > 1.1) && newLvl != currLvl) {
     _seq_heap.pattern.tracks[current_selected_track].level = newLvl;
 
     AudioNoInterrupts();
@@ -3815,7 +4531,7 @@ void handleEncoderSubtractiveSynthModA(int diff)
   switch (current_page_selected)
   {
   case 0:
-    updateTrackLength(diff);
+    updateTrackLastStep(diff);
     break;
   case 1:
     updateSubtractiveSynthWaveform(diff);
@@ -3842,31 +4558,7 @@ void handleEncoderSubtractiveSynthModB(int diff)
   TRACK currTrack = getHeapCurrentSelectedTrack();
 
   if (current_page_selected == 0) {
-    float currVel = currTrack.velocity;
-    float newVel = currVel + diff;
-
-    if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
-      TRACK_STEP currStep = getHeapCurrentSelectedTrackStep();
-
-      currVel = currStep.velocity;
-      newVel = currVel + diff;
-    }
-
-    if (!(newVel < 1 || newVel > 100) && newVel != currVel) {
-      if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
-        _pattern_mods_mem.tracks[current_selected_track].step_mod_flags[current_selected_step].flags[6] = true;
-        _pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].velocity = newVel;
-      } else {
-        _seq_heap.pattern.tracks[current_selected_track].velocity = newVel;
-      }
-
-      // AudioNoInterrupts();
-      // voices[current_selected_track].leftCtrl.gain(newVel * 0.01);
-      // voices[current_selected_track].rightCtrl.gain(newVel * 0.01);
-      // AudioInterrupts();
-
-      drawSequencerScreen(false);
-    }
+    updateTrackLength(diff);
   } else if (current_page_selected == 1) {
     float currDetune = currTrack.detune;
     float newDetune = currDetune + diff;
@@ -3947,7 +4639,8 @@ void handleEncoderSubtractiveSynthModB(int diff)
 
     float newDecay = currTrack.amp_decay + (diff * mult);
 
-    if (!(newDecay < 0 || newDecay > 11880) && newDecay != currDecay) {
+    // real max decay = 11880
+    if (!(newDecay < 0 || newDecay > 500) && newDecay != currDecay) {
       _seq_heap.pattern.tracks[current_selected_track].amp_decay = newDecay;
 
       AudioNoInterrupts();
@@ -3974,8 +4667,10 @@ void handleEncoderSubtractiveSynthModB(int diff)
       }
 
       AudioNoInterrupts();
-      comboVoices[current_selected_track].leftCtrl.gain(newGainL);
-      comboVoices[current_selected_track].rightCtrl.gain(newGainR);
+      // comboVoices[current_selected_track].leftCtrl.gain(getStereoPanValues(newPan).left * (currTrack.velocity * 0.01));
+      // comboVoices[current_selected_track].leftCtrl.gain(getStereoPanValues(newPan).right * (currTrack.velocity * 0.01));
+      comboVoices[current_selected_track].leftCtrl.gain(newGainR);
+      comboVoices[current_selected_track].rightCtrl.gain(newGainL);
       AudioInterrupts();
 
       drawSequencerScreen(false);
@@ -3988,7 +4683,31 @@ void handleEncoderSubtractiveSynthModC(int diff)
   TRACK currTrack = getHeapCurrentSelectedTrack();
 
   if (current_page_selected == 0) {
-    // probability
+    float currVel = currTrack.velocity;
+    float newVel = currVel + diff;
+
+    if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
+      TRACK_STEP currStep = getHeapCurrentSelectedTrackStep();
+
+      currVel = currStep.velocity;
+      newVel = currVel + diff;
+    }
+
+    if (!(newVel < 1 || newVel > 100) && newVel != currVel) {
+      if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
+        _pattern_mods_mem.tracks[current_selected_track].step_mod_flags[current_selected_step].flags[MOD_ATTRS::VELOCITY] = true;
+        _pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].velocity = newVel;
+      } else {
+        _seq_heap.pattern.tracks[current_selected_track].velocity = newVel;
+      }
+
+      // AudioNoInterrupts();
+      // voices[current_selected_track].leftCtrl.gain(newVel * 0.01);
+      // voices[current_selected_track].rightCtrl.gain(newVel * 0.01);
+      // AudioInterrupts();
+
+      drawSequencerScreen(false);
+    }
   } else if (current_page_selected == 1) {
     float currFine = currTrack.fine;
     float newFine = currFine + diff;
@@ -4067,27 +4786,7 @@ void handleEncoderSubtractiveSynthModC(int diff)
       drawSequencerScreen(false);
     }
   } else if (current_page_selected == 5) {
-    int currLastStep = currTrack.last_step;
-    int newLastStep = currTrack.last_step + diff;
-
-    // make sure track last step doesn't exceed pattern's
-    PATTERN currPattern = getHeapCurrentSelectedPattern();
-
-    // TODO: try to re-align current playing track step with pattern step if able
-
-    if (newLastStep < 1) {
-      newLastStep = 1;
-    } else if (newLastStep > currPattern.last_step) {
-      newLastStep = currPattern.last_step;
-    }
-
-    if (newLastStep != currLastStep) {
-      _seq_heap.pattern.tracks[current_selected_track].last_step = newLastStep;
-
-      displayPageLEDs(-1);
-      setDisplayStateForAllStepLEDs();
-      drawSequencerScreen(false);
-    }
+    //
   }
 }
 
@@ -4162,6 +4861,7 @@ void handleEncoderSubtractiveSynthModD(int diff)
 
     float newRel = currTrack.amp_release + (diff * mult);
 
+    // real max release = 11880
     if (!(newRel < 0 || newRel > 11880) && newRel != curRel) {
       _seq_heap.pattern.tracks[current_selected_track].amp_release = newRel;
 
@@ -4181,57 +4881,47 @@ void handleEncoderRawSampleModA(int diff)
   TRACK currTrack = getHeapCurrentSelectedTrack();
 
   if (current_page_selected == 0) {
-    Serial.print("diff: ");
-    Serial.print(diff);
-    Serial.print(" currTrack.raw_sample_id: ");
-    Serial.println(currTrack.raw_sample_id);
+    int currLastStep = currTrack.last_step;
+    int newLastStep = currTrack.last_step + diff;
 
-    int newSampleId = currTrack.raw_sample_id + diff;
+    // make sure track last step doesn't exceed pattern's
+    PATTERN currPattern = getHeapCurrentSelectedPattern();
 
-    Serial.print("newSampleId: ");
-    Serial.println(newSampleId);
-
-    if (newSampleId < 0) {
-      newSampleId = (rawSamplesAvailable-1);
-    } else if (newSampleId > (rawSamplesAvailable-1)) {
-      newSampleId = 0;
+    // TODO: try to re-align current playing track step with pattern step if able
+    if (newLastStep < 1) {
+      newLastStep = 1;
+    } else if (newLastStep > currPattern.last_step) {
+      newLastStep = currPattern.last_step;
     }
 
-    Serial.print("rawSamplesAvailable: ");
-    Serial.println(rawSamplesAvailable);
+    if (newLastStep != currLastStep) {
+      _seq_heap.pattern.tracks[current_selected_track].last_step = newLastStep;
 
-    Serial.print("newSampleId post: ");
-    Serial.println(newSampleId);
-
-    _seq_heap.pattern.tracks[current_selected_track].raw_sample_id = newSampleId;
-
-    drawSequencerScreen(false);
+      displayPageLEDs(-1);
+      setDisplayStateForAllStepLEDs();
+      drawSequencerScreen(false);
+    }
   } else if (current_page_selected == 1) {
+    int currLoopType = currTrack.looptype;
 
-    Serial.print("currTrack.looptype pre: ");
-    Serial.println(currTrack.looptype);
+    if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
+      currLoopType = _pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].looptype;
+    }
 
-    int newLoopType = (currTrack.looptype + diff);
-
-    Serial.print("newLoopType pre: ");
-    Serial.println(newLoopType);
+    int newLoopType = (currLoopType + diff);
 
     if (newLoopType < 0) {
-      newLoopType = 2;
-    } else if (newLoopType > 2) {
+      newLoopType = 1;
+    } else if (newLoopType > 1) {
       newLoopType = 0;
     }
 
-    Serial.print("newLoopType post: ");
-    Serial.println(newLoopType);
-
-    if (newLoopType == 2) {
-      _seq_heap.pattern.tracks[current_selected_track].chromatic_enabled = true;
+    if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
+      _pattern_mods_mem.tracks[current_selected_track].step_mod_flags[current_selected_step].flags[MOD_ATTRS::LOOPTYPE] = true;
+      _pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].looptype = newLoopType;
     } else {
-      _seq_heap.pattern.tracks[current_selected_track].chromatic_enabled = false;
+      _seq_heap.pattern.tracks[current_selected_track].looptype = newLoopType;
     }
-
-    _seq_heap.pattern.tracks[current_selected_track].looptype = newLoopType;
 
     drawSequencerScreen(false);
   } else if (current_page_selected == 2) {
@@ -4246,7 +4936,8 @@ void handleEncoderRawSampleModA(int diff)
 
     float newAtt = currTrack.amp_attack + (diff * mult);
 
-    if (!(newAtt < 1 || newAtt > 11880) && newAtt != currAtt) {
+    // real max attack = 11880
+    if (!(newAtt < 1 || newAtt > 1000) && newAtt != currAtt) {
       _seq_heap.pattern.tracks[current_selected_track].amp_attack = newAtt;
 
       if (current_selected_track > 3) {
@@ -4261,12 +4952,17 @@ void handleEncoderRawSampleModA(int diff)
 
       drawSequencerScreen(false);
     }
-  }else if (current_page_selected == 3) {
+  } else if (current_page_selected == 3) {
     float currLvl = currTrack.level;
-    float newLvl = currTrack.level + (diff * 0.1);
+    float newLvl = currTrack.level + (diff * 0.01);
 
-    if (!(newLvl < -0.1 || newLvl > 1.1) && newLvl != currLvl) {
+    if (!(newLvl < 0.0 || newLvl > 1.1) && newLvl != currLvl) {
       _seq_heap.pattern.tracks[current_selected_track].level = newLvl;
+
+      Serial.print("current_selected_track: ");
+      Serial.print(current_selected_track);
+      Serial.print(" newLvl: ");
+      Serial.println(newLvl);
 
       if (current_selected_track > 3) {
         AudioNoInterrupts();
@@ -4294,33 +4990,23 @@ void handleEncoderRawSampleModB(int diff)
   TRACK currTrack = getHeapCurrentSelectedTrack();
 
   if (current_page_selected == 0) {
-    // sample speed adj
-    float currSpeed = currTrack.sample_play_rate;
-    float newSpeed = currSpeed + (diff * 0.1);
+    int newSampleId = currTrack.raw_sample_id + diff;
 
-    if (!(newSpeed < -1.1 || newSpeed > 10.1) && newSpeed != currSpeed) {
-      if ((currSpeed > 0.0 && newSpeed < 0.1) || (currSpeed == -1.0 && newSpeed < -1.0)) {
-        newSpeed = -1.0;
-      } else if (currSpeed <= -1.0 && newSpeed > -1.0) {
-        newSpeed = 0.1;
-      }
-
-      _seq_heap.pattern.tracks[current_selected_track].sample_play_rate = newSpeed;
-      
-      if (current_selected_track > 3) {
-        AudioNoInterrupts();
-        sampleVoices[current_selected_track-4].rSample.setPlaybackRate(newSpeed);
-        AudioInterrupts();
-      } else {
-        AudioNoInterrupts();
-        comboVoices[current_selected_track].rSample.setPlaybackRate(newSpeed);
-        AudioInterrupts();
-      }
-
-      drawSequencerScreen(false);
+    if (newSampleId < 0) {
+      newSampleId = (rawSamplesAvailable-1);
+    } else if (newSampleId > (rawSamplesAvailable-1)) {
+      newSampleId = 0;
     }
+
+    _seq_heap.pattern.tracks[current_selected_track].raw_sample_id = newSampleId;
+
+    drawSequencerScreen(false);
   } else if (current_page_selected == 1) {
     uint32_t currLoopStart = currTrack.loopstart;
+
+    if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
+      currLoopStart = _pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].loopstart;
+    }
 
     int mult = 1;
     if (abs(diff) > 5) {
@@ -4331,8 +5017,14 @@ void handleEncoderRawSampleModB(int diff)
 
     uint32_t newLoopStart = currLoopStart + (diff * mult);
 
-    if (!(newLoopStart < 0) && newLoopStart != currLoopStart) {
-      _seq_heap.pattern.tracks[current_selected_track].loopstart = newLoopStart;
+    if (!(newLoopStart < 0 || newLoopStart > 10000) && newLoopStart != currLoopStart) {
+
+      if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
+        _pattern_mods_mem.tracks[current_selected_track].step_mod_flags[current_selected_step].flags[MOD_ATTRS::LOOPSTART] = true;
+        _pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].loopstart = newLoopStart;
+      } else {
+        _seq_heap.pattern.tracks[current_selected_track].loopstart = newLoopStart;
+      }
 
       drawSequencerScreen(false);
     }
@@ -4348,7 +5040,8 @@ void handleEncoderRawSampleModB(int diff)
 
     float newDecay = currTrack.amp_decay + (diff * mult);
 
-    if (!(newDecay < 0 || newDecay > 11880) && newDecay != currDecay) {
+    // real max decay = 11880
+    if (!(newDecay < 0 || newDecay > 500) && newDecay != currDecay) {
       _seq_heap.pattern.tracks[current_selected_track].amp_decay = newDecay;
 
       if (current_selected_track > 3) {
@@ -4382,13 +5075,17 @@ void handleEncoderRawSampleModB(int diff)
 
       if (current_selected_track > 3) {
         AudioNoInterrupts();
-        sampleVoices[current_selected_track-4].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
-        sampleVoices[current_selected_track-4].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+        // sampleVoices[current_selected_track-4].leftCtrl.gain(getStereoPanValues(newPan).left * (currTrack.velocity * 0.01));
+        // sampleVoices[current_selected_track-4].leftCtrl.gain(getStereoPanValues(newPan).right * (currTrack.velocity * 0.01));
+        sampleVoices[current_selected_track-4].leftCtrl.gain(newGainR);
+        sampleVoices[current_selected_track-4].rightCtrl.gain(newGainL);
         AudioInterrupts();
       } else {
         AudioNoInterrupts();
-        comboVoices[current_selected_track].leftCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
-        comboVoices[current_selected_track].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+        // comboVoices[current_selected_track].leftCtrl.gain(getStereoPanValues(newPan).left * (currTrack.velocity * 0.01));
+        // comboVoices[current_selected_track].leftCtrl.gain(getStereoPanValues(newPan).right * (currTrack.velocity * 0.01));
+        comboVoices[current_selected_track].leftCtrl.gain(newGainR);
+        comboVoices[current_selected_track].rightCtrl.gain(newGainL);
         AudioInterrupts();
       }
 
@@ -4402,9 +5099,50 @@ void handleEncoderRawSampleModC(int diff)
   TRACK currTrack = getHeapCurrentSelectedTrack();
 
   if (current_page_selected == 0) {
-    // n/a
+    // sample speed adj
+    float currSpeed = currTrack.sample_play_rate;
+
+    if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
+      currSpeed = _pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].sample_play_rate;
+    }
+
+    float newSpeed = currSpeed + (diff * 0.1);
+
+    if (!(newSpeed < -1.1 || newSpeed > 10.1) && newSpeed != currSpeed) {
+      if ((currSpeed > 0.0 && newSpeed < 0.1) || (currSpeed == -1.0 && newSpeed < -1.0)) {
+        newSpeed = -1.0;
+      } else if (currSpeed <= -1.0 && newSpeed > -1.0) {
+        newSpeed = 0.1;
+      }
+
+      if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
+        _pattern_mods_mem.tracks[current_selected_track].step_mod_flags[current_selected_step].flags[MOD_ATTRS::SAMPLE_PLAY_RATE] = true;
+        _pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].sample_play_rate = newSpeed;
+      } else {
+        _seq_heap.pattern.tracks[current_selected_track].sample_play_rate = newSpeed;
+      }
+      
+      if (current_selected_track > 3) {
+        AudioNoInterrupts();
+        sampleVoices[current_selected_track-4].rSample.setPlaybackRate(newSpeed);
+        AudioInterrupts();
+      } else {
+        AudioNoInterrupts();
+        comboVoices[current_selected_track].rSample.setPlaybackRate(newSpeed);
+        AudioInterrupts();
+      }
+
+      drawSequencerScreen(false);
+    }
   } else if (current_page_selected == 1) {
     uint32_t currLoopFinish = currTrack.loopfinish;
+
+    if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
+      currLoopFinish = _pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].loopfinish;
+    }
+
+    Serial.print("currLoopFinish: ");
+    Serial.println(currLoopFinish);
 
     int mult = 1;
     if (abs(diff) > 5) {
@@ -4414,10 +5152,18 @@ void handleEncoderRawSampleModC(int diff)
     }
 
     uint32_t newLoopFinish = currLoopFinish + (diff * mult);
-    
 
-    if (!(newLoopFinish < 0) && newLoopFinish != currLoopFinish) {
-      _seq_heap.pattern.tracks[current_selected_track].loopfinish = newLoopFinish;
+    Serial.print("newLoopFinish: ");
+    Serial.println(newLoopFinish);
+
+    if (!(newLoopFinish < 0 || newLoopFinish > 10000) && newLoopFinish != currLoopFinish) {
+
+      if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
+        _pattern_mods_mem.tracks[current_selected_track].step_mod_flags[current_selected_step].flags[MOD_ATTRS::LOOPFINISH] = true;
+        _pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].loopfinish = newLoopFinish;
+      } else {
+        _seq_heap.pattern.tracks[current_selected_track].loopfinish = newLoopFinish;
+      }
 
       drawSequencerScreen(false);
     }
@@ -4441,27 +5187,7 @@ void handleEncoderRawSampleModC(int diff)
       drawSequencerScreen(false);
     }
   } else if (current_page_selected == 3) {
-    int currLastStep = currTrack.last_step;
-    int newLastStep = currTrack.last_step + diff;
-
-    // make sure track last step doesn't exceed pattern's
-    PATTERN currPattern = getHeapCurrentSelectedPattern();
-
-    // TODO: try to re-align current playing track step with pattern step if able
-
-    if (newLastStep < 1) {
-      newLastStep = 1;
-    } else if (newLastStep > currPattern.last_step) {
-      newLastStep = currPattern.last_step;
-    }
-
-    if (newLastStep != currLastStep) {
-      _seq_heap.pattern.tracks[current_selected_track].last_step = newLastStep;
-
-      displayPageLEDs(-1);
-      setDisplayStateForAllStepLEDs();
-      drawSequencerScreen(false);
-    }
+    //
   }
 }
 
@@ -4496,10 +5222,13 @@ void handleEncoderRawSampleModD(int diff)
       drawSequencerScreen(false);
     }
   } else if (current_page_selected == 1) {
-    int newPlayStart = (playStartFindMap[currTrack.playstart]) + diff;
+    play_start currPlaystart = currTrack.playstart;
 
-    Serial.print("newPlayStart pre: ");
-    Serial.println(newPlayStart);
+    if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
+      currPlaystart = _pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].playstart;
+    }
+
+    int newPlayStart = (playStartFindMap[currPlaystart]) + diff;
 
     if (newPlayStart < 0) {
       newPlayStart = 1;
@@ -4507,12 +5236,14 @@ void handleEncoderRawSampleModD(int diff)
       newPlayStart = 0;
     }
 
-    Serial.print("newPlayStart post: ");
-    Serial.println(newPlayStart);
-
     play_start playStartSel = playStartSelMap[newPlayStart];
 
-    _seq_heap.pattern.tracks[current_selected_track].playstart = playStartSel;
+    if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
+      _pattern_mods_mem.tracks[current_selected_track].step_mod_flags[current_selected_step].flags[MOD_ATTRS::PLAYSTART] = true;
+      _pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].playstart = playStartSel;
+    } else {
+      _seq_heap.pattern.tracks[current_selected_track].playstart = playStartSel;
+    }
 
     drawSequencerScreen(false);
   } else if (current_page_selected == 2) {
@@ -4527,6 +5258,7 @@ void handleEncoderRawSampleModD(int diff)
 
     float newRel = currTrack.amp_release + (diff * mult);
 
+    // real max release = 11880
     if (!(newRel < 0 || newRel > 11880) && newRel != curRel) {
       _seq_heap.pattern.tracks[current_selected_track].amp_release = newRel;
     
@@ -4551,6 +5283,32 @@ void handleEncoderWavSampleModA(int diff)
 {
   TRACK currTrack = getHeapCurrentSelectedTrack();
 
+  int currLastStep = currTrack.last_step;
+  int newLastStep = currTrack.last_step + diff;
+
+  // make sure track last step doesn't exceed pattern's
+  PATTERN currPattern = getHeapCurrentSelectedPattern();
+
+  // TODO: try to re-align current playing track step with pattern step if able
+  if (newLastStep < 1) {
+    newLastStep = 1;
+  } else if (newLastStep > currPattern.last_step) {
+    newLastStep = currPattern.last_step;
+  }
+
+  if (newLastStep != currLastStep) {
+    _seq_heap.pattern.tracks[current_selected_track].last_step = newLastStep;
+
+    displayPageLEDs(-1);
+    setDisplayStateForAllStepLEDs();
+    drawSequencerScreen(false);
+  }
+}
+
+void handleEncoderWavSampleModB(int diff)
+{
+  TRACK currTrack = getHeapCurrentSelectedTrack();
+
   int newSampleId = currTrack.wav_sample_id + diff;
 
   if (newSampleId < 0) {
@@ -4564,17 +5322,71 @@ void handleEncoderWavSampleModA(int diff)
   drawSequencerScreen(false);
 }
 
-void handleEncoderWavSampleModB(int diff)
-{
-  //
-}
-
 void handleEncoderWavSampleModC(int diff)
 {
   //
 }
 
 void handleEncoderWavSampleModD(int diff)
+{
+  //
+}
+
+void handleEncoderCvGateModA(int diff)
+{
+  TRACK currTrack = getHeapCurrentSelectedTrack();
+
+  int currLastStep = currTrack.last_step;
+  int newLastStep = currTrack.last_step + diff;
+
+  // make sure track last step doesn't exceed pattern's
+  PATTERN currPattern = getHeapCurrentSelectedPattern();
+
+  // TODO: try to re-align current playing track step with pattern step if able
+  if (newLastStep < 1) {
+    newLastStep = 1;
+  } else if (newLastStep > currPattern.last_step) {
+    newLastStep = currPattern.last_step;
+  }
+
+  if (newLastStep != currLastStep) {
+    _seq_heap.pattern.tracks[current_selected_track].last_step = newLastStep;
+
+    displayPageLEDs(-1);
+    setDisplayStateForAllStepLEDs();
+    drawSequencerScreen(false);
+  }
+}
+
+void handleEncoderCvGateModB(int diff)
+{
+  updateTrackLength(diff);
+}
+
+void handleEncoderCvGateModC(int diff)
+{
+  TRACK currTrack = getHeapCurrentSelectedTrack();
+
+  int currOutput = currTrack.channel;
+  int newOutput = currTrack.channel + diff;
+
+  // TODO: try to re-align current playing track step with pattern step if able
+  if (newOutput < 1) {
+    newOutput = 1;
+  } else if (newOutput > 4) {
+    newOutput = 4;
+  }
+
+  if (newOutput != currOutput) {
+    _seq_heap.pattern.tracks[current_selected_track].channel = newOutput;
+
+    displayPageLEDs(-1);
+    setDisplayStateForAllStepLEDs();
+    drawSequencerScreen(false);
+  }
+}
+
+void handleEncoderCvGateModD(int diff)
 {
   //
 }
@@ -4608,12 +5420,51 @@ void handleEncoderPatternModA(int diff)
 
 void handleEncoderPatternModB(int diff)
 {
-  //
+  PATTERN currPattern = getHeapCurrentSelectedPattern();
+
+  int currGrooveId = currPattern.groove_id;
+  int newGrooveId = currPattern.groove_id + diff;
+
+  if (newGrooveId < -1) {
+    newGrooveId = -1;
+  } else if (newGrooveId > MAXIMUM_GROOVE_CONFIGS-1) {
+    newGrooveId = MAXIMUM_GROOVE_CONFIGS-1;
+  }
+
+  if (newGrooveId != currGrooveId) {
+    _seq_heap.pattern.groove_id = newGrooveId;
+
+    if (newGrooveId == -1) {
+      uClock.setShuffle(false);
+    } else if (!uClock.isShuffled()) {
+      uClock.setShuffleTemplate(_grooves.configs[newGrooveId].templates[currPattern.groove_amount]);
+      uClock.setShuffle(true);
+    }
+
+    drawSequencerScreen(false);
+  }
 }
 
 void handleEncoderPatternModC(int diff)
 {
-  //
+  PATTERN currPattern = getHeapCurrentSelectedPattern();
+
+  int currGrooveAmt = currPattern.groove_amount;
+  int newGrooveAmt = currPattern.groove_amount + diff;
+
+  if (newGrooveAmt < 0) {
+    newGrooveAmt = 0;
+  } else if (newGrooveAmt > MAXIMUM_GROOVE_OPTIONS-1) {
+    newGrooveAmt = MAXIMUM_GROOVE_OPTIONS-1;
+  }
+
+  if (newGrooveAmt != currGrooveAmt) {
+    _seq_heap.pattern.groove_amount = newGrooveAmt;
+
+    uClock.setShuffleTemplate(_grooves.configs[currPattern.groove_id].templates[newGrooveAmt]);
+
+    drawSequencerScreen(false);
+  }
 }
 
 void handleEncoderPatternModD(int diff)
@@ -4664,6 +5515,16 @@ void handleEncoderSetTrackMods(void)
           handleEncoderWavSampleModC(diff);
         } else if (m == 3) {
           handleEncoderWavSampleModD(diff);
+        }
+      } else if (currTrack.track_type == CV_GATE) {
+        if (m == 0) {
+          handleEncoderCvGateModA(diff);
+        } else if (m == 1) {
+          handleEncoderCvGateModB(diff);
+        } else if (m == 2) {
+          handleEncoderCvGateModC(diff);
+        } else if (m == 3) {
+          handleEncoderCvGateModD(diff);
         }
       }
 
@@ -4778,7 +5639,10 @@ void handleKeyboardSetRatchets(void)
       
       invertedNoteNumber = backwardsNoteNumbers[i];
       ratchet_division = keyed_ratchet_divisions[invertedNoteNumber];
-    if (ratchets_held < 3) ++ratchets_held;
+
+      if (ratchets_held < 3) ++ratchets_held;
+
+      drawSequencerScreen(false);
     }
     // if it *was* touched and now *isnt*, alert!
     if (!(currtouched & _BV(i)) && (lasttouched & _BV(i)) ) {
@@ -4789,7 +5653,10 @@ void handleKeyboardSetRatchets(void)
 
       Serial.print("ratchets_held");
       Serial.println(ratchets_held);
+
       if (ratchets_held == 0) ratchetReleaseTime = elapsed;
+
+      drawSequencerScreen(false);
     }
   }
 
@@ -4800,7 +5667,10 @@ void handleKeyboardSetRatchets(void)
     fastBtnPressed = true;
     invertedNoteNumber = backwardsNoteNumbers[12];
     ratchet_division = keyed_ratchet_divisions[invertedNoteNumber];
+
     if (ratchets_held < 3) ++ratchets_held;
+
+    drawSequencerScreen(false);
 
   } else if (fastBtnPressed && fastTouchRead(32) < 64) {
     std::string releasedStr = "Released key: 12";
@@ -4813,7 +5683,10 @@ void handleKeyboardSetRatchets(void)
 
       Serial.print("ratchets_held");
       Serial.println(ratchets_held);
-    if (ratchets_held == 0) ratchetReleaseTime = elapsed;
+      
+      if (ratchets_held == 0) ratchetReleaseTime = elapsed;
+
+    drawSequencerScreen(false);
   }
 
   // reset our state
@@ -4878,6 +5751,24 @@ void handleKeyboardStates(void) {
               comboVoices[current_selected_track].filterEnv.noteOff();
             }
           }
+
+          if (currSelTrack.track_type == MIDI_OUT) {
+            MIDI.sendNoteOff(64, 100, 1);
+          } else if (currSelTrack.track_type == CV_GATE) {
+            if (currSelTrack.channel == 1) {
+              //writeToDAC(CS1, 0, cvLevels[midiNote]); // cv
+              writeToDAC(CS1, 1, 0); // gate
+            } else if (currSelTrack.channel == 2)  {
+              //writeToDAC(CS2, 0, cvLevels[midiNote]); // cv
+              writeToDAC(CS2, 1, 0); // gate
+            } else if (currSelTrack.channel == 3) {
+              //writeToDAC(CS3, 0, cvLevels[midiNote]); // cv
+              writeToDAC(CS3, 1, 0); // gate
+            } else if (currSelTrack.channel == 4)  {
+              //writeToDAC(CS4, 0, cvLevels[midiNote]); // cv
+              writeToDAC(CS4, 1, 0); // gate
+            }
+          } 
         }
       }
     }
@@ -4915,9 +5806,9 @@ void handleKeyboardStates(void) {
   // released a key button, so modify a step's note number if also holding a step button
   if (released && invertedNoteNumber > -1) {
     if (current_UI_mode == SUBMITTING_STEP_VALUE && current_selected_step > -1) {
-      _pattern_mods_mem.tracks[current_selected_track].step_mod_flags[current_selected_step].flags[3] = true;
+      _pattern_mods_mem.tracks[current_selected_track].step_mod_flags[current_selected_step].flags[MOD_ATTRS::NOTE] = true;
       _pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].note = invertedNoteNumber;
-      _pattern_mods_mem.tracks[current_selected_track].step_mod_flags[current_selected_step].flags[4] = true;
+      _pattern_mods_mem.tracks[current_selected_track].step_mod_flags[current_selected_step].flags[MOD_ATTRS::OCTAVE] = true;
       _pattern_mods_mem.tracks[current_selected_track].steps[current_selected_step].octave = keyboardOctave;
 
       drawSequencerScreen(false);
@@ -4938,6 +5829,24 @@ void handleKeyboardStates(void) {
             comboVoices[current_selected_track].filterEnv.noteOff();
           }
         }
+
+        if (currSelTrack.track_type == MIDI_OUT) {
+          MIDI.sendNoteOff(64, 100, 1);
+        } else if (currSelTrack.track_type == CV_GATE) {
+          if (currSelTrack.channel == 1) {
+            //writeToDAC(CS1, 0, cvLevels[midiNote]); // cv
+            writeToDAC(CS1, 1, 0); // gate
+          } else if (currSelTrack.channel == 2)  {
+            //writeToDAC(CS2, 0, cvLevels[midiNote]); // cv
+            writeToDAC(CS2, 1, 0); // gate
+          } else if (currSelTrack.channel == 3) {
+            //writeToDAC(CS3, 0, cvLevels[midiNote]); // cv
+            writeToDAC(CS3, 1, 0); // gate
+          } else if (currSelTrack.channel == 4)  {
+            //writeToDAC(CS4, 0, cvLevels[midiNote]); // cv
+            writeToDAC(CS4, 1, 0); // gate
+          }
+        } 
       }
     }
   }
@@ -4968,7 +5877,7 @@ void handleSwitchStates(bool discard) {
 
                 return;
               } else if (current_UI_mode == PROJECT_INITIALIZE && !project_initialized) {
-                if (kpd.key[i].kchar == 'j') { // select
+                if (kpd.key[i].kchar == SELECT_BTN_CHAR) { // select
                   initProject();
                 }
               } else if (current_UI_mode == PROJECT_BUSY && !project_initialized) {
@@ -5023,8 +5932,8 @@ void handleSwitchStates(bool discard) {
                   } else if (currType == RAW_SAMPLE) {
                     newType = WAV_SAMPLE;
                   } else if (currType == WAV_SAMPLE) {
-                    newType = MIDI;
-                  } else if (currType == MIDI) {
+                    newType = MIDI_OUT;
+                  } else if (currType == MIDI_OUT) {
                     newType = CV_GATE;
                   } else if (currType == CV_GATE) {
                     newType = CV_TRIG;
@@ -5078,13 +5987,14 @@ void handleSwitchStates(bool discard) {
                 }
 
                 // paste
-                else if (current_UI_mode == COPY_STEP && step_copy_available && (btnCharIsATrack(kpd.key[i].kchar) || kpd.key[i].kchar == 'i')) { // paste step
-                  if (kpd.key[i].kchar == 'i') {
+                else if (current_UI_mode == COPY_STEP && step_copy_available && (btnCharIsATrack(kpd.key[i].kchar) || kpd.key[i].kchar == ESCAPE_BTN_CHAR)) { // paste step
+                  if (kpd.key[i].kchar == ESCAPE_BTN_CHAR) {
                     step_copy_available = false;
                     current_UI_mode = previous_UI_mode;
                     clearAllStepLEDs();
                     if (current_UI_mode == TRACK_WRITE) setDisplayStateForAllStepLEDs();
                     drawSequencerScreen();
+                    return;
                   }
 
                   uint8_t stepToUse = getKeyStepNum(kpd.key[i].kchar);
@@ -5106,13 +6016,14 @@ void handleSwitchStates(bool discard) {
 
                   Serial.println("drawing paste step confirm overlay!");
                   drawPasteConfirmOverlay("STEP", stepToUse);
-                } else if (current_UI_mode == COPY_PATTERN && pattern_copy_available && (btnCharIsATrack(kpd.key[i].kchar) || kpd.key[i].kchar == 'i')) { // paste pattern
-                  if (kpd.key[i].kchar == 'i') {
+                } else if (current_UI_mode == COPY_PATTERN && pattern_copy_available && (btnCharIsATrack(kpd.key[i].kchar) || kpd.key[i].kchar == ESCAPE_BTN_CHAR)) { // paste pattern
+                  if (kpd.key[i].kchar == ESCAPE_BTN_CHAR) {
                     pattern_copy_available = false;
                     current_UI_mode = previous_UI_mode;
                     clearAllStepLEDs();
                     if (current_UI_mode == TRACK_WRITE) setDisplayStateForAllStepLEDs();
                     drawSequencerScreen();
+                    return;
                   }
 
                   Serial.println("pasting selected pattern to target pattern!");
@@ -5144,13 +6055,14 @@ void handleSwitchStates(bool discard) {
                     current_selected_pattern = targetPattern;
                     swapSequencerMemoryForPattern(current_selected_bank, targetPattern); // TODO: rework this to enable pasting patterns across banks too
                   }
-                } else if (current_UI_mode == COPY_TRACK && track_copy_available && (btnCharIsATrack(kpd.key[i].kchar) || kpd.key[i].kchar == 'i')) { // paste track
-                  if (kpd.key[i].kchar == 'i') {
+                } else if (current_UI_mode == COPY_TRACK && track_copy_available && (btnCharIsATrack(kpd.key[i].kchar) || kpd.key[i].kchar == ESCAPE_BTN_CHAR)) { // paste track
+                  if (kpd.key[i].kchar == ESCAPE_BTN_CHAR) {
                     track_copy_available = false;
                     current_UI_mode = previous_UI_mode;
                     clearAllStepLEDs();
                     if (current_UI_mode == TRACK_WRITE) setDisplayStateForAllStepLEDs();
                     drawSequencerScreen();
+                    return;
                   }
 
                   Serial.println("pasting selected track to target track!");
@@ -5339,6 +6251,35 @@ void handleSwitchStates(bool discard) {
                   current_UI_mode = CHANGE_SETUP;
 
                   drawSetupScreen();
+                } else if ((current_UI_mode == TRACK_WRITE || current_UI_mode == PATTERN_WRITE) && kpd.key[i].kchar == 'b') {
+                  previous_UI_mode = current_UI_mode;
+                  current_UI_mode = BANK_SEL;
+
+                  clearAllStepLEDs();
+                  displayCurrentlySelectedBank();
+                } else if (current_UI_mode == BANK_SEL && btnCharIsATrack(kpd.key[i].kchar)) {
+                  uint8_t selBank = getKeyStepNum(kpd.key[i].kchar)-1; // zero-based
+
+                  if (_seq_state.playback_state == RUNNING) {
+                    _queued_pattern.bank = selBank;
+                    _queued_pattern.number = current_selected_pattern;
+
+                    current_UI_mode = previous_UI_mode;
+                    previous_UI_mode = BANK_SEL;
+                  } else {
+                    swapSequencerMemoryForPattern(selBank, current_selected_pattern);
+
+                    Serial.print("marking pressed bank selection (zero-based): ");
+                    Serial.println(selBank);
+
+                    bnk_held_for_selection = selBank;
+
+                    previous_UI_mode = BANK_SEL;
+                    current_UI_mode = BANK_SEL;
+
+                    clearAllStepLEDs();
+                    displayCurrentlySelectedBank();
+                  }
                 } else if (current_UI_mode == TRACK_WRITE && kpd.key[i].kchar == 'c') {
                   // TODO: impl AB layer switching mechanic
                 }
@@ -5441,6 +6382,7 @@ void handleSwitchStates(bool discard) {
               else if (current_UI_mode == PERFORM_RATCHET && btnCharIsATrack(kpd.key[i].kchar)) { // handle ratchets
                 if (_seq_state.playback_state == RUNNING) {
                   ratcheting_track = getKeyStepNum(kpd.key[i].kchar)-1;
+                  drawSequencerScreen(false);
                 }
               }
 
@@ -5513,6 +6455,27 @@ void handleSwitchStates(bool discard) {
                 drawSequencerScreen(false);
               }
 
+              // bank select release              
+              else if (current_UI_mode == BANK_SEL && kpd.key[i].kchar == 'b' && bnk_held_for_selection == -1) {      
+                current_UI_mode = PATTERN_WRITE; // force patt write mode when leaving bank / bank select action
+                previous_UI_mode = PATTERN_WRITE;
+
+                clearPageLEDs();
+                clearAllStepLEDs();
+                drawSequencerScreen(false);
+              } else if (current_UI_mode == BANK_SEL && btnCharIsATrack(kpd.key[i].kchar) && ((getKeyStepNum(kpd.key[i].kchar)-1) == bnk_held_for_selection)) {   
+                Serial.println("unmarking bank as held for selection!");   
+
+                current_selected_bank = getKeyStepNum(kpd.key[i].kchar)-1;
+                bnk_held_for_selection = -1;
+                clearAllStepLEDs();
+
+                current_UI_mode = PATTERN_WRITE; // force patt write mode when leaving bank / bank select action
+                previous_UI_mode = PATTERN_WRITE;
+
+                drawSequencerScreen(false);
+              }
+
               // copy release
               else if (current_UI_mode == COPY_SEL && kpd.key[i].kchar == COPY_BTN_CHAR) {
                 Serial.print(" reverting copy mode, entering: ");
@@ -5578,7 +6541,7 @@ void handleSwitchStates(bool discard) {
 
               // setup screen release
               else if ( current_UI_mode == CHANGE_SETUP) {
-                if (kpd.key[i].kchar == 'j') { // select
+                if (kpd.key[i].kchar == SELECT_BTN_CHAR) { // select
                   saveProject();
 
                   auto leavingUI = current_UI_mode;
@@ -5592,7 +6555,7 @@ void handleSwitchStates(bool discard) {
                   function_started = false;
 
                   drawSequencerScreen(false);
-                } else if (kpd.key[i].kchar == 'i') { // esc
+                } else if (kpd.key[i].kchar == ESCAPE_BTN_CHAR) { // esc
                   auto leavingUI = current_UI_mode;
                   auto newUI = previous_UI_mode;
 
@@ -5644,6 +6607,8 @@ void handleSwitchStates(bool discard) {
 
                 ratcheting_track = -1;
                 ratchet_division = -1;
+
+                drawSequencerScreen(false);
               }
 
               // function stop
@@ -5698,7 +6663,7 @@ int16_t encoder_getValue(int addr) {
 
 void u8g2_prepare(void) {
   u8g2.setFont(small_font);
-  u8g2.setFontRefHeightExtendedText();
+  u8g2.setFontRefHeightAll();
   u8g2.setDrawColor(1);
   u8g2.setFontPosTop();
   u8g2.setFontDirection(0);

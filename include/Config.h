@@ -1,6 +1,7 @@
 #ifndef Config_h
 #define Config_h
 
+#include <MIDI.h>
 #include <Arduino.h>
 #include <Audio.h>
 #include <Adafruit_TLC5947.h>
@@ -17,6 +18,8 @@
 #include <TimeLib.h>
 
 #define FIRMWARE_VERSION "0.1.0"
+
+#define LOG_METRICS_ENABLED false
 
 #define DISPLAY_MAX_WIDTH 128
 #define DISPLAY_MAX_HEIGHT 64
@@ -65,6 +68,8 @@
 #define COPY_BTN_CHAR 'x'
 #define TEMPO_BTN_CHAR '4'
 #define SOUND_BTN_CHAR '0'
+#define SELECT_BTN_CHAR 'i' // reverse when silkscreen is corrected
+#define ESCAPE_BTN_CHAR 'j' // reverse when silkscreen is corrected
 
 #define COMBO_VOICE_COUNT 4
 #define SAMPLE_VOICE_COUNT 12
@@ -270,7 +275,7 @@ enum WAVEFORM_TYPE {
 // sequencer
 
 enum TRACK_TYPE {
-  MIDI = 0,
+  MIDI_OUT = 0,
   CV_TRIG = 1,
   CV_GATE = 2,
   SUBTRACTIVE_SYNTH = 3,
@@ -345,6 +350,8 @@ typedef struct
 {
   TRACK tracks[MAXIMUM_SEQUENCER_TRACKS];
   uint8_t last_step = DEFAULT_LAST_STEP;
+  uint8_t groove_amount = 0;
+  int8_t groove_id = -1;
   bool initialized = false;
 } PATTERN;
 
@@ -411,6 +418,41 @@ typedef struct
 } TRACK_STEP_MODS;
 
 #define MAX_STEP_MOD_ATTRS 33
+
+enum MOD_ATTRS {
+  RAW_SAMPLE_ID = 0,
+  WAV_SAMPLE_ID,
+  WAVEFORM,
+  NOTE,
+  OCTAVE,
+  LENGTH,
+  VELOCITY,
+  PROBABILITY,
+  MICROTIMING,
+  DETUNE,
+  FINE,
+  LOOPTYPE,
+  LOOPSTART,
+  LOOPFINISH,
+  PLAYSTART,
+  LEVEL,
+  PAN,
+  SAMPLE_PLAY_RATE,
+  WIDTH,
+  OSCALEVEL,
+  OSCBLEVEL,
+  CUTOFF,
+  RES,
+  F_ATTACK,
+  F_SUSTAIN,
+  F_DECAY,
+  F_RELEASE,
+  A_ATTACK,
+  A_SUSTAIN,
+  A_DECAY,
+  A_RELEASE,
+  NOISE,
+};
 
 typedef struct
 {
@@ -555,6 +597,8 @@ int8_t current_selected_track = 0; // default to 0 (first)
 int8_t current_selected_step = -1; // default to -1 (none)
 int8_t current_step_page = 1;
 
+int8_t current_tracks_soloed = 0;
+
 bool pattern_copy_available = false;
 bool track_copy_available = false;
 bool step_copy_available = false;
@@ -596,6 +640,7 @@ std::map<uint8_t, uint8_t> keyed_ratchet_divisions = {
 bool function_started = false;
 bool track_sel_btn_held = false;
 
+int8_t bnk_held_for_selection = -1;
 int8_t patt_held_for_selection = -1;
 int8_t track_held_for_selection = -1; // default to -1 (none)
 int8_t perf_held_for_selection = -1;
@@ -659,7 +704,7 @@ std::map<TRACK_TYPE, int> trackPageNumMap = {
   { SUBTRACTIVE_SYNTH, 6},
   { RAW_SAMPLE, 4},
   { WAV_SAMPLE, 1},
-  { MIDI, 1},
+  { MIDI_OUT, 1},
   { CV_GATE, 1},
   { CV_TRIG, 1},
 };
@@ -682,7 +727,7 @@ std::map<TRACK_TYPE, std::map<int, std::string>> trackCurrPageNameMap = {
   { WAV_SAMPLE, {
     {0, "MAIN"},
   }},
-  { MIDI, {
+  { MIDI_OUT, {
     {0, "MAIN"},
   }},
   { CV_GATE, {
@@ -691,6 +736,14 @@ std::map<TRACK_TYPE, std::map<int, std::string>> trackCurrPageNameMap = {
   { CV_TRIG, {
     {0, "MAIN"},
   }},
+};
+
+enum SOUND_CONTROL_MOD_TYPE
+{
+  DEFAULT = 0,
+  RANGE,
+  BAR,
+  DIAL,
 };
 
 typedef struct
@@ -703,6 +756,14 @@ typedef struct
   std::string bValue;
   std::string cValue;
   std::string dValue;
+  float aFloatValue;
+  float bFloatValue;
+  float cFloatValue;
+  float dFloatValue;
+  SOUND_CONTROL_MOD_TYPE aType;
+  SOUND_CONTROL_MOD_TYPE bType;
+  SOUND_CONTROL_MOD_TYPE cType;
+  SOUND_CONTROL_MOD_TYPE dType;
 } SOUND_CONTROL_MODS;
 
 std::map<int, loop_type> loopTypeSelMap = {
@@ -735,5 +796,54 @@ typedef struct
 elapsedMillis elapsed;
 
 std::string new_project_name;
+
+  // MPC60 groove signatures?
+  uint8_t current_shuffle = 0;
+  int8_t shuffle_54[2] = {0, 1};
+  int8_t shuffle_58[2] = {0, 2};
+  int8_t shuffle_62[2] = {0, 3};
+  int8_t shuffle_66[2] = {0, 4};
+  int8_t shuffle_71[2] = {0, 5};
+  std::string groove_names[1] = {"909"};
+  std::string shuffle_name[5] = {"54%", "58%", "62%", "66%", "71%"};
+  int8_t* shuffle_templates[5] = {shuffle_54, shuffle_58, shuffle_62, shuffle_66, shuffle_71};
+
+
+  // off-tempo hiphop style? 
+  int8_t shuffle_off_tempo[16] = {0, -1, 0, -2, 0, -1, 0, 2, 0, -1, 0, -2, 0, 3, 0, -1};
+
+
+#define MAXIMUM_GROOVE_CONFIGS 1
+#define MAXIMUM_GROOVE_OPTIONS 5
+
+typedef struct {
+  std::string name;
+  std::string option_names[MAXIMUM_GROOVE_OPTIONS];
+  int8_t* templates[MAXIMUM_GROOVE_OPTIONS];
+} GROOVE_CONFIG;
+
+typedef struct {
+  GROOVE_CONFIG configs[MAXIMUM_GROOVE_CONFIGS];
+} GROOVES;
+
+GROOVE_CONFIG _tr909_groove = {
+  "909", 
+  {"54%", "58%", "62%", "66%", "71%"},
+  {shuffle_54, shuffle_58, shuffle_62, shuffle_66, shuffle_71}
+};
+
+GROOVES _grooves = {{_tr909_groove}};
+
+MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);
+
+int cvLevels[128];
+
+bool _trkNeedsInit[MAXIMUM_SEQUENCER_TRACKS] = {
+  false, false, false, false,
+  false, false, false, false,
+  false, false, false, false,
+  false, false, false, false
+};
+
 
 #endif /* Config_h */
