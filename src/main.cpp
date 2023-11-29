@@ -673,23 +673,25 @@ void initSoundsForTrack(int t)
     comboVoices[t].rightSubMix.gain(1, currTrack.level); // raw sample / synth right
   } else {
     // init mono RAW sample
-    sampleVoices[t].rSample.setPlaybackRate(currTrack.sample_play_rate);
-    sampleVoices[t].rSample.enableInterpolation(true);
+    int tOffset = t-4;
 
-    sampleVoices[t].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
-    sampleVoices[t].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
-    sampleVoices[t].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
-    sampleVoices[t].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
+    sampleVoices[tOffset].rSample.setPlaybackRate(currTrack.sample_play_rate);
+    sampleVoices[tOffset].rSample.enableInterpolation(true);
+
+    sampleVoices[tOffset].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
+    sampleVoices[tOffset].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
+    sampleVoices[tOffset].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
+    sampleVoices[tOffset].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
 
     // mono to L&R
-    sampleVoices[t].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
-    sampleVoices[t].rightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+    sampleVoices[tOffset].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+    sampleVoices[tOffset].rightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
 
     // Sub L&R mixers
-    sampleVoices[t].leftSubMix.gain(0, currTrack.level); // wav sample left
-    sampleVoices[t].leftSubMix.gain(1, currTrack.level); // raw sample / synth left
-    sampleVoices[t].rightSubMix.gain(0, currTrack.level); // wav sample right
-    sampleVoices[t].rightSubMix.gain(1, currTrack.level); // raw sample / synth right
+    sampleVoices[tOffset].leftSubMix.gain(0, currTrack.level); // wav sample left
+    sampleVoices[tOffset].leftSubMix.gain(1, currTrack.level); // raw sample / synth left
+    sampleVoices[tOffset].rightSubMix.gain(0, currTrack.level); // wav sample right
+    sampleVoices[tOffset].rightSubMix.gain(1, currTrack.level); // raw sample / synth right
   }
 
   configureVoiceSettingsForTrack(t);
