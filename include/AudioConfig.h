@@ -6,12 +6,11 @@
 #include <Audio.h>
 #include <SerialFlash.h>
 #include <TeensyVariablePlayback.h>
+#include <synth_dexed.h>
 
-#include <Audio.h>
 #include <Wire.h>
 #include <SPI.h>
 #include <SD.h>
-#include <SerialFlash.h>
 
 // GUItool: begin automatically generated code
 AudioSynthNoiseWhite     vnoise3;        //xy=390,865
@@ -78,13 +77,7 @@ AudioEffectEnvelope      venv12; //xy=1063.4999389648438,2926.6666259765625
 AudioEffectEnvelope      venv9; //xy=1070,2360
 AudioEffectEnvelope      venv11; //xy=1070.1666259765625,2726.6666259765625
 AudioEffectEnvelope      venv10; //xy=1073.5,2550
-AudioPlayWAVstereo       vssample2;      //xy=1172,457
-AudioPlayWAVstereo       vssample3;      //xy=1171,716
-AudioPlayWAVstereo       vssample8; //xy=1166.9999389648438,1793.6666259765625
-AudioPlayWAVstereo       vssample4;      //xy=1171,966
-AudioPlayWAVstereo       vssample1;      //xy=1175,208
-AudioPlayWAVstereo       vssample5; //xy=1173.5,1227
-AudioPlayWAVstereo       vssample7; //xy=1173.6666259765625,1593.6666259765625
+AudioSynthDexed          dexed1(1, 44100);         //xy=1176,364
 AudioAmplifier           vleft3;         //xy=1177,772
 AudioAmplifier           vleft8; //xy=1172.9999389648438,1848.6666259765625
 AudioAmplifier           vleft2;         //xy=1179,512
@@ -94,32 +87,26 @@ AudioAmplifier           vleft1;         //xy=1181,263
 AudioAmplifier           vright2;        //xy=1180,551
 AudioAmplifier           vright4;        //xy=1178,1060
 AudioAmplifier           vright8; //xy=1174.9999389648438,1887.6666259765625
-AudioPlayWAVstereo       vssample6; //xy=1177,1417
+AudioSynthDexed          dexed4(1, 44100);    //xy=1179,1110
 AudioAmplifier           vright1;        //xy=1183,302
 AudioAmplifier           vleft5; //xy=1179.5,1282
+AudioSynthDexed          dexed2(1, 44100);    //xy=1183,601
+AudioSynthDexed          dexed3(1, 44100);    //xy=1182,868
 AudioAmplifier           vleft7; //xy=1179.6666259765625,1648.6666259765625
 AudioAmplifier           vright5; //xy=1181.5,1321
 AudioAmplifier           vright7; //xy=1181.6666259765625,1687.6666259765625
 AudioAmplifier           vleft6; //xy=1183,1472
 AudioAmplifier           vright6; //xy=1185,1511
-AudioPlayWAVstereo       vssample16; //xy=1182.9999389648438,3888.6666259765625
-AudioPlayWAVstereo       vssample13; //xy=1189.5,3322
-AudioPlayWAVstereo       vssample15; //xy=1189.6666259765625,3688.6666259765625
 AudioAmplifier           vleft16; //xy=1188.9999389648438,3943.6666259765625
 AudioAmplifier           vright16; //xy=1190.9999389648438,3982.6666259765625
-AudioPlayWAVstereo       vssample14; //xy=1193,3512
 AudioAmplifier           vleft13; //xy=1195.5,3377
 AudioAmplifier           vleft15; //xy=1195.6666259765625,3743.6666259765625
 AudioAmplifier           vright13; //xy=1197.5,3416
 AudioAmplifier           vright15; //xy=1197.6666259765625,3782.6666259765625
 AudioAmplifier           vleft14; //xy=1199,3567
 AudioAmplifier           vright14; //xy=1201,3606
-AudioPlayWAVstereo       vssample12; //xy=1210.4999389648438,2853.6666259765625
-AudioPlayWAVstereo       vssample9; //xy=1217,2287
-AudioPlayWAVstereo       vssample11; //xy=1217.1666259765625,2653.6666259765625
 AudioAmplifier           vleft12; //xy=1216.4999389648438,2908.6666259765625
 AudioAmplifier           vright12; //xy=1218.4999389648438,2947.6666259765625
-AudioPlayWAVstereo       vssample10; //xy=1220.5,2477
 AudioAmplifier           vleft9; //xy=1223,2342
 AudioAmplifier           vleft11; //xy=1223.1666259765625,2708.6666259765625
 AudioAmplifier           vright9; //xy=1225,2381
@@ -132,7 +119,7 @@ AudioMixer4              vsubmixl3;      //xy=1383.0001373291016,764.33334350585
 AudioMixer4              vsubmixr3;      //xy=1384.666763305664,833.666618347168
 AudioMixer4              vsubmixl8; //xy=1383.5714073181152,1851.238042831421
 AudioMixer4              vsubmixr8; //xy=1384.2380332946777,1923.238039970398
-AudioMixer4              vsubmixl1;      //xy=1391.5714683532715,265.5714168548584
+AudioMixer4              vsubmixl1;      //xy=1391.5714233517647,265.5714111328125
 AudioMixer4              vsubmixr1;      //xy=1392.238094329834,337.57141399383545
 AudioMixer4              vsubmixl5; //xy=1390.0714683532715,1284.5714168548584
 AudioMixer4              vsubmixr5; //xy=1390.738094329834,1356.5714139938354
@@ -261,131 +248,108 @@ AudioConnection          patchCord81(venv11, vleft11);
 AudioConnection          patchCord82(venv11, vright11);
 AudioConnection          patchCord83(venv10, vleft10);
 AudioConnection          patchCord84(venv10, vright10);
-AudioConnection          patchCord85(vssample2, 0, vsubmixl2, 0);
-AudioConnection          patchCord86(vssample2, 1, vsubmixr2, 0);
-AudioConnection          patchCord87(vssample3, 0, vsubmixl3, 0);
-AudioConnection          patchCord88(vssample3, 1, vsubmixr3, 0);
-AudioConnection          patchCord89(vssample8, 0, vsubmixl8, 0);
-AudioConnection          patchCord90(vssample8, 1, vsubmixr8, 0);
-AudioConnection          patchCord91(vssample4, 0, vsubmixl4, 0);
-AudioConnection          patchCord92(vssample4, 1, vsubmixr4, 0);
-AudioConnection          patchCord93(vssample1, 0, vsubmixl1, 0);
-AudioConnection          patchCord94(vssample1, 1, vsubmixr1, 0);
-AudioConnection          patchCord95(vssample5, 0, vsubmixl5, 0);
-AudioConnection          patchCord96(vssample5, 1, vsubmixr5, 0);
-AudioConnection          patchCord97(vssample7, 0, vsubmixl7, 0);
-AudioConnection          patchCord98(vssample7, 1, vsubmixr7, 0);
-AudioConnection          patchCord99(vleft3, 0, vsubmixl3, 1);
-AudioConnection          patchCord100(vleft8, 0, vsubmixl8, 1);
-AudioConnection          patchCord101(vleft2, 0, vsubmixl2, 1);
-AudioConnection          patchCord102(vleft4, 0, vsubmixl4, 1);
-AudioConnection          patchCord103(vright3, 0, vsubmixr3, 1);
-AudioConnection          patchCord104(vleft1, 0, vsubmixl1, 1);
-AudioConnection          patchCord105(vright2, 0, vsubmixr2, 1);
-AudioConnection          patchCord106(vright4, 0, vsubmixr4, 1);
-AudioConnection          patchCord107(vright8, 0, vsubmixr8, 1);
-AudioConnection          patchCord108(vssample6, 0, vsubmixl6, 0);
-AudioConnection          patchCord109(vssample6, 1, vsubmixr6, 0);
-AudioConnection          patchCord110(vright1, 0, vsubmixr1, 1);
-AudioConnection          patchCord111(vleft5, 0, vsubmixl5, 1);
-AudioConnection          patchCord112(vleft7, 0, vsubmixl7, 1);
-AudioConnection          patchCord113(vright5, 0, vsubmixr5, 1);
-AudioConnection          patchCord114(vright7, 0, vsubmixr7, 1);
-AudioConnection          patchCord115(vleft6, 0, vsubmixl6, 1);
-AudioConnection          patchCord116(vright6, 0, vsubmixr6, 1);
-AudioConnection          patchCord117(vssample16, 0, vsubmixl16, 0);
-AudioConnection          patchCord118(vssample16, 1, vsubmixr16, 0);
-AudioConnection          patchCord119(vssample13, 0, vsubmixl13, 0);
-AudioConnection          patchCord120(vssample13, 1, vsubmixr13, 0);
-AudioConnection          patchCord121(vssample15, 0, vsubmixl15, 0);
-AudioConnection          patchCord122(vssample15, 1, vsubmixr15, 0);
-AudioConnection          patchCord123(vleft16, 0, vsubmixl16, 1);
-AudioConnection          patchCord124(vright16, 0, vsubmixr16, 1);
-AudioConnection          patchCord125(vssample14, 0, vsubmixl14, 0);
-AudioConnection          patchCord126(vssample14, 1, vsubmixr14, 0);
-AudioConnection          patchCord127(vleft13, 0, vsubmixl13, 1);
-AudioConnection          patchCord128(vleft15, 0, vsubmixl15, 1);
-AudioConnection          patchCord129(vright13, 0, vsubmixr13, 1);
-AudioConnection          patchCord130(vright15, 0, vsubmixr15, 1);
-AudioConnection          patchCord131(vleft14, 0, vsubmixl14, 1);
-AudioConnection          patchCord132(vright14, 0, vsubmixr14, 1);
-AudioConnection          patchCord133(vssample12, 0, vsubmixl12, 0);
-AudioConnection          patchCord134(vssample12, 1, vsubmixr12, 0);
-AudioConnection          patchCord135(vssample9, 0, vsubmixl9, 0);
-AudioConnection          patchCord136(vssample9, 1, vsubmixr9, 0);
-AudioConnection          patchCord137(vssample11, 0, vsubmixl11, 0);
-AudioConnection          patchCord138(vssample11, 1, vsubmixr11, 0);
-AudioConnection          patchCord139(vleft12, 0, vsubmixl12, 1);
-AudioConnection          patchCord140(vright12, 0, vsubmixr12, 1);
-AudioConnection          patchCord141(vssample10, 0, vsubmixl10, 0);
-AudioConnection          patchCord142(vssample10, 1, vsubmixr10, 0);
-AudioConnection          patchCord143(vleft9, 0, vsubmixl9, 1);
-AudioConnection          patchCord144(vleft11, 0, vsubmixl11, 1);
-AudioConnection          patchCord145(vright9, 0, vsubmixr9, 1);
-AudioConnection          patchCord146(vright11, 0, vsubmixr11, 1);
-AudioConnection          patchCord147(vleft10, 0, vsubmixl10, 1);
-AudioConnection          patchCord148(vright10, 0, vsubmixr10, 1);
-AudioConnection          patchCord149(vsubmixr4, 0, mixerRight1, 3);
-AudioConnection          patchCord150(vsubmixl4, 0, mixerLeft1, 3);
-AudioConnection          patchCord151(vsubmixl3, 0, mixerLeft1, 2);
-AudioConnection          patchCord152(vsubmixr3, 0, mixerRight1, 2);
-AudioConnection          patchCord153(vsubmixl8, 0, mixerLeft2, 3);
-AudioConnection          patchCord154(vsubmixr8, 0, mixerRight2, 3);
-AudioConnection          patchCord155(vsubmixl1, 0, mixerLeft1, 0);
-AudioConnection          patchCord156(vsubmixr1, 0, mixerRight1, 0);
-AudioConnection          patchCord157(vsubmixl5, 0, mixerLeft2, 0);
-AudioConnection          patchCord158(vsubmixr5, 0, mixerRight2, 0);
-AudioConnection          patchCord159(vsubmixl7, 0, mixerLeft2, 2);
-AudioConnection          patchCord160(vsubmixl2, 0, mixerLeft1, 1);
-AudioConnection          patchCord161(vsubmixr2, 0, mixerRight1, 1);
-AudioConnection          patchCord162(vsubmixr7, 0, mixerRight2, 2);
-AudioConnection          patchCord163(vsubmixl6, 0, mixerLeft2, 1);
-AudioConnection          patchCord164(vsubmixr6, 0, mixerRight2, 1);
-AudioConnection          patchCord165(vsubmixl16, 0, mixerLeft4, 3);
-AudioConnection          patchCord166(vsubmixr16, 0, mixerRight4, 3);
-AudioConnection          patchCord167(vsubmixl13, 0, mixerLeft4, 0);
-AudioConnection          patchCord168(vsubmixr13, 0, mixerRight4, 0);
-AudioConnection          patchCord169(vsubmixl15, 0, mixerLeft4, 2);
-AudioConnection          patchCord170(vsubmixr15, 0, mixerRight4, 2);
-AudioConnection          patchCord171(vsubmixl14, 0, mixerLeft4, 1);
-AudioConnection          patchCord172(vsubmixr14, 0, mixerRight4, 1);
-AudioConnection          patchCord173(vsubmixl12, 0, mixerLeft3, 3);
-AudioConnection          patchCord174(vsubmixr12, 0, mixerRight3, 3);
-AudioConnection          patchCord175(vsubmixr9, 0, mixerRight3, 0);
-AudioConnection          patchCord176(vsubmixl11, 0, mixerLeft3, 2);
-AudioConnection          patchCord177(vsubmixr11, 0, mixerRight3, 2);
-AudioConnection          patchCord178(vsubmixl10, 0, mixerLeft3, 1);
-AudioConnection          patchCord179(vsubmixl9, 0, mixerLeft3, 0);
-AudioConnection          patchCord180(vsubmixr10, 0, mixerRight3, 1);
-AudioConnection          patchCord181(mixerLeft2, 0, mainMixerLeft, 1);
-AudioConnection          patchCord182(mixerRight4, 0, mainMixerRight, 3);
-AudioConnection          patchCord183(mixerLeft4, 0, mainMixerLeft, 3);
-AudioConnection          patchCord184(mixerRight2, 0, mainMixerRight, 1);
-AudioConnection          patchCord185(mixerLeft1, 0, mainMixerLeft, 0);
-AudioConnection          patchCord186(mixerRight3, 0, mainMixerRight, 2);
-AudioConnection          patchCord187(mixerLeft3, 0, mainMixerLeft, 2);
-AudioConnection          patchCord188(mixerRight1, 0, mainMixerRight, 0);
-AudioConnection          patchCord189(mainMixerLeft, 0, OutputMixerLeft, 0);
-AudioConnection          patchCord190(mainMixerRight, 0, OutputMixerRight, 0);
-AudioConnection          patchCord191(i2s2, 0, inputMixerLeft, 0);
-AudioConnection          patchCord192(i2s2, 0, peak_left, 0);
-AudioConnection          patchCord193(i2s2, 1, inputMixerRight, 0);
-AudioConnection          patchCord194(i2s2, 1, peak_right, 0);
-AudioConnection          patchCord195(inputMixerLeft, 0, OutputMixerLeft, 1);
-AudioConnection          patchCord196(inputMixerRight, 0, OutputMixerRight, 1);
-AudioConnection          patchCord197(OutputMixerLeft, 0, i2s1, 0);
-AudioConnection          patchCord198(OutputMixerRight, 0, i2s1, 1);
+AudioConnection          patchCord85(dexed1, 0, vsubmixl1, 1);
+AudioConnection          patchCord86(dexed1, 0, vsubmixr1, 1);
+AudioConnection          patchCord87(vleft3, 0, vsubmixl3, 0);
+AudioConnection          patchCord88(vleft8, 0, vsubmixl8, 0);
+AudioConnection          patchCord89(vleft2, 0, vsubmixl2, 0);
+AudioConnection          patchCord90(vleft4, 0, vsubmixl4, 0);
+AudioConnection          patchCord91(vright3, 0, vsubmixr3, 0);
+AudioConnection          patchCord92(vleft1, 0, vsubmixl1, 0);
+AudioConnection          patchCord93(vright2, 0, vsubmixr2, 0);
+AudioConnection          patchCord94(vright4, 0, vsubmixr4, 0);
+AudioConnection          patchCord95(vright8, 0, vsubmixr8, 0);
+AudioConnection          patchCord96(dexed4, 0, vsubmixl4, 1);
+AudioConnection          patchCord97(dexed4, 0, vsubmixr4, 1);
+AudioConnection          patchCord98(vright1, 0, vsubmixr1, 0);
+AudioConnection          patchCord99(vleft5, 0, vsubmixl5, 0);
+AudioConnection          patchCord100(dexed2, 0, vsubmixl2, 1);
+AudioConnection          patchCord101(dexed2, 0, vsubmixr2, 1);
+AudioConnection          patchCord102(dexed3, 0, vsubmixl3, 1);
+AudioConnection          patchCord103(dexed3, 0, vsubmixr3, 1);
+AudioConnection          patchCord104(vleft7, 0, vsubmixl7, 0);
+AudioConnection          patchCord105(vright5, 0, vsubmixr5, 0);
+AudioConnection          patchCord106(vright7, 0, vsubmixr7, 0);
+AudioConnection          patchCord107(vleft6, 0, vsubmixl6, 0);
+AudioConnection          patchCord108(vright6, 0, vsubmixr6, 0);
+AudioConnection          patchCord109(vleft16, 0, vsubmixl16, 0);
+AudioConnection          patchCord110(vright16, 0, vsubmixr16, 0);
+AudioConnection          patchCord111(vleft13, 0, vsubmixl13, 0);
+AudioConnection          patchCord112(vleft15, 0, vsubmixl15, 0);
+AudioConnection          patchCord113(vright13, 0, vsubmixr13, 0);
+AudioConnection          patchCord114(vright15, 0, vsubmixr15, 0);
+AudioConnection          patchCord115(vleft14, 0, vsubmixl14, 0);
+AudioConnection          patchCord116(vright14, 0, vsubmixr14, 0);
+AudioConnection          patchCord117(vleft12, 0, vsubmixl12, 0);
+AudioConnection          patchCord118(vright12, 0, vsubmixr12, 0);
+AudioConnection          patchCord119(vleft9, 0, vsubmixl9, 0);
+AudioConnection          patchCord120(vleft11, 0, vsubmixl11, 0);
+AudioConnection          patchCord121(vright9, 0, vsubmixr9, 0);
+AudioConnection          patchCord122(vright11, 0, vsubmixr11, 0);
+AudioConnection          patchCord123(vleft10, 0, vsubmixl10, 0);
+AudioConnection          patchCord124(vright10, 0, vsubmixr10, 0);
+AudioConnection          patchCord125(vsubmixr4, 0, mixerRight1, 3);
+AudioConnection          patchCord126(vsubmixl4, 0, mixerLeft1, 3);
+AudioConnection          patchCord127(vsubmixl3, 0, mixerLeft1, 2);
+AudioConnection          patchCord128(vsubmixr3, 0, mixerRight1, 2);
+AudioConnection          patchCord129(vsubmixl8, 0, mixerLeft2, 3);
+AudioConnection          patchCord130(vsubmixr8, 0, mixerRight2, 3);
+AudioConnection          patchCord131(vsubmixl1, 0, mixerLeft1, 0);
+AudioConnection          patchCord132(vsubmixr1, 0, mixerRight1, 0);
+AudioConnection          patchCord133(vsubmixl5, 0, mixerLeft2, 0);
+AudioConnection          patchCord134(vsubmixr5, 0, mixerRight2, 0);
+AudioConnection          patchCord135(vsubmixl7, 0, mixerLeft2, 2);
+AudioConnection          patchCord136(vsubmixl2, 0, mixerLeft1, 1);
+AudioConnection          patchCord137(vsubmixr2, 0, mixerRight1, 1);
+AudioConnection          patchCord138(vsubmixr7, 0, mixerRight2, 2);
+AudioConnection          patchCord139(vsubmixl6, 0, mixerLeft2, 1);
+AudioConnection          patchCord140(vsubmixr6, 0, mixerRight2, 1);
+AudioConnection          patchCord141(vsubmixl16, 0, mixerLeft4, 3);
+AudioConnection          patchCord142(vsubmixr16, 0, mixerRight4, 3);
+AudioConnection          patchCord143(vsubmixl13, 0, mixerLeft4, 0);
+AudioConnection          patchCord144(vsubmixr13, 0, mixerRight4, 0);
+AudioConnection          patchCord145(vsubmixl15, 0, mixerLeft4, 2);
+AudioConnection          patchCord146(vsubmixr15, 0, mixerRight4, 2);
+AudioConnection          patchCord147(vsubmixl14, 0, mixerLeft4, 1);
+AudioConnection          patchCord148(vsubmixr14, 0, mixerRight4, 1);
+AudioConnection          patchCord149(vsubmixl12, 0, mixerLeft3, 3);
+AudioConnection          patchCord150(vsubmixr12, 0, mixerRight3, 3);
+AudioConnection          patchCord151(vsubmixr9, 0, mixerRight3, 0);
+AudioConnection          patchCord152(vsubmixl11, 0, mixerLeft3, 2);
+AudioConnection          patchCord153(vsubmixr11, 0, mixerRight3, 2);
+AudioConnection          patchCord154(vsubmixl10, 0, mixerLeft3, 1);
+AudioConnection          patchCord155(vsubmixl9, 0, mixerLeft3, 0);
+AudioConnection          patchCord156(vsubmixr10, 0, mixerRight3, 1);
+AudioConnection          patchCord157(mixerLeft2, 0, mainMixerLeft, 1);
+AudioConnection          patchCord158(mixerRight4, 0, mainMixerRight, 3);
+AudioConnection          patchCord159(mixerLeft4, 0, mainMixerLeft, 3);
+AudioConnection          patchCord160(mixerRight2, 0, mainMixerRight, 1);
+AudioConnection          patchCord161(mixerLeft1, 0, mainMixerLeft, 0);
+AudioConnection          patchCord162(mixerRight3, 0, mainMixerRight, 2);
+AudioConnection          patchCord163(mixerLeft3, 0, mainMixerLeft, 2);
+AudioConnection          patchCord164(mixerRight1, 0, mainMixerRight, 0);
+AudioConnection          patchCord165(mainMixerLeft, 0, OutputMixerLeft, 0);
+AudioConnection          patchCord166(mainMixerRight, 0, OutputMixerRight, 0);
+AudioConnection          patchCord167(i2s2, 0, inputMixerLeft, 0);
+AudioConnection          patchCord168(i2s2, 0, peak_left, 0);
+AudioConnection          patchCord169(i2s2, 1, inputMixerRight, 0);
+AudioConnection          patchCord170(i2s2, 1, peak_right, 0);
+AudioConnection          patchCord171(inputMixerLeft, 0, OutputMixerLeft, 1);
+AudioConnection          patchCord172(inputMixerRight, 0, OutputMixerRight, 1);
+AudioConnection          patchCord173(OutputMixerLeft, 0, i2s1, 0);
+AudioConnection          patchCord174(OutputMixerRight, 0, i2s1, 1);
 
 AudioControlSGTL5000     sgtl5000_1;     //xy=3069.094924926758,2246.0713777542114
 // GUItool: end automatically generated code
 
+newdigate::flashloader loader;
 
 newdigate::audiosample *samples[MAX_PROJECT_RAW_SAMPLES];
 
 class ComboVoice
 {
   public:
-    AudioPlayWAVstereo          &wSample;
+    AudioSynthDexed             &dexed;
     AudioPlayArrayResmp         &rSample;
     AudioSynthWaveform          &osca;
     AudioSynthWaveform          &oscb;
@@ -402,7 +366,7 @@ class ComboVoice
     AudioMixer4                 &rightSubMix;
  
     ComboVoice(
-      AudioPlayWAVstereo          &wSample,
+      AudioSynthDexed             &dexed,
       AudioPlayArrayResmp         &rSample,
       AudioSynthWaveform          &osca,
       AudioSynthWaveform          &oscb,
@@ -417,7 +381,7 @@ class ComboVoice
       AudioAmplifier              &rightCtrl,
       AudioMixer4                 &leftSubMix,
       AudioMixer4                 &rightSubMix
-    ) : wSample {wSample},
+    ) : dexed {dexed},
         rSample {rSample},
         osca {osca},
         oscb {oscb},
@@ -440,7 +404,6 @@ class ComboVoice
 class SampleVoice
 {
   public:
-    AudioPlayWAVstereo          &wSample;
     AudioPlayArrayResmp         &rSample;
     AudioEffectEnvelope         &ampEnv;
     AudioAmplifier              &leftCtrl;
@@ -449,15 +412,13 @@ class SampleVoice
     AudioMixer4                 &rightSubMix;
  
     SampleVoice(
-      AudioPlayWAVstereo          &wSample,
       AudioPlayArrayResmp         &rSample,
       AudioEffectEnvelope         &ampEnv,
       AudioAmplifier              &leftCtrl,
       AudioAmplifier              &rightCtrl,
       AudioMixer4                 &leftSubMix,
       AudioMixer4                 &rightSubMix
-    ) : wSample {wSample},
-        rSample {rSample},
+    ) : rSample {rSample},
         ampEnv {ampEnv},
         leftCtrl {leftCtrl},
         rightCtrl {rightCtrl},
@@ -470,55 +431,55 @@ class SampleVoice
 
 ComboVoice comboVoices[COMBO_VOICE_COUNT] = {
   ComboVoice(
-    vssample1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1
+    dexed1,vmsample1,vosca1,voscb1,vnoise1,voscmix1,vdc1,vlfilter1,vfilterenv1,vmix1,venv1,vleft1,vright1,vsubmixl1,vsubmixr1
   ),
   ComboVoice(
-    vssample2,vmsample2,vosca2,voscb2,vnoise2,voscmix2,vdc2,vlfilter2,vfilterenv2,vmix2,venv2,vleft2,vright2,vsubmixl2,vsubmixr2
+    dexed2,vmsample2,vosca2,voscb2,vnoise2,voscmix2,vdc2,vlfilter2,vfilterenv2,vmix2,venv2,vleft2,vright2,vsubmixl2,vsubmixr2
   ),
   ComboVoice(
-    vssample3,vmsample3,vosca3,voscb3,vnoise3,voscmix3,vdc3,vlfilter3,vfilterenv3,vmix3,venv3,vleft3,vright3,vsubmixl3,vsubmixr3
+    dexed3,vmsample3,vosca3,voscb3,vnoise3,voscmix3,vdc3,vlfilter3,vfilterenv3,vmix3,venv3,vleft3,vright3,vsubmixl3,vsubmixr3
   ),
   ComboVoice(
-    vssample4,vmsample4,vosca4,voscb4,vnoise4,voscmix4,vdc4,vlfilter4,vfilterenv4,vmix4,venv4,vleft4,vright4,vsubmixl4,vsubmixr4
+    dexed4,vmsample4,vosca4,voscb4,vnoise4,voscmix4,vdc4,vlfilter4,vfilterenv4,vmix4,venv4,vleft4,vright4,vsubmixl4,vsubmixr4
   ),
 };
 
 SampleVoice sampleVoices[SAMPLE_VOICE_COUNT] = {
   SampleVoice(
-    vssample5,vmsample5,venv5,vleft5,vright5,vsubmixl5,vsubmixr5
+    vmsample5,venv5,vleft5,vright5,vsubmixl5,vsubmixr5
   ),
   SampleVoice(
-    vssample6,vmsample6,venv6,vleft6,vright6,vsubmixl6,vsubmixr6
+    vmsample6,venv6,vleft6,vright6,vsubmixl6,vsubmixr6
   ),
   SampleVoice(
-    vssample7,vmsample7,venv7,vleft7,vright7,vsubmixl7,vsubmixr7
+    vmsample7,venv7,vleft7,vright7,vsubmixl7,vsubmixr7
   ),
   SampleVoice(
-    vssample8,vmsample8,venv8,vleft8,vright8,vsubmixl8,vsubmixr8
+    vmsample8,venv8,vleft8,vright8,vsubmixl8,vsubmixr8
   ),
   SampleVoice(
-    vssample9,vmsample9,venv9,vleft9,vright9,vsubmixl9,vsubmixr9
+    vmsample9,venv9,vleft9,vright9,vsubmixl9,vsubmixr9
   ),
   SampleVoice(
-    vssample10,vmsample10,venv10,vleft10,vright10,vsubmixl10,vsubmixr10
+    vmsample10,venv10,vleft10,vright10,vsubmixl10,vsubmixr10
   ),
   SampleVoice(
-    vssample11,vmsample11,venv11,vleft11,vright11,vsubmixl11,vsubmixr11
+    vmsample11,venv11,vleft11,vright11,vsubmixl11,vsubmixr11
   ),
   SampleVoice(
-    vssample12,vmsample12,venv12,vleft12,vright12,vsubmixl12,vsubmixr12
+    vmsample12,venv12,vleft12,vright12,vsubmixl12,vsubmixr12
   ),
   SampleVoice(
-    vssample13,vmsample13,venv13,vleft13,vright13,vsubmixl13,vsubmixr13
+    vmsample13,venv13,vleft13,vright13,vsubmixl13,vsubmixr13
   ),
   SampleVoice(
-    vssample14,vmsample14,venv14,vleft14,vright14,vsubmixl14,vsubmixr14
+    vmsample14,venv14,vleft14,vright14,vsubmixl14,vsubmixr14
   ),
   SampleVoice(
-    vssample15,vmsample15,venv15,vleft15,vright15,vsubmixl15,vsubmixr15
+    vmsample15,venv15,vleft15,vright15,vsubmixl15,vsubmixr15
   ),
   SampleVoice(
-    vssample16,vmsample16,venv16,vleft16,vright16,vsubmixl16,vsubmixr16
+    vmsample16,venv16,vleft16,vright16,vsubmixl16,vsubmixr16
   ),
 };
 

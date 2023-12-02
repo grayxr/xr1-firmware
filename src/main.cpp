@@ -57,6 +57,7 @@ void triggerCvGateNoteOn(uint8_t t, uint8_t note);
 void triggerSubtractiveSynthNoteOn(uint8_t t, uint8_t note);
 void triggerRawSampleNoteOn(uint8_t t, uint8_t note);
 void triggerWavSampleNoteOn(uint8_t t, uint8_t note);
+void triggerDexedNoteOn(uint8_t t, uint8_t note);
 void triggerAllStepsForAllTracks(uint32_t tick);
 void triggerRatchetingTrack(uint32_t tick);
 void updateCurrentPatternStepState(void);
@@ -71,10 +72,12 @@ void handleQueueActions(void);
 void handleSoloForTrack(uint8_t track, bool undoSoloing);
 void handleRawSampleNoteOnForTrack(int track);
 void handleWavSampleNoteOnForTrack(int track);
+void handleDexedNoteOnForTrack(int track);
 void handleSubtractiveSynthNoteOnForTrack(int track);
 void handleCvGateNoteOnForTrack(int track);
 void handleRawSampleNoteOnForTrackStep(int track, int step);
 void handleWavSampleNoteOnForTrackStep(int track, int step);
+void handleDexedNoteOnForTrackStep(int track, int step);
 void handleSubtractiveSynthNoteOnForTrackStep(int track, int step);
 void handleMIDINoteOnForTrackStep(int track, int step);
 void handleCvGateNoteOnForTrackStep(int track, int step);
@@ -87,6 +90,10 @@ void handleEncoderSubtractiveSynthModA(int diff);
 void handleEncoderSubtractiveSynthModB(int diff);
 void handleEncoderSubtractiveSynthModC(int diff);
 void handleEncoderSubtractiveSynthModD(int diff);
+void handleEncoderDexedModA(int diff);
+void handleEncoderDexedModB(int diff);
+void handleEncoderDexedModC(int diff);
+void handleEncoderDexedModD(int diff);
 void handleEncoderRawSampleModA(int diff);
 void handleEncoderRawSampleModB(int diff);
 void handleEncoderRawSampleModC(int diff);
@@ -188,6 +195,7 @@ TRACK_STEP getHeapCurrentSelectedTrackStep(void);
 SOUND_CONTROL_MODS getSubtractiveSynthControlModData();
 SOUND_CONTROL_MODS getRawSampleControlModData();
 SOUND_CONTROL_MODS getWavSampleControlModData();
+SOUND_CONTROL_MODS getDexedControlModData();
 SOUND_CONTROL_MODS getMidiControlModData();
 SOUND_CONTROL_MODS getCvGateControlModData();
 SOUND_CONTROL_MODS getCvTrigControlModData();
@@ -594,6 +602,11 @@ std::string getTrackTypeNameStr(TRACK_TYPE type)
     
     break;
   
+  case TRACK_TYPE::DEXED :
+    str = "DEXED";
+    
+    break;
+  
   default:
     break;
   }
@@ -632,6 +645,10 @@ void initSoundsForTrack(int t)
     comboVoices[t].rSample.setPlaybackRate(currTrack.sample_play_rate);
     comboVoices[t].rSample.enableInterpolation(true);
 
+    // init dexed
+    // comboVoices[t].dexed.loadInitVoice();
+    comboVoices[t].dexed.loadVoiceParameters(fmpiano_sysex);
+
     // init synth
     comboVoices[t].osca.begin(currTrack.waveform);
     comboVoices[t].osca.amplitude(currTrack.oscalevel);
@@ -667,10 +684,10 @@ void initSoundsForTrack(int t)
     comboVoices[t].rightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
 
     // Sub L&R mixers
-    comboVoices[t].leftSubMix.gain(0, currTrack.level); // wav sample left
-    comboVoices[t].leftSubMix.gain(1, currTrack.level); // raw sample / synth left
-    comboVoices[t].rightSubMix.gain(0, currTrack.level); // wav sample right
-    comboVoices[t].rightSubMix.gain(1, currTrack.level); // raw sample / synth right
+    comboVoices[t].leftSubMix.gain(1, currTrack.level); // wav sample left
+    comboVoices[t].leftSubMix.gain(0, currTrack.level); // dexed left
+    comboVoices[t].rightSubMix.gain(1, currTrack.level); // wav sample right
+    comboVoices[t].rightSubMix.gain(0, currTrack.level); // dexed right
   } else {
     // init mono RAW sample
     int tOffset = t-4;
@@ -688,9 +705,7 @@ void initSoundsForTrack(int t)
     sampleVoices[tOffset].rightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
 
     // Sub L&R mixers
-    sampleVoices[tOffset].leftSubMix.gain(0, currTrack.level); // wav sample left
     sampleVoices[tOffset].leftSubMix.gain(1, currTrack.level); // raw sample / synth left
-    sampleVoices[tOffset].rightSubMix.gain(0, currTrack.level); // wav sample right
     sampleVoices[tOffset].rightSubMix.gain(1, currTrack.level); // raw sample / synth right
   }
 
@@ -710,6 +725,10 @@ void initTrackSounds()
     // init mono RAW sample
     comboVoices[v].rSample.setPlaybackRate(currTrack.sample_play_rate);
     comboVoices[v].rSample.enableInterpolation(true);
+
+    // init dexed
+    // comboVoices[v].dexed.loadInitVoice();
+    comboVoices[v].dexed.loadVoiceParameters(fmpiano_sysex);
 
     // init synth
     comboVoices[v].osca.begin(currTrack.waveform);
@@ -746,10 +765,10 @@ void initTrackSounds()
     comboVoices[v].rightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
 
     // Sub L&R mixers
-    comboVoices[v].leftSubMix.gain(0, currTrack.level); // wav sample left
     comboVoices[v].leftSubMix.gain(1, currTrack.level); // raw sample / synth left
-    comboVoices[v].rightSubMix.gain(0, currTrack.level); // wav sample right
+    comboVoices[v].leftSubMix.gain(0, currTrack.level); // dexed left
     comboVoices[v].rightSubMix.gain(1, currTrack.level); // raw sample / synth right
+    comboVoices[v].rightSubMix.gain(0, currTrack.level); // dexed right
   }
 
   // configure sample voice audio objects
@@ -772,9 +791,7 @@ void initTrackSounds()
     sampleVoices[v].rightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
 
     // Sub L&R mixers
-    sampleVoices[v].leftSubMix.gain(0, currTrack.level); // wav sample left
     sampleVoices[v].leftSubMix.gain(1, currTrack.level); // raw sample / synth left
-    sampleVoices[v].rightSubMix.gain(0, currTrack.level); // wav sample right
     sampleVoices[v].rightSubMix.gain(1, currTrack.level); // raw sample / synth right
   }
 
@@ -843,21 +860,23 @@ void changeSampleTrackSoundType(uint8_t t, TRACK_TYPE newType)
   if (currType == newType) return;
 
   if (currType == WAV_SAMPLE) {
-    sampleVoices[t-4].wSample.disposeBuffer();
+    // sampleVoices[t-4].wSample.disposeBuffer();
   }
 
   if (newType == RAW_SAMPLE) {
     _seq_heap.pattern.tracks[t].track_type = RAW_SAMPLE;
+  } else if (newType == DEXED) {
+    _seq_heap.pattern.tracks[t].track_type = DEXED;
   } else if (newType == WAV_SAMPLE) {
     // only create buffers for stereo samples when needed
-    sampleVoices[t-4].wSample.createBuffer(2048, AudioBuffer::inExt);
+    // sampleVoices[t-4].wSample.createBuffer(2048, AudioBuffer::inExt);
 
     _seq_heap.pattern.tracks[t].track_type = WAV_SAMPLE;
   } else if (newType == MIDI_OUT) {
     _seq_heap.pattern.tracks[t].track_type = MIDI_OUT;
   } else if (newType == CV_GATE) {
     _seq_heap.pattern.tracks[t].track_type = CV_GATE;
-  }else if (newType == CV_TRIG) {
+  } else if (newType == CV_TRIG) {
     _seq_heap.pattern.tracks[t].track_type = CV_TRIG;
   }
 }
@@ -868,7 +887,7 @@ void configureSampleVoiceSettingsOnLoad(int t)
 
   if (track.track_type == WAV_SAMPLE) {
     // only create buffers for stereo samples when needed
-    sampleVoices[t-4].wSample.createBuffer(2048, AudioBuffer::inExt);
+    // sampleVoices[t-4].wSample.createBuffer(2048, AudioBuffer::inExt);
 
     _seq_heap.pattern.tracks[t].track_type = WAV_SAMPLE;
   }
@@ -881,7 +900,7 @@ void configureVoiceSettingsForTrack(int t)
 
     if (_seq_heap.pattern.tracks[t].track_type == WAV_SAMPLE) {
       // only create buffers for stereo samples when needed
-      trackVoice.wSample.createBuffer(2048, AudioBuffer::inExt);
+      // trackVoice.wSample.createBuffer(2048, AudioBuffer::inExt);
     }
     return;
   }
@@ -895,15 +914,23 @@ void configureVoiceSettingsForTrack(int t)
     trackVoice.mix.gain(0, 1);
     // turn synth volume all the way down
     trackVoice.mix.gain(1, 0); // synth
+  } else if (_seq_heap.pattern.tracks[t].track_type == DEXED) {
+    _seq_heap.pattern.tracks[t].track_type = DEXED;
+
+    trackVoice.mix.gain(0, 0); // mono sample
+    trackVoice.mix.gain(1, 0); // synth
+
+    trackVoice.leftSubMix.gain(0,0);
+    trackVoice.leftSubMix.gain(1,1);
+    trackVoice.rightSubMix.gain(0,0);
+    trackVoice.rightSubMix.gain(1,1);
   } else if (_seq_heap.pattern.tracks[t].track_type == WAV_SAMPLE) {
     _seq_heap.pattern.tracks[t].track_type = WAV_SAMPLE;
 
     // only create buffers for stereo samples when needed
-    trackVoice.wSample.createBuffer(2048, AudioBuffer::inExt);
+    // trackVoice.wSample.createBuffer(2048, AudioBuffer::inExt);
 
-    // turn sample volume all the way up
-    trackVoice.mix.gain(0, 1);
-    // turn synth volumes all the way down
+    trackVoice.mix.gain(0, 0); // mono sample
     trackVoice.mix.gain(1, 0); // synth
   } else if (_seq_heap.pattern.tracks[t].track_type == SUBTRACTIVE_SYNTH) {
     _seq_heap.pattern.tracks[t].track_type = SUBTRACTIVE_SYNTH;
@@ -962,13 +989,23 @@ void configureVoiceSettingsOnLoad(void)
       _seq_heap.pattern.tracks[t].track_type = WAV_SAMPLE;
 
       // only create buffers for stereo samples when needed
-      trackVoice.wSample.createBuffer(2048, AudioBuffer::inExt);
+      // trackVoice.wSample.createBuffer(2048, AudioBuffer::inExt);
 
       // turn sample volume all the way up
       trackVoice.mix.gain(0, 1);
       // turn synth volumes all the way down
       trackVoice.mix.gain(1, 0); // synth
-    } else if (_seq_heap.pattern.tracks[t].track_type == SUBTRACTIVE_SYNTH) {
+    } else if (_seq_heap.pattern.tracks[t].track_type == DEXED) {
+      _seq_heap.pattern.tracks[t].track_type = DEXED;
+
+      trackVoice.mix.gain(0, 0); // mono sample
+      trackVoice.mix.gain(1, 0); // synth
+
+      trackVoice.leftSubMix.gain(0,0);
+      trackVoice.leftSubMix.gain(1,1);
+      trackVoice.rightSubMix.gain(0,0);
+      trackVoice.rightSubMix.gain(1,1);
+    }  else if (_seq_heap.pattern.tracks[t].track_type == SUBTRACTIVE_SYNTH) {
       _seq_heap.pattern.tracks[t].track_type = SUBTRACTIVE_SYNTH;
 
       TRACK currTrack = getHeapTrack(t);
@@ -1019,7 +1056,7 @@ void changeTrackSoundType(uint8_t t, TRACK_TYPE newType)
   if (currType == newType) return;
 
   if (currType == WAV_SAMPLE) {
-    trackVoice.wSample.disposeBuffer();
+    // trackVoice.wSample.disposeBuffer();
   }
 
   if (newType == RAW_SAMPLE) {
@@ -1029,11 +1066,21 @@ void changeTrackSoundType(uint8_t t, TRACK_TYPE newType)
     trackVoice.mix.gain(0, 1);
     // turn synth volume all the way down
     trackVoice.mix.gain(1, 0); // synth
+  } else if (newType == DEXED) {
+    _seq_heap.pattern.tracks[t].track_type = DEXED;
+
+    trackVoice.mix.gain(0, 0); // mono sample
+    trackVoice.mix.gain(1, 0); // synth
+
+    trackVoice.leftSubMix.gain(0,0);
+    trackVoice.leftSubMix.gain(1,1);
+    trackVoice.rightSubMix.gain(0,0);
+    trackVoice.rightSubMix.gain(1,1);
   } else if (newType == WAV_SAMPLE) {
    _seq_heap.pattern.tracks[t].track_type = WAV_SAMPLE;
 
     // only create buffers for stereo samples when needed
-    trackVoice.wSample.createBuffer(2048, AudioBuffer::inExt);
+    // trackVoice.wSample.createBuffer(2048, AudioBuffer::inExt);
 
     // turn sample volume all the way up
     trackVoice.mix.gain(0, 1);
@@ -1315,7 +1362,7 @@ void initExternalSequencer(void)
           _seq_external.banks[b].patterns[p].tracks[t].steps[s].microtiming = 0;
           _seq_external.banks[b].patterns[p].tracks[t].steps[s].probability = 100;
 
-          _seq_external.banks[b].patterns[p].tracks[t].steps[s].state = TRACK_STEP_STATE::OFF;
+          _seq_external.banks[b].patterns[p].tracks[t].steps[s].state = TRACK_STEP_STATE::STATE_OFF;
         }
       }
     }
@@ -1588,7 +1635,7 @@ void loadRawSamplesFromSdCard(void)
 {  
   parseRootForRawSamples();
 
-  newdigate::flashloader loader;
+  // newdigate::flashloader loader;
 
   char naChar[32];
   strcpy(naChar, "N/A");
@@ -1632,7 +1679,9 @@ void handleQueueActions(void)
 
   if (dequeue_pattern) {
     dequeue_pattern = false;
-        
+
+    loader.clearSamples();
+
     swapSequencerMemoryForPattern(_queued_pattern.bank, _queued_pattern.number);
     
     // reset queue flags
@@ -1723,6 +1772,10 @@ std::string getTrackMetaStr(TRACK_TYPE type)
   
   case WAV_SAMPLE:
     outputStr = "WSAMPLE:";
+    break;
+
+  case DEXED:
+    outputStr = "DEXED:";
     break;
   
   case MIDI_OUT:
@@ -2130,6 +2183,33 @@ SOUND_CONTROL_MODS getWavSampleControlModData()
   return mods;
 }
 
+SOUND_CONTROL_MODS getDexedControlModData()
+{
+  SOUND_CONTROL_MODS mods;
+
+  TRACK track = getHeapCurrentSelectedTrack();
+
+  switch (current_page_selected)
+  {
+  case 0: // MAIN
+    mods.aName = "LSTP";
+    mods.bName = "LEN";
+    mods.cName = "--";
+    mods.dName = "--";
+
+    mods.aValue = std::to_string(track.last_step); // TODO : impl
+    mods.bValue = std::to_string(track.length); // TODO: impl
+    mods.cValue = "--";
+    mods.dValue = "--";
+    break;
+  
+  default:
+    break;
+  }
+
+  return mods;
+}
+
 SOUND_CONTROL_MODS getMidiControlModData()
 {
   SOUND_CONTROL_MODS mods;
@@ -2235,6 +2315,10 @@ SOUND_CONTROL_MODS getControlModDataForTrack()
   
   case WAV_SAMPLE:
     mods = getWavSampleControlModData();
+    break;
+
+  case DEXED:
+    mods = getDexedControlModData();
     break;
   
   case MIDI_OUT:
@@ -2911,7 +2995,7 @@ void drawSequencerScreen(bool queueBlink)
     u8g2.setColorIndex((u_int8_t)1);
 
     // draw track description / main icon area
-    if (currTrackType == SUBTRACTIVE_SYNTH || currTrackType == MIDI_OUT || currTrackType == CV_GATE) {
+    if (currTrackType == SUBTRACTIVE_SYNTH || currTrackType == DEXED || currTrackType == MIDI_OUT || currTrackType == CV_GATE) {
       if (
         (currTrackType != SUBTRACTIVE_SYNTH) ||
         ((currTrack.track_type == SUBTRACTIVE_SYNTH && current_page_selected != 3) &&
@@ -3132,10 +3216,21 @@ void triggerWavSampleNoteOn(uint8_t t, uint8_t note)
 
   if (t < 4) {
     comboVoices[t].ampEnv.noteOn();
-    comboVoices[t].wSample.play(usableWavSampleNames[currTrack.wav_sample_id], sd1);
+    // comboVoices[t].wSample.play(usableWavSampleNames[currTrack.wav_sample_id], sd1);
   } else {
     sampleVoices[tOffset].ampEnv.noteOn();
-    sampleVoices[tOffset].wSample.play(usableWavSampleNames[currTrack.wav_sample_id], sd1);
+    // sampleVoices[tOffset].wSample.play(usableWavSampleNames[currTrack.wav_sample_id], sd1);
+  }
+}
+
+void triggerDexedNoteOn(uint8_t t, uint8_t note)
+{
+  TRACK currTrack = getHeapCurrentSelectedPattern().tracks[t];
+
+  if (t < 4) {
+    int midiNote = (note + (12 * (keyboardOctave)));
+
+    comboVoices[t].dexed.keydown(midiNote, 50);
   }
 }
 
@@ -3147,6 +3242,10 @@ void triggerTrackManually(uint8_t t, uint8_t note)
     triggerRawSampleNoteOn(t, note);
   } else if (currTrack.track_type == WAV_SAMPLE) {
     triggerWavSampleNoteOn(t, note);
+  } else if (currTrack.track_type == DEXED) {
+    Serial.print("dexed note: ");
+    Serial.println(note);
+    triggerDexedNoteOn(t, note);
   } else if (currTrack.track_type == SUBTRACTIVE_SYNTH) {
     triggerSubtractiveSynthNoteOn(t, note);
   } else if (currTrack.track_type == CV_GATE) {
@@ -3182,7 +3281,7 @@ void triggerAllStepsForAllTracks(uint32_t tick)
     TRACK currTrack = currentPattern.tracks[t];
     TRACK_STEP currTrackStepData = currTrack.steps[currTrackStep];
 
-    if (!currTrack.muted && ((currTrackStepData.state == TRACK_STEP_STATE::ON) || (currTrackStepData.state == TRACK_STEP_STATE::ACCENTED))) {
+    if (!currTrack.muted && ((currTrackStepData.state == TRACK_STEP_STATE::STATE_ON) || (currTrackStepData.state == TRACK_STEP_STATE::STATE_ACCENTED))) {
       handleAddToStepStack(tick, t, currTrackStep);
     }
   }
@@ -3276,10 +3375,20 @@ void handleWavSampleNoteOnForTrack(int track)
     int tOffset = track-4;
 
     sampleVoices[tOffset].ampEnv.noteOn();
-    sampleVoices[tOffset].wSample.play(usableWavSampleNames[trackToUse.wav_sample_id], sd1);
+    // sampleVoices[tOffset].wSample.play(usableWavSampleNames[trackToUse.wav_sample_id], sd1);
   } else {
     comboVoices[track].ampEnv.noteOn();
-    comboVoices[track].wSample.play(usableWavSampleNames[trackToUse.wav_sample_id], sd1);
+    // comboVoices[track].wSample.play(usableWavSampleNames[trackToUse.wav_sample_id], sd1);
+  }
+}
+
+void handleDexedNoteOnForTrack(int track)
+{
+  TRACK trackToUse = getHeapTrack(track);
+
+  if (track < 4) {
+    // comboVoices[track].dexed.setSustain(true);
+    comboVoices[track].dexed.keydown(50, 50);
   }
 }
 
@@ -3528,10 +3637,34 @@ void handleWavSampleNoteOnForTrackStep(int track, int step)
     int tOffset = track-4;
 
     sampleVoices[tOffset].ampEnv.noteOn();
-    sampleVoices[tOffset].wSample.play(usableWavSampleNames[trackToUse.wav_sample_id], sd1);
+    // sampleVoices[tOffset].wSample.play(usableWavSampleNames[trackToUse.wav_sample_id], sd1);
   } else {
     comboVoices[track].ampEnv.noteOn();
-    comboVoices[track].wSample.play(usableWavSampleNames[trackToUse.wav_sample_id], sd1);
+    // comboVoices[track].wSample.play(usableWavSampleNames[trackToUse.wav_sample_id], sd1);
+  }
+}
+
+void handleDexedNoteOnForTrackStep(int track, int step)
+{
+  TRACK trackToUse = getHeapTrack(track);
+  TRACK_STEP stepToUse = getHeapStep(track, step);
+
+  uint8_t noteToUse = stepToUse.note;
+  if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[MOD_ATTRS::NOTE]) {
+    noteToUse = _pattern_mods_mem.tracks[track].steps[step].note;
+    //Serial.println(noteToUse);
+  }
+
+  uint8_t octaveToUse = stepToUse.octave;
+  if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[MOD_ATTRS::OCTAVE]) {
+    octaveToUse = _pattern_mods_mem.tracks[track].steps[step].octave;
+    //Serial.println(octaveToUse);
+  }
+
+  if (track < 4) {
+    int midiNote = (noteToUse + (12 * (octaveToUse)));
+
+    comboVoices[track].dexed.keydown(midiNote, stepToUse.velocity);
   }
 }
 
@@ -3601,6 +3734,8 @@ void handleNoteOnForTrack(int track)
     handleRawSampleNoteOnForTrack(track);
   } else if (trackToUse.track_type == WAV_SAMPLE) {
     handleWavSampleNoteOnForTrack(track);
+  } else if (trackToUse.track_type == DEXED) {
+    handleDexedNoteOnForTrack(track);
   } else if (trackToUse.track_type == SUBTRACTIVE_SYNTH) {
     handleSubtractiveSynthNoteOnForTrack(track);
   } else if (trackToUse.track_type == CV_GATE) {
@@ -3619,6 +3754,13 @@ void handleNoteOnForTrackStep(int track, int step)
   if (_trkNeedsInit[track]) {
     Serial.print("init sounds for track: ");
     Serial.println(track);
+
+    if (trackToUse.track_type == RAW_SAMPLE) {
+      //newdigate::flashloader loader;
+
+      samples[trackToUse.raw_sample_id] = loader.loadSample(usableSampleNames[trackToUse.raw_sample_id]);
+    }
+
     initSoundsForTrack(track);
   }
 
@@ -3626,6 +3768,8 @@ void handleNoteOnForTrackStep(int track, int step)
     handleRawSampleNoteOnForTrackStep(track, step);
   } else if (trackToUse.track_type == WAV_SAMPLE) {
     handleWavSampleNoteOnForTrackStep(track, step);
+  } else if (trackToUse.track_type == DEXED) {
+    handleDexedNoteOnForTrackStep(track, step);
   } else if (trackToUse.track_type == SUBTRACTIVE_SYNTH) {
     handleSubtractiveSynthNoteOnForTrackStep(track, step);
   } else if (trackToUse.track_type == MIDI_OUT) {
@@ -3642,7 +3786,12 @@ void handleNoteOffForTrackStep(int track, int step)
   if (currTrack.track_type == SUBTRACTIVE_SYNTH) {
     comboVoices[track].ampEnv.noteOff();
     comboVoices[track].filterEnv.noteOff();
-  } 
+  }
+
+  else if (currTrack.track_type == DEXED) {
+    comboVoices[track].dexed.notesOff();
+    //comboVoices[track].dexed.keyup(1);
+  }
   
   // fix
   else if (currTrack.track_type == MIDI_OUT) {
@@ -3681,6 +3830,11 @@ void handleNoteOffForTrack(int track)
     comboVoices[track].ampEnv.noteOff();
     comboVoices[track].filterEnv.noteOff();
   } 
+
+  else if (currTrack.track_type == DEXED) {
+    comboVoices[track].dexed.notesOff();
+    //comboVoices[track].dexed.keyup(1);
+  }
   
   // fix
   else if (currTrack.track_type == MIDI_OUT) {
@@ -3738,15 +3892,15 @@ void setDisplayStateForAllStepLEDs(void)
       continue;
     }
 
-    if (currTrackStepForLED.state == TRACK_STEP_STATE::OFF) {
+    if (currTrackStepForLED.state == TRACK_STEP_STATE::STATE_OFF) {
       if (keyLED < 0) {
         Serial.println("could not find key LED!");
       } else {
         setLEDPWM(keyLED, 0);
       }
-    } else if (currTrackStepForLED.state == TRACK_STEP_STATE::ON) {
+    } else if (currTrackStepForLED.state == TRACK_STEP_STATE::STATE_ON) {
       setLEDPWM(keyLED, 512); // 256 might be better
-    } else if (currTrackStepForLED.state == TRACK_STEP_STATE::ACCENTED) {
+    } else if (currTrackStepForLED.state == TRACK_STEP_STATE::STATE_ACCENTED) {
       setLEDPWM(keyLED, 4095);
     }
   }
@@ -3765,13 +3919,13 @@ void setDisplayStateForPatternActiveTracksLEDs(bool enable)
     
     TRACK_STEP currTrackStepForLED = currTrack.steps[currTrackStep-1];
 
-    if (currTrackStepForLED.state == TRACK_STEP_STATE::OFF) {
+    if (currTrackStepForLED.state == TRACK_STEP_STATE::STATE_OFF) {
       if (keyLED < 0) {
         Serial.println("could not find key LED!");
       } else {
         setLEDPWM(keyLED, 0);
       }
-    } else if (currTrackStepForLED.state == TRACK_STEP_STATE::ON || currTrackStepForLED.state == TRACK_STEP_STATE::ACCENTED) {
+    } else if (currTrackStepForLED.state == TRACK_STEP_STATE::STATE_ON || currTrackStepForLED.state == TRACK_STEP_STATE::STATE_ACCENTED) {
       setLEDPWM(keyLED, enable ? 4095 : 0);
     }
   }
@@ -4310,20 +4464,20 @@ void toggleSelectedStep(uint8_t step)
   TRACK_STEP_STATE currStepState = currTrack.steps[adjStep].state;
 
   Serial.print("currStepState: ");
-  Serial.println(currStepState == TRACK_STEP_STATE::ACCENTED ? "accented" : (currStepState == TRACK_STEP_STATE::ON ? "on" : "off"));
+  Serial.println(currStepState == TRACK_STEP_STATE::STATE_ACCENTED ? "accented" : (currStepState == TRACK_STEP_STATE::STATE_ON ? "on" : "off"));
 
   // TODO: implement accent state for MIDI, CV/Trig, Sample, Synth track types?
-  if (currStepState == TRACK_STEP_STATE::OFF) {
-    _seq_heap.pattern.tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::ON;
+  if (currStepState == TRACK_STEP_STATE::STATE_OFF) {
+    _seq_heap.pattern.tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::STATE_ON;
     // copy track properties to steps
     _seq_heap.pattern.tracks[current_selected_track].steps[adjStep].note = currTrack.note;
     _seq_heap.pattern.tracks[current_selected_track].steps[adjStep].octave = currTrack.octave;
     _seq_heap.pattern.tracks[current_selected_track].steps[adjStep].velocity = currTrack.velocity;
-  } else if (currStepState == TRACK_STEP_STATE::ON) {
-    _seq_heap.pattern.tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::ACCENTED;
+  } else if (currStepState == TRACK_STEP_STATE::STATE_ON) {
+    _seq_heap.pattern.tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::STATE_ACCENTED;
     _seq_heap.pattern.tracks[current_selected_track].steps[adjStep].velocity = 100; // TODO: use a "global accent" value here
-  } else if (currStepState == TRACK_STEP_STATE::ACCENTED) {
-    _seq_heap.pattern.tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::OFF;
+  } else if (currStepState == TRACK_STEP_STATE::STATE_ACCENTED) {
+    _seq_heap.pattern.tracks[current_selected_track].steps[adjStep].state = TRACK_STEP_STATE::STATE_OFF;
   }
 
   _seq_external.banks[current_selected_bank].patterns[current_selected_pattern].tracks[current_selected_track].steps[adjStep] = _seq_heap.pattern.tracks[current_selected_track].steps[adjStep];
@@ -4876,6 +5030,47 @@ void handleEncoderSubtractiveSynthModD(int diff)
   } else if (current_page_selected == 5) {
       // n/a
   }
+}
+
+void handleEncoderDexedModA(int diff)
+{
+  TRACK currTrack = getHeapCurrentSelectedTrack();
+
+  int currLastStep = currTrack.last_step;
+  int newLastStep = currTrack.last_step + diff;
+
+  // make sure track last step doesn't exceed pattern's
+  PATTERN currPattern = getHeapCurrentSelectedPattern();
+
+  // TODO: try to re-align current playing track step with pattern step if able
+  if (newLastStep < 1) {
+    newLastStep = 1;
+  } else if (newLastStep > currPattern.last_step) {
+    newLastStep = currPattern.last_step;
+  }
+
+  if (newLastStep != currLastStep) {
+    _seq_heap.pattern.tracks[current_selected_track].last_step = newLastStep;
+
+    displayPageLEDs(-1);
+    setDisplayStateForAllStepLEDs();
+    drawSequencerScreen(false);
+  }
+}
+
+void handleEncoderDexedModB(int diff)
+{
+  updateTrackLength(diff);
+}
+
+void handleEncoderDexedModC(int diff)
+{
+  //
+}
+
+void handleEncoderDexedModD(int diff)
+{
+  //
 }
 
 void handleEncoderRawSampleModA(int diff)
@@ -5498,6 +5693,16 @@ void handleEncoderSetTrackMods(void)
         } else if (m == 3) {
           handleEncoderSubtractiveSynthModD(diff);
         }
+      } else if (currTrack.track_type == DEXED) {
+        if (m == 0) {
+          handleEncoderDexedModA(diff);
+        } else if (m == 1) {
+          handleEncoderDexedModB(diff);
+        } else if (m == 2) {
+          handleEncoderDexedModC(diff);
+        } else if (m == 3) {
+          handleEncoderDexedModD(diff);
+        }
       } else if (currTrack.track_type == RAW_SAMPLE) {
         if (m == 0) {
           handleEncoderRawSampleModA(diff);
@@ -5932,6 +6137,8 @@ void handleSwitchStates(bool discard) {
                   if (currType == SUBTRACTIVE_SYNTH) {
                     newType = RAW_SAMPLE;
                   } else if (currType == RAW_SAMPLE) {
+                    newType = DEXED;
+                  } else if (currType == DEXED) {
                     newType = WAV_SAMPLE;
                   } else if (currType == WAV_SAMPLE) {
                     newType = MIDI_OUT;
