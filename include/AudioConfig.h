@@ -77,7 +77,7 @@ AudioEffectEnvelope      venv12; //xy=1063.4999389648438,2926.6666259765625
 AudioEffectEnvelope      venv9; //xy=1070,2360
 AudioEffectEnvelope      venv11; //xy=1070.1666259765625,2726.6666259765625
 AudioEffectEnvelope      venv10; //xy=1073.5,2550
-AudioSynthDexed          dexed1(1, 44100);         //xy=1176,364
+AudioSynthDexed          dexed1(4, SAMPLE_RATE);         //xy=1176,364
 AudioAmplifier           vleft3;         //xy=1177,772
 AudioAmplifier           vleft8; //xy=1172.9999389648438,1848.6666259765625
 AudioAmplifier           vleft2;         //xy=1179,512
@@ -86,12 +86,12 @@ AudioAmplifier           vright3;        //xy=1178,811
 AudioAmplifier           vleft1;         //xy=1181,263
 AudioAmplifier           vright2;        //xy=1180,551
 AudioAmplifier           vright4;        //xy=1178,1060
-AudioAmplifier           vright8; //xy=1174.9999389648438,1887.6666259765625
-AudioSynthDexed          dexed4(1, 44100);    //xy=1179,1110
+AudioAmplifier           vright8; //xy=1174 9999389648438,1887.6666259765625
+AudioSynthDexed          dexed4(4, SAMPLE_RATE);    //xy=1179,1110
 AudioAmplifier           vright1;        //xy=1183,302
 AudioAmplifier           vleft5; //xy=1179.5,1282
-AudioSynthDexed          dexed2(1, 44100);    //xy=1183,601
-AudioSynthDexed          dexed3(1, 44100);    //xy=1182,868
+AudioSynthDexed          dexed2(4, SAMPLE_RATE);    //xy=1183,601
+AudioSynthDexed          dexed3(4, SAMPLE_RATE);    //xy=1182,868
 AudioAmplifier           vleft7; //xy=1179.6666259765625,1648.6666259765625
 AudioAmplifier           vright5; //xy=1181.5,1321
 AudioAmplifier           vright7; //xy=1181.6666259765625,1687.6666259765625
@@ -482,5 +482,10 @@ SampleVoice sampleVoices[SAMPLE_VOICE_COUNT] = {
     vmsample16,venv16,vleft16,vright16,vsubmixl16,vsubmixr16
   ),
 };
+
+
+
+uint8_t dexed_current_bank = 0;
+uint8_t dexed_current_patch = 0;
 
 #endif /* AudioConfig_h */

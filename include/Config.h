@@ -19,7 +19,7 @@
 
 #define FIRMWARE_VERSION "0.1.0"
 
-#define LOG_METRICS_ENABLED false
+#define LOG_METRICS_ENABLED true
 
 #define DISPLAY_MAX_WIDTH 128
 #define DISPLAY_MAX_HEIGHT 64
@@ -367,10 +367,11 @@ typedef struct
 } SEQUENCER_EXTERNAL;
 
 DMAMEM SEQUENCER_EXTERNAL _seq_external;
-
 DMAMEM PATTERN _pattern_copy_buf;
 DMAMEM TRACK _track_copy_buf;
 DMAMEM TRACK_STEP _step_copy_buf;
+
+DMAMEM PATTERN _rec_pattern_buf;
 
 typedef struct
 {
@@ -497,6 +498,8 @@ typedef struct
 
 SEQUENCER_STATE _seq_state;
 
+bool _recording = false; // add to seq state struct eventually
+
 typedef struct
 {
   int8_t trackNum = -1;
@@ -517,7 +520,9 @@ typedef struct
 #define STEP_STACK_SIZE 1024
 STACK_STEP_DATA _step_stack[STEP_STACK_SIZE];
 
-STACK_RATCHET_DATA _ratchet_stack[STEP_STACK_SIZE];
+// 1 track * 16 steps * 96ppqn max = 1536
+#define RATCHET_STACK_SIZE 1536
+STACK_RATCHET_DATA _ratchet_stack[RATCHET_STACK_SIZE];
 
 // Project structure
 
