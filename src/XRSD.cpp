@@ -1,0 +1,193 @@
+#include <Arduino.h>
+#include <XRSD.h>
+#include <string>
+#include <XRHelpers.h>
+#include <XRDisplay.h>
+#include <XRKeyInput.h>
+
+namespace XRSD
+{
+
+    MACHINE_STATE_0_1_0 _machine_state;
+    PROJECT _current_project;
+
+    bool init()
+    {
+        SPI.setMOSI(SDCARD_MOSI_PIN);
+        SPI.setSCK(SDCARD_SCK_PIN);
+        
+        if (!(SD.begin(SDCARD_CS_PIN))) {
+            return false;
+        }
+
+        return true;
+    }
+
+    void initMachineState()
+    {
+        std::string newProjectName = XRKeyInput::get();
+        if (newProjectName.length() < 1) {
+            XRDisplay::drawError("INVALID PROJ. NAME!");
+            return;
+        }
+
+        // initialize machine state file
+        char machineStateDirBuf[50];
+        XRHelpers::getMachineStateDir(machineStateDirBuf);
+        std::string machineStateDir(machineStateDirBuf);
+
+        char machineStateFilenameBuf[50];
+        XRHelpers::getMachineStateFile(machineStateFilenameBuf);
+        std::string machineStateFilename(machineStateFilenameBuf);
+
+        int lastHyphenPos = machineStateFilename.rfind('-');
+        std::string machineStateVersion = machineStateFilename.substr(lastHyphenPos+1, 5); // todo: fix 5 char version string limit
+        //Serial.printf("machineStateVersion: %s\n", machineStateVersion.c_str());
+
+        // write machine state binary for current version
+        if (machineStateVersion == "0.1.0") {
+            //Serial.println("here!");
+
+            // verify file dir exists first
+            if (!SD.exists(machineStateDir.c_str())) {
+                if (!SD.mkdir(machineStateDir.c_str())) {
+                    XRDisplay::drawError("SD MKDIR ERR!");
+                    return;
+                }
+            }
+
+            std::string finalPath = machineStateDir + machineStateFilename;
+
+            File newMachineStateFile = SD.open(finalPath.c_str(), FILE_WRITE);
+
+            strcpy(_machine_state.lastOpenedProject, newProjectName.c_str());
+
+            newMachineStateFile.write((byte *)&_machine_state, sizeof(_machine_state));
+            newMachineStateFile.close();
+        }
+    }
+
+    bool loadMachineState()
+    {
+        char machineStateDirBuf[50];
+        XRHelpers::getMachineStateDir(machineStateDirBuf);
+        std::string machineStateDir(machineStateDirBuf);
+
+        char machineStateFilenameBuf[50];
+        XRHelpers::getMachineStateFile(machineStateFilenameBuf);
+        std::string machineStateFilename(machineStateFilenameBuf);
+
+        std::string finalPath = machineStateDir + machineStateFilename;
+
+        // Serial.printf("machineStatePath: %s\n", finalPath.c_str());
+        
+        File machineStateFile = SD.open(finalPath.c_str(), FILE_READ);
+        if (!machineStateFile.available()) {
+            Serial.println("machine state file not found!");
+            return false;
+        }
+
+        machineStateFile.read((byte *)&_machine_state, sizeof(_machine_state));
+        machineStateFile.close();
+
+        return true;
+    }
+
+    void createNewProject()
+    {
+        initMachineState();
+
+        char projectsPathPrefixBuf[50];
+        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
+        std::string projectsPath(projectsPathPrefixBuf); // read char array into string
+
+        // verify file dir exists first
+        if (!SD.exists(projectsPath.c_str())) {
+            if (!SD.mkdir(projectsPath.c_str())) {
+                XRDisplay::drawError("SD MKDIR ERR!");
+                return;
+            }
+        }
+
+        std::string newProjectName = XRKeyInput::get();
+
+        // populate project struct
+        strcpy(_current_project.name, newProjectName.c_str());
+        strcpy(_current_project.machineVersion, FIRMWARE_VERSION);
+        _current_project.tempo = 120.0;
+
+        std::string newProjectDataDir = projectsPath;
+        newProjectDataDir += "/";
+        newProjectDataDir += newProjectName;
+        newProjectDataDir += "/.data";
+
+        // verify file dir exists first
+        if (!SD.exists(newProjectDataDir.c_str())) {
+            if (!SD.mkdir(newProjectDataDir.c_str())) {
+                XRDisplay::drawError("SD MKDIR ERR!");
+                return;
+            }
+        }
+
+        std::string newProjectFilePath;
+        newProjectFilePath = newProjectDataDir;
+        newProjectFilePath += "/project-info.bin";
+
+        //Serial.printf("Saving new project file to SD card at path: %s\n", newProjectFilePath.c_str());
+        //Serial.printf("sizeof(_current_project): %d, sizeof(_machine_state): %d\n", sizeof(_current_project), sizeof(_machine_state));
+
+        File newProjectFile = SD.open(newProjectFilePath.c_str(), FILE_WRITE);
+        newProjectFile.write((byte *)&_current_project, sizeof(_current_project));
+        newProjectFile.close();
+
+       // Serial.println("finished!");
+    }
+
+    void saveProject()
+    {
+        //
+    }
+
+    bool loadLastProject()
+    {
+        std::string lastKnownProject(_machine_state.lastOpenedProject);
+        //Serial.printf("last project known to machine state: %s\n", lastKnownProject.c_str());
+
+        if (lastKnownProject.length() == 0) {
+            XRDisplay::drawError("NO PROJECT IN STATE!");
+            //Serial.println("here1");
+            delay(1000);
+            return false;
+        }
+
+        // get project path
+        char projectsPathPrefixBuf[50];
+        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
+        std::string projectPath(projectsPathPrefixBuf); // read char array into string
+        projectPath += "/";
+        projectPath += lastKnownProject;
+        projectPath += "/.data/project-info.bin";
+
+        //Serial.printf("proj path: %s\n", projectPath.c_str());
+
+        File lastKnownProjectFile = SD.open(projectPath.c_str(), FILE_READ);
+        if (!lastKnownProjectFile.available()) {
+            XRDisplay::drawError("CANNOT LOAD PROJECT!");
+            //Serial.println("here2");
+            delay(1000);
+            return false;
+        }
+
+        lastKnownProjectFile.read((byte *)&_current_project, sizeof(_current_project));
+        lastKnownProjectFile.close();
+
+        // Serial.printf(
+        //     "proj name: %s proj machineVersion: %s proj tempo: %f\n", 
+        //     _current_project.name,
+        //     _current_project.machineVersion,
+        //     _current_project.tempo
+        // );
+
+        return true;
+    }
+}
