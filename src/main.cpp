@@ -1,10 +1,12 @@
 #include <Arduino.h>
 #include <XRMain.h>
 
-void setup() {
+void setup()
+{
     Serial.begin(9600);
 
-    if (CrashReport) {
+    if (CrashReport)
+    {
         Serial.print(CrashReport);
     }
 

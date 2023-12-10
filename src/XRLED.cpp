@@ -1,5 +1,6 @@
 #include <XRLED.h>
 #include <XRSequencer.h>
+#include <XRHelpers.h>
 #include <map>
 
 namespace XRLED
@@ -51,7 +52,7 @@ namespace XRLED
         tlc.write();
     }
 
-    void setLEDPWMDouble (uint8_t LED1, uint16_t PWM1, uint8_t LED2, uint16_t PWM2)
+    void setPWMDouble(uint8_t LED1, uint16_t PWM1, uint8_t LED2, uint16_t PWM2)
     {
         tlc.setPWM(LED1, PWM1);
         tlc.setPWM(LED2, PWM2);
@@ -209,6 +210,64 @@ namespace XRLED
             else
             {
                 setPWM(_stepLEDPins[t], 0);
+            }
+        }
+    }
+
+    void setDisplayStateForAllStepLEDs()
+    {
+        auto currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto currStepPage = XRSequencer::getCurrentStepPage();
+
+        const int MAX_TRACK_LEDS_SIZE = 17;
+
+        for (int l = 1; l < MAX_TRACK_LEDS_SIZE; l++)
+        {
+            int stepToUse = l;
+
+            // todo: check if current track has last_step > 16
+            // if so, use proper offset to get correct step state for current page
+            if (currStepPage == 2)
+            {
+                stepToUse += 16;
+            }
+            else if (currStepPage == 3)
+            {
+                stepToUse += 32;
+            }
+            else if (currStepPage == 4)
+            {
+                stepToUse += 48;
+            }
+
+            auto currTrackStepForLED = currTrack.steps[stepToUse - 1];
+            int8_t curr_led_char = XRHelpers::stepCharMap[l];
+            int8_t keyLED = getKeyLED(curr_led_char);
+
+            if (stepToUse > currTrack.last_step)
+            {
+                setPWM(keyLED, 0);
+                continue;
+            }
+
+            if (currTrackStepForLED.state == XRSequencer::TRACK_STEP_STATE::STATE_OFF)
+            {
+                if (keyLED < 0)
+                {
+                    Serial.println("could not find key LED!");
+                }
+                else
+                {
+                    setPWM(keyLED, 0);
+                }
+            }
+            else if (currTrackStepForLED.state == XRSequencer::TRACK_STEP_STATE::STATE_ON)
+            {
+                setPWM(keyLED, 512); // 256 might be better
+            }
+            else if (currTrackStepForLED.state == XRSequencer::TRACK_STEP_STATE::STATE_ACCENTED)
+            {
+                setPWM(keyLED, 4095);
             }
         }
     }

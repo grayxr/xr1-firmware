@@ -8,10 +8,9 @@ namespace XRMenu
     std::string _soundMenuItems[SOUND_MENU_ITEM_MAX] = {
         "ASSIGN SOUND TO TRACK",
         "SAVE TRACK SOUND",
-        "LOAD TRACK SOUND"
-    };
+        "LOAD TRACK SOUND"};
 
-    std::string* getSoundMenuItems()
+    std::string *getSoundMenuItems()
     {
         return _soundMenuItems;
     }

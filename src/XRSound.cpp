@@ -373,10 +373,10 @@ namespace XRSound
         SOUND_CONTROL_MODS mods;
 
         auto currentSelectedTrack = XRSequencer::getHeapCurrentSelectedTrack();
-        //auto currentSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
+        // auto currentSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        //auto modsForCurrentTrackStep = XRSequencer::getModsForCurrentTrackStep();
-        //auto currentUXMode = XRUX::getCurrentMode();
+        // auto modsForCurrentTrackStep = XRSequencer::getModsForCurrentTrackStep();
+        // auto currentUXMode = XRUX::getCurrentMode();
 
         switch (currentSelectedPageNum)
         {
@@ -404,10 +404,10 @@ namespace XRSound
         SOUND_CONTROL_MODS mods;
 
         auto currentSelectedTrack = XRSequencer::getHeapCurrentSelectedTrack();
-        //auto currentSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
+        // auto currentSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        //auto modsForCurrentTrackStep = XRSequencer::getModsForCurrentTrackStep();
-        //auto currentUXMode = XRUX::getCurrentMode();
+        // auto modsForCurrentTrackStep = XRSequencer::getModsForCurrentTrackStep();
+        // auto currentUXMode = XRUX::getCurrentMode();
 
         switch (currentSelectedPageNum)
         {
@@ -435,10 +435,10 @@ namespace XRSound
         SOUND_CONTROL_MODS mods;
 
         auto currentSelectedTrack = XRSequencer::getHeapCurrentSelectedTrack();
-        //auto currentSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
+        // auto currentSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        //auto modsForCurrentTrackStep = XRSequencer::getModsForCurrentTrackStep();
-        //auto currentUXMode = XRUX::getCurrentMode();
+        // auto modsForCurrentTrackStep = XRSequencer::getModsForCurrentTrackStep();
+        // auto currentUXMode = XRUX::getCurrentMode();
 
         switch (currentSelectedPageNum)
         {
@@ -466,10 +466,10 @@ namespace XRSound
         SOUND_CONTROL_MODS mods;
 
         auto currentSelectedTrack = XRSequencer::getHeapCurrentSelectedTrack();
-        //auto currentSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
+        // auto currentSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        //auto modsForCurrentTrackStep = XRSequencer::getModsForCurrentTrackStep();
-        //auto currentUXMode = XRUX::getCurrentMode();
+        // auto modsForCurrentTrackStep = XRSequencer::getModsForCurrentTrackStep();
+        // auto currentUXMode = XRUX::getCurrentMode();
 
         switch (currentSelectedPageNum)
         {
@@ -503,10 +503,10 @@ namespace XRSound
         SOUND_CONTROL_MODS mods;
 
         auto currentSelectedTrack = XRSequencer::getHeapCurrentSelectedTrack();
-        //auto currentSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
+        // auto currentSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        //auto modsForCurrentTrackStep = XRSequencer::getModsForCurrentTrackStep();
-        //auto currentUXMode = XRUX::getCurrentMode();
+        // auto modsForCurrentTrackStep = XRSequencer::getModsForCurrentTrackStep();
+        // auto currentUXMode = XRUX::getCurrentMode();
 
         switch (currentSelectedPageNum)
         {
@@ -589,7 +589,7 @@ namespace XRSound
 
         auto currentSelectedTrack = XRSequencer::getHeapCurrentSelectedTrack();
         auto currentSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
-        //auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        // auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
         auto modsForCurrentTrackStep = XRSequencer::getModsForCurrentTrackStep();
         auto currentUXMode = XRUX::getCurrentMode();
 

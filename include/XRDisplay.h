@@ -9,7 +9,7 @@
 namespace XRDisplay
 {
     void init();
-    
+
     void drawIntro();
     void drawSetTempoOverlay();
     void drawGenericOverlayFrame(void);
@@ -26,7 +26,7 @@ namespace XRDisplay
     void drawExtendedControlMods();
     void drawControlModsForADSR(int att, int dec, float sus, int rel);
     void drawPageNumIndicators();
-    void drawGenericMenuList(std::string headerStr, std::string* menuItems, int menuItemMax);
+    void drawGenericMenuList(std::string headerStr, std::string *menuItems, int menuItemMax);
     void drawSoundMenuMain();
 
     std::string getDisplayNote();

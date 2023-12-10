@@ -240,21 +240,42 @@ namespace XRSequencer
     bool init();
 
     void initExternalSequencer();
+    void swapSequencerMemoryForPattern(int newBank, int newPattern);
+
+    void toggleSelectedStep(uint8_t step);
 
     void onClockStart();
     void onClockStop();
     void ClockOut16PPQN(uint32_t tick);
     void ClockOut96PPQN(uint32_t tick);
+
     void handle16PPQN(uint32_t tick);
     void handle96PPQN(uint32_t tick);
+
     void triggerAllStepsForAllTracks(uint32_t tick);
+    void triggerRatchetingTrack(uint32_t tick);
     void handleAddToStepStack(uint32_t tick, int track, int step);
+    void handleAddToRatchetStack();
+    void handleRemoveFromStepStack(uint32_t tick);
+    void handleRemoveFromRatchetStack();
+
+    void handleNoteOnForTrack(int track);
+    void handleNoteOffForTrack(int track);
     void handleNoteOnForTrackStep(int track, int step);
+    void handleNoteOffForTrackStep(int track, int step);
+    
     void updateAllTrackStepStates();
     void updateCurrentPatternStepState();
     void setDisplayStateForPatternActiveTracksLEDs(bool enable);
     void noteOffForAllSounds();
     void handleQueueActions();
+
+    void setSelectedTrack(int8_t track);
+    void setSelectedPage(int8_t page);
+    void initializeCurrentSelectedTrack();
+
+    void toggleSequencerPlayback(char btn);
+    void rewindAllCurrentStepsForAllTracks();
 
     SEQUENCER_STATE getSeqState();
 
@@ -275,7 +296,7 @@ namespace XRSequencer
     int8_t getCurrentSelectedPatternNum();
     int8_t getCurrentSelectedTrackNum();
     int8_t getCurrentSelectedStepNum();
-    int8_t getCurrentStepPageNum();
+    int8_t getCurrentStepPage();
 
     // the current page for the current track layer (default layer is "sound")
     int8_t getCurrentSelectedPage();

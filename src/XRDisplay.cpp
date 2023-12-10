@@ -77,7 +77,7 @@ namespace XRDisplay
 
         u8g2.sendBuffer();
     }
-    
+
     void drawGenericOverlayFrame(void)
     {
         int width = 124;
@@ -206,9 +206,9 @@ namespace XRDisplay
     void drawHatchedBackground()
     {
         int leftBoundX = 0;
-        //int rightBoundX = DISPLAY_MAX_WIDTH;
+        // int rightBoundX = DISPLAY_MAX_WIDTH;
         int topBoundX = 0;
-        //int bottomBoundX = DISPLAY_MAX_HEIGHT;
+        // int bottomBoundX = DISPLAY_MAX_HEIGHT;
 
         int pixelRows = DISPLAY_MAX_HEIGHT;
         int pixelCols = DISPLAY_MAX_WIDTH;
@@ -621,7 +621,7 @@ namespace XRDisplay
     void drawPatternControlMods()
     {
         int ctrlModHeaderY = 20;
-        //int ctrlModHeaderBoxSize = 9;
+        // int ctrlModHeaderBoxSize = 9;
         int ctrlModHeaderStartX = 0;
         int ctrlModSpaceWidth = (DISPLAY_MAX_WIDTH / 4);
         int ctrlModHeaderStartCenteredX = (DISPLAY_MAX_WIDTH / 4) / 2;
@@ -949,13 +949,13 @@ namespace XRDisplay
         u8g2.sendBuffer();
     }
 
-    void drawGenericMenuList(std::string headerStr, std::string* menuItems, int menuItemMax)
+    void drawGenericMenuList(std::string headerStr, std::string *menuItems, int menuItemMax)
     {
         drawGenericOverlayFrame();
 
         // menu header
         u8g2.drawStr(8, 6, headerStr.c_str());
-        
+
         // cursor
         int menuItemCursorIdx = XRMenu::getCursorPosition();
         int menuCursorStartX = 7;
@@ -966,13 +966,12 @@ namespace XRDisplay
         int menuCursorTriangleY3 = 23 + (menuItemCursorIdx * menuCursorLineSpacingY);
 
         u8g2.drawTriangle(
-            menuCursorStartX, 
-            menuCursorTriangleY1, 
-            menuCursorStartX, 
-            menuCursorTriangleY2, 
-            menuCursorStartX + menuCursorTriangleSize, 
-            menuCursorTriangleY3
-        );
+            menuCursorStartX,
+            menuCursorTriangleY1,
+            menuCursorStartX,
+            menuCursorTriangleY2,
+            menuCursorStartX + menuCursorTriangleSize,
+            menuCursorTriangleY3);
 
         // menu items
         int menuItemStartX = 12;
@@ -980,11 +979,12 @@ namespace XRDisplay
         int menuItemLineSpacingY = 9;
         int menuCurrentLine = 0;
 
-        for (int m=0; m<menuItemMax; m++) {
+        for (int m = 0; m < menuItemMax; m++)
+        {
             u8g2.drawStr(menuItemStartX, menuItemStartY + (menuCurrentLine * menuItemLineSpacingY), menuItems[m].c_str());
             ++menuCurrentLine;
         }
-        
+
         // esc / sel button legend
         u8g2.drawStr(93, 6, "ESC");
         u8g2.drawStr(110, 6, "SEL");

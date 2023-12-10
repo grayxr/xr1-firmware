@@ -6,7 +6,7 @@
 #include <XRConfig.h>
 
 namespace XRMIDI
-{    
+{
     void init();
 }
 

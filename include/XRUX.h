@@ -6,7 +6,8 @@
 
 namespace XRUX
 {
-    enum UX_MODE {
+    enum UX_MODE
+    {
         BANK_WRITE,
         BANK_SEL,
         PATTERN_WRITE,
@@ -38,7 +39,7 @@ namespace XRUX
 
     void setCurrentMode(UX_MODE mode);
     void setPreviousMode(UX_MODE mode);
-    
+
     UX_MODE getCurrentMode();
     UX_MODE getPreviousMode();
 }

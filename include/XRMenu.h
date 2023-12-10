@@ -7,7 +7,7 @@
 
 namespace XRMenu
 {
-    std::string* getSoundMenuItems();
+    std::string *getSoundMenuItems();
     uint8_t getCursorPosition();
     void setCursorPosition(uint8_t idx);
     void resetCursor();

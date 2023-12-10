@@ -10,21 +10,18 @@ namespace XRKeyInput
     const int SYMBOL_KEYSET_SIZE = 10;
 
     const char *alphaKeyset[ALPHA_KEYSET_SIZE] = {
-        "A","B","C","D","E","F","G","H",
-        "I","J","K","L","M","N","O","P",
-        "Q","R","S","T","U","V","W","X",
-        "Y","Z"
-    };
+        "A", "B", "C", "D", "E", "F", "G", "H",
+        "I", "J", "K", "L", "M", "N", "O", "P",
+        "Q", "R", "S", "T", "U", "V", "W", "X",
+        "Y", "Z"};
 
     const char *numericKeyset[NUMERIC_KEYSET_SIZE] = {
-        "0","1","2","3","4","5","6","7",
-        "8","9"
-    };
+        "0", "1", "2", "3", "4", "5", "6", "7",
+        "8", "9"};
 
     const char *symbolKeyset[SYMBOL_KEYSET_SIZE] = {
-        "!","-","_","(",")","#","&","$",
-        "*","%"
-    };
+        "!", "-", "_", "(", ")", "#", "&", "$",
+        "*", "%"};
 
     std::map<TEXT_KEYS, uint8_t> textKeyElementToKey = {
         {ELEM1, 0},
@@ -44,14 +41,18 @@ namespace XRKeyInput
 
     void enter(std::string input, int index)
     {
-        if (_inputBuf.length() == INPUT_LENGTH_MAX) {
+        if (_inputBuf.length() == INPUT_LENGTH_MAX)
+        {
             return;
         }
 
-        if (index < 0) {
+        if (index < 0)
+        {
             // no index provided, just append to the string
             _inputBuf += input;
-        } else {
+        }
+        else
+        {
             std::string tempInputBuf = _inputBuf;
             tempInputBuf.insert(index, input);
             _inputBuf = tempInputBuf;
@@ -64,30 +65,42 @@ namespace XRKeyInput
         int8_t elementToKey = textKeyElementToKey[element];
         int8_t elementAtRow = elementToKey + (8 * _currentKeyRow);
 
-        if (_currentKeyset == TEXT_KEYSET::UPPER_ALPHA) {
-            if (elementAtRow > (ALPHA_KEYSET_SIZE - 1)) {
+        if (_currentKeyset == TEXT_KEYSET::UPPER_ALPHA)
+        {
+            if (elementAtRow > (ALPHA_KEYSET_SIZE - 1))
+            {
                 return;
             }
 
             input = alphaKeyset[elementAtRow];
-        } else if (_currentKeyset == TEXT_KEYSET::LOWER_ALPHA) {
-            if (elementAtRow > (ALPHA_KEYSET_SIZE - 1)) {
+        }
+        else if (_currentKeyset == TEXT_KEYSET::LOWER_ALPHA)
+        {
+            if (elementAtRow > (ALPHA_KEYSET_SIZE - 1))
+            {
                 return;
             }
 
             input = alphaKeyset[elementAtRow];
 
-            for(auto& c : input){
+            for (auto &c : input)
+            {
                 c = tolower(c);
             }
-        } else if (_currentKeyset == TEXT_KEYSET::NUMERIC) {
-            if (elementAtRow > (NUMERIC_KEYSET_SIZE - 1)) {
+        }
+        else if (_currentKeyset == TEXT_KEYSET::NUMERIC)
+        {
+            if (elementAtRow > (NUMERIC_KEYSET_SIZE - 1))
+            {
                 return;
             }
 
             input = numericKeyset[elementAtRow];
-        } else if (_currentKeyset == TEXT_KEYSET::SYMBOLS) {
-            if (elementAtRow > (SYMBOL_KEYSET_SIZE - 1)) {
+        }
+        else if (_currentKeyset == TEXT_KEYSET::SYMBOLS)
+        {
+            if (elementAtRow > (SYMBOL_KEYSET_SIZE - 1))
+            {
                 return;
             }
 
@@ -109,10 +122,13 @@ namespace XRKeyInput
 
     void selectNextKeyRow()
     {
-        if (_currentKeyset == TEXT_KEYSET::UPPER_ALPHA || _currentKeyset == TEXT_KEYSET::LOWER_ALPHA) {
+        if (_currentKeyset == TEXT_KEYSET::UPPER_ALPHA || _currentKeyset == TEXT_KEYSET::LOWER_ALPHA)
+        {
             ++_currentKeyRow;
             _currentKeyRow = constrain(_currentKeyRow, 0, 3);
-        } else {
+        }
+        else
+        {
             ++_currentKeyRow;
             _currentKeyRow = constrain(_currentKeyRow, 0, 1);
         }
@@ -120,10 +136,13 @@ namespace XRKeyInput
 
     void selectPreviousKeyRow()
     {
-        if (_currentKeyset == TEXT_KEYSET::UPPER_ALPHA || _currentKeyset == TEXT_KEYSET::LOWER_ALPHA) {
+        if (_currentKeyset == TEXT_KEYSET::UPPER_ALPHA || _currentKeyset == TEXT_KEYSET::LOWER_ALPHA)
+        {
             --_currentKeyRow;
             _currentKeyRow = constrain(_currentKeyRow, 0, 3);
-        } else {
+        }
+        else
+        {
             --_currentKeyRow;
             _currentKeyRow = constrain(_currentKeyRow, 0, 1);
         }
@@ -149,26 +168,31 @@ namespace XRKeyInput
 
     void toggleAlphaCase()
     {
-        if (_currentKeyset == TEXT_KEYSET::LOWER_ALPHA || (_currentKeyset != TEXT_KEYSET::LOWER_ALPHA && _currentKeyset != TEXT_KEYSET::UPPER_ALPHA)) {
+        if (_currentKeyset == TEXT_KEYSET::LOWER_ALPHA || (_currentKeyset != TEXT_KEYSET::LOWER_ALPHA && _currentKeyset != TEXT_KEYSET::UPPER_ALPHA))
+        {
             _currentKeyset = TEXT_KEYSET::UPPER_ALPHA;
-        } else if (_currentKeyset == TEXT_KEYSET::UPPER_ALPHA) {
+        }
+        else if (_currentKeyset == TEXT_KEYSET::UPPER_ALPHA)
+        {
             _currentKeyset = TEXT_KEYSET::LOWER_ALPHA;
         }
     }
 
     void remove()
     {
-        if (_inputBuf.length() == 0) {
+        if (_inputBuf.length() == 0)
+        {
             return;
         }
 
-        if (_inputBuf.length() == 1) {
+        if (_inputBuf.length() == 1)
+        {
             _inputBuf = "";
             return;
         }
 
         std::string tempInputBuf = _inputBuf;
-        tempInputBuf.erase(tempInputBuf.length() -1, 1);
+        tempInputBuf.erase(tempInputBuf.length() - 1, 1);
         _inputBuf = tempInputBuf;
     }
 
@@ -188,30 +212,42 @@ namespace XRKeyInput
 
         int8_t elementAtRow = idx + (8 * _currentKeyRow);
 
-        if (_currentKeyset == TEXT_KEYSET::UPPER_ALPHA) {
-            if (elementAtRow > (ALPHA_KEYSET_SIZE - 1)) {
+        if (_currentKeyset == TEXT_KEYSET::UPPER_ALPHA)
+        {
+            if (elementAtRow > (ALPHA_KEYSET_SIZE - 1))
+            {
                 return result;
             }
 
             result = alphaKeyset[elementAtRow];
-        } else if (_currentKeyset == TEXT_KEYSET::LOWER_ALPHA) {
-            if (elementAtRow > (ALPHA_KEYSET_SIZE - 1)) {
+        }
+        else if (_currentKeyset == TEXT_KEYSET::LOWER_ALPHA)
+        {
+            if (elementAtRow > (ALPHA_KEYSET_SIZE - 1))
+            {
                 return result;
             }
 
             result = alphaKeyset[elementAtRow];
 
-            for(auto& c : result){
+            for (auto &c : result)
+            {
                 c = tolower(c);
             }
-        } else if (_currentKeyset == TEXT_KEYSET::NUMERIC) {
-            if (elementAtRow > (NUMERIC_KEYSET_SIZE - 1)) {
+        }
+        else if (_currentKeyset == TEXT_KEYSET::NUMERIC)
+        {
+            if (elementAtRow > (NUMERIC_KEYSET_SIZE - 1))
+            {
                 return result;
             }
 
             result = numericKeyset[elementAtRow];
-        } else if (_currentKeyset == TEXT_KEYSET::SYMBOLS) {
-            if (elementAtRow > (SYMBOL_KEYSET_SIZE - 1)) {
+        }
+        else if (_currentKeyset == TEXT_KEYSET::SYMBOLS)
+        {
+            if (elementAtRow > (SYMBOL_KEYSET_SIZE - 1))
+            {
                 return result;
             }
 

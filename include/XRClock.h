@@ -19,6 +19,11 @@ namespace XRClock
     } GROOVES;
 
     void init();
+    
+    void start();
+    void pause();
+    void stop();
+
     void setTempo(float tempo);
     
     float getTempo();

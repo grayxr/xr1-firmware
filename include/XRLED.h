@@ -15,6 +15,7 @@ namespace XRLED
     void clearAllStepLEDs();
     void displayCurrentlySelectedPattern();
     void displayCurrentlySelectedTrack();
+    void setDisplayStateForAllStepLEDs();
 
     int8_t getKeyLED(char idx);
 }

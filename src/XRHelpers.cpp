@@ -5,6 +5,25 @@ namespace XRHelpers
 {
     time_t RTCTime;
 
+    std::map<int8_t, char> stepCharMap = {
+        {1, 'm'},
+        {2, 'n'},
+        {3, 'o'},
+        {4, 'p'},
+        {5, 's'},
+        {6, 't'},
+        {7, 'u'},
+        {8, 'v'},
+        {9, 'y'},
+        {10, 'z'},
+        {11, '1'},
+        {12, '2'},
+        {13, '5'},
+        {14, '6'},
+        {15, '7'},
+        {16, '8'},
+    };
+
     std::map<uint8_t, std::string> baseNoteToStr = {
         {0, "C"},
         {1, "C#"},

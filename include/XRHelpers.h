@@ -4,10 +4,13 @@
 #include <Arduino.h>
 #include <TimeLib.h>
 #include <string>
+#include <map>
 #include <XRConfig.h>
 
 namespace XRHelpers
 {
+    extern std::map<int8_t, char> stepCharMap;
+
     time_t getTeensy3Time();
 
     void getMachineStateDir(char *buf);

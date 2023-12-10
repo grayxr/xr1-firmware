@@ -17,10 +17,10 @@
 #define DISPLAY_MAX_HEIGHT 64
 #define MAX_PROJECT_RAW_SAMPLES 40
 #define sd1 SD
-#define SDCARD_CS_PIN    BUILTIN_SDCARD
-#define SDCARD_MOSI_PIN  43  // not actually used
-#define SDCARD_SCK_PIN   45  // not actually used
-#define DAC_SCK  27
+#define SDCARD_CS_PIN BUILTIN_SDCARD
+#define SDCARD_MOSI_PIN 43 // not actually used
+#define SDCARD_SCK_PIN 45  // not actually used
+#define DAC_SCK 27
 #define DAC_MOSI 26
 #define CS1 28
 #define CS2 29
@@ -28,11 +28,11 @@
 #define CS4 31
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
-#define NUM_TLC5947 1 // How many boards do you have chained?
+#define NUM_TLC5947 1    // How many boards do you have chained?
 #define tlc5947_data 5
 #define tlc5947_clock 6
 #define tlc5947_latch 4
-#define tlc5947_oe 3  // set to -1 to not use the enable pin (its optional)
+#define tlc5947_oe 3 // set to -1 to not use the enable pin (its optional)
 #define HEADPHONE_PIN A8
 #define FAST_TOUCH_PIN 32
 #define MAX_USABLE_SAMPLE_IDS 256
@@ -74,7 +74,7 @@
 #define MOD4_ENCODER_ADDRESS 4
 
 #ifndef _BV
-#define _BV(bit) (1 << (bit)) 
+#define _BV(bit) (1 << (bit))
 #endif
 
 #define SOUND_MENU_ITEM_MAX 3

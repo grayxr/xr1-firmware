@@ -6,7 +6,7 @@
 #include <Wire.h>
 #include <XRConfig.h>
 
-namespace XREncoder 
+namespace XREncoder
 {
     void init();
     void handleStates();

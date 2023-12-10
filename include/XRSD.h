@@ -9,7 +9,8 @@
 
 namespace XRSD
 {
-    typedef struct {
+    typedef struct
+    {
         char lastOpenedProject[50];
     } MACHINE_STATE_0_1_0;
 
@@ -26,10 +27,13 @@ namespace XRSD
     bool init();
     bool loadMachineState();
     bool loadLastProject();
-    
+
     void initMachineState();
     void createNewProject();
     void saveProject();
+
+    void savePatternModsToSdCard();
+    void loadPatternModsFromSdCard();
 }
 
 #endif /* XRSD_h */

@@ -1,8 +1,11 @@
 #include <XRSequencer.h>
+#include <XRHelpers.h>
 #include <XRDisplay.h>
 #include <XRUX.h>
 #include <XRKeyMatrix.h>
 #include <XRLED.h>
+#include <XRSD.h>
+#include <XRClock.h>
 #include <map>
 
 namespace XRSequencer
@@ -33,65 +36,46 @@ namespace XRSequencer
     int8_t _ratchetsHeld = 0;
     long _ratchetReleaseTime;
 
-    std::map<int8_t, char> _stepCharMap = {
-        {1, 'm'},
-        {2, 'n'},
-        {3, 'o'},
-        {4, 'p'},
-        {5, 's'},
-        {6, 't'},
-        {7, 'u'},
-        {8, 'v'},
-        {9, 'y'},
-        {10, 'z'},
-        {11, '1'},
-        {12, '2'},
-        {13, '5'},
-        {14, '6'},
-        {15, '7'},
-        {16, '8'},
-    };
-
     std::map<TRACK_TYPE, int> trackPageNumMap = {
-        { SUBTRACTIVE_SYNTH, 6},
-        { DEXED, 1},
-        { RAW_SAMPLE, 4},
-        { WAV_SAMPLE, 1},
-        { MIDI_OUT, 1},
-        { CV_GATE, 1},
-        { CV_TRIG, 1},
+        {SUBTRACTIVE_SYNTH, 6},
+        {DEXED, 1},
+        {RAW_SAMPLE, 4},
+        {WAV_SAMPLE, 1},
+        {MIDI_OUT, 1},
+        {CV_GATE, 1},
+        {CV_TRIG, 1},
     };
 
     std::map<TRACK_TYPE, std::map<int, std::string>> trackCurrPageNameMap = {
         {SUBTRACTIVE_SYNTH, {
-            {0, "MAIN"},
-            {1, "OSC"},
-            {2, "FILTER"},
-            {3, "FILTER ENV"},
-            {4, "AMP ENV"},
-            {5, "OUTPUT"},
-        }},
+                                {0, "MAIN"},
+                                {1, "OSC"},
+                                {2, "FILTER"},
+                                {3, "FILTER ENV"},
+                                {4, "AMP ENV"},
+                                {5, "OUTPUT"},
+                            }},
         {DEXED, {
-            {0, "MAIN"},
-        }},
+                    {0, "MAIN"},
+                }},
         {RAW_SAMPLE, {
-            {0, "MAIN"},
-            {1, "LOOP"},
-            {2, "AMP ENV"},
-            {3, "OUTPUT"},
-        }},
+                         {0, "MAIN"},
+                         {1, "LOOP"},
+                         {2, "AMP ENV"},
+                         {3, "OUTPUT"},
+                     }},
         {WAV_SAMPLE, {
-            {0, "MAIN"},
-        }},
+                         {0, "MAIN"},
+                     }},
         {MIDI_OUT, {
-            {0, "MAIN"},
-        }},
+                       {0, "MAIN"},
+                   }},
         {CV_GATE, {
-            {0, "MAIN"},
-        }},
+                      {0, "MAIN"},
+                  }},
         {CV_TRIG, {
-            {0, "MAIN"},
-        }},
+                      {0, "MAIN"},
+                  }},
     };
 
     bool _trkNeedsInit[MAXIMUM_SEQUENCER_TRACKS] = {
@@ -101,7 +85,9 @@ namespace XRSequencer
         false, false, false, false};
 
     bool _dequeuePattern = false;
-    int drawQueueBlink = -1;
+    int _drawQueueBlink = -1;
+
+    uint8_t _bpmBlinkTimer = 1;
 
     bool init()
     {
@@ -133,7 +119,7 @@ namespace XRSequencer
             return;
         }
 
-        //usbMIDI.sendRealTime(usbMIDI.Stop);
+        // usbMIDI.sendRealTime(usbMIDI.Stop);
 
         noteOffForAllSounds();
     }
@@ -156,11 +142,11 @@ namespace XRSequencer
         {
             return;
         }
-        
+
         handle96PPQN(tick);
 
         // Send MIDI_CLOCK to external gears
-        //usbMIDI.sendRealTime(usbMIDI.Clock);
+        // usbMIDI.sendRealTime(usbMIDI.Clock);
     }
 
     void handle16PPQN(uint32_t tick)
@@ -168,11 +154,11 @@ namespace XRSequencer
         auto currentUXMode = XRUX::getCurrentMode();
         auto seqState = getSeqState();
         auto currentSelectedTrack = getCurrentSelectedTrackNum();
-        auto currentStepPage = getCurrentStepPageNum();
+        auto currentStepPage = getCurrentStepPage();
 
         bool functionActive = XRKeyMatrix::isFunctionActive();
 
-        //int8_t currentSelectedPatternCurrentStep = seqState.currentStep;
+        // int8_t currentSelectedPatternCurrentStep = seqState.currentStep;
         int8_t currentSelectedTrackCurrentStep = seqState.currentTrackSteps[currentSelectedTrack].currentStep;
         int8_t currentSelectedTrackCurrentBar = seqState.currentTrackSteps[currentSelectedTrack].currentBar;
 
@@ -196,13 +182,12 @@ namespace XRSequencer
         if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE && !functionActive && isOnStraightQtrNote)
         {
             auto currTrack = getHeapCurrentSelectedTrack();
-            
+
             XRLED::displayPageLEDs(
-                currentSelectedTrackCurrentBar, 
-                (_seqState.playbackState == RUNNING), 
-                currentStepPage, 
-                currTrack.last_step
-            );
+                currentSelectedTrackCurrentBar,
+                (_seqState.playbackState == RUNNING),
+                currentStepPage,
+                currTrack.last_step);
         }
 
         if (isOnStraightQtrNote)
@@ -212,7 +197,7 @@ namespace XRSequencer
 
         // This method handles advancing the sequencer
         // and displaying the start btn and step btn BPM LEDs
-        int8_t currStepChar = _stepCharMap[currStepPaged];
+        int8_t currStepChar = XRHelpers::stepCharMap[currStepPaged];
         int8_t keyLED = XRLED::getKeyLED(currStepChar);
 
         if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE)
@@ -250,7 +235,7 @@ namespace XRSequencer
             {
                 if (transitionStepLEDs)
                 {
-                    uint8_t prevKeyLED = XRLED::getKeyLED(_stepCharMap[currStepPaged - 1]);
+                    uint8_t prevKeyLED = XRLED::getKeyLED(XRHelpers::stepCharMap[currStepPaged - 1]);
 
                     XRLED::setPWM(prevKeyLED, 0); // turn prev sixteenth led OFF
                 }
@@ -266,8 +251,8 @@ namespace XRSequencer
                         currTrackLastStep -= 16;
                     }
 
-                    uint8_t prevKeyLED = XRLED::getKeyLED(_stepCharMap[currTrackLastStep]);
-                    
+                    uint8_t prevKeyLED = XRLED::getKeyLED(XRHelpers::stepCharMap[currTrackLastStep]);
+
                     XRLED::setPWM(prevKeyLED, 0); // turn prev sixteenth led OFF
                 }
             }
@@ -284,7 +269,149 @@ namespace XRSequencer
 
     void handle96PPQN(uint32_t tick)
     {
-        
+        auto currentUXMode = XRUX::getCurrentMode();
+
+        if ((tick % 6) && !(tick % _bpmBlinkTimer))
+        {
+            // if (_recording) {
+            XRLED::setPWM(23, 0); // turn start button led OFF every 16th note
+            // }
+        }
+
+        if (!(tick % 6))
+        {
+            if (_queuedPattern.bank > -1 && _queuedPattern.number > -1)
+            {
+                _drawQueueBlink = 0;
+            }
+        }
+
+        triggerRatchetingTrack(tick);
+        handleRemoveFromStepStack(tick);
+
+        if ((tick % (6)) && !(tick % _bpmBlinkTimer))
+        {
+            if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE)
+            {
+                setDisplayStateForPatternActiveTracksLEDs(false);
+            }
+            else if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE || currentUXMode == XRUX::UX_MODE::SUBMITTING_STEP_VALUE)
+            {
+                XRLED::setDisplayStateForAllStepLEDs();
+
+                if (!XRKeyMatrix::isFunctionActive())
+                {
+                    XRLED::displayPageLEDs(
+                        -1,
+                        (_seqState.playbackState == RUNNING),
+                        _currentStepPage,
+                        _seqHeap.pattern.last_step // TODO: use pattern OR track last step depending which UX mode is active
+                    );   
+                }
+            }
+        }
+    }
+
+    void handleRemoveFromStepStack(uint32_t tick)
+    {
+        for (int i = 0; i < STEP_STACK_SIZE; i++)
+        {
+            if (_stepStack[i].length != -1)
+            {
+                --_stepStack[i].length;
+
+                if (_stepStack[i].length == 0)
+                {
+                    handleNoteOffForTrackStep(_stepStack[i].trackNum, _stepStack[i].stepNum);
+
+                    // re-initialize stack entry
+                    _stepStack[i].trackNum = -1;
+                    _stepStack[i].stepNum = -1;
+                    _stepStack[i].length = -1;
+                }
+            }
+        }
+    }
+
+    void handleNoteOffForTrackStep(int track, int step)
+    {
+        auto currTrack = getHeapTrack(track);
+        auto currTrackStep = getHeapStep(track, step);
+
+        Serial.println("TODO: impl noteOff for track step");
+
+        return;
+
+        // if (currTrack.track_type == SUBTRACTIVE_SYNTH)
+        // {
+        //     comboVoices[track].ampEnv.noteOff();
+        //     comboVoices[track].filterEnv.noteOff();
+        // }
+
+        // else if (currTrack.track_type == DEXED)
+        // {
+        //     // comboVoices[track].dexed.notesOff();
+
+        //     uint8_t noteToUse = currTrackStep.note;
+        //     if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[MOD_ATTRS::NOTE])
+        //     {
+        //         noteToUse = _pattern_mods_mem.tracks[track].steps[step].note;
+        //         // Serial.println(noteToUse);
+        //     }
+
+        //     uint8_t octaveToUse = currTrackStep.octave;
+        //     if (_pattern_mods_mem.tracks[track].step_mod_flags[step].flags[MOD_ATTRS::OCTAVE])
+        //     {
+        //         octaveToUse = _pattern_mods_mem.tracks[track].steps[step].octave;
+        //         // Serial.println(octaveToUse);
+        //     }
+
+        //     int midiNote = (noteToUse + (12 * (octaveToUse)));
+
+        //     comboVoices[track].dexed.keyup(midiNote);
+        // }
+
+        // // fix
+        // else if (currTrack.track_type == MIDI_OUT)
+        // {
+        //     MIDI.sendNoteOff(64, 100, 1);
+        // }
+        // else if (currTrack.track_type == CV_GATE)
+        // {
+        //     if (currTrack.channel == 1)
+        //     {
+        //         // writeToDAC(CS1, 0, cvLevels[midiNote]); // cv
+        //         writeToDAC(CS1, 1, 0); // gate
+        //     }
+        //     else if (currTrack.channel == 2)
+        //     {
+        //         // writeToDAC(CS2, 0, cvLevels[midiNote]); // cv
+        //         writeToDAC(CS2, 1, 0); // gate
+        //     }
+        //     else if (currTrack.channel == 3)
+        //     {
+        //         // writeToDAC(CS3, 0, cvLevels[midiNote]); // cv
+        //         writeToDAC(CS3, 1, 0); // gate
+        //     }
+        //     else if (currTrack.channel == 4)
+        //     {
+        //         // writeToDAC(CS4, 0, cvLevels[midiNote]); // cv
+        //         writeToDAC(CS4, 1, 0); // gate
+        //     }
+        // }
+
+        // else
+        // {
+        //     if (track > 3)
+        //     {
+        //         int tOffset = track - 4;
+        //         sampleVoices[tOffset].ampEnv.noteOff();
+        //     }
+        //     else
+        //     {
+        //         comboVoices[track].ampEnv.noteOff();
+        //     }
+        // }
     }
 
     void noteOffForAllSounds()
@@ -515,7 +642,7 @@ namespace XRSequencer
             auto currTrack = currentPattern.tracks[t - 1];
             auto currTrackStep = _seqState.currentTrackSteps[t - 1].currentStep;
             auto currTrackStepForLED = currTrack.steps[currTrackStep - 1];
-            auto currLEDChar = _stepCharMap[t];
+            auto currLEDChar = XRHelpers::stepCharMap[t];
             auto keyLED = XRLED::getKeyLED(currLEDChar);
 
             if (currTrackStepForLED.state == TRACK_STEP_STATE::STATE_OFF)
@@ -589,32 +716,34 @@ namespace XRSequencer
             Serial.print("init sounds for track: ");
             Serial.println(track);
 
-            //XRSound::initSoundsForTrack(track);
+            // XRSound::initSoundsForTrack(track);
         }
+
+        Serial.println("TODO: impl noteOn for track step!");
 
         if (trackToUse.track_type == RAW_SAMPLE)
         {
-            //XRSound::handleRawSampleNoteOnForTrackStep(track, step);
+            // XRSound::handleRawSampleNoteOnForTrackStep(track, step);
         }
         else if (trackToUse.track_type == WAV_SAMPLE)
         {
-            //XRSound::handleWavSampleNoteOnForTrackStep(track, step);
+            // XRSound::handleWavSampleNoteOnForTrackStep(track, step);
         }
         else if (trackToUse.track_type == DEXED)
         {
-            //XRSound::handleDexedNoteOnForTrackStep(track, step);
+            // XRSound::handleDexedNoteOnForTrackStep(track, step);
         }
         else if (trackToUse.track_type == SUBTRACTIVE_SYNTH)
         {
-            //XRSound::handleSubtractiveSynthNoteOnForTrackStep(track, step);
+            // XRSound::handleSubtractiveSynthNoteOnForTrackStep(track, step);
         }
         else if (trackToUse.track_type == MIDI_OUT)
         {
-            //XRSound::handleMIDINoteOnForTrackStep(track, step);
+            // XRSound::handleMIDINoteOnForTrackStep(track, step);
         }
         else if (trackToUse.track_type == CV_GATE)
         {
-            //XRSound::handleCvGateNoteOnForTrackStep(track, step);
+            // XRSound::handleCvGateNoteOnForTrackStep(track, step);
         }
     }
 
@@ -624,18 +753,24 @@ namespace XRSequencer
 
         int currPatternLastStep = currPattern.last_step;
 
-        if (_seqState.currentStep <= currPatternLastStep) {
-            if (_seqState.currentStep < currPatternLastStep) {
-                if (!((_seqState.currentStep + 1) % 16)) { // TODO: make this bar division configurable
+        if (_seqState.currentStep <= currPatternLastStep)
+        {
+            if (_seqState.currentStep < currPatternLastStep)
+            {
+                if (!((_seqState.currentStep + 1) % 16))
+                { // TODO: make this bar division configurable
                     ++_seqState.currentBar;
                 }
 
                 ++_seqState.currentStep; // advance current step for sequencer
-            } else {
+            }
+            else
+            {
                 _seqState.currentStep = 1; // reset current step
                 _seqState.currentBar = 1;  // reset current bar
 
-                if (_queuedPattern.bank > -1 && _queuedPattern.number > -1) {
+                if (_queuedPattern.bank > -1 && _queuedPattern.number > -1)
+                {
                     // nullify pattern queue
                     _dequeuePattern = true;
                 }
@@ -751,15 +886,20 @@ namespace XRSequencer
 
     void handleQueueActions()
     {
-        if (drawQueueBlink > -1) {
-            if (drawQueueBlink == 1) {
+        if (_drawQueueBlink > -1)
+        {
+            if (_drawQueueBlink == 1)
+            {
                 XRDisplay::drawSequencerScreen(true);
-            } else if (drawQueueBlink == 0) {
+            }
+            else if (_drawQueueBlink == 0)
+            {
                 XRDisplay::drawSequencerScreen(false);
             }
         }
 
-        if (_dequeuePattern) {
+        if (_dequeuePattern)
+        {
             _dequeuePattern = false;
 
             swapSequencerMemoryForPattern(_queuedPattern.bank, _queuedPattern.number);
@@ -767,18 +907,393 @@ namespace XRSequencer
             // reset queue flags
             _queuedPattern.bank = -1;
             _queuedPattern.number = -1;
-            drawQueueBlink = -1;
+            _drawQueueBlink = -1;
 
-            current_step_page = 1;
-            current_page_selected = 1;
+            _currentStepPage = 1;
+            _currentSelectedPage = 1;
 
-            if (current_UI_mode == PATTERN_WRITE) {
+            auto currentUXMode = XRUX::getCurrentMode();
+            auto currentPattern = getHeapCurrentSelectedPattern();
+
+            if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE)
+            {
                 XRLED::clearAllStepLEDs();
-            } else if (current_UI_mode == TRACK_WRITE) {
-                XRLED::displayPageLEDs(1); // TODO need?
+            }
+            else if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE)
+            {
+                XRLED::displayPageLEDs(
+                    1,
+                    (_seqState.playbackState == RUNNING),
+                    _currentStepPage,
+                    currentPattern.last_step // TODO: use pattern OR track last step depending which UX mode is active
+                );                           // TODO need?
             }
 
             XRDisplay::drawSequencerScreen(false);
         }
+    }
+
+    void swapSequencerMemoryForPattern(int newBank, int newPattern)
+    {
+        // AudioNoInterrupts();
+        auto currPatternData = _seqHeap.pattern;
+        auto newPatternData = _seqExternall.banks[newBank].patterns[newPattern];
+
+        // save any mods for current pattern to SD
+        XRSD::savePatternModsToSdCard();
+
+        // swap memory data
+        _seqExternall.banks[_currentSelectedBank].patterns[_currentSelectedPattern] = currPatternData;
+        _seqHeap.pattern = newPatternData;
+
+        // initialize new pattern
+        _seqHeap.pattern.initialized = true;
+
+        // update currently selected vars
+        _currentSelectedBank = newBank;
+        _currentSelectedPattern = newPattern;
+
+        // load any mods for new bank/pattern to SD
+        XRSD::loadPatternModsFromSdCard();
+
+        // temp: trying this approach ^
+        for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+        {
+            _trkNeedsInit[t] = true;
+        }
+    }
+
+    void setSelectedTrack(int8_t track)
+    {
+        _currentSelectedTrack = track;
+    }
+
+    void setSelectedPage(int8_t page)
+    {
+        _currentSelectedPage = page;
+    }
+
+    void toggleSelectedStep(uint8_t step)
+    {
+        int stepToUse = step;
+
+        // todo: check if current track has last_step > 16
+        // if so, use proper offset to get correct step state for current page
+        if (_currentStepPage == 2)
+        {
+            stepToUse += 16;
+        }
+        else if (_currentStepPage == 3)
+        {
+            stepToUse += 32;
+        }
+        else if (_currentStepPage == 4)
+        {
+            stepToUse += 48;
+        }
+
+        uint8_t adjStep = stepToUse - 1; // get zero based step num
+
+        Serial.print("adjStep: ");
+        Serial.println(adjStep);
+
+        TRACK currTrack = getHeapCurrentSelectedTrack();
+        TRACK_STEP_STATE currStepState = currTrack.steps[adjStep].state;
+
+        Serial.print("currStepState: ");
+        Serial.println(currStepState == TRACK_STEP_STATE::STATE_ACCENTED ? "accented" : (currStepState == TRACK_STEP_STATE::STATE_ON ? "on" : "off"));
+
+        // TODO: implement accent state for MIDI, CV/Trig, Sample, Synth track types?
+        if (currStepState == TRACK_STEP_STATE::STATE_OFF)
+        {
+            _seqHeap.pattern.tracks[_currentSelectedTrack].steps[adjStep].state = TRACK_STEP_STATE::STATE_ON;
+            // copy track properties to steps
+            _seqHeap.pattern.tracks[_currentSelectedTrack].steps[adjStep].note = currTrack.note;
+            _seqHeap.pattern.tracks[_currentSelectedTrack].steps[adjStep].octave = currTrack.octave;
+            _seqHeap.pattern.tracks[_currentSelectedTrack].steps[adjStep].velocity = currTrack.velocity;
+        }
+        else if (currStepState == TRACK_STEP_STATE::STATE_ON)
+        {
+            _seqHeap.pattern.tracks[_currentSelectedTrack].steps[adjStep].state = TRACK_STEP_STATE::STATE_ACCENTED;
+            _seqHeap.pattern.tracks[_currentSelectedTrack].steps[adjStep].velocity = 100; // TODO: use a "global accent" value here
+        }
+        else if (currStepState == TRACK_STEP_STATE::STATE_ACCENTED)
+        {
+            _seqHeap.pattern.tracks[_currentSelectedTrack].steps[adjStep].state = TRACK_STEP_STATE::STATE_OFF;
+        }
+
+        _seqExternall.banks[_currentSelectedBank].patterns[_currentSelectedPattern].tracks[_currentSelectedTrack].steps[adjStep] = _seqHeap.pattern.tracks[_currentSelectedTrack].steps[adjStep];
+    }
+
+    void toggleSequencerPlayback(char btn)
+    {
+        auto currentUXMode = XRUX::getCurrentMode();
+
+        int8_t currStepChar = XRHelpers::stepCharMap[_seqState.currentStep - 1]; // TODO change type to char?
+        uint8_t keyLED = XRLED::getKeyLED(currStepChar);
+
+        if (_seqState.playbackState > STOPPED)
+        {
+            if (_seqState.playbackState == RUNNING && btn == 'q')
+            {
+                _seqState.playbackState = PAUSED;
+
+                XRClock::pause();
+                // uClock.pause();
+
+                XRLED::setPWMDouble(23, 0, keyLED, 0);
+
+                int8_t currentSelectedTrackCurrentBar = _seqState.currentTrackSteps[_currentSelectedTrack].currentBar;
+
+                auto currTrack = getHeapCurrentSelectedTrack();
+
+                XRLED::displayPageLEDs(
+                    currentSelectedTrackCurrentBar,
+                    (_seqState.playbackState == RUNNING),
+                    _currentStepPage,
+                    currTrack.last_step);
+
+                if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE)
+                {
+                    XRLED::setDisplayStateForAllStepLEDs(); // TODO: wrap with "if in track view display step LED state" conditional, etc
+                }
+                else if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE)
+                {
+                    XRLED::clearAllStepLEDs();
+                }
+            }
+            else if (_seqState.playbackState == PAUSED && btn == 'q')
+            {
+                // Unpaused, so advance sequencer from last known step
+                _seqState.playbackState = RUNNING;
+
+                XRClock::pause();
+                // uClock.pause();
+            }
+            else if (btn == 'w')
+            {
+                // Stopped, so reset sequencer to FIRST step in pattern
+                _seqState.currentStep = 1;
+                _seqState.currentBar = 1;
+
+                rewindAllCurrentStepsForAllTracks();
+
+                _seqState.playbackState = STOPPED;
+
+                XRClock::stop();
+                // uClock.stop();
+
+                XRLED::setPWM(keyLED, 0); // turn off current step LED
+                XRLED::setPWM(23, 0);     // turn start button led OFF
+
+                if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE)
+                {
+                    XRLED::setDisplayStateForAllStepLEDs(); // TODO: wrap with "if in track view display step LED state" conditional, etc
+                }
+                else if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE)
+                {
+                    XRLED::clearAllStepLEDs();
+                }
+            }
+        }
+        else if (btn == 'q')
+        {
+            // Started, so start sequencer from FIRST step in pattern
+            //_seqState.current_step = 1;
+            _seqState.playbackState = RUNNING;
+
+            XRClock::start();
+            // uClock.start();
+        }
+        else if (btn == 'w')
+        {
+            // Stopped, so reset sequencer to FIRST step in pattern
+            _seqState.currentStep = 1;
+            _seqState.currentBar = 1;
+
+            rewindAllCurrentStepsForAllTracks();
+
+            _seqState.playbackState = STOPPED;
+
+            XRClock::stop();
+            // uClock.stop();
+
+            // XRLED::setPWM(keyLED, 0); // turn off current step LED
+            XRLED::setPWM(23, 0); // turn start button led OFF
+
+            if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE)
+            {
+                XRLED::setDisplayStateForAllStepLEDs(); // TODO: wrap with "if in track view display step LED state" conditional, etc
+            }
+            else if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE)
+            {
+                XRLED::clearAllStepLEDs();
+            }
+        }
+    }
+
+    void rewindAllCurrentStepsForAllTracks()
+    {
+        for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+        {
+            _seqState.currentTrackSteps[t].currentStep = 1;
+        }
+    }
+
+    void triggerRatchetingTrack(uint32_t tick)
+    {
+        if (_ratchetTrack == -1)
+        {
+            return;
+        }
+
+        handleRemoveFromRatchetStack();
+
+        if (_ratchetDivision > -1 && !(tick % _ratchetDivision))
+        {
+            Serial.print("in ratchet division! tick: ");
+            Serial.print(tick);
+            Serial.print(" ratchet_division: ");
+            Serial.println(_ratchetDivision);
+
+            handleAddToRatchetStack();
+        }
+    }
+
+    void handleRemoveFromRatchetStack()
+    {
+        for (int i = 0; i < STEP_STACK_SIZE; i++)
+        {
+            if (_ratchetStack[i].length != -1)
+            {
+                --_ratchetStack[i].length;
+
+                if (_ratchetStack[i].length == 0)
+                {
+                    handleNoteOffForTrack(_ratchetStack[i].trackNum);
+
+                    // re-initialize stack entry
+                    _ratchetStack[i].trackNum = -1;
+                    _ratchetStack[i].length = -1;
+                }
+            }
+        }
+    }
+
+    void handleAddToRatchetStack()
+    {
+        for (uint8_t i = 0; i < STEP_STACK_SIZE; i++)
+        {
+            if (_ratchetStack[i].length == -1)
+            {
+                _ratchetStack[i].trackNum = _ratchetTrack;
+                _ratchetStack[i].length = 2; // TODO: shorten?
+
+                handleNoteOnForTrack(_ratchetStack[i].trackNum);
+
+                return;
+            }
+        }
+    }
+
+    void handleNoteOnForTrack(int track)
+    {
+        auto trackToUse = getHeapTrack(track);
+
+        Serial.println("TODO: impl handleNoteOnForTrack() !");
+
+        // if (trackToUse.track_type == RAW_SAMPLE)
+        // {
+        //     handleRawSampleNoteOnForTrack(track);
+        // }
+        // else if (trackToUse.track_type == WAV_SAMPLE)
+        // {
+        //     handleWavSampleNoteOnForTrack(track);
+        // }
+        // else if (trackToUse.track_type == DEXED)
+        // {
+        //     handleDexedNoteOnForTrack(track);
+        // }
+        // else if (trackToUse.track_type == SUBTRACTIVE_SYNTH)
+        // {
+        //     handleSubtractiveSynthNoteOnForTrack(track);
+        // }
+        // else if (trackToUse.track_type == CV_GATE)
+        // {
+        //     handleCvGateNoteOnForTrack(track);
+        // }
+    }
+
+    void handleNoteOffForTrack(int track)
+    {
+        auto currTrack = getHeapTrack(track);
+
+        Serial.println("TODO: impl handleNoteOffForTrack() !");
+
+        // if (currTrack.track_type == SUBTRACTIVE_SYNTH)
+        // {
+        //     comboVoices[track].ampEnv.noteOff();
+        //     comboVoices[track].filterEnv.noteOff();
+        // }
+
+        // else if (currTrack.track_type == DEXED)
+        // {
+        //     uint8_t noteToUse = currTrack.note;
+        //     uint8_t octaveToUse = currTrack.octave;
+
+        //     int midiNote = (noteToUse + (12 * (octaveToUse))); // use offset of 32 instead?
+
+        //     if (track < 4)
+        //     {
+        //         comboVoices[track].dexed.keyup(midiNote);
+        //     }
+        // }
+
+        // // fix
+        // else if (currTrack.track_type == MIDI_OUT)
+        // {
+        //     MIDI.sendNoteOff(64, 100, 1);
+        // }
+        // else if (currTrack.track_type == CV_GATE)
+        // {
+        //     if (currTrack.channel == 1)
+        //     {
+        //         // writeToDAC(CS1, 0, cvLevels[midiNote]); // cv
+        //         writeToDAC(CS1, 1, 0); // gate
+        //     }
+        //     else if (currTrack.channel == 2)
+        //     {
+        //         // writeToDAC(CS2, 0, cvLevels[midiNote]); // cv
+        //         writeToDAC(CS2, 1, 0); // gate
+        //     }
+        //     else if (currTrack.channel == 3)
+        //     {
+        //         // writeToDAC(CS3, 0, cvLevels[midiNote]); // cv
+        //         writeToDAC(CS3, 1, 0); // gate
+        //     }
+        //     else if (currTrack.channel == 4)
+        //     {
+        //         // writeToDAC(CS4, 0, cvLevels[midiNote]); // cv
+        //         writeToDAC(CS4, 1, 0); // gate
+        //     }
+        // }
+
+        // else
+        // {
+        //     if (track > 3)
+        //     {
+        //         int tOffset = track - 4;
+        //         sampleVoices[tOffset].ampEnv.noteOff();
+        //     }
+        //     else
+        //     {
+        //         comboVoices[track].ampEnv.noteOff();
+        //     }
+        // }
+    }
+
+    void initializeCurrentSelectedTrack()
+    {
+        _seqHeap.pattern.tracks[_currentSelectedTrack].initialized = true;
     }
 }

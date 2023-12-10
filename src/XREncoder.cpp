@@ -5,27 +5,25 @@
 #include <XRClock.h>
 #include <XRSD.h>
 
-namespace XREncoder 
+namespace XREncoder
 {
     elapsedMillis elapsedMs;
 
     int addresses[5] = {
-        0x36, 0x37, 0x38, 0x39, 0x40
-    };
+        0x36, 0x37, 0x38, 0x39, 0x40};
 
     int16_t currentValues[5] = {
-        0, 0, 0, 0, 0
-    };
+        0, 0, 0, 0, 0};
 
     int16_t lastValues[5] = {
-        0, 0, 0, 0, 0
-    };
+        0, 0, 0, 0, 0};
 
     void init()
-    {    
+    {
         Wire1.begin();
 
-        for (int i=0; i<5; i++) {
+        for (int i = 0; i < 5; i++)
+        {
             config(addresses[i], -3000, 3000, 1, 0, 0);
         }
     }
@@ -33,18 +31,24 @@ namespace XREncoder
     void config(int addr, int16_t rmin, int16_t rmax, int16_t rstep, int16_t rval, uint8_t rloop)
     {
         Wire1.beginTransmission(addr);
-        Wire1.write((uint8_t)(rval & 0xff)); Wire1.write((uint8_t)(rval >> 8));
-        Wire1.write(0); Wire1.write(rloop);
-        Wire1.write((uint8_t)(rmin & 0xff)); Wire1.write((uint8_t)(rmin >> 8));
-        Wire1.write((uint8_t)(rmax & 0xff)); Wire1.write((uint8_t)(rmax >> 8));
-        Wire1.write((uint8_t)(rstep & 0xff)); Wire1.write((uint8_t)(rstep >> 8));
+        Wire1.write((uint8_t)(rval & 0xff));
+        Wire1.write((uint8_t)(rval >> 8));
+        Wire1.write(0);
+        Wire1.write(rloop);
+        Wire1.write((uint8_t)(rmin & 0xff));
+        Wire1.write((uint8_t)(rmin >> 8));
+        Wire1.write((uint8_t)(rmax & 0xff));
+        Wire1.write((uint8_t)(rmax >> 8));
+        Wire1.write((uint8_t)(rstep & 0xff));
+        Wire1.write((uint8_t)(rstep >> 8));
         Wire1.endTransmission();
     }
 
     void set(int addr, int16_t rval)
     {
         Wire1.beginTransmission(addr);
-        Wire1.write((uint8_t)(rval & 0xff)); Wire1.write((uint8_t)(rval >> 8));
+        Wire1.write((uint8_t)(rval & 0xff));
+        Wire1.write((uint8_t)(rval >> 8));
         Wire1.endTransmission();
     }
 
@@ -76,7 +80,8 @@ namespace XREncoder
     void handleStates()
     {
         auto currentUXMode = XRUX::getCurrentMode();
-        if (!(elapsedMs % 25) && currentUXMode == XRUX::UX_MODE::SOUND_MENU_MAIN) {
+        if (!(elapsedMs % 25) && currentUXMode == XRUX::UX_MODE::SOUND_MENU_MAIN)
+        {
             handleSoundMenuCursor();
 
             return;
@@ -135,7 +140,7 @@ namespace XREncoder
         if (items > 2 && diff != 0)
         {
             uint8_t currPos = XRMenu::getCursorPosition();
-            uint8_t newPos = constrain(currPos+diff, 0, items-1);
+            uint8_t newPos = constrain(currPos + diff, 0, items - 1);
 
             XRMenu::setCursorPosition(newPos);
             XRDisplay::drawSoundMenuMain();

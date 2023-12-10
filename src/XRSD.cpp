@@ -15,8 +15,9 @@ namespace XRSD
     {
         SPI.setMOSI(SDCARD_MOSI_PIN);
         SPI.setSCK(SDCARD_SCK_PIN);
-        
-        if (!(SD.begin(SDCARD_CS_PIN))) {
+
+        if (!(SD.begin(SDCARD_CS_PIN)))
+        {
             return false;
         }
 
@@ -26,7 +27,8 @@ namespace XRSD
     void initMachineState()
     {
         std::string newProjectName = XRKeyInput::get();
-        if (newProjectName.length() < 1) {
+        if (newProjectName.length() < 1)
+        {
             XRDisplay::drawError("INVALID PROJ. NAME!");
             return;
         }
@@ -41,16 +43,19 @@ namespace XRSD
         std::string machineStateFilename(machineStateFilenameBuf);
 
         int lastHyphenPos = machineStateFilename.rfind('-');
-        std::string machineStateVersion = machineStateFilename.substr(lastHyphenPos+1, 5); // todo: fix 5 char version string limit
-        //Serial.printf("machineStateVersion: %s\n", machineStateVersion.c_str());
+        std::string machineStateVersion = machineStateFilename.substr(lastHyphenPos + 1, 5); // todo: fix 5 char version string limit
+        // Serial.printf("machineStateVersion: %s\n", machineStateVersion.c_str());
 
         // write machine state binary for current version
-        if (machineStateVersion == "0.1.0") {
-            //Serial.println("here!");
+        if (machineStateVersion == "0.1.0")
+        {
+            // Serial.println("here!");
 
             // verify file dir exists first
-            if (!SD.exists(machineStateDir.c_str())) {
-                if (!SD.mkdir(machineStateDir.c_str())) {
+            if (!SD.exists(machineStateDir.c_str()))
+            {
+                if (!SD.mkdir(machineStateDir.c_str()))
+                {
                     XRDisplay::drawError("SD MKDIR ERR!");
                     return;
                 }
@@ -80,9 +85,10 @@ namespace XRSD
         std::string finalPath = machineStateDir + machineStateFilename;
 
         // Serial.printf("machineStatePath: %s\n", finalPath.c_str());
-        
+
         File machineStateFile = SD.open(finalPath.c_str(), FILE_READ);
-        if (!machineStateFile.available()) {
+        if (!machineStateFile.available())
+        {
             Serial.println("machine state file not found!");
             return false;
         }
@@ -102,8 +108,10 @@ namespace XRSD
         std::string projectsPath(projectsPathPrefixBuf); // read char array into string
 
         // verify file dir exists first
-        if (!SD.exists(projectsPath.c_str())) {
-            if (!SD.mkdir(projectsPath.c_str())) {
+        if (!SD.exists(projectsPath.c_str()))
+        {
+            if (!SD.mkdir(projectsPath.c_str()))
+            {
                 XRDisplay::drawError("SD MKDIR ERR!");
                 return;
             }
@@ -122,8 +130,10 @@ namespace XRSD
         newProjectDataDir += "/.data";
 
         // verify file dir exists first
-        if (!SD.exists(newProjectDataDir.c_str())) {
-            if (!SD.mkdir(newProjectDataDir.c_str())) {
+        if (!SD.exists(newProjectDataDir.c_str()))
+        {
+            if (!SD.mkdir(newProjectDataDir.c_str()))
+            {
                 XRDisplay::drawError("SD MKDIR ERR!");
                 return;
             }
@@ -133,14 +143,14 @@ namespace XRSD
         newProjectFilePath = newProjectDataDir;
         newProjectFilePath += "/project-info.bin";
 
-        //Serial.printf("Saving new project file to SD card at path: %s\n", newProjectFilePath.c_str());
-        //Serial.printf("sizeof(_current_project): %d, sizeof(_machine_state): %d\n", sizeof(_current_project), sizeof(_machine_state));
+        // Serial.printf("Saving new project file to SD card at path: %s\n", newProjectFilePath.c_str());
+        // Serial.printf("sizeof(_current_project): %d, sizeof(_machine_state): %d\n", sizeof(_current_project), sizeof(_machine_state));
 
         File newProjectFile = SD.open(newProjectFilePath.c_str(), FILE_WRITE);
         newProjectFile.write((byte *)&_current_project, sizeof(_current_project));
         newProjectFile.close();
 
-       // Serial.println("finished!");
+        // Serial.println("finished!");
     }
 
     void saveProject()
@@ -151,11 +161,12 @@ namespace XRSD
     bool loadLastProject()
     {
         std::string lastKnownProject(_machine_state.lastOpenedProject);
-        //Serial.printf("last project known to machine state: %s\n", lastKnownProject.c_str());
+        // Serial.printf("last project known to machine state: %s\n", lastKnownProject.c_str());
 
-        if (lastKnownProject.length() == 0) {
+        if (lastKnownProject.length() == 0)
+        {
             XRDisplay::drawError("NO PROJECT IN STATE!");
-            //Serial.println("here1");
+            // Serial.println("here1");
             delay(1000);
             return false;
         }
@@ -168,12 +179,13 @@ namespace XRSD
         projectPath += lastKnownProject;
         projectPath += "/.data/project-info.bin";
 
-        //Serial.printf("proj path: %s\n", projectPath.c_str());
+        // Serial.printf("proj path: %s\n", projectPath.c_str());
 
         File lastKnownProjectFile = SD.open(projectPath.c_str(), FILE_READ);
-        if (!lastKnownProjectFile.available()) {
+        if (!lastKnownProjectFile.available())
+        {
             XRDisplay::drawError("CANNOT LOAD PROJECT!");
-            //Serial.println("here2");
+            // Serial.println("here2");
             delay(1000);
             return false;
         }
@@ -182,12 +194,60 @@ namespace XRSD
         lastKnownProjectFile.close();
 
         // Serial.printf(
-        //     "proj name: %s proj machineVersion: %s proj tempo: %f\n", 
+        //     "proj name: %s proj machineVersion: %s proj tempo: %f\n",
         //     _current_project.name,
         //     _current_project.machineVersion,
         //     _current_project.tempo
         // );
 
         return true;
+    }
+
+    void savePatternModsToSdCard()
+    {
+        Serial.println("TODO: impl save pattern mods to SD card!");
+
+        // std::string currentPatternModFilename = "/"; // e.g. /project_20230101000000_15_15_mods.bin
+        // currentPatternModFilename += current_project.name;
+        // currentPatternModFilename += "_";
+        // currentPatternModFilename += std::to_string(current_selected_bank);
+        // currentPatternModFilename += "_";
+        // currentPatternModFilename += std::to_string(current_selected_pattern);
+        // currentPatternModFilename += "_mods.bin";
+
+        // Serial.print("sizeof(_pattern_mods_mem): ");
+        // Serial.println(sizeof(_pattern_mods_mem));
+
+        // File currentPatternModsFile = SD.open(currentPatternModFilename.c_str(), FILE_WRITE);
+        // currentPatternModsFile.truncate();
+        // currentPatternModsFile.write((byte *)&_pattern_mods_mem, sizeof(_pattern_mods_mem));
+        // currentPatternModsFile.close();
+
+        // Serial.println("Saved pattern mods file for current bank and pattern!");
+    }
+
+    void loadPatternModsFromSdCard()
+    {
+        Serial.println("TODO: impl load pattern mods from SD card!");
+
+        // std::string currentPatternModFilename = "/"; // e.g. /project_20230101000000_15_15_mods.bin
+        // currentPatternModFilename += current_project.name;
+        // currentPatternModFilename += "_";
+        // currentPatternModFilename += std::to_string(current_selected_bank);
+        // currentPatternModFilename += "_";
+        // currentPatternModFilename += std::to_string(current_selected_pattern);
+        // currentPatternModFilename += "_mods.bin";
+
+        // File currentPatternModsFile = SD.open(currentPatternModFilename.c_str(), FILE_READ);
+        // if (currentPatternModsFile.available())
+        // {
+        //     currentPatternModsFile.read((byte *)&_pattern_mods_mem, sizeof(_pattern_mods_mem));
+        //     currentPatternModsFile.close();
+        // }
+        // else
+        // {
+        //     Serial.println("No pattern mods file for current bank and pattern! Saving new mods for current pattern now!");
+        //     savePatternModsToSdCard();
+        // }
     }
 }

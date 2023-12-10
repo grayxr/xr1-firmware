@@ -41,22 +41,31 @@ namespace XRCV
         SPI1.setDataMode(SPI_MODE0);
         digitalWrite(chip, LOW);
 
-        if (value == 0x000) {
+        if (value == 0x000)
+        {
             // use low gain
-            if(channel == 0){ 
+            if (channel == 0)
+            {
                 SPI1.transfer(highValue | chan_a_low_gain);
-            }else{
+            }
+            else
+            {
                 SPI1.transfer(highValue | chan_b_low_gain);
             }
-        } else {
+        }
+        else
+        {
             // use high gain
-            if(channel == 0){ 
+            if (channel == 0)
+            {
                 SPI1.transfer(highValue | chan_a_high_gain);
-            }else{
+            }
+            else
+            {
                 SPI1.transfer(highValue | chan_b_high_gain);
             }
         }
-        
+
         SPI1.transfer(lowValue);
         digitalWrite(chip, HIGH);
     }
