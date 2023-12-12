@@ -1247,4 +1247,10 @@ namespace XRSequencer
     {
         _currentSelectedPattern = pattern;
     }
+
+    void saveCurrentPatternOffHeap()
+    {
+        // push current heap memory to RAM2/DMAMEM
+        _seqExternal.banks[_currentSelectedBank].patterns[_currentSelectedPattern] = _seqHeap.pattern;
+    }
 }

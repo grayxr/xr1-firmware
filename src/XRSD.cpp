@@ -4,6 +4,8 @@
 #include <XRHelpers.h>
 #include <XRDisplay.h>
 #include <XRKeyInput.h>
+#include <XRUX.h>
+#include <XRSequencer.h>
 
 namespace XRSD
 {
@@ -176,18 +178,76 @@ namespace XRSD
 
     void saveProject()
     {
-        //
+        char projectsPathPrefixBuf[50];
+        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
+        std::string projectsPath(projectsPathPrefixBuf); // read char array into string
+
+        // verify project path exists first
+        if (!SD.exists(projectsPath.c_str()))
+        {
+            XRDisplay::drawError("FAILED TO SAVE PROJECT!");
+            return;
+        }
+
+        std::string projectDataDir = projectsPath;
+        projectDataDir += "/";
+        projectDataDir += _current_project.name;
+        projectDataDir += "/.data";
+
+        // verify project file path exists first
+        if (!SD.exists(projectDataDir.c_str()))
+        {
+            XRDisplay::drawError("FAILED TO SAVE PROJECT!");
+            return;
+        }
+
+        Serial.println("Write current project data file to SD card!");
+
+        std::string currProjectFilePath;
+        currProjectFilePath = projectDataDir;
+        currProjectFilePath += "/project-info.bin";
+
+        Serial.printf("Saving current project file to SD card at path: %s\n", currProjectFilePath.c_str());
+
+        File currProjectFile = SD.open(currProjectFilePath.c_str(), FILE_WRITE);
+        currProjectFile.truncate();
+        currProjectFile.write((byte *)&_current_project, sizeof(_current_project));
+        currProjectFile.close();
+
+        delay(100);
+
+        // make sure current pattern state is saved to RAM2 
+        // before storing the entire sequencer state in SD
+        XRSequencer::saveCurrentPatternOffHeap();
+
+        std::string currProjectSequencerFilePath;
+        currProjectSequencerFilePath = projectDataDir;
+        currProjectSequencerFilePath += "/sequencer.bin";
+
+        Serial.println("Write current project sequencer data binary file to SD card!");
+
+        auto &seqExt = XRSequencer::getSequencerExternal();
+
+        File seqFileW = SD.open(currProjectSequencerFilePath.c_str(), FILE_WRITE);
+        seqFileW.truncate();
+        seqFileW.write((byte *)&seqExt, sizeof(seqExt));
+        seqFileW.close();
+
+        // TODO: can prob remove this, the current pattern in heap should reflect the current pattern in DMAMEM
+        //_seq_heap.pattern = _seq_external.banks[current_selected_bank].patterns[current_selected_pattern];
+
+        savePatternModsToSdCard();
+
+        Serial.println("done saving project!");
     }
 
     bool loadLastProject()
     {
         std::string lastKnownProject(_machine_state.lastOpenedProject);
-        // Serial.printf("last project known to machine state: %s\n", lastKnownProject.c_str());
 
         if (lastKnownProject.length() == 0)
         {
             XRDisplay::drawError("NO PROJECT IN STATE!");
-            // Serial.println("here1");
             delay(1000);
             return false;
         }
@@ -200,26 +260,55 @@ namespace XRSD
         projectPath += lastKnownProject;
         projectPath += "/.data/project-info.bin";
 
-        // Serial.printf("proj path: %s\n", projectPath.c_str());
-
         File lastKnownProjectFile = SD.open(projectPath.c_str(), FILE_READ);
         if (!lastKnownProjectFile.available())
         {
             XRDisplay::drawError("CANNOT LOAD PROJECT!");
-            // Serial.println("here2");
             delay(1000);
             return false;
         }
 
         lastKnownProjectFile.read((byte *)&_current_project, sizeof(_current_project));
         lastKnownProjectFile.close();
+        
+        // get project path
+        char sProjectsPathPrefixBuf[50];
+        XRHelpers::getProjectsDir(sProjectsPathPrefixBuf);
+        std::string sProjectPath(sProjectsPathPrefixBuf); // read char array into string
 
-        // Serial.printf(
-        //     "proj name: %s proj machineVersion: %s proj tempo: %f\n",
-        //     _current_project.name,
-        //     _current_project.machineVersion,
-        //     _current_project.tempo
-        // );
+        std::string sProjectDataDir = sProjectPath;
+        sProjectDataDir += "/";
+        sProjectDataDir += _current_project.name;
+        sProjectDataDir += "/.data";
+
+        std::string currProjectSequencerFilePath;
+        currProjectSequencerFilePath = sProjectDataDir;
+        currProjectSequencerFilePath += "/sequencer.bin";
+
+        // verify project file path exists first
+        if (!SD.exists(currProjectSequencerFilePath.c_str()))
+        {
+            XRDisplay::drawError("FAILED TO LOAD SEQUENCER DATA!");
+            delay(1000);
+            return false;
+        }
+
+        auto &seqExt = XRSequencer::getSequencerExternal();
+
+        File seqFileR = SD.open(currProjectSequencerFilePath.c_str(), FILE_READ);
+        seqFileR.read((byte *)&seqExt, sizeof(seqExt));
+        seqFileR.close();
+
+        // setup current pattern in heap from first pattern from first bank off-heap
+        auto &seqHeap = XRSequencer::getSequencerHeap();
+        seqHeap.pattern = seqExt.banks[0].patterns[0];
+
+        Serial.printf(
+            "proj name: %s proj machineVersion: %s proj tempo: %f\n",
+            _current_project.name,
+            _current_project.machineVersion,
+            _current_project.tempo
+        );
 
         return true;
     }

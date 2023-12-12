@@ -240,6 +240,7 @@ namespace XRSequencer
     void initExternalPatternMods();
     
     void swapSequencerMemoryForPattern(int newBank, int newPattern);
+    void saveCurrentPatternOffHeap();
 
     void toggleSelectedStep(uint8_t step);
 

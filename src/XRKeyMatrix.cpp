@@ -530,12 +530,28 @@ namespace XRKeyMatrix
                 XRMenu::resetCursor();
 
                 if (currentUXMode == XRUX::UX_MODE::SOUND_MENU_MAIN) {
-                    Serial.println("enter sub menu");
+                    Serial.println("enter sound sub menu");
 
                     // todo: get ux mode for selected cursor position in sub menu
                     XRUX::setCurrentMode(XRUX::UX_MODE::ASSIGN_SAMPLE_TO_TRACK);
 
                     return true;
+                }
+
+                if (currentUXMode == XRUX::UX_MODE::CHANGE_SETUP) {
+                    Serial.println("enter setup sub menu");
+
+                    auto cursorPos = XRMenu::getCursorPosition();
+
+                    if (XRMenu::getSetupMenuItems()[cursorPos] == "SAVE PROJECT") {
+                        XRUX::setCurrentMode(XRUX::PROJECT_BUSY);
+                        XRDisplay::drawSaveProject();
+                        XRSD::saveProject();
+                        XRMenu::resetCursor();
+                        XRUX::setCurrentMode(XRUX::getPreviousMode());
+                    }
+
+                    return;
                 }
 
                 if (currentUXMode == XRUX::UX_MODE::SET_TEMPO) {
@@ -633,7 +649,8 @@ namespace XRKeyMatrix
     {
         // Serial.println("enter handleFunctionReleaseActions!");
 
-        if (key == FUNCTION_BTN_CHAR) {
+        if (key == FUNCTION_BTN_CHAR) { 
+            // leaving function
             _isFunctionActive = false;
 
             return true;
