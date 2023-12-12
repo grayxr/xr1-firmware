@@ -48,8 +48,7 @@ namespace XRSequencer
     {
         TRACK_TYPE track_type = RAW_SAMPLE;
         TRACK_STEP steps[MAXIMUM_SEQUENCER_STEPS];
-        uint8_t raw_sample_id = 0;
-        uint8_t wav_sample_id = 0;
+        char sample_name[MAX_SAMPLE_NAME_LENGTH];
         uint8_t waveform = XRSound::WAVEFORM_TYPE::SAW;
         uint8_t last_step = DEFAULT_LAST_STEP;
         uint8_t note = 0;   // 0 - C1
@@ -80,9 +79,9 @@ namespace XRSequencer
         float filter_release = 5000;
         float filterenvamt = 1.0;
         float amp_attack = 0;
-        float amp_decay = 500;
+        float amp_decay = 1000;
         float amp_sustain = 1.0;
-        float amp_release = 500;
+        float amp_release = 5000;
         float noise = 0;
         bool chromatic_enabled = false;
         bool muted = false;
@@ -136,8 +135,7 @@ namespace XRSequencer
 
     typedef struct
     {
-        uint8_t raw_sample_id = 0;
-        uint8_t wav_sample_id = 0;
+        char sample_name[MAX_SAMPLE_NAME_LENGTH] = {'N','/','A'};
         uint8_t waveform = XRSound::WAVEFORM_TYPE::SAW;
         uint8_t note = 0;        // 0 - C
         uint8_t octave = 4;      // 4 - middle C (C4)
@@ -173,8 +171,7 @@ namespace XRSequencer
 
     enum MOD_ATTRS
     {
-        RAW_SAMPLE_ID = 0,
-        WAV_SAMPLE_ID,
+        SAMPLE_NAME = 0,
         WAVEFORM,
         NOTE,
         OCTAVE,
@@ -240,6 +237,8 @@ namespace XRSequencer
     bool init();
 
     void initExternalSequencer();
+    void initExternalPatternMods();
+    
     void swapSequencerMemoryForPattern(int newBank, int newPattern);
 
     void toggleSelectedStep(uint8_t step);
@@ -269,28 +268,34 @@ namespace XRSequencer
     void setDisplayStateForPatternActiveTracksLEDs(bool enable);
     void noteOffForAllSounds();
     void handleQueueActions();
+    void queuePattern(int pattern, int bank);
 
+    void setSelectedPattern(int8_t pattern);
     void setSelectedTrack(int8_t track);
     void setSelectedPage(int8_t page);
     void initializeCurrentSelectedTrack();
+    void setTrackTypeForHeapTrack(int8_t track, TRACK_TYPE type);
+    void setTrackNeedsInit(int track, bool init);
+
+    void assignSampleNameToTrack(std::string sampleName);
 
     void toggleSequencerPlayback(char btn);
     void rewindAllCurrentStepsForAllTracks();
 
-    SEQUENCER_STATE getSeqState();
+    SEQUENCER_STATE &getSeqState();
 
-    SEQUENCER_EXTERNAL getSequencerExternal();
-    QUEUED_PATTERN getQueuedPattern();
-    SEQUENCER_HEAP getSequencerHeap();
+    SEQUENCER_EXTERNAL &getSequencerExternal();
+    QUEUED_PATTERN &getQueuedPattern();
+    SEQUENCER_HEAP &getSequencerHeap();
 
-    TRACK getHeapTrack(int track);
-    TRACK_STEP getHeapStep(int track, int step);
-    PATTERN getHeapCurrentSelectedPattern();
-    TRACK getHeapCurrentSelectedTrack();
-    TRACK_STEP getHeapCurrentSelectedTrackStep();
+    TRACK &getHeapTrack(int track);
+    TRACK_STEP &getHeapStep(int track, int step);
+    PATTERN &getHeapCurrentSelectedPattern();
+    TRACK &getHeapCurrentSelectedTrack();
+    TRACK_STEP &getHeapCurrentSelectedTrackStep();
 
-    PATTERN_MODS getModsForCurrentPattern();
-    TRACK_STEP_MODS getModsForCurrentTrackStep();
+    PATTERN_MODS &getModsForCurrentPattern();
+    TRACK_STEP_MODS &getModsForCurrentTrackStep();
 
     int8_t getCurrentSelectedBankNum();
     int8_t getCurrentSelectedPatternNum();

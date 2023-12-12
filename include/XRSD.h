@@ -34,6 +34,11 @@ namespace XRSD
 
     void savePatternModsToSdCard();
     void loadPatternModsFromSdCard();
+    
+    std::string *getSampleList(int16_t cursor);
+    void rewindSampleDir();
+    void unloadSampleFileListPaged();
+    std::string getCurrSampleFileHighlighted();
 }
 
 #endif /* XRSD_h */

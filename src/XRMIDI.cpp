@@ -8,4 +8,14 @@ namespace XRMIDI
     {
         MIDI.begin();
     }
+
+    void sendNoteOn(midi::DataByte inNoteNumber, midi::DataByte inVelocity, midi::Channel inChannel)
+    {
+        MIDI.sendNoteOn(inNoteNumber, inVelocity, inChannel);
+    }
+
+    void sendNoteOff(midi::DataByte inNoteNumber, midi::DataByte inVelocity, midi::Channel inChannel)
+    {
+        MIDI.sendNoteOff(inNoteNumber, inVelocity, inChannel);
+    }
 }

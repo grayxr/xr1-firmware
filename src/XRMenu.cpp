@@ -3,26 +3,58 @@
 
 namespace XRMenu
 {
-    uint8_t _cursorPos = 0;
+    int16_t _cursorPos = 0;
 
     std::string _soundMenuItems[SOUND_MENU_ITEM_MAX] = {
-        "ASSIGN SOUND TO TRACK",
         "SAVE TRACK SOUND",
-        "LOAD TRACK SOUND"};
+        "LOAD TRACK SOUND",
+        "RECORD SAMPLE",
+    };
+
+    // XRUX::UX_MODE_soundMenuSubMenuModes[SOUND_MENU_ITEM_MAX] = {
+    //     "SAVE TRACK SOUND",
+    //     "LOAD TRACK SOUND",
+    //     "Sample",
+    // };
+
+    std::string _setupMenuItems[SETUP_MENU_ITEM_MAX] = {
+        "SAVE PROJECT",
+        "LOAD/CREATE PROJECT",
+        "CLOCK SETTINGS",
+    };
 
     std::string *getSoundMenuItems()
     {
         return _soundMenuItems;
     }
 
-    uint8_t getCursorPosition()
+    std::string *getSetupMenuItems()
+    {
+        return _setupMenuItems;
+    }
+
+    int16_t getCursorPosition()
     {
         return _cursorPos;
     }
 
-    void setCursorPosition(uint8_t idx)
+    void setCursorPosition(int16_t idx)
     {
         _cursorPos = idx;
+    }
+
+    void incCursorPosition()
+    {
+        ++_cursorPos;
+
+        _cursorPos = constrain(_cursorPos, 0, 5);
+    }
+
+    void decCursorPosition()
+    {
+        --_cursorPos;
+
+        _cursorPos = constrain(_cursorPos, 0, 5);
     }
 
     void resetCursor()

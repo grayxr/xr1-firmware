@@ -13,6 +13,7 @@ namespace XRMain
         if (!XRSD::init())
         {
             XRDisplay::drawError("SD CARD ERROR!");
+
             return;
         }
 
@@ -24,6 +25,7 @@ namespace XRMain
         if (!XRVersa::init())
         {
             XRDisplay::drawError("KEYBOARD ERROR!");
+
             return;
         }
 
@@ -32,13 +34,13 @@ namespace XRMain
 
         XRMIDI::init();
         XRClock::init();
+        XRSound::init();
 
         XRDisplay::drawIntro();
 
         delay(1000);
 
-        bool loadSuccess = XRSD::loadMachineState();
-        if (!loadSuccess)
+        if (!XRSD::loadMachineState())
         {
             XRUX::setCurrentMode(XRUX::UX_MODE::PROJECT_INITIALIZE);
             XRDisplay::drawCreateProjectDialog();
@@ -47,17 +49,20 @@ namespace XRMain
         {
             XRUX::setCurrentMode(XRUX::UX_MODE::PROJECT_BUSY);
 
-            bool loadProjSuccess = XRSD::loadLastProject();
-            if (!loadProjSuccess)
+            if (!XRSD::loadLastProject())
             {
                 XRDisplay::drawError("ERROR LOADING PROJECT!");
+
+                // TODO: impl dialog to create new project
+
                 return;
             }
 
             XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_WRITE);
-            XRSequencer::init();
 
-            // XRAudio::loadVoiceSettings();
+            XRSequencer::init();
+            
+            XRSound::loadVoiceSettings();
         }
 
         XRAudio::resetMetrics();
@@ -69,6 +74,6 @@ namespace XRMain
         XRKeyMatrix::handleStates();
         XRVersa::handleStates();
         XREncoder::handleStates();
-        // handleQueueActions();
+        XRSequencer::handleQueueActions();
     }
 }

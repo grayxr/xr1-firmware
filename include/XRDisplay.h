@@ -27,7 +27,10 @@ namespace XRDisplay
     void drawControlModsForADSR(int att, int dec, float sus, int rel);
     void drawPageNumIndicators();
     void drawGenericMenuList(std::string headerStr, std::string *menuItems, int menuItemMax);
+    void drawPagedMenuList(std::string headerStr, std::string *menuItems, int menuItemMax);
     void drawSoundMenuMain();
+    void drawSetupMenu();
+    void drawSampleBrowser();
 
     std::string getDisplayNote();
 }

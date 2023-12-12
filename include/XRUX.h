@@ -34,7 +34,8 @@ namespace XRUX
         PASTE_STEP,
         UNDO,
         REDO,
-        SOUND_MENU_MAIN
+        SOUND_MENU_MAIN,
+        ASSIGN_SAMPLE_TO_TRACK
     };
 
     void setCurrentMode(UX_MODE mode);

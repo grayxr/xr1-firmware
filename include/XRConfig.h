@@ -38,13 +38,14 @@
 #define MAX_USABLE_SAMPLE_IDS 256
 #define MAX_USABLE_WAV_SAMPLE_IDS 512
 #define MAX_SAMPLE_NAME_LENGTH 32
+#define MAX_PATTERN_SAMPLES 16 // there are only 16 tracks per patter, so a max of 16 samples per pattern, for now
 // Sequencer data
 #define MAXIMUM_SEQUENCER_STEPS 64
 #define MAXIMUM_SEQUENCER_TRACKS 16
 #define MAXIMUM_SEQUENCER_PATTERNS 16
 #define MAXIMUM_SEQUENCER_BANKS 1
 #define DEFAULT_LAST_STEP 16
-#define MAX_STEP_MOD_ATTRS 33
+#define MAX_STEP_MOD_ATTRS 32
 #define COMBO_VOICE_COUNT 4
 #define SAMPLE_VOICE_COUNT 12
 // Represents the maximum allowed steps triggered in a running pattern,
@@ -66,6 +67,8 @@
 #define SOUND_BTN_CHAR '0'
 #define SELECT_BTN_CHAR 'i' // reverse when silkscreen is corrected
 #define ESCAPE_BTN_CHAR 'j' // reverse when silkscreen is corrected
+#define START_BTN_CHAR 'q'
+#define MOD_D_BTN_CHAR 'h'
 // Encoders
 #define MAIN_ENCODER_ADDRESS 0
 #define MOD1_ENCODER_ADDRESS 1
@@ -78,5 +81,6 @@
 #endif
 
 #define SOUND_MENU_ITEM_MAX 3
+#define SETUP_MENU_ITEM_MAX 3
 
 #endif /* XRConfig_h */

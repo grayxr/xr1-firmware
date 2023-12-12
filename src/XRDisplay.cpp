@@ -5,6 +5,7 @@
 #include <XRClock.h>
 #include <XRFonts.h>
 #include <XRKeyInput.h>
+#include <XRSD.h>
 #include <XRHelpers.h>
 #include <string>
 #include <map>
@@ -62,6 +63,8 @@ namespace XRDisplay
 
     void drawSetTempoOverlay()
     {
+        Serial.println("enter drawSetTempoOverlay!");
+
         drawGenericOverlayFrame();
 
         std::string tempoStr = "SET TEMPO";
@@ -87,7 +90,7 @@ namespace XRDisplay
         u8g2.drawBox(2, 2, width, height);
         u8g2.setColorIndex((u_int8_t)1);
         u8g2.drawFrame(2, 2, width, height);
-        u8g2.drawLine(2, 16, width, 16);
+        u8g2.drawLine(2, 12, width, 12);
     }
 
     void drawKeyboard(int verticalOffset)
@@ -265,6 +268,8 @@ namespace XRDisplay
 
     void drawSequencerScreen(bool queueBlink)
     {
+        Serial.println("enter drawSequencerScreen!");
+
         u8g2.clearBuffer();
 
         uint8_t currentBpm = (uint8_t)XRClock::getTempo();
@@ -373,7 +378,7 @@ namespace XRDisplay
         auto currentSelectedBank = XRSequencer::getCurrentSelectedBankNum();
         auto currentSelectedPattern = XRSequencer::getCurrentSelectedPatternNum();
         auto currentSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
-        auto queuedPattern = XRSequencer::getQueuedPattern();
+        auto &queuedPattern = XRSequencer::getQueuedPattern();
 
         bool bnkBlink = false;
         int bnkNumber = currentSelectedBank + 1;
@@ -393,7 +398,10 @@ namespace XRDisplay
         {
             ptnNumber = queuedPattern.number + 1;
             ptnBlink = (queuedPattern.number != currentSelectedPattern);
+
+            Serial.printf("ptnNumber: %d, ptnBlink: %d, queueBlink: %d\n", ptnNumber, ptnBlink, queueBlink);
         }
+
 
         if (currentUXMode == XRUX::PATTERN_WRITE)
         {
@@ -438,7 +446,7 @@ namespace XRDisplay
             currentUXMode == XRUX::TRACK_SEL ||
             currentUXMode == XRUX::SUBMITTING_STEP_VALUE)
         {
-            auto currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+            auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
             auto currTrackType = currTrack.track_type;
 
             // draw track meta type box
@@ -459,15 +467,10 @@ namespace XRDisplay
             {
                 trackInfoStr += XRSequencer::getTrackTypeNameStr(currTrackType);
             }
-            else if (currTrackType == XRSequencer::RAW_SAMPLE)
-            {
-                // trackInfoStr += usableSampleNames[currTrack.raw_sample_id]; TODO rework
-                trackInfoStr += "";
-            }
             else if (currTrackType == XRSequencer::RAW_SAMPLE || currTrackType == XRSequencer::WAV_SAMPLE)
             {
-                // trackInfoStr += usableWavSampleNames[currTrack.wav_sample_id]; TODO rework
-                trackInfoStr += "";
+                std::string sampleName(currTrack.sample_name);
+                trackInfoStr += sampleName.length() > 0 ? sampleName : "N/A";
             }
             else if (currTrackType == XRSequencer::MIDI_OUT)
             {
@@ -670,7 +673,7 @@ namespace XRDisplay
 
     void drawControlMods()
     {
-        auto currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
         auto currPageSelected = XRSequencer::getCurrentSelectedPage();
 
         if (
@@ -691,6 +694,15 @@ namespace XRDisplay
             (currTrack.track_type == XRSequencer::RAW_SAMPLE && currPageSelected == 3))
         {
             drawExtendedControlMods();
+
+            // sample folder icon
+            if (currTrack.track_type == XRSequencer::RAW_SAMPLE && currPageSelected == 0) {
+                u8g2.setColorIndex((u_int8_t)0);
+                u8g2.drawBox(105, 36, 15, 10);
+                u8g2.setColorIndex((u_int8_t)1);
+                u8g2.drawFrame(105, 36, 15, 10);
+                u8g2.drawStr(107, 37, "uSD");
+            }
         }
         else
         {
@@ -878,14 +890,14 @@ namespace XRDisplay
 
         if (XRUX::getCurrentMode() == XRUX::SUBMITTING_STEP_VALUE && currentSelectedStep > -1)
         {
-            auto trackStepMods = XRSequencer::getModsForCurrentTrackStep();
+            auto &trackStepMods = XRSequencer::getModsForCurrentTrackStep();
 
             outputStr += XRHelpers::getNoteStringForBaseNoteNum(trackStepMods.note);
             outputStr += std::to_string(trackStepMods.octave);
         }
         else
         {
-            auto currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+            auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
 
             outputStr += XRHelpers::getNoteStringForBaseNoteNum(currTrack.note);
             outputStr += std::to_string(currTrack.octave);
@@ -944,7 +956,16 @@ namespace XRDisplay
 
     void drawSoundMenuMain()
     {
-        drawGenericMenuList("SOUND MENU", XRMenu::getSoundMenuItems(), SOUND_MENU_ITEM_MAX);
+        Serial.println("enter drawSoundMenuMain!");
+
+        drawGenericMenuList("SOUND", XRMenu::getSoundMenuItems(), SOUND_MENU_ITEM_MAX);
+
+        u8g2.sendBuffer();
+    }
+
+    void drawSetupMenu()
+    {
+        drawGenericMenuList("SETUP", XRMenu::getSetupMenuItems(), SETUP_MENU_ITEM_MAX);
 
         u8g2.sendBuffer();
     }
@@ -954,16 +975,39 @@ namespace XRDisplay
         drawGenericOverlayFrame();
 
         // menu header
-        u8g2.drawStr(8, 6, headerStr.c_str());
+        u8g2.drawStr(6, 4, headerStr.c_str());
+
+        // menu items
+        int menuItemStartX = 12;
+        int menuItemStartY = 15;
+        int menuItemLineSpacingY = 9;
+        int menuCurrentLine = 0;
+
+        int itemsPresent = 0;
+
+        for (int m = 0; m < menuItemMax; m++)
+        {
+            if (menuItems[m].length() > 0) {
+                u8g2.drawStr(menuItemStartX, menuItemStartY + (menuCurrentLine * menuItemLineSpacingY), menuItems[m].c_str());
+                ++menuCurrentLine;
+                ++itemsPresent;
+            }
+        }
+
+        if (itemsPresent == 0) {
+            u8g2.drawStr(menuItemStartX, menuItemStartY, "--");
+            return;
+        }
 
         // cursor
         int menuItemCursorIdx = XRMenu::getCursorPosition();
-        int menuCursorStartX = 7;
+
+        int menuCursorStartX = 6;
         int menuCursorLineSpacingY = 9;
         int menuCursorTriangleSize = 3;
-        int menuCursorTriangleY1 = 26 + (menuItemCursorIdx * menuCursorLineSpacingY);
-        int menuCursorTriangleY2 = 20 + (menuItemCursorIdx * menuCursorLineSpacingY);
-        int menuCursorTriangleY3 = 23 + (menuItemCursorIdx * menuCursorLineSpacingY);
+        int menuCursorTriangleY1 = 21 + (menuItemCursorIdx * menuCursorLineSpacingY);
+        int menuCursorTriangleY2 = 15 + (menuItemCursorIdx * menuCursorLineSpacingY);
+        int menuCursorTriangleY3 = 18 + (menuItemCursorIdx * menuCursorLineSpacingY);
 
         u8g2.drawTriangle(
             menuCursorStartX,
@@ -973,22 +1017,73 @@ namespace XRDisplay
             menuCursorStartX + menuCursorTriangleSize,
             menuCursorTriangleY3);
 
+        // esc / sel button legend
+        // u8g2.drawStr(93, 6, "ESC");
+        // u8g2.drawStr(110, 6, "SEL");
+        // u8g2.drawFrame(91, 5, 15, 9);
+        // u8g2.drawFrame(108, 5, 15, 9);
+    }
+
+    void drawPagedMenuList(std::string headerStr, std::string *menuItems, int menuItemMax)
+    {
+        drawGenericOverlayFrame();
+
+        // menu header
+        u8g2.drawStr(6, 4, headerStr.c_str());
+
         // menu items
         int menuItemStartX = 12;
-        int menuItemStartY = 20;
+        int menuItemStartY = 15;
         int menuItemLineSpacingY = 9;
         int menuCurrentLine = 0;
+        int itemsPresent = 0;
+
+        int cursorPos = XRMenu::getCursorPosition();
+
+        auto currentFile = XRSD::getCurrSampleFileHighlighted();
 
         for (int m = 0; m < menuItemMax; m++)
         {
-            u8g2.drawStr(menuItemStartX, menuItemStartY + (menuCurrentLine * menuItemLineSpacingY), menuItems[m].c_str());
-            ++menuCurrentLine;
+            if (menuItems[m].length() > 0) {
+                if ((m == 0 && cursorPos == 0) || currentFile == menuItems[m]) {
+                    u8g2.drawBox(
+                        menuItemStartX-9,
+                        menuItemStartY + (menuCurrentLine * menuItemLineSpacingY) - 1,
+                        122,
+                        10
+                    );
+                    u8g2.setColorIndex((u_int8_t)0);
+                    u8g2.drawStr(menuItemStartX, menuItemStartY + (menuCurrentLine * menuItemLineSpacingY), menuItems[m].c_str());
+                    u8g2.setColorIndex((u_int8_t)1);
+                } else {
+                    u8g2.drawStr(menuItemStartX, menuItemStartY + (menuCurrentLine * menuItemLineSpacingY), menuItems[m].c_str());
+                }
+
+                ++menuCurrentLine;
+                ++itemsPresent;
+            }
+        }
+
+        if (itemsPresent == 0) {
+            u8g2.drawStr(menuItemStartX, menuItemStartY, "--");
+            return;
         }
 
         // esc / sel button legend
-        u8g2.drawStr(93, 6, "ESC");
-        u8g2.drawStr(110, 6, "SEL");
-        u8g2.drawFrame(91, 5, 15, 9);
-        u8g2.drawFrame(108, 5, 15, 9);
+        // u8g2.drawStr(93, 6, "ESC");
+        // u8g2.drawStr(110, 6, "SEL");
+        // u8g2.drawFrame(91, 5, 15, 9);
+        // u8g2.drawFrame(108, 5, 15, 9);
+    }
+
+    void drawSampleBrowser()
+    {
+        auto cursor = XRMenu::getCursorPosition();
+        auto list = XRSD::getSampleList(cursor);
+
+        // todo: impl minimap scroll bar
+        drawPagedMenuList("/SAMPLES", list, 5);
+
+        u8g2.sendBuffer();
     }
 }

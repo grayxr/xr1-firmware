@@ -128,6 +128,12 @@ namespace XRSound
         SOUND_CONTROL_MOD_TYPE dType;
     } SOUND_CONTROL_MODS;
 
+    typedef struct
+    {
+        float left;
+        float right;
+    } PANNED_AMOUNTS;
+
     extern ComboVoice comboVoices[COMBO_VOICE_COUNT];
     extern SampleVoice sampleVoices[SAMPLE_VOICE_COUNT];
 
@@ -141,9 +147,46 @@ namespace XRSound
     SOUND_CONTROL_MODS getCvGateControlModData();
     SOUND_CONTROL_MODS getCvTrigControlModData();
 
+    PANNED_AMOUNTS getStereoPanValues(float pan);
+
     std::string getWaveformName(uint8_t waveform);
     std::string getPlaybackSpeedStr(float rate);
     std::string getLoopTypeName();
+
+    void init();
+    void loadVoiceSettings();
+    void initSoundsForTrack(int t);
+    void configureVoiceSettingsForTrack(int t);
+    void configureSampleVoiceSettingsOnLoad(int t);
+    void assignSampleToTrack();
+    void clearSamples();
+
+    void changeTrackSoundType(int8_t t, int8_t newType);
+    void changeSampleTrackSoundType(uint8_t t, int8_t newType);
+
+    void handleRawSampleNoteOnForTrack(int track);
+    void handleWavSampleNoteOnForTrack(int track);
+    void handleDexedNoteOnForTrack(int track);
+    void handleSubtractiveSynthNoteOnForTrack(int track);
+    void handleMIDINoteOnForTrack(int track);
+    void handleCvGateNoteOnForTrack(int track);
+
+    void handleNoteOffForTrack(int track);
+    void handleNoteOffForTrackStep(int track, int step);
+    void noteOffTrackManually(int noteOnKeyboard);
+
+    void triggerTrackManually(uint8_t t, uint8_t note);
+    void triggerRawSampleNoteOn(uint8_t t, uint8_t note);
+    void triggerDexedNoteOn(uint8_t t, uint8_t note);
+    void triggerSubtractiveSynthNoteOn(uint8_t t, uint8_t note);
+    void triggerCvGateNoteOn(uint8_t t, uint8_t note);
+
+    void handleRawSampleNoteOnForTrackStep(int track, int step);
+    void handleWavSampleNoteOnForTrackStep(int track, int step);
+    void handleDexedNoteOnForTrackStep(int track, int step);
+    void handleSubtractiveSynthNoteOnForTrackStep(int track, int step);
+    void handleMIDINoteOnForTrackStep(int track, int step);
+    void handleCvGateNoteOnForTrackStep(int track, int step);
 }
 
 #endif /* XRSound_h */

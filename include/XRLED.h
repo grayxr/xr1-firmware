@@ -12,10 +12,12 @@ namespace XRLED
     void setPWMDouble(uint8_t LED1, uint16_t PWM1, uint8_t LED2, uint16_t PWM2);
     void showOctaveLEDs(int8_t octave);
     void displayPageLEDs(int currentBar, bool sequencerRunning, int currentStepPage, int lastStep);
+    void clearPageLEDs();
     void clearAllStepLEDs();
     void displayCurrentlySelectedPattern();
     void displayCurrentlySelectedTrack();
     void setDisplayStateForAllStepLEDs();
+    void displayCurrentOctaveLEDs(int8_t octave);
 
     int8_t getKeyLED(char idx);
 }

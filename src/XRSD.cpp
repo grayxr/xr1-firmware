@@ -11,6 +11,27 @@ namespace XRSD
     MACHINE_STATE_0_1_0 _machine_state;
     PROJECT _current_project;
 
+    typedef struct
+    {
+        std::string list[255];
+    } SAMPLE_FILE_LIST;
+
+    typedef struct
+    {
+        std::string list[5];
+    } SAMPLE_FILE_LIST_PAGED;
+
+    bool _sampleFileListLoaded = false;
+    bool _sampleFileListPagedLoaded = false;
+
+    SAMPLE_FILE_LIST _sampleFileList;
+    SAMPLE_FILE_LIST_PAGED _sampleFileListPaged;
+
+    int16_t _lastCursorPos = 0;
+    int16_t _currSamplePerPageIdx = 0;
+
+    std::string _currSampleFileHighlighted = "";
+
     bool init()
     {
         SPI.setMOSI(SDCARD_MOSI_PIN);
@@ -249,5 +270,89 @@ namespace XRSD
         //     Serial.println("No pattern mods file for current bank and pattern! Saving new mods for current pattern now!");
         //     savePatternModsToSdCard();
         // }
+    }
+
+    std::string *getSampleList(int16_t cursor)
+    {
+        if (_sampleFileListLoaded) {
+            _currSampleFileHighlighted = _sampleFileList.list[cursor];
+
+            uint8_t pageSize = 5;
+
+            for (uint8_t p = 0; p < pageSize; p++) {
+                if ((p+cursor) <= 255) {
+                    _sampleFileListPaged.list[p] = _sampleFileList.list[p+cursor];
+                }
+            }
+
+            return _sampleFileListPaged.list;
+        }
+
+        std::string samplePath = "/samples";
+
+        bool samplePathExsts = SD.exists(samplePath.c_str());
+        if (!samplePathExsts) {
+            SD.mkdir("/samples");
+
+            return _sampleFileListPaged.list;
+        }
+
+        auto sampleDir = SD.open(samplePath.c_str(), FILE_READ);
+        if (!sampleDir.isDirectory()) {
+            return _sampleFileListPaged.list;
+        }
+
+        uint8_t batchSize = 255;
+        for (uint8_t b = 0; b < batchSize; b++) {
+            auto sampleFile = sampleDir.openNextFile();
+
+            if (sampleFile && !sampleFile.isDirectory()) {
+                _sampleFileList.list[b] = sampleFile.name();
+            }
+
+            _sampleFileListLoaded = true;
+        }
+
+        uint8_t pageSize = 5;
+        for (uint8_t p = 0; p < pageSize; p++) {
+            _sampleFileListPaged.list[p] = _sampleFileList.list[p];
+        }
+        
+        _sampleFileListPagedLoaded = true;
+        
+        _currSampleFileHighlighted = _sampleFileList.list[cursor];
+
+        return  _sampleFileListPaged.list;
+    }
+
+    void rewindSampleDir()
+    { 
+        std::string samplePath = "/samples";
+
+        bool samplePathExsts = SD.exists(samplePath.c_str());
+        if (!samplePathExsts) {
+            Serial.println("ERROR! unable to reset sample dir!");
+
+            return;
+        }
+
+        auto sampleDir = SD.open(samplePath.c_str(), FILE_READ);
+        if (!sampleDir.isDirectory()) {
+            Serial.println("ERROR! unable to reset sample dir!");
+
+            return;
+        }
+
+        sampleDir.rewindDirectory();
+    }
+
+    void unloadSampleFileListPaged()
+    {
+        _sampleFileListPagedLoaded = false;
+    }
+
+    std::string getCurrSampleFileHighlighted()
+    {
+        return _currSampleFileHighlighted;
     }
 }

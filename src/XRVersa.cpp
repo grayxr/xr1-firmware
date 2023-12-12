@@ -3,6 +3,8 @@
 #include <map>
 #include <XRDisplay.h>
 #include <XRKeyInput.h>
+#include <XRSound.h>
+#include <XRSequencer.h>
 
 namespace XRVersa
 {
@@ -12,6 +14,7 @@ namespace XRVersa
     Adafruit_MPR121 mpr121_a = Adafruit_MPR121();
 
     uint8_t _noteOnKeyboard = 0;
+    int8_t _keyboardNotesHeld = 0;
 
     int32_t keyPressed = -1; // -1 means none pressed
 
@@ -48,6 +51,12 @@ namespace XRVersa
         {12, 0},
     };
 
+    const uint8_t _backwardsNoteNumbers[13] = {
+        12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
+    };
+
+    void handleNoteInput();
+
     bool init()
     {
         // Default address is 0x5A, if tied to 3.3V its 0x5B
@@ -68,7 +77,9 @@ namespace XRVersa
         // mprUpdate();
         // fastBtnUpdate();
 
-        if (XRUX::getCurrentMode() == XRUX::PROJECT_INITIALIZE)
+        auto currentUXMode = XRUX::getCurrentMode();
+
+        if (currentUXMode == XRUX::PROJECT_INITIALIZE)
         {
             mprUpdateExclusive();
 
@@ -81,6 +92,33 @@ namespace XRVersa
             {
                 handleProjectNameInput();
             }
+
+            return;
+        }
+
+        bool allowedModeToPlayKeysFrom = (
+            currentUXMode == XRUX::UX_MODE::PATTERN_WRITE || 
+            currentUXMode == XRUX::UX_MODE::TRACK_WRITE || 
+            currentUXMode == XRUX::UX_MODE::PERFORM_TAP ||
+            currentUXMode == XRUX::UX_MODE::PERFORM_MUTE ||
+            currentUXMode == XRUX::UX_MODE::PERFORM_SOLO ||
+            currentUXMode == XRUX::UX_MODE::PERFORM_RATCHET
+        );
+
+        if (allowedModeToPlayKeysFrom) {
+            mprUpdate();
+
+            if (!(elapsedMs % 100))
+            { // reduce touchiness of fast touch pin
+                fastBtnUpdate();
+            }
+
+            if (keyPressed > -1)
+            {
+                handleNoteInput();
+            }
+
+            return;
         }
     }
 
@@ -158,20 +196,47 @@ namespace XRVersa
     {
         _mprCurrTouched = mpr121_a.touched();
 
+        auto currentUXMode = XRUX::getCurrentMode();
+        int8_t invertedNoteNumber = -1;
+        bool released = false;
+
         for (uint8_t i = 0; i < 12; i++)
         {
             // if *is* touched and *wasnt* touched before, alert!
             if ((_mprCurrTouched & _BV(i)) && !(_mprLastTouched & _BV(i)))
             {
-                Serial.print(i);
-                Serial.println(" touched");
-            }
+                Serial.printf("%d touched\n", i);
 
+                invertedNoteNumber = _backwardsNoteNumbers[i];
+                _noteOnKeyboard = invertedNoteNumber;
+
+                if (_keyboardNotesHeld < 6) _keyboardNotesHeld++;
+
+                // noteOn
+                if (currentUXMode != XRUX::SUBMITTING_STEP_VALUE) {
+                    XRSound::triggerTrackManually(
+                        XRSequencer::getCurrentSelectedTrackNum(), 
+                        _noteOnKeyboard
+                    );
+                }
+            }
             // if it *was* touched and now *isnt*, alert!
             if (!(_mprCurrTouched & _BV(i)) && (_mprLastTouched & _BV(i)))
             {
-                Serial.print(i);
-                Serial.println(" released");
+                Serial.printf("%d released\n", i);
+                
+                //_noteOnKeyboard = 0; // need this?
+
+                if (_keyboardNotesHeld > 0) _keyboardNotesHeld--;
+                
+                released = true;
+
+                // noteOff
+                if (currentUXMode != XRUX::SUBMITTING_STEP_VALUE) {
+                    if (_keyboardNotesHeld == 0) {
+                        XRSound::noteOffTrackManually(_noteOnKeyboard);
+                    }
+                }
             }
         }
 
@@ -190,5 +255,10 @@ namespace XRVersa
             _fastBtnPressed = false;
             keyPressed = -1;
         }
+    }
+
+    void handleNoteInput()
+    {
+        
     }
 }

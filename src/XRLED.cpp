@@ -1,6 +1,7 @@
 #include <XRLED.h>
 #include <XRSequencer.h>
 #include <XRHelpers.h>
+#include <XRKeyMatrix.h>
 #include <map>
 
 namespace XRLED
@@ -164,14 +165,17 @@ namespace XRLED
 
     void displayCurrentlySelectedPattern()
     {
-        auto seqExternal = XRSequencer::getSequencerExternal();
-        auto currentSelectedBank = XRSequencer::getCurrentSelectedBankNum();
+        //auto &seqExternal = XRSequencer::getSequencerExternal();
+        //auto currentSelectedBank = XRSequencer::getCurrentSelectedBankNum();
+        auto currentSelectedPattern = XRSequencer::getCurrentSelectedPatternNum();
 
-        for (int p = 0; p < MAXIMUM_SEQUENCER_PATTERNS; p++)
+        for (int8_t p = 0; p < MAXIMUM_SEQUENCER_PATTERNS; p++)
         {
-            if (seqExternal.banks[currentSelectedBank].patterns[p].initialized)
-            {
-                if (p == currentSelectedBank)
+            // TODO: impl pattern, track, bank initialize properly
+
+            //if (seqExternal.banks[currentSelectedBank].patterns[p].initialized)
+            //{
+                if (p == currentSelectedPattern)
                 {
                     setPWM(_stepLEDPins[p], 4095);
                 }
@@ -179,25 +183,28 @@ namespace XRLED
                 {
                     setPWM(_stepLEDPins[p], 512);
                 }
-            }
-            else
-            {
-                setPWM(_stepLEDPins[p], 0);
-            }
+            // }
+            // else
+            // {
+            //     setPWM(_stepLEDPins[p], 0);
+            // }
         }
     }
 
     void displayCurrentlySelectedTrack()
     {
-        auto seqExternal = XRSequencer::getSequencerExternal();
-        auto currentSelectedBank = XRSequencer::getCurrentSelectedBankNum();
-        auto currentSelectedPattern = XRSequencer::getCurrentSelectedPatternNum();
+        //Serial.println("fix displayCurrentlySelectedTrack");
+        //return;
+
+        //auto &seqHeap = XRSequencer::getSequencerHeap();
         auto currentSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
 
         for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
         {
-            if (seqExternal.banks[currentSelectedBank].patterns[currentSelectedPattern].tracks[t].initialized)
-            {
+            // TODO: impl pattern, track, bank initialize properly
+
+            // if (seqHeap.pattern.tracks[t].initialized)
+            // {
                 if (t == currentSelectedTrack)
                 {
                     setPWM(_stepLEDPins[t], 4095);
@@ -206,17 +213,17 @@ namespace XRLED
                 {
                     setPWM(_stepLEDPins[t], 512);
                 }
-            }
-            else
-            {
-                setPWM(_stepLEDPins[t], 0);
-            }
+            // }
+            // else
+            // {
+            //     setPWM(_stepLEDPins[t], 0);
+            // }
         }
     }
 
     void setDisplayStateForAllStepLEDs()
     {
-        auto currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
         auto currStepPage = XRSequencer::getCurrentStepPage();
 
         const int MAX_TRACK_LEDS_SIZE = 17;
@@ -270,5 +277,71 @@ namespace XRLED
                 setPWM(keyLED, 4095);
             }
         }
+    }
+
+    void displayCurrentOctaveLEDs(int8_t octave)
+    {
+        switch (octave)
+        {
+        case 1:
+            setPWM(17, 100);
+            setPWM(18, 25);
+            setPWM(19, 0);
+            setPWM(20, 0);
+            break;
+
+        case 2:
+            setPWM(17, 25);
+            setPWM(18, 25);
+            setPWM(19, 0);
+            setPWM(20, 0);
+            break;
+
+        case 3:
+            setPWM(17, 0);
+            setPWM(18, 25);
+            setPWM(19, 0);
+            setPWM(20, 0);
+            break;
+
+        case 4:
+            setPWM(17, 0);
+            setPWM(18, 0);
+            setPWM(19, 0);
+            setPWM(20, 0);
+            break;
+
+        case 5:
+            setPWM(17, 0);
+            setPWM(18, 0);
+            setPWM(19, 25);
+            setPWM(20, 0);
+            break;
+
+        case 6:
+            setPWM(17, 0);
+            setPWM(18, 0);
+            setPWM(19, 25);
+            setPWM(20, 25);
+            break;
+
+        case 7:
+            setPWM(17, 0);
+            setPWM(18, 0);
+            setPWM(19, 25);
+            setPWM(20, 100);
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    void clearPageLEDs()
+    {
+        setPWM(17, 0);
+        setPWM(18, 0);
+        setPWM(19, 0);
+        setPWM(20, 0);
     }
 }

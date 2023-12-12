@@ -80,15 +80,32 @@ namespace XREncoder
     void handleStates()
     {
         auto currentUXMode = XRUX::getCurrentMode();
-        if (!(elapsedMs % 25) && currentUXMode == XRUX::UX_MODE::SOUND_MENU_MAIN)
-        {
-            handleSoundMenuCursor();
 
+        bool uxModesWithMenu = (
+            currentUXMode == XRUX::UX_MODE::SOUND_MENU_MAIN || 
+            currentUXMode == XRUX::UX_MODE::CHANGE_SETUP  || 
+            currentUXMode == XRUX::UX_MODE::ASSIGN_SAMPLE_TO_TRACK
+        );
+
+        if (!(elapsedMs % 25) && uxModesWithMenu) {
+            if (currentUXMode == XRUX::UX_MODE::SOUND_MENU_MAIN) {
+                if (handleMenuCursor(SOUND_MENU_ITEM_MAX)) {
+                    XRDisplay::drawSoundMenuMain();
+                }
+            } else if (currentUXMode == XRUX::UX_MODE::CHANGE_SETUP) {
+                if (handleMenuCursor(SETUP_MENU_ITEM_MAX)) {
+                    XRDisplay::drawSetupMenu();
+                }
+            } else if (currentUXMode == XRUX::UX_MODE::ASSIGN_SAMPLE_TO_TRACK) {
+                if (handleMenuCursor(255)) {
+                    XRDisplay::drawSampleBrowser();
+                }
+            }
+            
             return;
         }
 
-        if (!(elapsedMs % 25) && currentUXMode == XRUX::UX_MODE::SET_TEMPO)
-        {
+        if (!(elapsedMs % 25) && currentUXMode == XRUX::UX_MODE::SET_TEMPO) {
             handleEncoderSetTempo();
 
             return;
@@ -132,18 +149,20 @@ namespace XREncoder
         }
     }
 
-    void handleSoundMenuCursor()
+    bool handleMenuCursor(int menuItems)
     {
-        int items = SOUND_MENU_ITEM_MAX;
         int diff = getDiff(MAIN_ENCODER_ADDRESS);
 
-        if (items > 2 && diff != 0)
+        if (menuItems > 2 && diff != 0)
         {
             uint8_t currPos = XRMenu::getCursorPosition();
-            uint8_t newPos = constrain(currPos + diff, 0, items - 1);
+            uint8_t newPos = constrain(currPos + diff, 0, menuItems - 1);
 
             XRMenu::setCursorPosition(newPos);
-            XRDisplay::drawSoundMenuMain();
+
+            return true;
         }
+
+        return false;
     }
 }
