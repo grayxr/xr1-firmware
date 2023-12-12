@@ -695,12 +695,12 @@ namespace XRSound
             {
                 XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::DEXED);
 
-                trackVoice.mix.gain(0, 0); // mono sample
-                trackVoice.mix.gain(1, 0); // synth
+                trackVoice.mix.gain(0, 1); // mono sample
+                trackVoice.mix.gain(1, 1); // synth
 
-                trackVoice.leftSubMix.gain(0, 0);
+                trackVoice.leftSubMix.gain(0, 1);
                 trackVoice.leftSubMix.gain(1, 1);
-                trackVoice.rightSubMix.gain(0, 0);
+                trackVoice.rightSubMix.gain(0, 1);
                 trackVoice.rightSubMix.gain(1, 1);
             }
             else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::SUBTRACTIVE_SYNTH)
@@ -725,24 +725,24 @@ namespace XRSound
                 XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::MIDI_OUT);
 
                 // turn all audio for this track voice down
-                trackVoice.mix.gain(0, 0); // mono sample
-                trackVoice.mix.gain(1, 0); // synth
+                trackVoice.mix.gain(0, 1); // mono sample
+                trackVoice.mix.gain(1, 1); // synth
             }
             else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::CV_GATE)
             {
                 XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::CV_GATE);
 
                 // turn all audio for this track voice down
-                trackVoice.mix.gain(0, 0); // mono sample
-                trackVoice.mix.gain(1, 0); // synth
+                trackVoice.mix.gain(0, 1); // mono sample
+                trackVoice.mix.gain(1, 1); // synth
             }
             else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::CV_TRIG)
             {
                 XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::CV_TRIG);
 
                 // turn all audio for this track voice down
-                trackVoice.mix.gain(0, 0); // mono sample
-                trackVoice.mix.gain(1, 0); // synth
+                trackVoice.mix.gain(0, 1); // mono sample
+                trackVoice.mix.gain(1, 1); // synth
             }
         }
     }
@@ -762,7 +762,7 @@ namespace XRSound
 
     void initSoundsForTrack(int t)
     {
-        AudioNoInterrupts();
+    AudioNoInterrupts();
 
         // TODO: eventually need to restore all sounds for all patterns and their tracks?
         auto &currTrack = XRSequencer::getHeapTrack(t);
@@ -818,7 +818,7 @@ namespace XRSound
 
             // output
             comboVoices[t].mix.gain(0, 1); // raw sample
-            comboVoices[t].mix.gain(1, 1); // synth
+            comboVoices[t].mix.gain(1, 0); // synth
 
             // mono to L&R
             comboVoices[t].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
@@ -857,6 +857,150 @@ namespace XRSound
         AudioInterrupts();
 
         XRSequencer::setTrackNeedsInit(t, false);
+    }
+
+    void initTrackSounds()
+    {
+        // configure combo voice audio objects
+        for (int v = 0; v < COMBO_VOICE_COUNT; v++)
+        {
+            // TODO: eventually need to restore all sounds for all patterns and their tracks?
+            auto &currTrack = XRSequencer::getHeapTrack(v);
+
+            // init mono RAW sample
+            comboVoices[v].rSample.setPlaybackRate(currTrack.sample_play_rate);
+            comboVoices[v].rSample.enableInterpolation(true);
+
+            // init dexed
+            comboVoices[v].dexed.loadInitVoice();
+            // comboVoices[v].dexed.loadVoiceParameters(fmpiano_sysex);
+            
+            //loadDexedVoiceToCurrentTrack();
+            
+            // comboVoices[v].dexed.setMonoMode(true);
+            // comboVoices[v].dexed.setTranspose(36);
+
+            // init synth
+            comboVoices[v].osca.begin(currTrack.waveform);
+            comboVoices[v].osca.amplitude(currTrack.oscalevel);
+            comboVoices[v].osca.frequency(261.63); // C4 TODO: use find freq LUT with track note
+            comboVoices[v].osca.pulseWidth(currTrack.width);
+            comboVoices[v].oscb.begin(currTrack.waveform);
+            comboVoices[v].oscb.amplitude(currTrack.oscblevel);
+            comboVoices[v].oscb.frequency(261.63); // C3 TODO: use find freq LUT with track note + detune
+            comboVoices[v].oscb.pulseWidth(currTrack.width);
+            comboVoices[v].noise.amplitude(currTrack.noise);
+            comboVoices[v].oscMix.gain(0, 0.33);
+            comboVoices[v].oscMix.gain(1, 0.33);
+            comboVoices[v].oscMix.gain(2, 0.33);
+            comboVoices[v].dc.amplitude(currTrack.filterenvamt);
+            comboVoices[v].lfilter.frequency(currTrack.cutoff);
+            comboVoices[v].lfilter.resonance(currTrack.res);
+            comboVoices[v].lfilter.octaveControl(4);
+            comboVoices[v].filterEnv.attack(currTrack.filter_attack);
+            comboVoices[v].filterEnv.decay(currTrack.filter_decay);
+            comboVoices[v].filterEnv.sustain(currTrack.filter_sustain);
+            comboVoices[v].filterEnv.release(currTrack.filter_release);
+            comboVoices[v].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
+            comboVoices[v].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
+            comboVoices[v].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
+            comboVoices[v].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
+
+            // output
+            comboVoices[v].mix.gain(0, 1); // raw sample
+            comboVoices[v].mix.gain(1, 0); // synth
+
+            // mono to L&R
+            comboVoices[v].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+            comboVoices[v].rightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+
+            // Sub L&R mixers
+            comboVoices[v].leftSubMix.gain(1, currTrack.level);  // raw sample / synth left
+            comboVoices[v].leftSubMix.gain(0, currTrack.level);  // dexed left
+            comboVoices[v].rightSubMix.gain(1, currTrack.level); // raw sample / synth right
+            comboVoices[v].rightSubMix.gain(0, currTrack.level); // dexed right
+        }
+
+        // configure sample voice audio objects
+        for (int v = 0; v < SAMPLE_VOICE_COUNT; v++)
+        {
+            // TODO: eventually need to restore all sounds for all patterns and their tracks?
+            auto &currTrack = XRSequencer::getHeapTrack(v + 4); // offset by 4 since the 12 sample voices start at track 5
+
+            // init mono RAW sample
+            sampleVoices[v].rSample.setPlaybackRate(currTrack.sample_play_rate);
+            sampleVoices[v].rSample.enableInterpolation(true);
+
+            sampleVoices[v].ampEnv.attack(currTrack.amp_attack * (currTrack.velocity * 0.01));
+            sampleVoices[v].ampEnv.decay(currTrack.amp_decay * (currTrack.velocity * 0.01));
+            sampleVoices[v].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
+            sampleVoices[v].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
+            // sampleVoices[v].ampEnv.releaseNoteOn(15);
+
+            // mono to L&R
+            sampleVoices[v].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+            sampleVoices[v].rightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+
+            // Sub L&R mixers
+            sampleVoices[v].leftSubMix.gain(1, currTrack.level);  // raw sample / synth left
+            sampleVoices[v].rightSubMix.gain(1, currTrack.level); // raw sample / synth right
+        }
+
+        mixerLeft1.gain(0, 1);
+        mixerRight1.gain(0, 1);
+        mixerLeft1.gain(1, 1);
+        mixerRight1.gain(1, 1);
+        mixerLeft1.gain(2, 1);
+        mixerRight1.gain(2, 1);
+        mixerLeft1.gain(3, 1);
+        mixerRight1.gain(3, 1);
+
+        mixerLeft2.gain(0, 1);
+        mixerRight2.gain(0, 1);
+        mixerLeft2.gain(1, 1);
+        mixerRight2.gain(1, 1);
+        mixerLeft2.gain(2, 1);
+        mixerRight2.gain(2, 1);
+        mixerLeft2.gain(3, 1);
+        mixerRight2.gain(3, 1);
+
+        mixerLeft3.gain(0, 1);
+        mixerRight3.gain(0, 1);
+        mixerLeft3.gain(1, 1);
+        mixerRight3.gain(1, 1);
+        mixerLeft3.gain(2, 1);
+        mixerRight3.gain(2, 1);
+        mixerLeft3.gain(3, 1);
+        mixerRight3.gain(3, 1);
+
+        mixerLeft4.gain(0, 1);
+        mixerRight4.gain(0, 1);
+        mixerLeft4.gain(1, 1);
+        mixerRight4.gain(1, 1);
+        mixerLeft4.gain(2, 1);
+        mixerRight4.gain(2, 1);
+        mixerLeft4.gain(3, 1);
+        mixerRight4.gain(3, 1);
+
+        // Main L&R output mixer
+        mainMixerLeft.gain(0, 1);
+        mainMixerRight.gain(0, 1);
+        mainMixerLeft.gain(1, 1);
+        mainMixerRight.gain(1, 1);
+        mainMixerLeft.gain(2, 1);
+        mainMixerRight.gain(2, 1);
+        mainMixerLeft.gain(3, 1);
+        mainMixerRight.gain(3, 1);
+
+        // L&R input mixer
+        inputMixerLeft.gain(0, 0.25);
+        inputMixerRight.gain(0, 0.25);
+
+        // Main L&R output mixer
+        OutputMixerLeft.gain(0, 1);
+        OutputMixerRight.gain(0, 1);
+        OutputMixerLeft.gain(1, 1);
+        OutputMixerRight.gain(1, 1);
     }
 
     PANNED_AMOUNTS getStereoPanValues(float pan)
@@ -907,12 +1051,12 @@ namespace XRSound
         {
             XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::DEXED);
 
-            trackVoice.mix.gain(0, 0); // mono sample
-            trackVoice.mix.gain(1, 0); // synth
+            trackVoice.mix.gain(0, 1); // mono sample
+            trackVoice.mix.gain(1, 1); // synth
 
-            trackVoice.leftSubMix.gain(0, 0);
+            trackVoice.leftSubMix.gain(0, 1);
             trackVoice.leftSubMix.gain(1, 1);
-            trackVoice.rightSubMix.gain(0, 0);
+            trackVoice.rightSubMix.gain(0, 1);
             trackVoice.rightSubMix.gain(1, 1);
         }
         else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::WAV_SAMPLE)
@@ -922,8 +1066,8 @@ namespace XRSound
             // only create buffers for stereo samples when needed
             // trackVoice.wSample.createBuffer(2048, AudioBuffer::inExt);
 
-            trackVoice.mix.gain(0, 0); // mono sample
-            trackVoice.mix.gain(1, 0); // synth
+            trackVoice.mix.gain(0, 1); // mono sample
+            trackVoice.mix.gain(1, 1); // synth
         }
         else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::SUBTRACTIVE_SYNTH)
         {
@@ -932,7 +1076,7 @@ namespace XRSound
             auto currTrack = XRSequencer::getHeapTrack(t);
 
             // turn sample volume all the way down
-            trackVoice.mix.gain(0, 0);
+            trackVoice.mix.gain(0, 1);
             // turn synth volumes all the way up
             trackVoice.mix.gain(1, 1); // ladder
 
@@ -947,24 +1091,24 @@ namespace XRSound
             XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::MIDI_OUT);
 
             // turn all audio for this track voice down
-            trackVoice.mix.gain(0, 0); // mono sample
-            trackVoice.mix.gain(1, 0); // synth
+            trackVoice.mix.gain(0, 1); // mono sample
+            trackVoice.mix.gain(1, 1); // synth
         }
         else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::CV_GATE)
         {
             XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::CV_GATE);
 
             // turn all audio for this track voice down
-            trackVoice.mix.gain(0, 0); // mono sample
-            trackVoice.mix.gain(1, 0); // synth
+            trackVoice.mix.gain(0, 1); // mono sample
+            trackVoice.mix.gain(1, 1); // synth
         }
         else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::CV_TRIG)
         {
             XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::CV_TRIG);
 
             // turn all audio for this track voice down
-            trackVoice.mix.gain(0, 0); // mono sample
-            trackVoice.mix.gain(1, 0); // synth
+            trackVoice.mix.gain(0, 1); // mono sample
+            trackVoice.mix.gain(1, 1); // synth
         }
     }
 
@@ -1079,7 +1223,7 @@ namespace XRSound
 
     void handleWavSampleNoteOnForTrack(int track)
     {
-        auto &trackToUse = XRSequencer::getHeapTrack(track);
+        // auto &trackToUse = XRSequencer::getHeapTrack(track);
 
         if (track > 3)
         {
@@ -1420,7 +1564,7 @@ namespace XRSound
 
     AudioInterrupts();
 
-        // now triggers envs
+        // now trigger envs
         comboVoices[track].ampEnv.noteOn();
         comboVoices[track].filterEnv.noteOn();
     }
@@ -1703,10 +1847,10 @@ namespace XRSound
         if (currType == newType)
             return;
 
-        if (currType == XRSequencer::WAV_SAMPLE)
-        {
-            // trackVoice.wSample.disposeBuffer();
-        }
+        // if (currType == XRSequencer::WAV_SAMPLE)
+        // {
+        //     // trackVoice.wSample.disposeBuffer();
+        // }
 
         if (newType == XRSequencer::RAW_SAMPLE)
         {
@@ -1724,9 +1868,9 @@ namespace XRSound
             trackVoice.mix.gain(0, 0); // mono sample
             trackVoice.mix.gain(1, 0); // synth
 
-            trackVoice.leftSubMix.gain(0, 0);
+            trackVoice.leftSubMix.gain(0, 1);
             trackVoice.leftSubMix.gain(1, 1);
-            trackVoice.rightSubMix.gain(0, 0);
+            trackVoice.rightSubMix.gain(0, 1);
             trackVoice.rightSubMix.gain(1, 1);
         }
         else if (newType == XRSequencer::WAV_SAMPLE)
@@ -1748,7 +1892,8 @@ namespace XRSound
             auto &currTrack = XRSequencer::getHeapTrack(t);
 
             // turn sample volume all the way down
-            trackVoice.mix.gain(0, 1);
+            //trackVoice.mix.gain(0, 0);
+            trackVoice.mix.gain(0, 1); // TODO: CHANGE
             // turn synth volumes all the way up
             trackVoice.mix.gain(1, 1); // ladder
 
@@ -1926,14 +2071,14 @@ namespace XRSound
 
     void triggerSubtractiveSynthNoteOn(uint8_t t, uint8_t note)
     {
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedPattern().tracks[t];
+        auto &currTrack = XRSequencer::getHeapTrack(t);
 
     AudioNoInterrupts();
         float foundBaseFreq = _noteToFreqArr[note];
         float octaveFreqA = (foundBaseFreq + (currTrack.fine * 0.01)) * (pow(2, XRKeyMatrix::getKeyboardOctave()));
         float octaveFreqB = (foundBaseFreq * pow(2.0, (float)currTrack.detune / 12.0)) * (pow(2, XRKeyMatrix::getKeyboardOctave()));
 
-        Serial.printf("note: %d, foundBaseFreq: %f, octaveFreqA: %f, octaveFreqB: %f\n", note, foundBaseFreq, octaveFreqA, octaveFreqB);
+        // Serial.printf("note: %d, foundBaseFreq: %f, octaveFreqA: %f, octaveFreqB: %f\n", note, foundBaseFreq, octaveFreqA, octaveFreqB);
 
         comboVoices[t].osca.frequency(octaveFreqA);
         comboVoices[t].oscb.frequency(octaveFreqB);
@@ -1946,12 +2091,12 @@ namespace XRSound
         comboVoices[t].ampEnv.sustain(currTrack.amp_sustain * (currTrack.velocity * 0.01));
         comboVoices[t].ampEnv.release(currTrack.amp_release * (currTrack.velocity * 0.01));
 
-        float a1 = currTrack.amp_attack * (currTrack.velocity * 0.01);
-        float d1 = currTrack.amp_decay * (currTrack.velocity * 0.01);
-        float s1 = currTrack.amp_sustain * (currTrack.velocity * 0.01);
-        float r1 = currTrack.amp_release * (currTrack.velocity * 0.01);
+        // float a1 = currTrack.amp_attack * (currTrack.velocity * 0.01);
+        // float d1 = currTrack.amp_decay * (currTrack.velocity * 0.01);
+        // float s1 = currTrack.amp_sustain * (currTrack.velocity * 0.01);
+        // float r1 = currTrack.amp_release * (currTrack.velocity * 0.01);
         
-        Serial.printf("a: %f, d: %f, s: %f, r: %f\n", a1, d1, s1, r1);
+        // Serial.printf("a: %f, d: %f, s: %f, r: %f\n", a1, d1, s1, r1);
 
         comboVoices[t].filterEnv.attack(currTrack.filter_attack);
         comboVoices[t].filterEnv.decay(currTrack.filter_decay);

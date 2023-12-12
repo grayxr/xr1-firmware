@@ -181,6 +181,7 @@ namespace XRKeyMatrix
         
         if (currentUXMode == XRUX::UX_MODE::TRACK_SEL && key == SOUND_BTN_CHAR) {
             Serial.println("TODO: impl track sound change!");
+            
             auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
             auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
             auto currType = currTrack.track_type;

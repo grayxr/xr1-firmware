@@ -156,6 +156,7 @@ namespace XRSound
     void init();
     void loadVoiceSettings();
     void initSoundsForTrack(int t);
+    void initTrackSounds();
     void configureVoiceSettingsForTrack(int t);
     void configureSampleVoiceSettingsOnLoad(int t);
     void assignSampleToTrack();

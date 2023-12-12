@@ -113,10 +113,10 @@ namespace XRVersa
                 fastBtnUpdate();
             }
 
-            if (keyPressed > -1)
-            {
-                handleNoteInput();
-            }
+            // if (keyPressed > -1)
+            // {
+            //     handleNoteInput();
+            // }
 
             return;
         }
@@ -198,6 +198,7 @@ namespace XRVersa
 
         auto currentUXMode = XRUX::getCurrentMode();
         int8_t invertedNoteNumber = -1;
+
         bool released = false;
 
         for (uint8_t i = 0; i < 12; i++)
@@ -211,6 +212,8 @@ namespace XRVersa
                 _noteOnKeyboard = invertedNoteNumber;
 
                 if (_keyboardNotesHeld < 6) _keyboardNotesHeld++;
+
+                Serial.printf("_keyboardNotesHeld: %d\n", _keyboardNotesHeld);
 
                 // noteOn
                 if (currentUXMode != XRUX::SUBMITTING_STEP_VALUE) {
@@ -228,6 +231,8 @@ namespace XRVersa
                 //_noteOnKeyboard = 0; // need this?
 
                 if (_keyboardNotesHeld > 0) _keyboardNotesHeld--;
+
+                Serial.printf("_keyboardNotesHeld: %d\n", _keyboardNotesHeld);
                 
                 released = true;
 
