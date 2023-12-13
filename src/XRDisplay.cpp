@@ -467,9 +467,14 @@ namespace XRDisplay
             {
                 trackInfoStr += XRSequencer::getTrackTypeNameStr(currTrackType);
             }
+            else if (currTrackType == XRSequencer::DEXED)
+            {
+                trackInfoStr += XRSD::dexedPatchName.length() > 0 ? XRSD::dexedPatchName : "";
+            }
             else if (currTrackType == XRSequencer::RAW_SAMPLE || currTrackType == XRSequencer::WAV_SAMPLE)
             {
                 std::string sampleName(currTrack.sample_name);
+                
                 trackInfoStr += sampleName.length() > 0 ? sampleName : "N/A";
             }
             else if (currTrackType == XRSequencer::MIDI_OUT)
@@ -1082,7 +1087,7 @@ namespace XRDisplay
         auto list = XRSD::getSampleList(cursor);
 
         // todo: impl minimap scroll bar
-        drawPagedMenuList("/SAMPLES", list, 5);
+        drawPagedMenuList("SAMPLES", list, 5);
 
         u8g2.sendBuffer();
     }

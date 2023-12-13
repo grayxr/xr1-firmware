@@ -383,15 +383,15 @@ namespace XREncoder
             }
             else if (currTrack.track_type == XRSequencer::DEXED)
             {
-                // if (m == 1) {
-                //     handleEncoderDexedModA(mDiff);
-                // } else if (m == 2) {
-                //     handleEncoderDexedModB(mDiff);
-                // } else if (m == 3) {
-                //     handleEncoderDexedModC(mDiff);
-                // } else if (m == 4) {
-                //     handleEncoderDexedModD(mDiff);
-                // }
+                if (m == 1) {
+                    handleEncoderDexedModA(mDiff);
+                } else if (m == 2) {
+                    handleEncoderDexedModB(mDiff);
+                } else if (m == 3) {
+                    handleEncoderDexedModC(mDiff);
+                } else if (m == 4) {
+                    handleEncoderDexedModD(mDiff);
+                }
             }
             else if (currTrack.track_type == XRSequencer::RAW_SAMPLE)
             {
@@ -439,7 +439,7 @@ namespace XREncoder
         auto &currStep = XRSequencer::getHeapCurrentSelectedTrackStep();
         auto &patternMods = XRSequencer::getModsForCurrentPattern();
         auto &comboVoice = XRSound::getComboVoiceForCurrentTrack();
-        auto currSelectedTrackNum = XRSequencer::getCurrentSelectedStepNum();
+        auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
         auto numNotesHeldOfKeyboard = XRVersa::getKeyboardNotesHeld();
@@ -600,7 +600,7 @@ namespace XREncoder
         auto &currStep = XRSequencer::getHeapCurrentSelectedTrackStep();
         auto &patternMods = XRSequencer::getModsForCurrentPattern();
         auto &comboVoice = XRSound::getComboVoiceForCurrentTrack();
-        auto currSelectedTrackNum = XRSequencer::getCurrentSelectedStepNum();
+        auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
         //auto numNotesHeldOfKeyboard = XRVersa::getKeyboardNotesHeld();
@@ -750,7 +750,7 @@ namespace XREncoder
         auto &currStep = XRSequencer::getHeapCurrentSelectedTrackStep();
         auto &patternMods = XRSequencer::getModsForCurrentPattern();
         auto &comboVoice = XRSound::getComboVoiceForCurrentTrack();
-        auto currSelectedTrackNum = XRSequencer::getCurrentSelectedStepNum();
+        auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
         //auto numNotesHeldOfKeyboard = XRVersa::getKeyboardNotesHeld();
@@ -781,6 +781,8 @@ namespace XREncoder
                     {
                         newSpeed = 0.1;
                     }
+
+                    Serial.printf("debug param lock -- currUXMode: %d, selTrack: %d, selStep: %d\n",currUXMode,currSelectedTrackNum,currSelectedStepNum);
 
                     if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1)
                     {
@@ -900,7 +902,7 @@ namespace XREncoder
         auto &currStep = XRSequencer::getHeapCurrentSelectedTrackStep();
         auto &patternMods = XRSequencer::getModsForCurrentPattern();
         auto &comboVoice = XRSound::getComboVoiceForCurrentTrack();
-        auto currSelectedTrackNum = XRSequencer::getCurrentSelectedStepNum();
+        auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
         // auto numNotesHeldOfKeyboard = XRVersa::getKeyboardNotesHeld();
@@ -1023,6 +1025,80 @@ namespace XREncoder
 
         default:
             break;
+        }
+    }
+
+    void handleEncoderDexedModA(int diff)
+    {
+        //
+    }
+
+    void handleEncoderDexedModB(int diff)
+    {
+        //
+    }
+
+    void handleEncoderDexedModC(int diff)
+    {
+        auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+
+        if (currSelectedPageNum == 0) {
+            int dif = XRSD::dexedCurrentBank + diff;
+            if (dif == XRSD::dexedCurrentBank) {
+                return;
+            }
+
+            XRSD::dexedCurrentBank = XRSD::dexedCurrentBank + diff;
+
+            if (XRSD::dexedCurrentBank < 0)
+            {
+                XRSD::dexedCurrentBank = 98;
+            }
+            else if (XRSD::dexedCurrentBank > 98)
+            {
+                XRSD::dexedCurrentBank = 0;
+            }
+
+            Serial.print("dexed_current_bank: ");
+            Serial.print(XRSD::dexedCurrentBank);
+
+            Serial.print(" dexed_current_patch: ");
+            Serial.println(XRSD::dexedCurrentPatch);
+
+            XRSD::loadDexedVoiceToCurrentTrack();
+            XRDisplay::drawSequencerScreen(false);
+        }
+    }
+
+    void handleEncoderDexedModD(int diff)
+    {
+        auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+
+        if (currSelectedPageNum == 0) {
+            int dif = XRSD::dexedCurrentPatch + diff;
+            if (dif == XRSD::dexedCurrentPatch) {
+                return;
+            }
+
+            XRSD::dexedCurrentPatch = XRSD::dexedCurrentPatch + diff;
+
+            if (XRSD::dexedCurrentPatch < 0)
+            {
+                XRSD::dexedCurrentPatch = 31;
+            }
+            else if (XRSD::dexedCurrentPatch > 31)
+            {
+                XRSD::dexedCurrentPatch = 0;
+            }
+
+            Serial.print("dexed_current_bank: ");
+            Serial.print(XRSD::dexedCurrentBank);
+
+            Serial.print(" dexed_current_patch: ");
+            Serial.println(XRSD::dexedCurrentPatch);
+
+            XRSD::loadDexedVoiceToCurrentTrack();
+            XRDisplay::drawSequencerScreen(false);
         }
     }
 
@@ -1218,7 +1294,7 @@ namespace XREncoder
         auto &currStep = XRSequencer::getHeapCurrentSelectedTrackStep();
         auto &patternMods = XRSequencer::getModsForCurrentPattern();
         auto &comboVoice = XRSound::getComboVoiceForCurrentTrack();
-        auto currSelectedTrackNum = XRSequencer::getCurrentSelectedStepNum();
+        auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
         auto numNotesHeldOfKeyboard = XRVersa::getKeyboardNotesHeld();
@@ -1366,7 +1442,7 @@ namespace XREncoder
         //auto &currStep = XRSequencer::getHeapCurrentSelectedTrackStep();
         //auto &patternMods = XRSequencer::getModsForCurrentPattern();
         auto &comboVoice = XRSound::getComboVoiceForCurrentTrack();
-        //auto currSelectedTrackNum = XRSequencer::getCurrentSelectedStepNum();
+        //auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         //auto currSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
         //auto numNotesHeldOfKeyboard = XRVersa::getKeyboardNotesHeld();

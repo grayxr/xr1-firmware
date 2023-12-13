@@ -484,13 +484,13 @@ namespace XRSound
         case 0: // MAIN
             mods.aName = "LSTP";
             mods.bName = "LEN";
-            mods.cName = "--";
-            mods.dName = "--";
+            mods.cName = "BNK";
+            mods.dName = "PAT";
 
             mods.aValue = std::to_string(currentSelectedTrack.last_step); // TODO : impl
             mods.bValue = std::to_string(currentSelectedTrack.length);    // TODO: impl
-            mods.cValue = "--";
-            mods.dValue = "--";
+            mods.cValue = std::to_string(XRSD::dexedCurrentBank);
+            mods.dValue = std::to_string(XRSD::dexedCurrentPatch);
             break;
 
         default:
@@ -718,7 +718,7 @@ namespace XRSound
 
     std::string getSampleName(const char* name)
     {
-        std::string sampleName = "/samples/";
+        std::string sampleName = "/audio enjoyer/xr-1/samples/";
         sampleName += name;
 
         return sampleName;
@@ -861,10 +861,10 @@ namespace XRSound
         auto &currTrack = XRSequencer::getHeapTrack(t);
 
         if (currTrack.track_type == XRSequencer::RAW_SAMPLE) {
-            std::string sampleName = "/samples/";
+            std::string sampleName = "/audio enjoyer/xr-1/samples/";
             sampleName += currTrack.sample_name;
 
-            if (sampleName != "/samples/") {
+            if (sampleName != "/audio enjoyer/xr-1/samples/") {
                 Serial.printf("initializing this sample name: %s\n", sampleName.c_str());
 
                 _extPatternSamples[t] = _loader.loadSample(sampleName.c_str());
@@ -877,8 +877,9 @@ namespace XRSound
             comboVoices[t].rSample.enableInterpolation(true);
 
             // init dexed
-            comboVoices[t].dexed.loadInitVoice();
+            //comboVoices[t].dexed.loadInitVoice();
             // TODO: impl loadDexedVoiceToCurrentTrack();
+            XRSD::loadDexedVoiceToCurrentTrack();
             
             // comboVoices[t].dexed.setMonoMode(true);
             // comboVoices[t].dexed.setTranspose(36);
@@ -965,10 +966,9 @@ namespace XRSound
             comboVoices[v].rSample.enableInterpolation(true);
 
             // init dexed
-            comboVoices[v].dexed.loadInitVoice();
+            // comboVoices[v].dexed.loadInitVoice();
             // comboVoices[v].dexed.loadVoiceParameters(fmpiano_sysex);
-            
-            //loadDexedVoiceToCurrentTrack();
+            XRSD::loadDexedVoiceToCurrentTrack();
             
             // comboVoices[v].dexed.setMonoMode(true);
             // comboVoices[v].dexed.setTranspose(36);
@@ -1103,7 +1103,7 @@ namespace XRSound
         auto &seqHeap = XRSequencer::getSequencerHeap();
 
         if (t > 3) { // sample-only voices
-            //SampleVoice trackVoice = sampleVoices[t - 4];
+            // SampleVoice trackVoice = sampleVoices[t - 4];
 
             if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::WAV_SAMPLE)
             {
@@ -1855,7 +1855,7 @@ namespace XRSound
 
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
 
-        std::string sampleName = "/samples/";
+        std::string sampleName = "/audio enjoyer/xr-1/samples/";
         std::string selected = XRSD::getCurrSampleFileHighlighted();
         sampleName += selected;
 

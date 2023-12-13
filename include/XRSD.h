@@ -24,6 +24,10 @@ namespace XRSD
     extern MACHINE_STATE_0_1_0 _machine_state;
     extern PROJECT _current_project;
 
+    extern int dexedCurrentBank;
+    extern int dexedCurrentPatch;
+    extern std::string dexedPatchName;
+
     bool init();
     bool loadMachineState();
     bool loadLastProject();
@@ -34,6 +38,8 @@ namespace XRSD
 
     void savePatternModsToSdCard();
     void loadPatternModsFromSdCard();
+
+    void loadDexedVoiceToCurrentTrack();
     
     std::string *getSampleList(int16_t cursor);
     void rewindSampleDir();

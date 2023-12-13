@@ -277,6 +277,7 @@ namespace XRSequencer
     void initializeCurrentSelectedTrack();
     void setTrackTypeForHeapTrack(int8_t track, TRACK_TYPE type);
     void setTrackNeedsInit(int track, bool init);
+    void setCurrentSelectedStep(int step);
 
     void assignSampleNameToTrack(std::string sampleName);
 

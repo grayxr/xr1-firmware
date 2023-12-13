@@ -26,7 +26,7 @@ namespace XRVersa
     uint16_t _mprExcLastTouched = 0;
     uint16_t _mprExcCurrTouched = 0;
 
-    bool _pinsPressed[13] = {
+    bool _notesPressed[13] = {
         false, false, false, false,
         false, false, false, false,
         false, false, false, false,
@@ -56,6 +56,8 @@ namespace XRVersa
     };
 
     void handleNoteInput();
+    void handleNoteOnInput(uint8_t pin);
+    void handleNoteOffInput(uint8_t pin);
 
     bool init()
     {
@@ -106,11 +108,11 @@ namespace XRVersa
         );
 
         if (allowedModeToPlayKeysFrom) {
-            mprUpdate();
+            mprUpdateForNote();
 
             if (!(elapsedMs % 100))
             { // reduce touchiness of fast touch pin
-                fastBtnUpdate();
+                fastBtnUpdateForNote();
             }
 
             // if (keyPressed > -1)
@@ -192,14 +194,11 @@ namespace XRVersa
         _mprExcLastTouched = _mprExcCurrTouched;
     }
 
-    void mprUpdate()
+    void mprUpdateForNote()
     {
         _mprCurrTouched = mpr121_a.touched();
 
-        auto currentUXMode = XRUX::getCurrentMode();
-        int8_t invertedNoteNumber = -1;
-
-        bool released = false;
+        // bool released = false;
 
         for (uint8_t i = 0; i < 12; i++)
         {
@@ -208,42 +207,13 @@ namespace XRVersa
             {
                 Serial.printf("%d touched\n", i);
 
-                invertedNoteNumber = _backwardsNoteNumbers[i];
-                _noteOnKeyboard = invertedNoteNumber;
-
-                if (_keyboardNotesHeld < 6) _keyboardNotesHeld++;
-
-                Serial.printf("_keyboardNotesHeld: %d\n", _keyboardNotesHeld);
-                Serial.printf("_noteOnKeyboard: %d\n", _noteOnKeyboard);
-
-                // noteOn
-                if (currentUXMode != XRUX::SUBMITTING_STEP_VALUE) {
-                    XRSound::triggerTrackManually(
-                        XRSequencer::getCurrentSelectedTrackNum(), 
-                        _noteOnKeyboard
-                    );
-                }
+                handleNoteOnInput(i);
             }
             // if it *was* touched and now *isnt*, alert!
-            if (!(_mprCurrTouched & _BV(i)) && (_mprLastTouched & _BV(i)))
-            {
+            if (!(_mprCurrTouched & _BV(i)) && (_mprLastTouched & _BV(i))) {
                 Serial.printf("%d released\n", i);
-                
-                //_noteOnKeyboard = 0; // need this?
 
-                if (_keyboardNotesHeld > 0) _keyboardNotesHeld--;
-
-                Serial.printf("_keyboardNotesHeld: %d\n", _keyboardNotesHeld);
-                Serial.printf("_noteOnKeyboard: %d\n", _noteOnKeyboard);
-                
-                released = true;
-
-                // noteOff
-                if (currentUXMode != XRUX::SUBMITTING_STEP_VALUE) {
-                    if (_keyboardNotesHeld == 0) {
-                        XRSound::noteOffTrackManually(_noteOnKeyboard);
-                    }
-                }
+                handleNoteOffInput(i);
             }
         }
 
@@ -261,6 +231,71 @@ namespace XRVersa
         {
             _fastBtnPressed = false;
             keyPressed = -1;
+        }
+    }
+
+    void fastBtnUpdateForNote()
+    {
+        if (!_fastBtnPressed && fastTouchRead(FAST_TOUCH_PIN) >= 64)
+        {
+            _fastBtnPressed = true;
+            
+            handleNoteOnInput(12);
+        }
+        else if (_fastBtnPressed && fastTouchRead(FAST_TOUCH_PIN) < 64)
+        {
+            _fastBtnPressed = false;
+            
+            handleNoteOffInput(12);
+        }
+    }
+
+    void handleNoteOnInput(uint8_t pin)
+    {
+        auto currentUXMode = XRUX::getCurrentMode();
+
+        int8_t invertedNoteNumber = -1;
+        invertedNoteNumber = _backwardsNoteNumbers[pin];
+                
+        _noteOnKeyboard = invertedNoteNumber;
+
+        if (_keyboardNotesHeld < 6) _keyboardNotesHeld++;
+
+        if (invertedNoteNumber > -1 && _notesPressed[invertedNoteNumber] == false) {
+            _notesPressed[invertedNoteNumber] = true;
+
+            // noteOn
+            if (currentUXMode != XRUX::SUBMITTING_STEP_VALUE) {
+                XRSound::triggerTrackManually(
+                    XRSequencer::getCurrentSelectedTrackNum(), 
+                    _noteOnKeyboard
+                );
+            }
+
+            Serial.printf("_keyboardNotesHeld: %d, invertedNoteNumber: %d\n", _keyboardNotesHeld, invertedNoteNumber);
+        }
+    }
+
+    void handleNoteOffInput(uint8_t pin)
+    {
+        auto currentUXMode = XRUX::getCurrentMode();
+
+        int8_t invertedNoteNumber = -1;
+        invertedNoteNumber = _backwardsNoteNumbers[pin];
+        
+        _noteOnKeyboard = invertedNoteNumber;
+
+        if (_keyboardNotesHeld > 0) _keyboardNotesHeld--;
+
+        if (invertedNoteNumber > -1 && _notesPressed[invertedNoteNumber]) {
+            _notesPressed[invertedNoteNumber] = false;
+
+            // noteOff
+            if (currentUXMode != XRUX::SUBMITTING_STEP_VALUE) {
+                XRSound::noteOffTrackManually(invertedNoteNumber);
+            }
+
+            Serial.printf("_keyboardNotesHeld: %d, invertedNoteNumber: %d\n", _keyboardNotesHeld, invertedNoteNumber);
         }
     }
 

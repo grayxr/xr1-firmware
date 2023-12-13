@@ -64,11 +64,13 @@ namespace XRKeyMatrix
     void handleReleaseForKey(char key);
 
     bool handleActivateFunction(char key);
+    bool handleActivateParamLockStep(char key);
     bool handlePatternReleaseActions(char key);
     bool handleTrackReleaseActions(char key);
     bool handleCreateProjectReleaseActions(char key);
     bool handleMenuReleaseActions(char key);
     bool handleFunctionReleaseActions(char key);
+    bool handleParamLockStepRelease(char key);
 
     bool btnCharIsATrack(char btnChar);
 
@@ -318,6 +320,8 @@ namespace XRKeyMatrix
         // Serial.println("enter handleHoldForKey!");
 
         if (handleActivateFunction(key)) return;
+
+        if (handleActivateParamLockStep(key)) return;
     }
 
     void handleReleaseForKey(char key)
@@ -338,6 +342,8 @@ namespace XRKeyMatrix
         if (handleTrackReleaseActions(key)) return;
 
         if (handlePatternReleaseActions(key)) return;
+
+        if (handleParamLockStepRelease(key)) return;
     }
 
     bool handlePatternReleaseActions(char key)
@@ -707,6 +713,28 @@ namespace XRKeyMatrix
         return false;
     }
    
+    bool handleParamLockStepRelease(char key)
+    {
+        Serial.println("enter handleParamLockStepRelease");
+
+        XRUX::UX_MODE previousUXMode = XRUX::getPreviousMode();
+        XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
+
+        // param lock release
+        if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && btnCharIsATrack(key)) {
+            // revert
+            XRUX::setCurrentMode(previousUXMode);
+
+            XRSequencer::setCurrentSelectedStep(-1); // unselect the step
+
+            XRDisplay::drawSequencerScreen(false);
+        }
+
+        Serial.println("leaving handleParamLockStepRelease");
+
+        return true;
+    }
+
     bool handleActivateFunction(char key)
     {
         // Serial.println("enter handleActivateFunction!");
@@ -732,7 +760,61 @@ namespace XRKeyMatrix
 
         return false;
     }
-    
+
+    bool handleActivateParamLockStep(char key)
+    {
+        XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
+
+        // param lock step
+        bool allowedModeToParamLockFrom = (currentUXMode == XRUX::TRACK_WRITE);
+
+        if (allowedModeToParamLockFrom && btnCharIsATrack(key))
+        {
+            // editing a step value / parameter locking this step
+            XRUX::setCurrentMode(XRUX::SUBMITTING_STEP_VALUE);
+
+            uint8_t stepToUse = getKeyStepNum(key);
+            auto currStepPage = XRSequencer::getCurrentStepPage();
+
+            if (currStepPage == 2)
+            {
+                stepToUse += 16;
+            }
+            else if (currStepPage == 3)
+            {
+                stepToUse += 32;
+            }
+            else if (currStepPage == 4)
+            {
+                stepToUse += 48;
+            }
+
+            int selectedStepNum = stepToUse - 1;
+
+            XRSequencer::setCurrentSelectedStep(selectedStepNum);
+
+            auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+
+            auto &heldStep = currTrack.steps[selectedStepNum];
+
+            // only toggle held step ON if initially in the OFF position,
+            // so that holding / param locking doesn't turn the step off
+            if (heldStep.state == XRSequencer::TRACK_STEP_STATE::STATE_OFF)
+            {
+                Serial.println("toggling held step!");
+
+                uint8_t stepToToggle = getKeyStepNum(key);
+
+                XRSequencer::toggleSelectedStep(stepToToggle);
+                XRLED::setDisplayStateForAllStepLEDs();
+            }
+
+            XRDisplay::drawSequencerScreen(false);
+        }
+
+        return true;
+    }
+
     bool isFunctionActive()
     {
         return _isFunctionActive;

@@ -12,9 +12,10 @@ namespace XRVersa
 
     void handleStates();
     void handleProjectNameInput();
-    void mprUpdate();
+    void mprUpdateForNote();
     void mprUpdateExclusive();
     void fastBtnUpdate();
+    void fastBtnUpdateForNote();
 
     int8_t getKeyboardNotesHeld();
     int8_t getNoteOnKeyboard();

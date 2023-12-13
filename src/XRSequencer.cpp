@@ -550,7 +550,7 @@ namespace XRSequencer
 
     TRACK_STEP_MODS &getModsForCurrentTrackStep()
     {
-        return _patternMods.tracks[_currentSelectedTrack].steps[_currentSelectedTrack];
+        return _patternMods.tracks[_currentSelectedTrack].steps[_currentSelectedStep];
     }
 
     std::string getCurrPageNameForTrack()
@@ -961,7 +961,7 @@ namespace XRSequencer
         _currentSelectedPattern = newPattern;
         _currentSelectedTrack = 0;
 
-        // load any mods for new bank/pattern to SD
+        // load any mods for new bank/pattern from SD
         XRSD::loadPatternModsFromSdCard();
 
         for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
@@ -1249,5 +1249,12 @@ namespace XRSequencer
     {
         // push current heap memory to RAM2/DMAMEM
         _seqExternal.banks[_currentSelectedBank].patterns[_currentSelectedPattern] = _seqHeap.pattern;
+    }
+
+    void setCurrentSelectedStep(int step)
+    {
+       // _seqHeap.pattern.tracks[_currentSelectedTrack].steps[step];
+
+        _currentSelectedStep = step;
     }
 }
