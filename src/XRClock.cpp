@@ -55,6 +55,11 @@ namespace XRClock
         return _shuffle_name[id];
     }
 
+    int8_t* getShuffleTemplateForGroove(int8_t grooveId, int8_t grooveAmount)
+    {
+       return _grooves.configs[grooveId].templates[grooveAmount];
+    }
+
     void start()
     {
         uClock.start();
@@ -68,5 +73,26 @@ namespace XRClock
     void stop()
     {
         uClock.stop();
+    }
+
+    void setShuffle(bool active)
+    {
+        uClock.setShuffle(active);
+    }
+
+    void setShuffleTemplate(int8_t* shuffleTemplate)
+    {
+        uClock.setShuffleTemplate(shuffleTemplate);
+    }
+
+    void setShuffleTemplateForGroove(int8_t grooveId, int8_t grooveAmount)
+    {
+        Serial.printf("groove id idx: %d, groove amount idx: %d\n", grooveId, grooveAmount);
+
+        auto t = _grooves.configs[grooveId].templates[grooveAmount];
+
+        Serial.printf("curr groove: %s, curr groove amount: %s\n", getGrooveString(grooveId).c_str(), getGrooveAmountString(grooveAmount).c_str());
+
+        uClock.setShuffleTemplate(t);
     }
 }

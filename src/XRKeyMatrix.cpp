@@ -543,15 +543,21 @@ namespace XRKeyMatrix
 
                     auto cursorPos = XRMenu::getCursorPosition();
 
-                    if (XRMenu::getSetupMenuItems()[cursorPos] == "SAVE PROJECT") {
+                    if (XRMenu::getSetupMenuItems()[cursorPos] == "SAVE PROJECT") { // TODO: something better than a str compare
                         XRUX::setCurrentMode(XRUX::PROJECT_BUSY);
                         XRDisplay::drawSaveProject();
                         XRSD::saveProject();
                         XRMenu::resetCursor();
-                        XRUX::setCurrentMode(XRUX::getPreviousMode());
-                    }
+                        XRUX::setCurrentMode(XRUX::PATTERN_WRITE); 
 
-                    return;
+                        // TODO: impl UX mode "categories", so instead of forcing pattern write mode here,
+                        // leaving project modes with several transitions
+                        // can happen and the user is placed back at the last known sequencer UX mode, etc
+
+                        XRDisplay::drawSequencerScreen();
+
+                        return true;
+                    }
                 }
 
                 if (currentUXMode == XRUX::UX_MODE::SET_TEMPO) {
@@ -739,13 +745,13 @@ namespace XRKeyMatrix
         std::string btnCharStr;
         btnCharStr += btnChar;
 
-        Serial.printf("btnCharStr: %s\n", btnCharStr.c_str());
+        // Serial.printf("btnCharStr: %s\n", btnCharStr.c_str());
         
         std::string checkStr = "mnopstuvyz125678";
         if (btnCharStr.length() > 0) {
             if (checkStr.find(btnChar) != std::string::npos) {
-                Serial.println("char found!");
-                Serial.println("leave btnCharIsATrack!");
+                // Serial.println("char found!");
+                // Serial.println("leave btnCharIsATrack!");
                 return true;
             }
         }
@@ -757,8 +763,8 @@ namespace XRKeyMatrix
         //     return true;
         // }
 
-        Serial.println("char NOT found!");
-        Serial.println("leave btnCharIsATrack!");
+        // Serial.println("char NOT found!");
+        // Serial.println("leave btnCharIsATrack!");
 
         return false;
     }

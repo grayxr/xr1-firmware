@@ -49,25 +49,55 @@ namespace XRSound
             vmsample16, venv16, vleft16, vright16, vsubmixl16, vsubmixr16),
     };
 
-    std::map<int, loop_type> loopTypeSelMap = {
-        {0, looptype_none},
-        {1, looptype_repeat},
-        {2, looptype_repeat}, // used for chromatic repeat
-    };
-
     float _noteToFreqArr[13] = {
         16.35, 17.32, 18.35, 19.45, 20.60, 21.83, 23.12, 24.50, 25.96, 27.50, 29.14, 30.87, 32.70
     };
 
     int _cvLevels[128];
 
-    uint8_t _numChannels = 1;
+    std::map<int, loop_type> loopTypeSelMap = {
+        {0, looptype_none},
+        {1, looptype_repeat},
+        {2, looptype_repeat}, // used for chromatic repeat
+    };
 
-    // 8MB max of samples per pattern in external PSRAM, 1 sample allowed per track for now
-    char _extPatternSampleNames[MAXIMUM_SEQUENCER_TRACKS][MAX_SAMPLE_NAME_LENGTH];
+    std::map<loop_type, int> loopTypeFindMap = {
+        {looptype_none, 0},
+        {looptype_repeat, 1},
+    };
+
+    std::map<int, play_start> playStartSelMap = {
+        {0, play_start_sample},
+        {1, play_start_loop},
+    };
+
+    std::map<play_start, int> playStartFindMap = {
+        {play_start_sample, 0},
+        {play_start_loop, 1},
+    };
+
+    std::map<int, int> _waveformFindMap = {
+        {WAVEFORM_SAWTOOTH, 0},
+        {WAVEFORM_SAWTOOTH_REVERSE, 1},
+        {WAVEFORM_TRIANGLE, 2},
+        {WAVEFORM_SQUARE, 3},
+        {WAVEFORM_PULSE, 4},
+        {WAVEFORM_SINE, 5},
+    };
+
+    std::map<int, int> _waveformSelMap = {
+        {0, WAVEFORM_SAWTOOTH},
+        {1, WAVEFORM_SAWTOOTH_REVERSE},
+        {2, WAVEFORM_TRIANGLE},
+        {3, WAVEFORM_SQUARE},
+        {4, WAVEFORM_PULSE},
+        {5, WAVEFORM_SINE},
+    };
+
+    // 8MB max of samples per pattern in external PSRAM, 1 sample allowed per track for now    
     newdigate::audiosample *_extPatternSamples[MAXIMUM_SEQUENCER_TRACKS];
-
     newdigate::flashloader _loader;
+    uint8_t _numChannels = 1;
     
     void init()
     {
@@ -77,6 +107,16 @@ namespace XRSound
         }
     }
 
+    ComboVoice &getComboVoiceForCurrentTrack()
+    {
+        return comboVoices[XRSequencer::getCurrentSelectedTrackNum()];
+    }
+
+    SampleVoice &getSampleVoiceForTrack(int t)
+    {
+        return sampleVoices[t];
+    }
+    
     SOUND_CONTROL_MODS getControlModDataForPattern()
     {
         SOUND_CONTROL_MODS mods;
@@ -93,7 +133,7 @@ namespace XRSound
 
         mods.aValue = std::to_string(pattern.last_step);
         mods.bValue = pattern.groove_id > -1 ? grooveForPattern : "OFF";
-        mods.cValue = pattern.groove_amount > 0 ? grooveAmountForPattern : "--";
+        mods.cValue = pattern.groove_id > -1 ? grooveAmountForPattern : "--";
         mods.dValue = "--";
 
         return mods;
@@ -559,6 +599,33 @@ namespace XRSound
         return mods;
     }
 
+    PANNED_AMOUNTS getStereoPanValues(float pan)
+    {
+        PANNED_AMOUNTS amounts;
+
+        amounts.left = 1.0;
+        if (pan < 0) {
+            amounts.left += pan;
+        }
+
+        amounts.right = 1.0;
+        if (pan > 0) {
+            amounts.right -= pan;
+        }
+
+        return amounts;
+    }
+    
+    int getWaveformNumber(uint8_t waveformType)
+    {
+        return _waveformFindMap[(int)waveformType];
+    }
+
+    int getWaveformTypeSelection(uint8_t waveformNumber)
+    {
+        return _waveformSelMap[(int)waveformNumber];
+    }
+
     std::string getWaveformName(uint8_t waveform)
     {
         std::string outputStr;
@@ -649,6 +716,14 @@ namespace XRSound
         return outputStr;
     }
 
+    std::string getSampleName(const char* name)
+    {
+        std::string sampleName = "/samples/";
+        sampleName += name;
+
+        return sampleName;
+    }
+    
     void loadVoiceSettings()
     {
         for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
@@ -678,6 +753,12 @@ namespace XRSound
                 trackVoice.mix.gain(0, 1);
                 // turn synth volume all the way down
                 trackVoice.mix.gain(1, 0); // synth
+
+                // turn off dexed, turn on sample and synth
+                trackVoice.leftSubMix.gain(0, 1);
+                trackVoice.leftSubMix.gain(1, 0);
+                trackVoice.rightSubMix.gain(0, 1);
+                trackVoice.rightSubMix.gain(1, 0);
             }
             else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::WAV_SAMPLE)
             {
@@ -687,9 +768,9 @@ namespace XRSound
                 // trackVoice.wSample.createBuffer(2048, AudioBuffer::inExt);
 
                 // turn sample volume all the way up
-                trackVoice.mix.gain(0, 1);
-                // turn synth volumes all the way down
-                trackVoice.mix.gain(1, 0); // synth
+                // trackVoice.mix.gain(0, 1);
+                // // turn synth volumes all the way down
+                // trackVoice.mix.gain(1, 0); // synth
             }
             else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::DEXED)
             {
@@ -698,9 +779,10 @@ namespace XRSound
                 trackVoice.mix.gain(0, 1); // mono sample
                 trackVoice.mix.gain(1, 1); // synth
 
-                trackVoice.leftSubMix.gain(0, 1);
+                // turn on dexed, turn off sample and synth
+                trackVoice.leftSubMix.gain(0, 0);
                 trackVoice.leftSubMix.gain(1, 1);
-                trackVoice.rightSubMix.gain(0, 1);
+                trackVoice.rightSubMix.gain(0, 0);
                 trackVoice.rightSubMix.gain(1, 1);
             }
             else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::SUBTRACTIVE_SYNTH)
@@ -709,40 +791,46 @@ namespace XRSound
 
                 auto currTrack = XRSequencer::getHeapTrack(t);
 
-                // turn sample volume all the way down
-                trackVoice.mix.gain(0, 0);
-                // turn synth volumes all the way up
-                trackVoice.mix.gain(1, 1); // ladder
-
                 // TESTING: revert amp env to normal synth setting
                 trackVoice.ampEnv.attack(currTrack.amp_attack);
                 trackVoice.ampEnv.decay(currTrack.amp_decay);
                 trackVoice.ampEnv.sustain(currTrack.amp_sustain);
                 trackVoice.ampEnv.release(currTrack.amp_release);
+
+                // turn sample volume all the way down
+                trackVoice.mix.gain(0, 0);
+                // turn synth volumes all the way up
+                trackVoice.mix.gain(1, 1); // ladder
+
+                // turn off dexed, turn on sample and synth
+                trackVoice.leftSubMix.gain(0, 1);
+                trackVoice.leftSubMix.gain(1, 0);
+                trackVoice.rightSubMix.gain(0, 1);
+                trackVoice.rightSubMix.gain(1, 0);
             }
             else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::MIDI_OUT)
             {
                 XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::MIDI_OUT);
 
                 // turn all audio for this track voice down
-                trackVoice.mix.gain(0, 1); // mono sample
-                trackVoice.mix.gain(1, 1); // synth
+                trackVoice.mix.gain(0, 0); // mono sample
+                trackVoice.mix.gain(1, 0); // synth
             }
             else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::CV_GATE)
             {
                 XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::CV_GATE);
 
                 // turn all audio for this track voice down
-                trackVoice.mix.gain(0, 1); // mono sample
-                trackVoice.mix.gain(1, 1); // synth
+                trackVoice.mix.gain(0, 0); // mono sample
+                trackVoice.mix.gain(1, 0); // synth
             }
             else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::CV_TRIG)
             {
                 XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::CV_TRIG);
 
                 // turn all audio for this track voice down
-                trackVoice.mix.gain(0, 1); // mono sample
-                trackVoice.mix.gain(1, 1); // synth
+                trackVoice.mix.gain(0, 0); // mono sample
+                trackVoice.mix.gain(1, 0); // synth
             }
         }
     }
@@ -750,6 +838,7 @@ namespace XRSound
     void configureSampleVoiceSettingsOnLoad(int t)
     {
         auto &track = XRSequencer::getHeapTrack(t);
+        auto &sampleVoice = sampleVoices[t-4];
 
         if (track.track_type == XRSequencer::TRACK_TYPE::WAV_SAMPLE)
         {
@@ -757,6 +846,10 @@ namespace XRSound
             // sampleVoices[t-4].wSample.createBuffer(2048, AudioBuffer::inExt);
 
             //XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::WAV_SAMPLE);
+        } else {
+            // make sure sample channels are up
+            sampleVoice.leftSubMix.gain(0, track.level);
+            sampleVoice.rightSubMix.gain(0, track.level);
         }
     }
 
@@ -859,7 +952,7 @@ namespace XRSound
         XRSequencer::setTrackNeedsInit(t, false);
     }
 
-    void initTrackSounds()
+    void initAllTrackSounds()
     {
         // configure combo voice audio objects
         for (int v = 0; v < COMBO_VOICE_COUNT; v++)
@@ -908,7 +1001,7 @@ namespace XRSound
 
             // output
             comboVoices[v].mix.gain(0, 1); // raw sample
-            comboVoices[v].mix.gain(1, 0); // synth
+            comboVoices[v].mix.gain(1, 1); // synth
 
             // mono to L&R
             comboVoices[v].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
@@ -942,8 +1035,10 @@ namespace XRSound
             sampleVoices[v].rightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
 
             // Sub L&R mixers
-            sampleVoices[v].leftSubMix.gain(1, currTrack.level);  // raw sample / synth left
-            sampleVoices[v].rightSubMix.gain(1, currTrack.level); // raw sample / synth right
+            sampleVoices[v].leftSubMix.gain(0, currTrack.level);  // raw sample / synth left
+            sampleVoices[v].rightSubMix.gain(0, currTrack.level); // raw sample / synth right
+            sampleVoices[v].leftSubMix.gain(1, currTrack.level);  // dexed left
+            sampleVoices[v].rightSubMix.gain(1, currTrack.level); // dexed right
         }
 
         mixerLeft1.gain(0, 1);
@@ -1003,23 +1098,6 @@ namespace XRSound
         OutputMixerRight.gain(1, 1);
     }
 
-    PANNED_AMOUNTS getStereoPanValues(float pan)
-    {
-        PANNED_AMOUNTS amounts;
-
-        amounts.left = 1.0;
-        if (pan < 0) {
-            amounts.left += pan;
-        }
-
-        amounts.right = 1.0;
-        if (pan > 0) {
-            amounts.right -= pan;
-        }
-
-        return amounts;
-    }
-
     void configureVoiceSettingsForTrack(int t)
     {
         auto &seqHeap = XRSequencer::getSequencerHeap();
@@ -1051,12 +1129,12 @@ namespace XRSound
         {
             XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::DEXED);
 
-            trackVoice.mix.gain(0, 1); // mono sample
-            trackVoice.mix.gain(1, 1); // synth
+            trackVoice.mix.gain(0, 0); // mono sample
+            trackVoice.mix.gain(1, 0); // synth
 
-            trackVoice.leftSubMix.gain(0, 1);
+            trackVoice.leftSubMix.gain(0, 0);
             trackVoice.leftSubMix.gain(1, 1);
-            trackVoice.rightSubMix.gain(0, 1);
+            trackVoice.rightSubMix.gain(0, 0);
             trackVoice.rightSubMix.gain(1, 1);
         }
         else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::WAV_SAMPLE)
@@ -1066,8 +1144,8 @@ namespace XRSound
             // only create buffers for stereo samples when needed
             // trackVoice.wSample.createBuffer(2048, AudioBuffer::inExt);
 
-            trackVoice.mix.gain(0, 1); // mono sample
-            trackVoice.mix.gain(1, 1); // synth
+            trackVoice.mix.gain(0, 0); // mono sample
+            trackVoice.mix.gain(1, 0); // synth
         }
         else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::SUBTRACTIVE_SYNTH)
         {
@@ -1076,7 +1154,7 @@ namespace XRSound
             auto currTrack = XRSequencer::getHeapTrack(t);
 
             // turn sample volume all the way down
-            trackVoice.mix.gain(0, 1);
+            trackVoice.mix.gain(0, 0);
             // turn synth volumes all the way up
             trackVoice.mix.gain(1, 1); // ladder
 
@@ -1091,24 +1169,24 @@ namespace XRSound
             XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::MIDI_OUT);
 
             // turn all audio for this track voice down
-            trackVoice.mix.gain(0, 1); // mono sample
-            trackVoice.mix.gain(1, 1); // synth
+            trackVoice.mix.gain(0, 0); // mono sample
+            trackVoice.mix.gain(1, 0); // synth
         }
         else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::CV_GATE)
         {
             XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::CV_GATE);
 
             // turn all audio for this track voice down
-            trackVoice.mix.gain(0, 1); // mono sample
-            trackVoice.mix.gain(1, 1); // synth
+            trackVoice.mix.gain(0, 0); // mono sample
+            trackVoice.mix.gain(1, 0); // synth
         }
         else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::CV_TRIG)
         {
             XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::CV_TRIG);
 
             // turn all audio for this track voice down
-            trackVoice.mix.gain(0, 1); // mono sample
-            trackVoice.mix.gain(1, 1); // synth
+            trackVoice.mix.gain(0, 0); // mono sample
+            trackVoice.mix.gain(1, 0); // synth
         }
     }
 
@@ -1257,7 +1335,7 @@ namespace XRSound
     void handleSubtractiveSynthNoteOnForTrack(int track)
     {
         auto &trackToUse = XRSequencer::getHeapTrack(track);
-
+        
         AudioNoInterrupts();
         float foundBaseFreq = _noteToFreqArr[trackToUse.note];
         float octaveFreqA = (foundBaseFreq + (trackToUse.fine * 0.01)) * (pow(2, trackToUse.octave));
@@ -1302,11 +1380,12 @@ namespace XRSound
         auto &stepToUse = XRSequencer::getHeapStep(track, step);
         auto &patternMods = XRSequencer::getModsForCurrentPattern();
 
-        uint8_t noteToUse = stepToUse.note;
-        if (patternMods.tracks[track].step_mod_flags[step].flags[XRSequencer::MOD_ATTRS::NOTE])
-        {
-            noteToUse = patternMods.tracks[track].steps[step].note;
-        }
+        // TODO: allow sample chromatic note playback
+        // uint8_t noteToUse = stepToUse.note;
+        // if (patternMods.tracks[track].step_mod_flags[step].flags[XRSequencer::MOD_ATTRS::NOTE])
+        // {
+        //     noteToUse = patternMods.tracks[track].steps[step].note;
+        // }
 
         // uint8_t octaveToUse = stepToUse.octave;
         // if (patternMods.tracks[track].step_mod_flags[step].flags[4]) {
@@ -1458,7 +1537,7 @@ namespace XRSound
 
     void handleWavSampleNoteOnForTrackStep(int track, int step)
     {
-        auto &trackToUse = XRSequencer::getHeapTrack(track);
+        // auto &trackToUse = XRSequencer::getHeapTrack(track);
 
         if (track > 3)
         {
@@ -1476,7 +1555,7 @@ namespace XRSound
 
     void handleDexedNoteOnForTrackStep(int track, int step)
     {
-        auto &trackToUse = XRSequencer::getHeapTrack(track);
+        // auto &trackToUse = XRSequencer::getHeapTrack(track);
         auto &stepToUse = XRSequencer::getHeapStep(track, step);
         auto &patternMods = XRSequencer::getModsForCurrentPattern();
 
@@ -1494,12 +1573,12 @@ namespace XRSound
             // Serial.println(octaveToUse);
         }
 
-        if (track < 4)
-        {
+        // if (track < 4)
+        // {
             int midiNote = (noteToUse + (12 * (octaveToUse)));
 
             comboVoices[track].dexed.keydown(midiNote, stepToUse.velocity);
-        }
+        // }
     }
 
     void handleSubtractiveSynthNoteOnForTrackStep(int track, int step)
@@ -1571,8 +1650,8 @@ namespace XRSound
 
     void handleMIDINoteOnForTrackStep(int track, int step)
     {
-        auto &trackToUse = XRSequencer::getHeapTrack(track);
-        auto &stepToUse = XRSequencer::getHeapStep(track, step);
+        //auto &trackToUse = XRSequencer::getHeapTrack(track);
+        //auto &stepToUse = XRSequencer::getHeapStep(track, step);
 
         XRMIDI::sendNoteOn(64, 100, 1);
     }
@@ -1893,7 +1972,7 @@ namespace XRSound
 
             // turn sample volume all the way down
             //trackVoice.mix.gain(0, 0);
-            trackVoice.mix.gain(0, 1); // TODO: CHANGE
+            trackVoice.mix.gain(0, 0); // TODO: CHANGE
             // turn synth volumes all the way up
             trackVoice.mix.gain(1, 1); // ladder
 
@@ -1927,14 +2006,6 @@ namespace XRSound
             trackVoice.mix.gain(0, 0); // mono sample
             trackVoice.mix.gain(1, 0); // ladder
         }
-    }
-
-    std::string getSampleName(const char* name)
-    {
-        std::string sampleName = "/samples/";
-        sampleName += name;
-
-        return sampleName;
     }
 
     void triggerTrackManually(uint8_t t, uint8_t note)
@@ -2059,14 +2130,14 @@ namespace XRSound
 
     void triggerDexedNoteOn(uint8_t t, uint8_t note)
     {
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedPattern().tracks[t];
+        // auto &currTrack = XRSequencer::getHeapCurrentSelectedPattern().tracks[t];
 
-        if (t < 4)
-        {
+        // if (t < 4)
+        // {
             int midiNote = (note + (12 * (XRKeyMatrix::getKeyboardOctave())));
 
             comboVoices[t].dexed.keydown(midiNote, 50);
-        }
+        // }
     }
 
     void triggerSubtractiveSynthNoteOn(uint8_t t, uint8_t note)
@@ -2191,5 +2262,21 @@ namespace XRSound
                 XRCV::write(CS4, 1, 0); // gate
             }
         }
+    }
+
+    float getDetunedOscFreqB(uint8_t note, float detuneAmount)
+    {
+        auto foundBaseFreq = _noteToFreqArr[note];
+        auto keyboardOctave = XRKeyMatrix::getKeyboardOctave();
+        
+        return (foundBaseFreq * pow(2.0, (float)detuneAmount / 12.0)) * (pow(2, keyboardOctave));
+    }
+
+    float getOscFreqA(uint8_t note, int8_t fine)
+    {
+        float foundBaseFreq = _noteToFreqArr[note];
+        auto keyboardOctave = XRKeyMatrix::getKeyboardOctave();
+
+        return (foundBaseFreq + (fine * 0.01)) * (pow(2, keyboardOctave));
     }
 }

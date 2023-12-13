@@ -15,6 +15,9 @@ namespace XRVersa
     void mprUpdate();
     void mprUpdateExclusive();
     void fastBtnUpdate();
+
+    int8_t getKeyboardNotesHeld();
+    int8_t getNoteOnKeyboard();
 }
 
 #endif /* XRVersa_h */

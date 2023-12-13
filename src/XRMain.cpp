@@ -62,8 +62,8 @@ namespace XRMain
 
             XRSequencer::init();
             
+            XRSound::initAllTrackSounds();
             XRSound::loadVoiceSettings();
-            XRSound::initTrackSounds();
         }
 
         XRAudio::resetMetrics();

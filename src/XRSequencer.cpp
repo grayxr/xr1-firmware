@@ -99,9 +99,6 @@ namespace XRSequencer
         _currentSelectedPattern = 0;
         _currentSelectedTrack = 0;
 
-        initExternalSequencer();
-        initExternalPatternMods();
-
         XRDisplay::drawSequencerScreen(false);
 
         return true;

@@ -6,6 +6,7 @@
 #include <XRConfig.h>
 #include <XRAudioConfig.h>
 #include <string>
+#include <map>
 
 namespace XRSound
 {
@@ -137,6 +138,11 @@ namespace XRSound
     extern ComboVoice comboVoices[COMBO_VOICE_COUNT];
     extern SampleVoice sampleVoices[SAMPLE_VOICE_COUNT];
 
+    extern std::map<int, loop_type> loopTypeSelMap;
+    extern std::map<loop_type, int> loopTypeFindMap;
+    extern std::map<int, play_start> playStartSelMap;
+    extern std::map<play_start, int> playStartFindMap;
+
     SOUND_CONTROL_MODS getControlModDataForPattern();
     SOUND_CONTROL_MODS getControlModDataForTrack();
     SOUND_CONTROL_MODS getSubtractiveSynthControlModData();
@@ -149,6 +155,14 @@ namespace XRSound
 
     PANNED_AMOUNTS getStereoPanValues(float pan);
 
+    ComboVoice &getComboVoiceForCurrentTrack();
+    SampleVoice &getSampleVoiceForTrack(int t);
+
+    int getWaveformNumber(uint8_t waveformType);
+    int getWaveformTypeSelection(uint8_t waveformNumber);
+    float getOscFreqA(uint8_t note, int8_t fine);
+    float getDetunedOscFreqB(uint8_t note, float detuneAmount);
+
     std::string getWaveformName(uint8_t waveform);
     std::string getPlaybackSpeedStr(float rate);
     std::string getLoopTypeName();
@@ -156,7 +170,7 @@ namespace XRSound
     void init();
     void loadVoiceSettings();
     void initSoundsForTrack(int t);
-    void initTrackSounds();
+    void initAllTrackSounds();
     void configureVoiceSettingsForTrack(int t);
     void configureSampleVoiceSettingsOnLoad(int t);
     void assignSampleToTrack();

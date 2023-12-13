@@ -25,11 +25,16 @@ namespace XRClock
     void stop();
 
     void setTempo(float tempo);
+    void setShuffle(bool active);
+    void setShuffleTemplate(int8_t* shuffleTemplate);
+    void setShuffleTemplateForGroove(int8_t grooveId, int8_t grooveAmount);
     
     float getTempo();
 
     std::string getGrooveString(int8_t id);
     std::string getGrooveAmountString(uint8_t id);
+
+    int8_t* getShuffleTemplateForGroove(int8_t grooveId, int8_t grooveAmount);
 }
 
 #endif /* XRClock_h */

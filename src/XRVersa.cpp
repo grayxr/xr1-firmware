@@ -214,6 +214,7 @@ namespace XRVersa
                 if (_keyboardNotesHeld < 6) _keyboardNotesHeld++;
 
                 Serial.printf("_keyboardNotesHeld: %d\n", _keyboardNotesHeld);
+                Serial.printf("_noteOnKeyboard: %d\n", _noteOnKeyboard);
 
                 // noteOn
                 if (currentUXMode != XRUX::SUBMITTING_STEP_VALUE) {
@@ -233,6 +234,7 @@ namespace XRVersa
                 if (_keyboardNotesHeld > 0) _keyboardNotesHeld--;
 
                 Serial.printf("_keyboardNotesHeld: %d\n", _keyboardNotesHeld);
+                Serial.printf("_noteOnKeyboard: %d\n", _noteOnKeyboard);
                 
                 released = true;
 
@@ -265,5 +267,15 @@ namespace XRVersa
     void handleNoteInput()
     {
         
+    }
+
+    int8_t getKeyboardNotesHeld()
+    {
+        return _keyboardNotesHeld;
+    }
+
+    int8_t getNoteOnKeyboard()
+    {
+        return _noteOnKeyboard;
     }
 }

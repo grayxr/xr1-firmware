@@ -214,7 +214,7 @@ namespace XRSD
         currProjectFile.write((byte *)&_current_project, sizeof(_current_project));
         currProjectFile.close();
 
-        delay(100);
+        //delay(100);
 
         // make sure current pattern state is saved to RAM2 
         // before storing the entire sequencer state in SD
@@ -294,6 +294,8 @@ namespace XRSD
         }
 
         auto &seqExt = XRSequencer::getSequencerExternal();
+        XRSequencer::initExternalSequencer();
+        //XRSequencer::initExternalPatternMods();
 
         File seqFileR = SD.open(currProjectSequencerFilePath.c_str(), FILE_READ);
         seqFileR.read((byte *)&seqExt, sizeof(seqExt));
