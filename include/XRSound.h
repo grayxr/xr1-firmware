@@ -26,6 +26,8 @@ namespace XRSound
         AudioEffectEnvelope &ampEnv;
         AudioAmplifier &leftCtrl;
         AudioAmplifier &rightCtrl;
+        AudioAmplifier &dexedLeftCtrl;
+        AudioAmplifier &dexedRightCtrl;
         AudioMixer4 &leftSubMix;
         AudioMixer4 &rightSubMix;
 
@@ -43,6 +45,8 @@ namespace XRSound
             AudioEffectEnvelope &ampEnv,
             AudioAmplifier &leftCtrl,
             AudioAmplifier &rightCtrl,
+            AudioAmplifier &dexedLeftCtrl,
+            AudioAmplifier &dexedRightCtrl,
             AudioMixer4 &leftSubMix,
             AudioMixer4 &rightSubMix) : dexed{dexed},
                                         rSample{rSample},
@@ -57,6 +61,8 @@ namespace XRSound
                                         ampEnv{ampEnv},
                                         leftCtrl{leftCtrl},
                                         rightCtrl{rightCtrl},
+                                        dexedLeftCtrl{dexedLeftCtrl},
+                                        dexedRightCtrl{dexedRightCtrl},
                                         leftSubMix{leftSubMix},
                                         rightSubMix{rightSubMix}
         {
@@ -156,6 +162,7 @@ namespace XRSound
     PANNED_AMOUNTS getStereoPanValues(float pan);
 
     ComboVoice &getComboVoiceForCurrentTrack();
+    ComboVoice &getComboVoiceForTrack(int t);
     SampleVoice &getSampleVoiceForTrack(int t);
 
     int getWaveformNumber(uint8_t waveformType);

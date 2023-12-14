@@ -1702,7 +1702,7 @@ void Dexed::setName(char* name)
 
 void Dexed::getName(char* buffer)
 {
-  strncpy((char*)&data[DEXED_VOICE_OFFSET + DEXED_NAME], buffer, 10);
+  strncpy(buffer, (char*)&data[DEXED_VOICE_OFFSET + DEXED_NAME], 10);
   buffer[10] = '\0';
 }
 

@@ -13,13 +13,13 @@ namespace XRSound
 {
     ComboVoice comboVoices[COMBO_VOICE_COUNT] = {
         ComboVoice(
-            dexed1, vmsample1, vosca1, voscb1, vnoise1, voscmix1, vdc1, vlfilter1, vfilterenv1, vmix1, venv1, vleft1, vright1, vsubmixl1, vsubmixr1),
+            dexed1, vmsample1, vosca1, voscb1, vnoise1, voscmix1, vdc1, vlfilter1, vfilterenv1, vmix1, venv1, vleft1, vright1, dleft1, dright1, vsubmixl1, vsubmixr1),
         ComboVoice(
-            dexed2, vmsample2, vosca2, voscb2, vnoise2, voscmix2, vdc2, vlfilter2, vfilterenv2, vmix2, venv2, vleft2, vright2, vsubmixl2, vsubmixr2),
+            dexed2, vmsample2, vosca2, voscb2, vnoise2, voscmix2, vdc2, vlfilter2, vfilterenv2, vmix2, venv2, vleft2, vright2, dleft2, dright2, vsubmixl2, vsubmixr2),
         ComboVoice(
-            dexed3, vmsample3, vosca3, voscb3, vnoise3, voscmix3, vdc3, vlfilter3, vfilterenv3, vmix3, venv3, vleft3, vright3, vsubmixl3, vsubmixr3),
+            dexed3, vmsample3, vosca3, voscb3, vnoise3, voscmix3, vdc3, vlfilter3, vfilterenv3, vmix3, venv3, vleft3, vright3, dleft3, dright3, vsubmixl3, vsubmixr3),
         ComboVoice(
-            dexed4, vmsample4, vosca4, voscb4, vnoise4, voscmix4, vdc4, vlfilter4, vfilterenv4, vmix4, venv4, vleft4, vright4, vsubmixl4, vsubmixr4),
+            dexed4, vmsample4, vosca4, voscb4, vnoise4, voscmix4, vdc4, vlfilter4, vfilterenv4, vmix4, venv4, vleft4, vright4, dleft4, dright4, vsubmixl4, vsubmixr4),
     };
 
     SampleVoice sampleVoices[SAMPLE_VOICE_COUNT] = {
@@ -110,6 +110,11 @@ namespace XRSound
     ComboVoice &getComboVoiceForCurrentTrack()
     {
         return comboVoices[XRSequencer::getCurrentSelectedTrackNum()];
+    }
+
+    ComboVoice &getComboVoiceForTrack(int t)
+    {
+        return comboVoices[t];
     }
 
     SampleVoice &getSampleVoiceForTrack(int t)
@@ -493,6 +498,46 @@ namespace XRSound
             mods.dValue = std::to_string(XRSD::dexedCurrentPatch);
             break;
 
+        case 1: // FM1
+            mods.aName = "--";
+            mods.bName = "--";
+            mods.cName = "--";
+            mods.dName = "--";
+
+            mods.aValue = "--";
+            mods.bValue = "--";
+            mods.cValue = "--";
+            mods.dValue = "--";
+            break;
+
+        case 2: // FM2
+            mods.aName = "--";
+            mods.bName = "--";
+            mods.cName = "--";
+            mods.dName = "--";
+
+            mods.aValue = "--";
+            mods.bValue = "--";
+            mods.cValue = "--";
+            mods.dValue = "--";
+            break;
+
+        case 3: // OUTPUT
+            mods.aName = "LEVEL";
+            mods.bName = "PAN";
+            mods.cName = "--";
+            mods.dName = "--"; // fx send?
+
+            mods.aValue = std::to_string(round(currentSelectedTrack.level * 100));
+            mods.bValue = std::to_string((float)round(currentSelectedTrack.pan * 100) / 100);
+            mods.bValue = mods.bValue.substr(0, 3);
+            mods.bFloatValue = currentSelectedTrack.pan;
+            mods.bType = RANGE;
+
+            mods.cValue = "--";
+            mods.dValue = "--";
+            break;
+
         default:
             break;
         }
@@ -775,6 +820,7 @@ namespace XRSound
             else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::DEXED)
             {
                 XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::DEXED);
+                XRSD::loadDexedVoiceToCurrentTrack();
 
                 trackVoice.mix.gain(0, 1); // mono sample
                 trackVoice.mix.gain(1, 1); // synth
@@ -879,7 +925,7 @@ namespace XRSound
             // init dexed
             //comboVoices[t].dexed.loadInitVoice();
             // TODO: impl loadDexedVoiceToCurrentTrack();
-            XRSD::loadDexedVoiceToCurrentTrack();
+            XRSD::loadDexedVoiceToCurrentTrack(t);
             
             // comboVoices[t].dexed.setMonoMode(true);
             // comboVoices[t].dexed.setTranspose(36);
@@ -918,11 +964,15 @@ namespace XRSound
             comboVoices[t].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
             comboVoices[t].rightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
 
+            // dexed mono to l&R
+            comboVoices[t].dexedLeftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+            comboVoices[t].dexedRightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+
             // Sub L&R mixers
             comboVoices[t].leftSubMix.gain(1, currTrack.level);  // wav sample left
-            comboVoices[t].leftSubMix.gain(0, currTrack.level);  // dexed left
+            comboVoices[t].leftSubMix.gain(1, currTrack.level);  // dexed left
             comboVoices[t].rightSubMix.gain(1, currTrack.level); // wav sample right
-            comboVoices[t].rightSubMix.gain(0, currTrack.level); // dexed right
+            comboVoices[t].rightSubMix.gain(1, currTrack.level); // dexed right
         }
         else
         { // sample-only voice tracks
@@ -968,7 +1018,7 @@ namespace XRSound
             // init dexed
             // comboVoices[v].dexed.loadInitVoice();
             // comboVoices[v].dexed.loadVoiceParameters(fmpiano_sysex);
-            XRSD::loadDexedVoiceToCurrentTrack();
+            // XRSD::loadDexedVoiceToCurrentTrack(v);
             
             // comboVoices[v].dexed.setMonoMode(true);
             // comboVoices[v].dexed.setTranspose(36);
@@ -1006,6 +1056,10 @@ namespace XRSound
             // mono to L&R
             comboVoices[v].leftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
             comboVoices[v].rightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+
+            // mono to L&R
+            comboVoices[v].dexedLeftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+            comboVoices[v].dexedRightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
 
             // Sub L&R mixers
             comboVoices[v].leftSubMix.gain(1, currTrack.level);  // raw sample / synth left
@@ -1943,6 +1997,7 @@ namespace XRSound
         else if (newType == XRSequencer::DEXED)
         {
             XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::DEXED);
+            XRSD::loadDexedVoiceToCurrentTrack();
 
             trackVoice.mix.gain(0, 0); // mono sample
             trackVoice.mix.gain(1, 0); // synth

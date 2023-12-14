@@ -31,6 +31,9 @@ namespace XRDisplay
     void drawSoundMenuMain();
     void drawSetupMenu();
     void drawSampleBrowser();
+    void drawCopyConfirmOverlay(std::string type, uint8_t num);
+    void drawCopySelOverlay(std::string type);
+    void drawPasteConfirmOverlay(std::string type, uint8_t num);
 
     std::string getDisplayNote();
 }

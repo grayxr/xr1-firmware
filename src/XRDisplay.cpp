@@ -1091,4 +1091,95 @@ namespace XRDisplay
 
         u8g2.sendBuffer();
     }
+
+    void drawCopyConfirmOverlay(std::string type, uint8_t num)
+    {
+        std::string copyStr = "CHOOSE WHERE TO PASTE";
+
+        int centerX = (128 / 2);
+        int centerY = (64 / 2);
+
+        int boxWidth = 100;
+        int boxHeight = 30;
+
+        int boxStartX = centerX - (boxWidth / 2);
+        int boxStartY = centerY - (boxHeight / 2);
+
+        int msgStartX = (centerX - (boxWidth / 2)) + 6;
+        int msgStartY = (centerY - (boxHeight / 2)) + 6;
+
+        u8g2.setColorIndex((u_int8_t)0);
+        u8g2.drawBox(boxStartX, boxStartY, boxWidth, boxHeight);
+        u8g2.setColorIndex((u_int8_t)1);
+        u8g2.drawFrame(boxStartX, boxStartY, boxWidth, boxHeight);
+        u8g2.drawStr(msgStartX, msgStartY, copyStr.c_str());
+
+        std::string suffixStr = type;
+        suffixStr += " ";
+        suffixStr += std::to_string(num);
+
+        u8g2.drawStr(msgStartX, msgStartY + 10, suffixStr.c_str());
+
+        u8g2.sendBuffer();
+    }
+
+    void drawCopySelOverlay(std::string type)
+    {
+        std::string copyStr = "SELECT ";
+        copyStr += type;
+        copyStr += " TO COPY";
+
+        int centerX = (128 / 2);
+        int centerY = (64 / 2);
+
+        int boxWidth = 100;
+        int boxHeight = 20;
+
+        int boxStartX = centerX - (boxWidth / 2);
+        int boxStartY = centerY - (boxHeight / 2);
+
+        int msgStartX = (centerX - (boxWidth / 2)) + 6;
+        int msgStartY = (centerY - (boxHeight / 2)) + 6;
+
+        u8g2.setColorIndex((u_int8_t)0);
+        u8g2.drawBox(boxStartX, boxStartY, boxWidth, boxHeight);
+        u8g2.setColorIndex((u_int8_t)1);
+        u8g2.drawFrame(boxStartX, boxStartY, boxWidth, boxHeight);
+        u8g2.drawStr(msgStartX, msgStartY, copyStr.c_str());
+
+        u8g2.sendBuffer();
+    }
+
+    void drawPasteConfirmOverlay(std::string type, uint8_t num)
+    {
+        std::string pasteStr;
+        pasteStr += type;
+        pasteStr += " PASTED TO ";
+
+        int centerX = (128 / 2);
+        int centerY = (64 / 2);
+
+        int boxWidth = 100;
+        int boxHeight = 30;
+
+        int boxStartX = centerX - (boxWidth / 2);
+        int boxStartY = centerY - (boxHeight / 2);
+
+        int msgStartX = (centerX - (boxWidth / 2)) + 6;
+        int msgStartY = (centerY - (boxHeight / 2)) + 6;
+
+        u8g2.setColorIndex((u_int8_t)0);
+        u8g2.drawBox(boxStartX, boxStartY, boxWidth, boxHeight);
+        u8g2.setColorIndex((u_int8_t)1);
+        u8g2.drawFrame(boxStartX, boxStartY, boxWidth, boxHeight);
+        u8g2.drawStr(msgStartX, msgStartY, pasteStr.c_str());
+
+        std::string suffixStr = type;
+        suffixStr += " ";
+        suffixStr += std::to_string(num);
+
+        u8g2.drawStr(msgStartX, msgStartY + 10, suffixStr.c_str());
+
+        u8g2.sendBuffer();
+    }
 }

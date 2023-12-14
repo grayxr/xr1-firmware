@@ -6,6 +6,7 @@
 #include <XRKeyInput.h>
 #include <XRUX.h>
 #include <XRSequencer.h>
+#include <XRClock.h>
 
 namespace XRSD
 {
@@ -215,6 +216,7 @@ namespace XRSD
         currProjectFilePath += "/project-info.bin";
 
         Serial.printf("Saving current project file to SD card at path: %s\n", currProjectFilePath.c_str());
+        Serial.printf("with tempo: %f\n", _current_project.tempo);
 
         File currProjectFile = SD.open(currProjectFilePath.c_str(), FILE_WRITE);
         currProjectFile.truncate();
@@ -277,6 +279,9 @@ namespace XRSD
 
         lastKnownProjectFile.read((byte *)&_current_project, sizeof(_current_project));
         lastKnownProjectFile.close();
+
+        // set tempo
+        XRClock::setTempo(_current_project.tempo);
         
         // get project path
         char sProjectsPathPrefixBuf[50];
@@ -501,7 +506,7 @@ namespace XRSD
         _sampleFileListPagedLoaded = false;
     }
 
-    void loadDexedVoiceToCurrentTrack()
+    void loadDexedVoiceToCurrentTrack(int t)
     {
         File sysexDir;
 
@@ -547,14 +552,12 @@ namespace XRSD
             Serial.println("got voice data!");
 
             uint8_t tmp_data[156];
-            auto &comboVoice = XRSound::getComboVoiceForCurrentTrack();
+            auto &comboVoice = t > -1 ? XRSound::getComboVoiceForTrack(t) : XRSound::getComboVoiceForCurrentTrack();
             bool ret =  comboVoice.dexed.decodeVoice(tmp_data, data);
             Serial.print("decode result: ");
             Serial.println(ret ? "true" : "false");
             if (ret) {
                 comboVoice.dexed.loadVoiceParameters(tmp_data);
-
-                // TODO: fix this, name is not being read in properly
                 char dexedTempNameBuf[11];
                 comboVoice.dexed.getName(dexedTempNameBuf);
                 std::string tempDexedPatchName(dexedTempNameBuf);

@@ -53,9 +53,15 @@ namespace XRKeyMatrix
     bool _stepCopyAvailable = false;
     bool _recording = false;
 
+    elapsedMillis _elapsedMs;
+    long _patternSelDebounceStartMs = 0;
+
     int8_t _keyboardOctave = 4; // range 1-7 ?
     int8_t _trackHeldForSelection = -1; // default to -1 (none)
     int8_t _ptnHeldForSelection = -1;
+    int8_t _performModeHeldForSelection = -1;
+
+    int8_t _currentTracksSoloed = 0;
 
     Keypad kpd = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
@@ -63,6 +69,9 @@ namespace XRKeyMatrix
     void handleHoldForKey(char key);    
     void handleReleaseForKey(char key);
 
+    void handleSoloForTrack(uint8_t track, bool undoSoloing);
+
+    bool handleFunctionPress(char key);
     bool handleActivateFunction(char key);
     bool handleActivateParamLockStep(char key);
     bool handlePatternReleaseActions(char key);
@@ -71,6 +80,9 @@ namespace XRKeyMatrix
     bool handleMenuReleaseActions(char key);
     bool handleFunctionReleaseActions(char key);
     bool handleParamLockStepRelease(char key);
+    bool handleRatchetRelease(char key);
+    bool handleRatchets(char key);
+    bool handleCopySelect(char key);
 
     bool btnCharIsATrack(char btnChar);
 
@@ -128,11 +140,13 @@ namespace XRKeyMatrix
 
     void handlePressForKey(char key)
     {
-        // Serial.println("enter handlePressForKey!");
+        Serial.println("enter handlePressForKey!");
 
         XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
 
         if (_isFunctionActive) {
+            // handleFunctionPress(key);
+
             return;
         }
 
@@ -157,8 +171,7 @@ namespace XRKeyMatrix
             XRLED::displayCurrentlySelectedTrack();
 
             return;
-        }
-        
+        }       
         if (currentUXMode == XRUX::UX_MODE::TRACK_SEL && btnCharIsATrack(key)) {
             uint8_t selTrack = getKeyStepNum(key)-1; // zero-based
 
@@ -178,9 +191,15 @@ namespace XRKeyMatrix
             XRLED::clearAllStepLEDs();
             XRLED::displayCurrentlySelectedTrack();
 
+            XRLED::displayPageLEDs(
+                -1, 
+                (XRSequencer::getSeqState().playbackState == XRSequencer::SEQUENCER_PLAYBACK_STATE::RUNNING),
+                XRSequencer::getCurrentStepPage(),
+                XRSequencer::getHeapCurrentSelectedTrack().last_step // TODO: use pattern last step here?
+            );
+
             return;
         } 
-        
         if (currentUXMode == XRUX::UX_MODE::TRACK_SEL && key == SOUND_BTN_CHAR) {
             Serial.println("TODO: impl track sound change!");
             
@@ -230,9 +249,14 @@ namespace XRKeyMatrix
 
             return;
         }
-
+        
         // track write
-        else if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE && key != PATTERN_BTN_CHAR) { // TODO get allowed buttons
+        if (
+            currentUXMode == XRUX::UX_MODE::TRACK_WRITE && 
+            key != PATTERN_BTN_CHAR && key != '9' && key != '3' && key != 'a'// TODO use allowed button list instead
+        ) {
+            Serial.println("doing track write actions!");
+
             auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
             auto currPageSelected = XRSequencer::getCurrentSelectedPage();
 
@@ -259,10 +283,15 @@ namespace XRKeyMatrix
             _trackCopyAvailable = false;
             _stepCopyAvailable = false;
 
+            _patternSelDebounceStartMs = _elapsedMs;
+
             XRLED::clearAllStepLEDs();
             XRLED::displayCurrentlySelectedPattern();
 
-        } else if (currentUXMode == XRUX::UX_MODE::PATTERN_SEL && btnCharIsATrack(key)) {
+            return;
+
+        } 
+        else if (currentUXMode == XRUX::UX_MODE::PATTERN_SEL && btnCharIsATrack(key)) {
             Serial.println("confirm pattern selection!");
 
             int selPattern = getKeyStepNum(key) - 1; // zero-based
@@ -288,16 +317,26 @@ namespace XRKeyMatrix
                 XRLED::clearAllStepLEDs();
                 XRLED::displayCurrentlySelectedPattern();
             }
+
+            return;
         }
 
         // pattern write allow tapping tracks (and recording steps in rec mode)
         else if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE && btnCharIsATrack(key))
         {
-            // auto trackNum = getKeyStepNum(key) - 1;
-            // auto &track = XRSequencer::getHeapTrack(trackNum);
+            // if (_patternSelDebounceStartMs > 0 && (_elapsedMs - _patternSelDebounceStartMs) < 100) {
+            //     Serial.println("not triggering track, pattern button debouncing first!");
+
+            //     return;
+            // } else {
+            //     _patternSelDebounceStartMs = 0;
+            // }
+
+            auto trackNum = getKeyStepNum(key) - 1;
+            auto &track = XRSequencer::getHeapTrack(trackNum);
 
             // TODO: fix issue with triggering and selecting patterns, and trying to trigger tracks with no sounds:
-            //XRSound::triggerTrackManually(trackNum, track.note);
+            XRSound::triggerTrackManually(trackNum, track.note);
 
             if (_recording)
             {
@@ -312,6 +351,380 @@ namespace XRKeyMatrix
 
                 // if rec enabled, show minimap of tracks in pattern mode to show which one is currently selected for keyboard note input?
             }
+
+            return;
+        }
+        
+        // copy
+        if (
+            currentUXMode == XRUX::COPY_SEL && 
+            (!_stepCopyAvailable && !_stepCopyAvailable && !_patternCopyAvailable) && 
+            (btnCharIsATrack(key) || key == PATTERN_BTN_CHAR || key == TRACK_BTN_CHAR)
+        ) {            
+            if (!_stepCopyAvailable && btnCharIsATrack(key))
+            { 
+                // copy step
+                auto currStepPage = XRSequencer::getCurrentStepPage();
+
+                XRUX::setCurrentMode(XRUX::COPY_STEP);
+
+                uint8_t stepToUse = getKeyStepNum(key);
+                if (currStepPage == 2)
+                {
+                    stepToUse += 16;
+                }
+                else if (currStepPage == 3)
+                {
+                    stepToUse += 32;
+                }
+                else if (currStepPage == 4)
+                {
+                    stepToUse += 48;
+                }
+
+                XRSequencer::setCopyBufferForStep(stepToUse - 1);
+
+                _stepCopyAvailable = true;
+
+                Serial.println("drawing copy step confirm overlay!");
+
+                XRDisplay::drawCopyConfirmOverlay("STEP", stepToUse);
+            }
+            else if (key == PATTERN_BTN_CHAR)
+            {
+                XRUX::setCurrentMode(XRUX::COPY_PATTERN);
+
+                Serial.println("drawing copy pattern sel overlay!");
+
+                XRDisplay::drawCopySelOverlay("PATTERN");
+
+                XRLED::displayInitializedPatternLEDs();
+            }
+            else if (key == TRACK_BTN_CHAR)
+            {
+                XRUX::setCurrentMode(XRUX::COPY_TRACK);
+
+                Serial.println("drawing copy track sel overlay!");
+
+                XRDisplay::drawCopySelOverlay("TRACK");
+
+                XRLED::displayInitializedTrackLEDs();
+            }
+
+            return;
+        }
+
+        if (currentUXMode == XRUX::COPY_PATTERN && !_patternCopyAvailable && btnCharIsATrack(key))
+        {
+            Serial.printf("write selected pattern %d to copy buffer\n", getKeyStepNum(key));
+
+            auto curSelBank = XRSequencer::getCurrentSelectedBankNum();
+            auto currSelPattern = XRSequencer::getCurrentSelectedPatternNum();
+            auto &seqExternal = XRSequencer::getSequencerExternal();
+            auto &seqHeap = XRSequencer::getSequencerHeap();
+
+            Serial.println("try this:");
+
+            // make sure if copying current pattern that the latest state exists in RAM2
+            if (currSelPattern == getKeyStepNum(key) - 1)
+            {
+                seqExternal.banks[curSelBank].patterns[currSelPattern] = seqHeap.pattern;
+            }
+
+            Serial.println("finished that");
+
+            XRSequencer::setCopyBufferForPattern(getKeyStepNum(key) - 1);
+
+            _patternCopyAvailable = true;
+
+            XRDisplay::drawCopyConfirmOverlay("PATTERN", getKeyStepNum(key));
+
+            return;
+        }
+        else if (currentUXMode == XRUX::COPY_TRACK && !_trackCopyAvailable && btnCharIsATrack(key))
+        {
+            Serial.printf("write selected track %s to copy buffer\n", getKeyStepNum(key));
+
+            XRSequencer::setCopyBufferForTrack(getKeyStepNum(key) - 1);
+
+            _trackCopyAvailable = true;
+
+            XRDisplay::drawCopyConfirmOverlay("TRACK", getKeyStepNum(key));
+
+            return;
+        }
+
+        // paste
+        else if (
+            currentUXMode == XRUX::COPY_STEP && _stepCopyAvailable && 
+            (btnCharIsATrack(key) || key == ESCAPE_BTN_CHAR)
+        ) { 
+            // paste step
+
+            if (key == ESCAPE_BTN_CHAR) // discard copy/paste operation
+            { 
+                _stepCopyAvailable = false;
+                XRUX::setCurrentMode(XRUX::getPreviousMode());
+                XRLED::clearAllStepLEDs();
+
+                if (currentUXMode == XRUX::TRACK_WRITE) {
+                    XRLED::setDisplayStateForAllStepLEDs();
+                }
+                
+                XRDisplay::drawSequencerScreen();
+
+                return;
+            }
+
+            uint8_t stepToUse = getKeyStepNum(key);
+            auto currStepPage = XRSequencer::getCurrentStepPage();
+
+            if (currStepPage == 2)
+            {
+                stepToUse += 16;
+            }
+            else if (currStepPage == 3)
+            {
+                stepToUse += 32;
+            }
+            else if (currStepPage == 4)
+            {
+                stepToUse += 48;
+            }
+
+            // save pasted step
+            auto &seqExternal = XRSequencer::getSequencerExternal();
+            auto &seqHeap = XRSequencer::getSequencerHeap();
+            auto currSelBank = XRSequencer::getCurrentSelectedBankNum();
+            auto currSelPattern = XRSequencer::getCurrentSelectedPatternNum();
+            auto currSelTrack = XRSequencer::getCurrentSelectedTrackNum();
+
+            seqHeap.pattern.tracks[currSelTrack].steps[stepToUse - 1] = XRSequencer::getCopyBufferForStep();
+
+            _stepCopyAvailable = false;
+
+            XRUX::setCurrentMode(XRUX::PASTE_STEP);
+
+            Serial.println("drawing paste step confirm overlay!");
+
+            XRDisplay::drawPasteConfirmOverlay("STEP", stepToUse);
+
+            return;
+        }
+        else if (currentUXMode == XRUX::COPY_PATTERN && _patternCopyAvailable && (btnCharIsATrack(key) || key == ESCAPE_BTN_CHAR))
+        { 
+            // paste pattern
+
+            Serial.println("here9");
+
+            if (key == ESCAPE_BTN_CHAR) // discard copy/paste operation
+            {
+                _patternCopyAvailable = false;
+
+                XRUX::setCurrentMode(XRUX::getPreviousMode());
+                XRLED::clearAllStepLEDs();
+                XRDisplay::drawSequencerScreen();
+
+                return;
+            }
+
+            Serial.println("pasting selected pattern to target pattern!");
+
+            uint8_t targetPattern = getKeyStepNum(key) - 1;
+            auto &seqExternal = XRSequencer::getSequencerExternal();
+            auto &seqHeap = XRSequencer::getSequencerHeap();
+            auto &seqState = XRSequencer::getSeqState();
+            auto currSelBank = XRSequencer::getCurrentSelectedBankNum();
+            auto currSelPattern = XRSequencer::getCurrentSelectedPatternNum();
+            auto &patternCopyBuf = XRSequencer::getCopyBufferForPattern();
+
+            // save pasted pattern to RAM2 / DMAMEM
+            seqExternal.banks[currSelBank].patterns[targetPattern] = patternCopyBuf;
+
+            // and reload the current pattern into heap if target pattern is current selected pattern
+            if (currSelPattern == targetPattern)
+            {
+                seqHeap.pattern = seqExternal.banks[currSelBank].patterns[currSelPattern];
+            }
+
+            _patternCopyAvailable = false;
+            XRUX::setCurrentMode(XRUX::PASTE_PATTERN);
+
+            Serial.println("drawing paste pattern confirm overlay!");
+
+            XRDisplay::drawPasteConfirmOverlay("PATTERN", getKeyStepNum(key));
+
+            // transition to target pattern as well?
+            if (seqState.playbackState == XRSequencer::SEQUENCER_PLAYBACK_STATE::RUNNING)
+            {
+                XRSequencer::queuePattern(currSelBank, targetPattern);
+            }
+            else
+            {
+                // TODO: rework this to enable pasting patterns across banks too
+                XRSequencer::setSelectedPattern(targetPattern);
+                XRSequencer::swapSequencerMemoryForPattern(currSelBank, targetPattern);
+            }
+
+            return;
+        }
+        else if (currentUXMode == XRUX::COPY_TRACK && _trackCopyAvailable && (btnCharIsATrack(key) || key == ESCAPE_BTN_CHAR))
+        { 
+            // paste track
+            
+            if (key == ESCAPE_BTN_CHAR) // discard copy/paste operation
+            {
+                _trackCopyAvailable = false;
+                XRUX::setCurrentMode(XRUX::getPreviousMode());
+                XRLED::clearAllStepLEDs();
+                if (currentUXMode == XRUX::TRACK_WRITE) {
+                    XRLED::setDisplayStateForAllStepLEDs();
+                }
+                
+                XRDisplay::drawSequencerScreen();
+                return;
+            }
+
+            Serial.println("pasting selected track to target track!");
+
+            uint8_t targetTrack = getKeyStepNum(key) - 1;
+            auto &seqHeap = XRSequencer::getSequencerHeap();
+            auto &trackCopyBuf = XRSequencer::getCopyBufferForTrack();
+
+            seqHeap.pattern.tracks[targetTrack] = trackCopyBuf;
+
+            _trackCopyAvailable = false;
+
+            XRUX::setCurrentMode(XRUX::PASTE_TRACK);
+
+            Serial.println("drawing paste track confirm overlay!");
+
+            XRDisplay::drawPasteConfirmOverlay("TRACK", getKeyStepNum(key));
+
+            // transition to target track as well?
+            XRSequencer::setSelectedTrack(targetTrack);
+
+            return;
+        }
+
+        // page
+        else if (key == '9' || key == '3')
+        {
+            auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+            auto currStepPage = XRSequencer::getCurrentStepPage();
+
+            int maxPages = 1;
+            if (currTrack.last_step > 16 && currTrack.last_step <= 32)
+            {
+                maxPages = 2;
+            }
+            else if (currTrack.last_step > 32 && currTrack.last_step <= 48)
+            {
+                maxPages = 3;
+            }
+            else if (currTrack.last_step > 48)
+            {
+                maxPages = 4;
+            }
+
+            if (key == '3')
+            {
+                XRSequencer::setCurrentStepPage(min(maxPages, currStepPage + 1));
+            }
+            else if (key == '9')
+            {
+                XRSequencer::setCurrentStepPage(max(1, currStepPage - 1));
+            }
+
+            XRLED::displayPageLEDs(
+                -1, 
+                (XRSequencer::getSeqState().playbackState == XRSequencer::SEQUENCER_PLAYBACK_STATE::RUNNING),
+                XRSequencer::getCurrentStepPage(),
+                XRSequencer::getHeapCurrentSelectedTrack().last_step // TODO: use pattern last step here?
+            );
+
+            XRLED::setDisplayStateForAllStepLEDs();
+
+            return;
+        }
+
+        // perform
+        else if (key == 'a')
+        {
+            XRUX::setCurrentMode(XRUX::PERFORM_SEL);
+
+            _patternCopyAvailable = false;
+            _trackCopyAvailable = false;
+            _stepCopyAvailable = false;
+
+            XRLED::clearAllStepLEDs();
+            XRLED::displayPerformModeLEDs();
+
+            return;
+        }
+        else if (currentUXMode == XRUX::PERFORM_SEL && btnCharIsATrack(key) && getKeyStepNum(key) >= 13)
+        {
+            _performModeHeldForSelection = getKeyStepNum(key) - 1;
+
+            Serial.print("_performModeHeldForSelection: ");
+            Serial.println(_performModeHeldForSelection);
+
+            if (getKeyStepNum(key) == 14)
+            {
+                // enable mute mode
+                // TODO: find better way to track UI mode before PERFORM_SEL
+                XRUX::setCurrentMode(XRUX::PERFORM_MUTE);
+                XRUX::setPreviousMode(XRUX::PATTERN_WRITE);
+
+                XRLED::clearAllStepLEDs();
+                XRLED::displayMuteLEDs();
+                XRDisplay::drawSequencerScreen(false);
+            }
+            else if (getKeyStepNum(key) == 15)
+            {
+                // enable solo mode
+                // TODO: find better way to track UI mode before PERFORM_SEL
+                XRUX::setCurrentMode(XRUX::PERFORM_SOLO);
+                XRUX::setPreviousMode(XRUX::PATTERN_WRITE);
+
+                // displayMuteLEDs();
+                XRLED::clearAllStepLEDs();
+                XRDisplay::drawSequencerScreen(false);
+            }
+            else if (getKeyStepNum(key) == 16)
+            {
+                // enable ratchet mode
+                // TODO: find better way to track UI mode before PERFORM_SEL
+                XRUX::setCurrentMode(XRUX::PERFORM_RATCHET);
+                XRUX::setPreviousMode(XRUX::PATTERN_WRITE);
+
+                // displayMuteLEDs();
+                XRLED::clearAllStepLEDs();
+                XRDisplay::drawSequencerScreen(false);
+            }
+
+            return;
+        }
+        else if (currentUXMode == XRUX::PERFORM_MUTE && btnCharIsATrack(key))
+        { 
+            auto &track = XRSequencer::getHeapTrack(getKeyStepNum(key) - 1);
+            // handle mutes
+            bool currMuteState = track.muted;
+            track.muted = (currMuteState ? false : true);
+
+            XRLED::displayMuteLEDs();
+
+            return;
+        }
+        else if (currentUXMode == XRUX::PERFORM_SOLO && btnCharIsATrack(key))
+        { 
+            auto &track = XRSequencer::getHeapTrack(getKeyStepNum(key) - 1);
+            // handle solos
+            bool undoSoloing = track.soloing;
+
+            handleSoloForTrack(getKeyStepNum(key) - 1, undoSoloing);
+
+            return;
         }
     }
 
@@ -322,6 +735,10 @@ namespace XRKeyMatrix
         if (handleActivateFunction(key)) return;
 
         if (handleActivateParamLockStep(key)) return;
+
+        if (handleRatchets(key)) return;
+
+        if (handleCopySelect(key)) return;
     }
 
     void handleReleaseForKey(char key)
@@ -344,6 +761,8 @@ namespace XRKeyMatrix
         if (handlePatternReleaseActions(key)) return;
 
         if (handleParamLockStepRelease(key)) return;
+
+        if (handleRatchetRelease(key)) return;
     }
 
     bool handlePatternReleaseActions(char key)
@@ -659,17 +1078,26 @@ namespace XRKeyMatrix
 
     bool handleFunctionReleaseActions(char key)
     {
+        XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
+        XRUX::UX_MODE previousUXMode = XRUX::getPreviousMode();
+
         // Serial.println("enter handleFunctionReleaseActions!");
 
         if (key == FUNCTION_BTN_CHAR) { 
             // leaving function
             _isFunctionActive = false;
 
+            if (currentUXMode == XRUX::PATTERN_WRITE || currentUXMode == XRUX::TRACK_WRITE) {
+                XRLED::displayPageLEDs(
+                    -1,
+                    (XRSequencer::getSeqState().playbackState == XRSequencer::SEQUENCER_PLAYBACK_STATE::RUNNING),
+                    XRSequencer::getCurrentSelectedPage(),
+                    XRSequencer::getHeapCurrentSelectedTrack().last_step // TODO: use pattern last step here?
+                );
+            }
+
             return true;
         }
-        
-        XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
-        XRUX::UX_MODE previousUXMode = XRUX::getPreviousMode();
 
         // octave
         if (key == '9' || key == '3') {
@@ -715,7 +1143,7 @@ namespace XRKeyMatrix
    
     bool handleParamLockStepRelease(char key)
     {
-        Serial.println("enter handleParamLockStepRelease");
+        // Serial.println("enter handleParamLockStepRelease");
 
         XRUX::UX_MODE previousUXMode = XRUX::getPreviousMode();
         XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
@@ -730,7 +1158,7 @@ namespace XRKeyMatrix
             XRDisplay::drawSequencerScreen(false);
         }
 
-        Serial.println("leaving handleParamLockStepRelease");
+        // Serial.println("leaving handleParamLockStepRelease");
 
         return true;
     }
@@ -794,7 +1222,6 @@ namespace XRKeyMatrix
             XRSequencer::setCurrentSelectedStep(selectedStepNum);
 
             auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
-
             auto &heldStep = currTrack.steps[selectedStepNum];
 
             // only toggle held step ON if initially in the OFF position,
@@ -810,16 +1237,123 @@ namespace XRKeyMatrix
             }
 
             XRDisplay::drawSequencerScreen(false);
+
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     bool isFunctionActive()
     {
         return _isFunctionActive;
     }
-    
+
+    bool handleCopySelect(char key)
+    {
+        auto currUXMode = XRUX::getCurrentMode();
+        bool allowedModeToCopySelectFrom = (currUXMode == XRUX::PATTERN_WRITE || currUXMode == XRUX::TRACK_WRITE);
+
+        if (allowedModeToCopySelectFrom && key == COPY_BTN_CHAR)
+        {
+            Serial.print("current mode: ");
+            Serial.println(currUXMode);
+
+            Serial.println("enter copy select mode!");
+
+            XRUX::setCurrentMode(XRUX::COPY_SEL);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    bool handleRatchetRelease(char key)
+    {
+        auto currentUXMode = XRUX::getCurrentMode();
+
+        if (currentUXMode == XRUX::PERFORM_RATCHET && btnCharIsATrack(key))
+        {
+            Serial.println("release track ratchet");
+
+            XRSequencer::setRatchetTrack(-1);
+            XRSequencer::setRatchetDivision(-1);
+
+            XRDisplay::drawSequencerScreen(false);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    bool handleRatchets(char key)
+    {
+        auto currentUXMode = XRUX::getCurrentMode();
+        auto &seqState = XRSequencer::getSeqState();
+
+        // perform ratchet
+        if (currentUXMode == XRUX::PERFORM_RATCHET && btnCharIsATrack(key))
+        { 
+            // handle ratchets
+            if (seqState.playbackState == XRSequencer::SEQUENCER_PLAYBACK_STATE::RUNNING)
+            {
+                XRSequencer::setRatchetTrack(getKeyStepNum(key) - 1);
+
+                XRDisplay::drawSequencerScreen(false);
+                
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void handleSoloForTrack(uint8_t track, bool undoSoloing)
+    {
+        auto &pattern = XRSequencer::getHeapCurrentSelectedPattern();
+
+        for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+        {
+            if (undoSoloing && _currentTracksSoloed > 0 && t == track)
+            {
+                --_currentTracksSoloed;
+                pattern.tracks[t].soloing = false;
+                pattern.tracks[t].muted = true;
+                
+                XRLED::setPWM(XRLED::_stepLEDPins[t], 0);
+            }
+
+            if (undoSoloing && _currentTracksSoloed == 0)
+            {
+                pattern.tracks[t].soloing = false;
+                pattern.tracks[t].muted = false;
+
+                XRLED::setPWM(XRLED::_stepLEDPins[t], 0);
+            }
+
+            if (undoSoloing)
+                continue;
+
+            if (t == track)
+            {
+                ++_currentTracksSoloed;
+                pattern.tracks[t].soloing = true;
+                pattern.tracks[t].muted = false;
+
+                XRLED::setPWM(XRLED::_stepLEDPins[t], 4095);
+            }
+            else if (!pattern.tracks[t].soloing)
+            {
+                pattern.tracks[t].soloing = false;
+                pattern.tracks[t].muted = true;
+
+                XRLED::setPWM(XRLED::_stepLEDPins[t], 0);
+            }
+        }
+    }
+
     bool btnCharIsATrack(char btnChar)
     {
         // Serial.println("enter btnCharIsATrack!");

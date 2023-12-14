@@ -278,6 +278,17 @@ namespace XRSequencer
     void setTrackTypeForHeapTrack(int8_t track, TRACK_TYPE type);
     void setTrackNeedsInit(int track, bool init);
     void setCurrentSelectedStep(int step);
+    void setCurrentStepPage(int8_t page);
+    void setRatchetTrack(int track);
+    void setRatchetDivision(int track);
+
+    void setCopyBufferForPattern(int pattern);
+    void setCopyBufferForTrack(int track);
+    void setCopyBufferForStep(int step);
+
+    PATTERN &getCopyBufferForPattern();
+    TRACK &getCopyBufferForTrack();
+    TRACK_STEP &getCopyBufferForStep();
 
     void assignSampleNameToTrack(std::string sampleName);
 

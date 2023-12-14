@@ -120,6 +120,8 @@ namespace XRLED
 
     void displayPageLEDs(int currentBar, bool sequencerRunning, int currentStepPage, int lastStep)
     {
+        // Serial.printf("enter displayPageLEDs, lastStep: %d\n", lastStep);
+        
         //bool blinkCurrentPage = _seq_state.playback_state == RUNNING && currentBar != -1;
         bool blinkCurrentPage = sequencerRunning && currentBar != -1;
 
@@ -343,5 +345,65 @@ namespace XRLED
         setPWM(18, 0);
         setPWM(19, 0);
         setPWM(20, 0);
+    }
+
+    void displayPerformModeLEDs(void)
+    {
+        for (int s = 12; s < 16; s++)
+        {
+            setPWM(_stepLEDPins[s], 4095);
+        }
+    }
+
+    void displayMuteLEDs(void)
+    {
+        auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
+
+        for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+        {
+            if (!currPattern.tracks[t].muted)
+            {
+                setPWM(_stepLEDPins[t], 0);
+            }
+            else
+            {
+                setPWM(_stepLEDPins[t], 4095);
+            }
+        }
+    }
+
+    void displayInitializedPatternLEDs()
+    {
+        auto &seqExternal = XRSequencer::getSequencerExternal();
+        auto currSelBank = XRSequencer::getCurrentSelectedBankNum();
+
+        for (int p = 0; p < MAXIMUM_SEQUENCER_PATTERNS; p++)
+        {
+            if (seqExternal.banks[currSelBank].patterns[p].initialized)
+            {
+                setPWM(_stepLEDPins[p], 4095);
+            }
+            else
+            {
+                setPWM(_stepLEDPins[p], 0);
+            }
+        }
+    }
+
+    void displayInitializedTrackLEDs()
+    {
+        auto &pattern = XRSequencer::getHeapCurrentSelectedPattern();
+
+        for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+        {
+            if (pattern.tracks[t].initialized)
+            {
+                setPWM(_stepLEDPins[t], 4095);
+            }
+            else
+            {
+                setPWM(_stepLEDPins[t], 0);
+            }
+        }
     }
 }

@@ -446,7 +446,9 @@ namespace XREncoder
         auto noteOnKeyboard = XRVersa::getNoteOnKeyboard();
         auto currUXMode = XRUX::getCurrentMode();
 
-        if (currSelectedPageNum == 0)
+        switch (currSelectedPageNum)
+        {
+        case 0:
         {
             int currLastStep = currTrack.last_step;
             int newLastStep = currTrack.last_step + diff;
@@ -471,14 +473,14 @@ namespace XREncoder
                     -1,
                     (XRSequencer::getSeqState().playbackState == XRSequencer::RUNNING),
                     XRSequencer::getCurrentStepPage(),
-                    newLastStep
-                );
+                    newLastStep);
 
                 XRLED::setDisplayStateForAllStepLEDs();
                 XRDisplay::drawSequencerScreen(false);
             }
         }
-        else if (currSelectedPageNum == 1)
+        break;
+        case 1:
         {
             int currLoopType = currTrack.looptype;
 
@@ -510,7 +512,8 @@ namespace XREncoder
 
             XRDisplay::drawSequencerScreen(false);
         }
-        else if (currSelectedPageNum == 2)
+        break;
+        case 2:
         {
             float currAtt = currTrack.amp_attack;
 
@@ -533,25 +536,26 @@ namespace XREncoder
 
                 if (currSelectedTrackNum > 3)
                 {
-                AudioNoInterrupts();
+                    AudioNoInterrupts();
                     auto &sampleVoice = XRSound::getSampleVoiceForTrack(currSelectedTrackNum - 4);
 
                     sampleVoice.ampEnv.attack(newAtt);
-                AudioInterrupts();
+                    AudioInterrupts();
                 }
                 else
                 {
-                AudioNoInterrupts();
+                    AudioNoInterrupts();
                     auto &comboVoice = XRSound::getComboVoiceForCurrentTrack();
 
                     comboVoice.ampEnv.attack(newAtt);
-                AudioInterrupts();
+                    AudioInterrupts();
                 }
 
                 XRDisplay::drawSequencerScreen(false);
             }
         }
-        else if (currSelectedPageNum == 3)
+        break;
+        case 3:
         {
             float currLvl = currTrack.level;
             float newLvl = currTrack.level + (diff * 0.01);
@@ -567,29 +571,34 @@ namespace XREncoder
 
                 if (currSelectedTrackNum > 3)
                 {
-                AudioNoInterrupts();
+                    AudioNoInterrupts();
                     auto &sampleVoice = XRSound::getSampleVoiceForTrack(currSelectedTrackNum - 4);
 
                     sampleVoice.leftSubMix.gain(0, newLvl);
                     sampleVoice.leftSubMix.gain(1, newLvl);
                     sampleVoice.rightSubMix.gain(0, newLvl);
                     sampleVoice.rightSubMix.gain(1, newLvl);
-                AudioInterrupts();
+                    AudioInterrupts();
                 }
                 else
                 {
-                AudioNoInterrupts();
+                    AudioNoInterrupts();
                     auto &comboVoice = XRSound::getComboVoiceForCurrentTrack();
 
                     comboVoice.leftSubMix.gain(0, newLvl);
                     comboVoice.leftSubMix.gain(1, newLvl);
                     comboVoice.rightSubMix.gain(0, newLvl);
                     comboVoice.rightSubMix.gain(1, newLvl);
-                AudioInterrupts();
+                    AudioInterrupts();
                 }
 
                 XRDisplay::drawSequencerScreen(false);
             }
+        }
+        break;
+
+        default:
+            break;
         }
     }
 
@@ -1030,12 +1039,154 @@ namespace XREncoder
 
     void handleEncoderDexedModA(int diff)
     {
-        //
+        auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
+        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &currStep = XRSequencer::getHeapCurrentSelectedTrackStep();
+        auto &patternMods = XRSequencer::getModsForCurrentPattern();
+        auto &comboVoice = XRSound::getComboVoiceForCurrentTrack();
+        auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+        auto currSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
+        auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        auto numNotesHeldOfKeyboard = XRVersa::getKeyboardNotesHeld();
+        auto noteOnKeyboard = XRVersa::getNoteOnKeyboard();
+        auto currUXMode = XRUX::getCurrentMode();
+
+        switch (currSelectedPageNum)
+        {
+        case 0:
+        {
+            int currLastStep = currTrack.last_step;
+            int newLastStep = currTrack.last_step + diff;
+
+            // make sure track last step doesn't exceed pattern's
+
+            // TODO: try to re-align current playing track step with pattern step if able
+            if (newLastStep < 1)
+            {
+                newLastStep = 1;
+            }
+            else if (newLastStep > currPattern.last_step)
+            {
+                newLastStep = currPattern.last_step;
+            }
+
+            if (newLastStep != currLastStep)
+            {
+                currTrack.last_step = newLastStep;
+
+                XRLED::displayPageLEDs(
+                    -1,
+                    (XRSequencer::getSeqState().playbackState == XRSequencer::RUNNING),
+                    XRSequencer::getCurrentStepPage(),
+                    newLastStep);
+
+                XRLED::setDisplayStateForAllStepLEDs();
+                XRDisplay::drawSequencerScreen(false);
+            }
+        }
+        break;
+        case 1:
+        {
+            //
+        }
+        break;
+        case 2:
+        {
+            //
+        }
+        break;
+        case 3:
+        {
+            float currLvl = currTrack.level;
+            float newLvl = currTrack.level + (diff * 0.01);
+
+            if (!(newLvl < 0.0 || newLvl > 1.1) && newLvl != currLvl)
+            {
+                currTrack.level = newLvl;
+
+                AudioNoInterrupts();
+                auto &comboVoice = XRSound::getComboVoiceForCurrentTrack();
+
+                //comboVoice.leftSubMix.gain(0, newLvl);
+                comboVoice.leftSubMix.gain(1, newLvl);
+                //comboVoice.rightSubMix.gain(0, newLvl);
+                comboVoice.rightSubMix.gain(1, newLvl);
+                AudioInterrupts();
+
+                XRDisplay::drawSequencerScreen(false);
+            }
+        }
+        break;
+
+        default:
+            break;
+        }
     }
 
     void handleEncoderDexedModB(int diff)
     {
-        //
+        auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
+        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &currStep = XRSequencer::getHeapCurrentSelectedTrackStep();
+        auto &patternMods = XRSequencer::getModsForCurrentPattern();
+        auto &comboVoice = XRSound::getComboVoiceForCurrentTrack();
+        auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+        auto currSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
+        auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        auto numNotesHeldOfKeyboard = XRVersa::getKeyboardNotesHeld();
+        auto noteOnKeyboard = XRVersa::getNoteOnKeyboard();
+        auto currUXMode = XRUX::getCurrentMode();
+
+        switch (currSelectedPageNum)
+        {
+        case 0:
+            updateTrackLength(diff);
+            
+            break;
+
+        case 1:
+            /* code */
+            break;
+
+        case 2:
+            /* code */
+            break;
+
+        case 3:
+        {
+            float currPan = currTrack.pan;
+            float newPan = currTrack.pan + (diff * 0.1);
+
+            if (!(newPan < -1.0 || newPan > 1.0) && newPan != currPan)
+            {
+                currTrack.pan = newPan;
+
+                float newGainL = 1.0;
+                if (newPan < 0)
+                {
+                    newGainL += newPan;
+                }
+
+                float newGainR = 1.0;
+                if (newPan > 0)
+                {
+                    newGainR -= newPan;
+                }
+                
+                AudioNoInterrupts();
+                comboVoice.dexedLeftCtrl.gain(newGainR);
+                comboVoice.dexedRightCtrl.gain(newGainL);
+                AudioInterrupts();
+
+                XRDisplay::drawSequencerScreen(false);
+            }
+        }
+
+        break;
+
+        default:
+            break;
+        }
     }
 
     void handleEncoderDexedModC(int diff)

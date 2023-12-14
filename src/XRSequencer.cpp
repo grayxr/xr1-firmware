@@ -38,7 +38,7 @@ namespace XRSequencer
 
     std::map<TRACK_TYPE, int> trackPageNumMap = {
         {SUBTRACTIVE_SYNTH, 6},
-        {DEXED, 1},
+        {DEXED, 4},
         {RAW_SAMPLE, 4},
         {WAV_SAMPLE, 1},
         {MIDI_OUT, 1},
@@ -56,8 +56,11 @@ namespace XRSequencer
                                 {5, "OUTPUT"},
                             }},
         {DEXED, {
-                    {0, "MAIN"},
-                }},
+                         {0, "MAIN"},
+                         {1, "FM1"},
+                         {2, "FM2"},
+                         {3, "OUTPUT"},
+                     }},
         {RAW_SAMPLE, {
                          {0, "MAIN"},
                          {1, "LOOP"},
@@ -303,13 +306,15 @@ namespace XRSequencer
             {
                 XRLED::setDisplayStateForAllStepLEDs();
 
+                int lastStep = (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) ? _seqHeap.pattern.last_step : _seqHeap.pattern.tracks[_currentSelectedTrack].last_step;
+
                 if (!XRKeyMatrix::isFunctionActive())
                 {
                     XRLED::displayPageLEDs(
                         -1,
                         (_seqState.playbackState == RUNNING),
                         _currentStepPage,
-                        _seqHeap.pattern.last_step // TODO: use pattern OR track last step depending which UX mode is active
+                        lastStep
                     );   
                 }
             }
@@ -466,19 +471,19 @@ namespace XRSequencer
         switch (type)
         {
         case SUBTRACTIVE_SYNTH:
-            outputStr = "SYNTH:";
+            outputStr = "MONO >";
             break;
 
         case RAW_SAMPLE:
-            outputStr = "RSAMPLE:";
+            outputStr = "MSAMPLE >";
             break;
 
         case WAV_SAMPLE:
-            outputStr = "WSAMPLE:";
+            outputStr = "SSAMPLE >";
             break;
 
         case DEXED:
-            outputStr = "DEXED:";
+            outputStr = "DEXED >";
             break;
 
         case MIDI_OUT:
@@ -527,7 +532,7 @@ namespace XRSequencer
             break;
 
         case TRACK_TYPE::SUBTRACTIVE_SYNTH:
-            str = "2-OSC SUBTRACTIVE";
+            str = "INIT";
 
             break;
 
@@ -928,12 +933,14 @@ namespace XRSequencer
             }
             else if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE)
             {
+                int lastStep = (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) ? _seqHeap.pattern.last_step : _seqHeap.pattern.tracks[_currentSelectedTrack].last_step;
+
                 XRLED::displayPageLEDs(
                     1,
                     (_seqState.playbackState == RUNNING),
                     _currentStepPage,
-                    _seqHeap.pattern.last_step // TODO: use pattern OR track last step depending which UX mode is active
-                );                           // TODO need?
+                    lastStep // TODO need?
+                );
             }
 
             XRDisplay::drawSequencerScreen(false);
@@ -1256,5 +1263,50 @@ namespace XRSequencer
        // _seqHeap.pattern.tracks[_currentSelectedTrack].steps[step];
 
         _currentSelectedStep = step;
+    }
+
+    void setCurrentStepPage(int8_t page)
+    {
+        _currentStepPage = page;
+    }
+
+    void setCopyBufferForStep(int step)
+    {
+        _stepCopyBuffer = _seqHeap.pattern.tracks[_currentSelectedTrack].steps[step];
+    }
+
+    void setCopyBufferForTrack(int track)
+    {
+        _trackCopyBuffer = _seqHeap.pattern.tracks[track];
+    }
+
+    void setCopyBufferForPattern(int pattern)
+    {
+        _patternCopyBuffer = _seqExternal.banks[_currentSelectedBank].patterns[pattern];
+    }
+
+    PATTERN &getCopyBufferForPattern()
+    {
+        return _patternCopyBuffer;
+    }
+
+    TRACK &getCopyBufferForTrack()
+    {
+        return _trackCopyBuffer;
+    }
+
+    TRACK_STEP &getCopyBufferForStep()
+    {
+        return _stepCopyBuffer;
+    }
+
+    void setRatchetTrack(int track)
+    {
+        _ratchetTrack = track;
+    }
+
+    void setRatchetDivision(int track)
+    {
+        _ratchetDivision = track;
     }
 }
