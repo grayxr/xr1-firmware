@@ -820,7 +820,8 @@ namespace XRSound
             else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::DEXED)
             {
                 XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::DEXED);
-                XRSD::loadDexedVoiceToCurrentTrack();
+                //XRSD::loadDexedVoiceToCurrentTrack();
+                //trackVoice.dexed.setMonoMode(true);
 
                 trackVoice.mix.gain(0, 1); // mono sample
                 trackVoice.mix.gain(1, 1); // synth
@@ -926,6 +927,7 @@ namespace XRSound
             //comboVoices[t].dexed.loadInitVoice();
             // TODO: impl loadDexedVoiceToCurrentTrack();
             XRSD::loadDexedVoiceToCurrentTrack(t);
+            //comboVoices[t].dexed.setMonoMode(true);
             
             // comboVoices[t].dexed.setMonoMode(true);
             // comboVoices[t].dexed.setTranspose(36);
@@ -1998,6 +2000,7 @@ namespace XRSound
         {
             XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::DEXED);
             XRSD::loadDexedVoiceToCurrentTrack();
+            //trackVoice.dexed.setMonoMode(true);
 
             trackVoice.mix.gain(0, 0); // mono sample
             trackVoice.mix.gain(1, 0); // synth

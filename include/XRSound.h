@@ -10,6 +10,12 @@
 
 namespace XRSound
 {
+    // typedef struct {
+    //     bool isLoading;
+    //     bool isPlaying;
+    //     uint8_t voiceData[156];
+    // } XR_DEXED_VOICE;
+
     class ComboVoice
     {
     public:
