@@ -6,6 +6,7 @@
 #include <XRLED.h>
 #include <XRSD.h>
 #include <XRClock.h>
+#include <XRAudio.h>
 #include <map>
 
 namespace XRSequencer
@@ -40,6 +41,7 @@ namespace XRSequencer
         {SUBTRACTIVE_SYNTH, 6},
         {DEXED, 4},
         {RAW_SAMPLE, 4},
+        {FM_DRUM, 2},
         {WAV_SAMPLE, 1},
         {MIDI_OUT, 1},
         {CV_GATE, 1},
@@ -60,6 +62,10 @@ namespace XRSequencer
                          {1, "FM1"},
                          {2, "FM2"},
                          {3, "OUTPUT"},
+                     }},
+        {FM_DRUM, {
+                         {0, "MAIN"},
+                         {1, "OUTPUT"},
                      }},
         {RAW_SAMPLE, {
                          {0, "MAIN"},
@@ -322,7 +328,7 @@ namespace XRSequencer
 
         // every 1/4 step log memory usage
         if (!(tick % 24)) {
-            //logMetrics();
+            XRAudio::logMetrics();
 
             // blink queued bank / pattern
             if (_queuedPattern.bank > -1 && _queuedPattern.number > -1) {
@@ -332,7 +338,7 @@ namespace XRSequencer
 
         if (_recording) {
             XRLED::setPWM(23, 512);
-            //setLEDPWM(23, 1024);
+            //XRLED::setPWM(23, 1024);
         }
     }
 
@@ -486,6 +492,10 @@ namespace XRSequencer
             outputStr = "DEXED >";
             break;
 
+        case FM_DRUM:
+            outputStr = "FM DRUM >";
+            break;
+
         case MIDI_OUT:
             outputStr = "MIDI";
             break;
@@ -538,6 +548,9 @@ namespace XRSequencer
 
         case TRACK_TYPE::DEXED:
             str = "DEXED";
+
+        case TRACK_TYPE::FM_DRUM:
+            str = "FM DRUM";
 
             break;
 
@@ -686,6 +699,10 @@ namespace XRSequencer
         else if (trackToUse.track_type == DEXED)
         {
             XRSound::handleDexedNoteOnForTrackStep(track, step);
+        }
+        else if (trackToUse.track_type == FM_DRUM)
+        {
+            XRSound::handleFmDrumNoteOnForTrackStep(track, step);
         }
         else if (trackToUse.track_type == SUBTRACTIVE_SYNTH)
         {
@@ -1204,6 +1221,10 @@ namespace XRSequencer
         else if (trackToUse.track_type == DEXED)
         {
             XRSound::handleDexedNoteOnForTrack(track);
+        }
+        else if (trackToUse.track_type == FM_DRUM)
+        {
+            XRSound::handleFmDrumNoteOnForTrack(track);
         }
         else if (trackToUse.track_type == SUBTRACTIVE_SYNTH)
         {

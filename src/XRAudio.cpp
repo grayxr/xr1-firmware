@@ -44,7 +44,7 @@ namespace XRAudio
     void logMetrics()
     {
         Serial.printf(
-            "Memory: %d/%d CPU: %d/%d",
+            "Memory: %d/%d CPU: %f/%f\n",
             AudioMemoryUsage(),
             AudioMemoryUsageMax(),
             AudioProcessorUsage(),

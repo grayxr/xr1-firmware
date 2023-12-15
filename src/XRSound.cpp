@@ -13,13 +13,13 @@ namespace XRSound
 {
     ComboVoice comboVoices[COMBO_VOICE_COUNT] = {
         ComboVoice(
-            dexed1, vmsample1, vosca1, voscb1, vnoise1, voscmix1, vdc1, vlfilter1, vfilterenv1, vmix1, venv1, vleft1, vright1, dleft1, dright1, vsubmixl1, vsubmixr1),
+            fmdrum1, dexed1, vmsample1, vosca1, voscb1, vnoise1, voscmix1, vdc1, vlfilter1, vfilterenv1, vmix1, venv1, vleft1, vright1, dleft1, dright1, fdleft1, fdright1, vsubmixl1, vsubmixr1),
         ComboVoice(
-            dexed2, vmsample2, vosca2, voscb2, vnoise2, voscmix2, vdc2, vlfilter2, vfilterenv2, vmix2, venv2, vleft2, vright2, dleft2, dright2, vsubmixl2, vsubmixr2),
+            fmdrum2, dexed2, vmsample2, vosca2, voscb2, vnoise2, voscmix2, vdc2, vlfilter2, vfilterenv2, vmix2, venv2, vleft2, vright2, dleft2, dright2, fdleft2, fdright2, vsubmixl2, vsubmixr2),
         ComboVoice(
-            dexed3, vmsample3, vosca3, voscb3, vnoise3, voscmix3, vdc3, vlfilter3, vfilterenv3, vmix3, venv3, vleft3, vright3, dleft3, dright3, vsubmixl3, vsubmixr3),
+            fmdrum3, dexed3, vmsample3, vosca3, voscb3, vnoise3, voscmix3, vdc3, vlfilter3, vfilterenv3, vmix3, venv3, vleft3, vright3, dleft3, dright3, fdleft3, fdright3, vsubmixl3, vsubmixr3),
         ComboVoice(
-            dexed4, vmsample4, vosca4, voscb4, vnoise4, voscmix4, vdc4, vlfilter4, vfilterenv4, vmix4, venv4, vleft4, vright4, dleft4, dright4, vsubmixl4, vsubmixr4),
+            fmdrum4, dexed4, vmsample4, vosca4, voscb4, vnoise4, voscmix4, vdc4, vlfilter4, vfilterenv4, vmix4, venv4, vleft4, vright4, dleft4, dright4, fdleft4, fdright4, vsubmixl4, vsubmixr4),
     };
 
     SampleVoice sampleVoices[SAMPLE_VOICE_COUNT] = {
@@ -165,6 +165,10 @@ namespace XRSound
             break;
 
         case XRSequencer::DEXED:
+            mods = getDexedControlModData();
+            break;
+
+        case XRSequencer::FM_DRUM:
             mods = getDexedControlModData();
             break;
 
@@ -545,6 +549,53 @@ namespace XRSound
         return mods;
     }
 
+    SOUND_CONTROL_MODS getFmDrumControlModData()
+    {
+        SOUND_CONTROL_MODS mods;
+
+        auto &currentSelectedTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        // auto currentSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
+        auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        // auto modsForCurrentTrackStep = XRSequencer::getModsForCurrentTrackStep();
+        // auto currentUXMode = XRUX::getCurrentMode();
+
+        switch (currentSelectedPageNum)
+        {
+        case 0: // MAIN
+            mods.aName = "--";
+            mods.bName = "--";
+            mods.cName = "--";
+            mods.dName = "--";
+
+            mods.aValue = "--";
+            mods.bValue = "--";
+            mods.cValue = "--";
+            mods.dValue = "--";
+            break;
+
+        case 1: // OUTPUT
+            mods.aName = "LEVEL";
+            mods.bName = "PAN";
+            mods.cName = "--";
+            mods.dName = "--"; // fx send?
+
+            mods.aValue = std::to_string(round(currentSelectedTrack.level * 100));
+            mods.bValue = std::to_string((float)round(currentSelectedTrack.pan * 100) / 100);
+            mods.bValue = mods.bValue.substr(0, 3);
+            mods.bFloatValue = currentSelectedTrack.pan;
+            mods.bType = RANGE;
+
+            mods.cValue = "--";
+            mods.dValue = "--";
+            break;
+
+        default:
+            break;
+        }
+
+        return mods;
+    }
+
     SOUND_CONTROL_MODS getMidiControlModData()
     {
         SOUND_CONTROL_MODS mods;
@@ -832,6 +883,21 @@ namespace XRSound
                 trackVoice.rightSubMix.gain(0, 0);
                 trackVoice.rightSubMix.gain(1, 1);
             }
+            else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::FM_DRUM)
+            {
+                XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::FM_DRUM);
+                trackVoice.fmdrum.init();
+
+                trackVoice.mix.gain(0, 0); // mono sample
+                trackVoice.mix.gain(1, 0); // synth
+
+                trackVoice.leftSubMix.gain(0, 0);
+                trackVoice.leftSubMix.gain(1, 0); 
+                trackVoice.leftSubMix.gain(2, 1); // on
+                trackVoice.rightSubMix.gain(0, 0);
+                trackVoice.rightSubMix.gain(1, 0);
+                trackVoice.rightSubMix.gain(2, 1); // on
+            }
             else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::SUBTRACTIVE_SYNTH)
             {
                 XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::SUBTRACTIVE_SYNTH);
@@ -970,6 +1036,10 @@ namespace XRSound
             comboVoices[t].dexedLeftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
             comboVoices[t].dexedRightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
 
+            // fm drum mono to l&R
+            comboVoices[t].fmDrumLeftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+            comboVoices[t].fmDrumRightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+
             // Sub L&R mixers
             comboVoices[t].leftSubMix.gain(1, currTrack.level);  // wav sample left
             comboVoices[t].leftSubMix.gain(1, currTrack.level);  // dexed left
@@ -1063,11 +1133,16 @@ namespace XRSound
             comboVoices[v].dexedLeftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
             comboVoices[v].dexedRightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
 
+            comboVoices[v].fmDrumLeftCtrl.gain(getStereoPanValues(currTrack.pan).right * (currTrack.velocity * 0.01));
+            comboVoices[v].fmDrumRightCtrl.gain(getStereoPanValues(currTrack.pan).left * (currTrack.velocity * 0.01));
+
             // Sub L&R mixers
-            comboVoices[v].leftSubMix.gain(1, currTrack.level);  // raw sample / synth left
-            comboVoices[v].leftSubMix.gain(0, currTrack.level);  // dexed left
-            comboVoices[v].rightSubMix.gain(1, currTrack.level); // raw sample / synth right
-            comboVoices[v].rightSubMix.gain(0, currTrack.level); // dexed right
+            comboVoices[v].leftSubMix.gain(0, currTrack.level);  // raw sample / synth left
+            comboVoices[v].leftSubMix.gain(1, currTrack.level);  // dexed left
+            comboVoices[v].leftSubMix.gain(2, currTrack.level);  // fm drum left
+            comboVoices[v].rightSubMix.gain(0, currTrack.level); // raw sample / synth right
+            comboVoices[v].rightSubMix.gain(1, currTrack.level); // dexed right
+            comboVoices[v].rightSubMix.gain(2, currTrack.level); // dexed right
         }
 
         // configure sample voice audio objects
@@ -1189,9 +1264,26 @@ namespace XRSound
             trackVoice.mix.gain(1, 0); // synth
 
             trackVoice.leftSubMix.gain(0, 0);
-            trackVoice.leftSubMix.gain(1, 1);
+            trackVoice.leftSubMix.gain(1, 1); // on
+            trackVoice.leftSubMix.gain(2, 0);
             trackVoice.rightSubMix.gain(0, 0);
-            trackVoice.rightSubMix.gain(1, 1);
+            trackVoice.rightSubMix.gain(1, 1); // on
+            trackVoice.rightSubMix.gain(2, 0);
+        }
+         else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::FM_DRUM)
+        {
+            XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::TRACK_TYPE::FM_DRUM);
+            //trackVoice.fmdrum.init();
+
+            trackVoice.mix.gain(0, 0); // mono sample
+            trackVoice.mix.gain(1, 0); // synth
+
+            trackVoice.leftSubMix.gain(0, 0);
+            trackVoice.leftSubMix.gain(1, 0); // on
+            trackVoice.leftSubMix.gain(2, 1);
+            trackVoice.rightSubMix.gain(0, 0);
+            trackVoice.rightSubMix.gain(1, 0); // on
+            trackVoice.rightSubMix.gain(2, 1);
         }
         else if (seqHeap.pattern.tracks[t].track_type == XRSequencer::TRACK_TYPE::WAV_SAMPLE)
         {
@@ -1385,6 +1477,14 @@ namespace XRSound
         if (track < 4)
         {
             comboVoices[track].dexed.keydown(midiNote, 50);
+        }
+    }
+    
+    void handleFmDrumNoteOnForTrack(int track)
+    {
+        if (track < 4)
+        {
+            comboVoices[track].fmdrum.noteOn();
         }
     }
 
@@ -1637,6 +1737,18 @@ namespace XRSound
         // }
     }
 
+    void handleFmDrumNoteOnForTrackStep(int track, int step)
+    {
+        // auto &trackToUse = XRSequencer::getHeapTrack(track);
+        auto &stepToUse = XRSequencer::getHeapStep(track, step);
+        auto &patternMods = XRSequencer::getModsForCurrentPattern();
+
+        // if (track < 4)
+        // {
+            comboVoices[track].fmdrum.noteOn();
+        // }
+    }
+
     void handleSubtractiveSynthNoteOnForTrackStep(int track, int step)
     {
         auto &trackToUse = XRSequencer::getHeapTrack(track);
@@ -1783,6 +1895,10 @@ namespace XRSound
                 comboVoices[track].dexed.keyup(midiNote);
             }
         }
+        else if (currTrack.track_type == XRSequencer::TRACK_TYPE::FM_DRUM)
+        {
+            // TODO: fm drum note off?
+        }
         else if (currTrack.track_type == XRSequencer::TRACK_TYPE::MIDI_OUT)
         {
             XRMIDI::sendNoteOff(64, 100, 1);
@@ -1859,6 +1975,11 @@ namespace XRSound
             int midiNote = (noteToUse + (12 * (octaveToUse)));
 
             comboVoices[track].dexed.keyup(midiNote);
+        }
+
+        else if (currTrack.track_type == XRSequencer::TRACK_TYPE::FM_DRUM)
+        {
+            Serial.println("TODO: FM DRUM NOTE OFF HERE?");
         }
 
         // fix
@@ -1942,10 +2063,6 @@ namespace XRSound
         {
             XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::RAW_SAMPLE);
         }
-        else if (newType == XRSequencer::DEXED)
-        {
-            XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::DEXED);
-        }
         else if (newType == XRSequencer::WAV_SAMPLE)
         {
             // only create buffers for stereo samples when needed
@@ -2007,8 +2124,27 @@ namespace XRSound
 
             trackVoice.leftSubMix.gain(0, 1);
             trackVoice.leftSubMix.gain(1, 1);
+            trackVoice.leftSubMix.gain(2, 1);
             trackVoice.rightSubMix.gain(0, 1);
             trackVoice.rightSubMix.gain(1, 1);
+            trackVoice.rightSubMix.gain(2, 1);
+        }
+        else if (newType == XRSequencer::FM_DRUM)
+        {
+            XRSequencer::setTrackTypeForHeapTrack(t, XRSequencer::FM_DRUM);
+            //XRSD::loadDexedVoiceToCurrentTrack();
+            //trackVoice.dexed.setMonoMode(true);
+            //trackVoice.fmdrum.init();
+
+            trackVoice.mix.gain(0, 0); // mono sample
+            trackVoice.mix.gain(1, 0); // synth
+
+            trackVoice.leftSubMix.gain(0, 1);
+            trackVoice.leftSubMix.gain(1, 1);
+            trackVoice.leftSubMix.gain(2, 1);
+            trackVoice.rightSubMix.gain(0, 1);
+            trackVoice.rightSubMix.gain(1, 1);
+            trackVoice.rightSubMix.gain(2, 1);
         }
         else if (newType == XRSequencer::WAV_SAMPLE)
         {
@@ -2082,6 +2218,10 @@ namespace XRSound
         else if (track.track_type == XRSequencer::DEXED)
         {
             triggerDexedNoteOn(t, note);
+        }
+        else if (track.track_type == XRSequencer::FM_DRUM)
+        {
+            triggerFmDrumNoteOn(t, note);
         }
         else if (track.track_type == XRSequencer::SUBTRACTIVE_SYNTH)
         {
@@ -2198,6 +2338,17 @@ namespace XRSound
         // }
     }
 
+    void triggerFmDrumNoteOn(uint8_t t, uint8_t note)
+    {
+        // auto &currTrack = XRSequencer::getHeapCurrentSelectedPattern().tracks[t];
+
+        // if (t < 4)
+        // {
+
+            comboVoices[t].fmdrum.noteOn();
+        // }
+    }
+
     void triggerSubtractiveSynthNoteOn(uint8_t t, uint8_t note)
     {
         auto &currTrack = XRSequencer::getHeapTrack(t);
@@ -2293,6 +2444,10 @@ namespace XRSound
                 int midiNote = (noteOnKeyboard + (12 * (XRKeyMatrix::getKeyboardOctave())));
 
                 comboVoices[currSelTrackNum].dexed.keyup(midiNote);
+            }
+            else if (currSelTrack.track_type == XRSequencer::TRACK_TYPE::FM_DRUM)
+            {
+                Serial.println("TODO: FM DRUM MANUAL NOTE OFF HERE?");
             }
         }
 

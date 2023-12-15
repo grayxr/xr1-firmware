@@ -12,6 +12,12 @@ namespace XREncoder
 {
     elapsedMillis elapsedMs;
 
+    float _tempFm = 0;
+    int _tempFreq = 50;
+    float _tempDecay = 0.75;
+    float _tempNoise = 0;
+    float _tempOverDrive = 0;
+
     int addresses[5] = {
         0x36, 0x37, 0x38, 0x39, 0x40
     };
@@ -40,6 +46,10 @@ namespace XREncoder
     void handleEncoderDexedModB(int diff);
     void handleEncoderDexedModC(int diff);
     void handleEncoderDexedModD(int diff);
+    void handleEncoderFmDrumModA(int diff);
+    void handleEncoderFmDrumModB(int diff);
+    void handleEncoderFmDrumModC(int diff);
+    void handleEncoderFmDrumModD(int diff);
     void handleEncoderRawSampleModA(int diff);
     void handleEncoderRawSampleModB(int diff);
     void handleEncoderRawSampleModC(int diff);
@@ -391,6 +401,18 @@ namespace XREncoder
                     handleEncoderDexedModC(mDiff);
                 } else if (m == 4) {
                     handleEncoderDexedModD(mDiff);
+                }
+            }
+            else if (currTrack.track_type == XRSequencer::FM_DRUM)
+            {
+                if (m == 1) {
+                    handleEncoderFmDrumModA(mDiff);
+                } else if (m == 2) {
+                    handleEncoderFmDrumModB(mDiff);
+                } else if (m == 3) {
+                    handleEncoderFmDrumModC(mDiff);
+                } else if (m == 4) {
+                    handleEncoderFmDrumModD(mDiff);
                 }
             }
             else if (currTrack.track_type == XRSequencer::RAW_SAMPLE)
@@ -1252,6 +1274,148 @@ namespace XREncoder
             XRDisplay::drawSequencerScreen(false);
         }
     }
+
+
+    void handleEncoderFmDrumModA(int diff)
+    {
+        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &comboVoice = XRSound::getComboVoiceForCurrentTrack();
+        auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        auto currUXMode = XRUX::getCurrentMode();
+
+        switch (currSelectedPageNum)
+        {
+        case 0:
+        {
+            _tempNoise = _tempNoise + (diff * 0.01);
+
+            comboVoice.fmdrum.noise(_tempNoise);
+        }
+        break;
+        case 1:
+        {
+            float currLvl = currTrack.level;
+            float newLvl = currTrack.level + (diff * 0.01);
+
+            if (!(newLvl < 0.0 || newLvl > 1.1) && newLvl != currLvl)
+            {
+                currTrack.level = newLvl;
+
+                AudioNoInterrupts();
+                auto &comboVoice = XRSound::getComboVoiceForCurrentTrack();
+
+                //comboVoice.leftSubMix.gain(0, newLvl);
+                comboVoice.leftSubMix.gain(2, newLvl);
+                //comboVoice.rightSubMix.gain(0, newLvl);
+                comboVoice.rightSubMix.gain(2, newLvl);
+                AudioInterrupts();
+
+                XRDisplay::drawSequencerScreen(false);
+            }
+        }
+        break;
+
+        default:
+            break;
+        }
+    }
+
+    void handleEncoderFmDrumModB(int diff)
+    {
+        if (diff == 0) {
+            return;
+        }
+
+        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &comboVoice = XRSound::getComboVoiceForCurrentTrack();
+        auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+
+        switch (currSelectedPageNum)
+        {
+        case 0:
+            _tempDecay = _tempDecay + (diff * 0.01);
+
+            comboVoice.fmdrum.decay(_tempDecay);
+
+            XRDisplay::drawSequencerScreen(false);
+
+            break;
+
+        case 1:
+        {
+            float currPan = currTrack.pan;
+            float newPan = currTrack.pan + (diff * 0.1);
+
+            if (!(newPan < -1.0 || newPan > 1.0) && newPan != currPan)
+            {
+                currTrack.pan = newPan;
+
+                float newGainL = 1.0;
+                if (newPan < 0)
+                {
+                    newGainL += newPan;
+                }
+
+                float newGainR = 1.0;
+                if (newPan > 0)
+                {
+                    newGainR -= newPan;
+                }
+                
+                AudioNoInterrupts();
+                comboVoice.fmDrumLeftCtrl.gain(newGainR);
+                comboVoice.fmDrumRightCtrl.gain(newGainL);
+                AudioInterrupts();
+
+                XRDisplay::drawSequencerScreen(false);
+            }
+        }
+
+        break;
+
+        default:
+            break;
+        }
+    }
+
+    void handleEncoderFmDrumModC(int diff)
+    {
+        if (diff == 0) {
+            return;
+        }
+
+        auto &comboVoice = XRSound::getComboVoiceForCurrentTrack();
+        auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+
+        if (currSelectedPageNum == 0) 
+        {
+            _tempFm = _tempFm + (diff * 0.01);
+
+            comboVoice.fmdrum.fm(_tempFm);
+
+            XRDisplay::drawSequencerScreen(false);
+        }
+    }
+
+    void handleEncoderFmDrumModD(int diff)
+    {
+        if (diff == 0) {
+            return;
+        }
+
+        auto &comboVoice = XRSound::getComboVoiceForCurrentTrack();
+        auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+
+        if (currSelectedPageNum == 0) {
+            _tempFreq = _tempFreq + diff;
+
+            comboVoice.fmdrum.frequency(_tempFreq);
+
+            XRDisplay::drawSequencerScreen(false);
+        }
+    }
+
+
 
     void handleEncoderSubtractiveSynthModA(int diff)
     {

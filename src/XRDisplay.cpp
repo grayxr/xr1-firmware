@@ -471,6 +471,10 @@ namespace XRDisplay
             {
                 trackInfoStr += XRSD::dexedPatchName.length() > 0 ? XRSD::dexedPatchName : "";
             }
+            else if (currTrackType == XRSequencer::FM_DRUM)
+            {
+                trackInfoStr += "N/A";
+            }
             else if (currTrackType == XRSequencer::RAW_SAMPLE || currTrackType == XRSequencer::WAV_SAMPLE)
             {
                 std::string sampleName(currTrack.sample_name);
@@ -496,6 +500,7 @@ namespace XRDisplay
             if (
                 currTrackType == XRSequencer::SUBTRACTIVE_SYNTH ||
                 currTrackType == XRSequencer::DEXED ||
+                currTrackType == XRSequencer::FM_DRUM ||
                 currTrackType == XRSequencer::MIDI_OUT ||
                 currTrackType == XRSequencer::CV_GATE)
             {
@@ -694,6 +699,7 @@ namespace XRDisplay
         else if (
             (currTrack.track_type == XRSequencer::CV_TRIG) ||
             (currTrack.track_type == XRSequencer::WAV_SAMPLE) ||
+            (currTrack.track_type == XRSequencer::FM_DRUM) ||
             (currTrack.track_type == XRSequencer::RAW_SAMPLE && currPageSelected == 0) ||
             (currTrack.track_type == XRSequencer::RAW_SAMPLE && currPageSelected == 1) ||
             (currTrack.track_type == XRSequencer::RAW_SAMPLE && currPageSelected == 3))

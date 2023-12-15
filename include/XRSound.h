@@ -19,6 +19,7 @@ namespace XRSound
     class ComboVoice
     {
     public:
+        AudioSynthFMDrum &fmdrum;
         AudioSynthDexed &dexed;
         AudioPlayArrayResmp &rSample;
         AudioSynthWaveform &osca;
@@ -34,10 +35,13 @@ namespace XRSound
         AudioAmplifier &rightCtrl;
         AudioAmplifier &dexedLeftCtrl;
         AudioAmplifier &dexedRightCtrl;
+        AudioAmplifier &fmDrumLeftCtrl;
+        AudioAmplifier &fmDrumRightCtrl;
         AudioMixer4 &leftSubMix;
         AudioMixer4 &rightSubMix;
 
         ComboVoice(
+            AudioSynthFMDrum &fmdrum,
             AudioSynthDexed &dexed,
             AudioPlayArrayResmp &rSample,
             AudioSynthWaveform &osca,
@@ -53,8 +57,11 @@ namespace XRSound
             AudioAmplifier &rightCtrl,
             AudioAmplifier &dexedLeftCtrl,
             AudioAmplifier &dexedRightCtrl,
+            AudioAmplifier &fmDrumLeftCtrl,
+            AudioAmplifier &fmDrumRightCtrl,
             AudioMixer4 &leftSubMix,
-            AudioMixer4 &rightSubMix) : dexed{dexed},
+            AudioMixer4 &rightSubMix) : fmdrum{fmdrum},
+                                        dexed{dexed},
                                         rSample{rSample},
                                         osca{osca},
                                         oscb{oscb},
@@ -69,6 +76,8 @@ namespace XRSound
                                         rightCtrl{rightCtrl},
                                         dexedLeftCtrl{dexedLeftCtrl},
                                         dexedRightCtrl{dexedRightCtrl},
+                                        fmDrumLeftCtrl{fmDrumLeftCtrl},
+                                        fmDrumRightCtrl{fmDrumRightCtrl},
                                         leftSubMix{leftSubMix},
                                         rightSubMix{rightSubMix}
         {
@@ -161,6 +170,7 @@ namespace XRSound
     SOUND_CONTROL_MODS getRawSampleControlModData();
     SOUND_CONTROL_MODS getWavSampleControlModData();
     SOUND_CONTROL_MODS getDexedControlModData();
+    SOUND_CONTROL_MODS getFmDrumControlModData();
     SOUND_CONTROL_MODS getMidiControlModData();
     SOUND_CONTROL_MODS getCvGateControlModData();
     SOUND_CONTROL_MODS getCvTrigControlModData();
@@ -195,6 +205,7 @@ namespace XRSound
     void handleRawSampleNoteOnForTrack(int track);
     void handleWavSampleNoteOnForTrack(int track);
     void handleDexedNoteOnForTrack(int track);
+    void handleFmDrumNoteOnForTrack(int track);
     void handleSubtractiveSynthNoteOnForTrack(int track);
     void handleMIDINoteOnForTrack(int track);
     void handleCvGateNoteOnForTrack(int track);
@@ -206,12 +217,14 @@ namespace XRSound
     void triggerTrackManually(uint8_t t, uint8_t note);
     void triggerRawSampleNoteOn(uint8_t t, uint8_t note);
     void triggerDexedNoteOn(uint8_t t, uint8_t note);
+    void triggerFmDrumNoteOn(uint8_t t, uint8_t note);
     void triggerSubtractiveSynthNoteOn(uint8_t t, uint8_t note);
     void triggerCvGateNoteOn(uint8_t t, uint8_t note);
 
     void handleRawSampleNoteOnForTrackStep(int track, int step);
     void handleWavSampleNoteOnForTrackStep(int track, int step);
     void handleDexedNoteOnForTrackStep(int track, int step);
+    void handleFmDrumNoteOnForTrackStep(int track, int step);
     void handleSubtractiveSynthNoteOnForTrackStep(int track, int step);
     void handleMIDINoteOnForTrackStep(int track, int step);
     void handleCvGateNoteOnForTrackStep(int track, int step);

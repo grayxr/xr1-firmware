@@ -17,6 +17,8 @@ namespace XRSequencer
         RAW_SAMPLE = 4,
         WAV_SAMPLE = 5,
         DEXED = 6,
+        FM_DRUM = 7,
+        // BRAIDS = 8,
     };
 
     enum TRACK_STEP_STATE
@@ -36,12 +38,12 @@ namespace XRSequencer
     typedef struct
     {
         TRACK_STEP_STATE state = TRACK_STEP_STATE::STATE_OFF;
-        uint8_t note = 0;        // 0 - C
-        uint8_t octave = 4;      // 4 - middle C (C4)
+        uint8_t note = 0;        // 0 = C
+        uint8_t octave = 4;      // 4 = middle C (C4)
         uint8_t length = 4;      // 4 = 1/16
-        uint8_t velocity = 50;   // 1 - 100%
-        uint8_t probability = 0; // 1 = 100ms
-        int8_t microtiming = 0;  // 1 = 100ms
+        uint8_t velocity = 50;   // 50 = 50%
+        uint8_t probability = 0;
+        int8_t microtiming = 0;
     } TRACK_STEP;
 
     typedef struct
@@ -49,16 +51,16 @@ namespace XRSequencer
         TRACK_TYPE track_type = RAW_SAMPLE;
         TRACK_STEP steps[MAXIMUM_SEQUENCER_STEPS];
         char sample_name[MAX_SAMPLE_NAME_LENGTH];
-        uint8_t waveform = XRSound::WAVEFORM_TYPE::SAW;
-        uint8_t last_step = DEFAULT_LAST_STEP;
-        uint8_t note = 0;   // 0 - C1
-        uint8_t octave = 4; // 4 - middle C (C4)
         int8_t detune = -7;
         int8_t fine = 0;
         int8_t microtiming = 0;
+        uint8_t waveform = XRSound::WAVEFORM_TYPE::SAW;
+        uint8_t last_step = DEFAULT_LAST_STEP;
+        uint8_t note = 0;   // 0 = C1
+        uint8_t octave = 4; // 4 = middle C (C4)
         uint8_t length = 4; // 1 = 1/64 step len
         uint8_t bitrate = 16;
-        uint8_t velocity = 50; // 1 - 100%
+        uint8_t velocity = 50; // 50 = 50%
         uint8_t probability = 100;
         uint8_t channel = 1;
         uint8_t looptype = 0;
@@ -68,7 +70,7 @@ namespace XRSequencer
         float level = 0.7; // TODO: impl real default level based on default mixer settings
         float pan = 0;     // -1.0 = panned fully left, 1.0 = panned fully right
         float sample_play_rate = 1.0;
-        float width = 0.5; // pulsewidth / waveshaping
+        float width = 0.5; // pulsewidth (and waveshaping eventually)
         float oscalevel = 1;
         float oscblevel = 0.5;
         float cutoff = 1600;

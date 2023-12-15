@@ -225,6 +225,10 @@ namespace XRKeyMatrix
             }
             else if (currType == XRSequencer::DEXED)
             {
+                newType = XRSequencer::FM_DRUM;
+            }
+            else if (currType == XRSequencer::FM_DRUM)
+            {
                 newType = XRSequencer::WAV_SAMPLE;
             }
             else if (currType == XRSequencer::WAV_SAMPLE)
