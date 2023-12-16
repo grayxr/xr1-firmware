@@ -67,4 +67,3 @@ teensy_add_executable(xr1firmware
 
 teensy_target_link_libraries(xr1firmware synthdexed Audio arm_math Time U8g2 FastTouch arduino_midi_library  Adafruit_MPR121 Adafruit_TLC5947 Adafruit_BusIO Keypad ResponsiveAnalogRead uClock  TeensySampleFlashLoader  TeensyVariablePlayback   SD SdFat  SPI SerialFlash  Wire  cores)
 target_link_libraries(xr1firmware.elf stdc++ m)
-#add_subdirectory(examples/loadsample)

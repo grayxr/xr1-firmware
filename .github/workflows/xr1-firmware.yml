@@ -1,0 +1,182 @@
+name: xr1-firmware
+on:
+  push:
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/checkout@v2
+        with:
+          repository: newdigate/teensy-cmake-macros
+          path: deps/teensy-cmake-macros
+
+      - uses: actions/checkout@v2
+        with:
+          repository: PaulStoffregen/cores.git
+          path: deps/cores
+          fetch-depth: 1
+          ref: master
+
+      - uses: actions/checkout@v2
+        with:
+          repository: h4yn0nnym0u5e/Audio.git
+          path: deps/Audio
+          fetch-depth: 1
+          ref: feature/buffered-SD-interrupt-safe-01
+
+      - uses: actions/checkout@v2
+        with:
+          repository: PaulStoffregen/SD.git
+          path: deps/SD
+          fetch-depth: 1
+          ref: Juse_Use_SdFat
+
+      - uses: actions/checkout@v2
+        with:
+          repository: PaulStoffregen/Wire.git
+          path: deps/Wire
+          fetch-depth: 1
+          ref: master
+
+      - uses: actions/checkout@v2
+        with:
+          repository: PaulStoffregen/SPI.git
+          path: deps/SPI
+          fetch-depth: 1
+          ref: master
+
+      - uses: actions/checkout@v2
+        with:
+          repository: PaulStoffregen/SerialFlash.git
+          path: deps/SerialFlash
+          fetch-depth: 1
+          ref: master
+
+      - uses: actions/checkout@v2
+        with:
+          repository: PaulStoffregen/arm_math.git
+          path: deps/arm_math
+          ref: master
+
+      - uses: actions/checkout@v2
+        with:
+          repository: PaulStoffregen/SdFat.git
+          path: deps/SdFat
+          fetch-depth: 1
+          ref: master
+
+      - uses: actions/checkout@v2
+        with:
+          repository: PaulStoffregen/LittleFS.git
+          path: deps/LittleFS
+          fetch-depth: 1
+          ref: main
+
+      - uses: actions/checkout@v2
+        with:
+          repository: newdigate/teensy-variable-playback.git
+          path: deps/teensy-variable-playback
+          fetch-depth: 1
+          ref: 1.0.16
+
+      - uses: actions/checkout@v2
+        with:
+          repository: adafruit/Adafruit_BusIO
+          path: deps/Adafruit_BusIO
+          fetch-depth: 1
+          ref: 1.14.5
+
+      - uses: actions/checkout@v2
+        with:
+          repository: FortySevenEffects/arduino_midi_library
+          path: deps/arduino_midi_library
+          fetch-depth: 1
+          ref: 5.0.2
+
+      - uses: actions/checkout@v2
+        with:
+          repository: adrianfreed/FastTouch
+          path: deps/FastTouch
+          fetch-depth: 1
+          ref: master
+
+      - uses: actions/checkout@v2
+        with:
+          repository: newdigate/teensy-sample-flashloader.git
+          path: deps/teensy-sample-flashloader
+          fetch-depth: 1
+          ref: feature/audio_chunk_heap
+
+      - uses: actions/checkout@v2
+        with:
+          repository: dxinteractive/ResponsiveAnalogRead.git
+          path: deps/ResponsiveAnalogRead
+          fetch-depth: 1
+          ref: v1.2.1
+
+      - uses: actions/checkout@v2
+        with:
+          repository: adafruit/Adafruit_TLC5947.git
+          path: deps/Adafruit_TLC5947
+          fetch-depth: 1
+          ref: 1.2.1
+
+      - uses: actions/checkout@v2
+        with:
+          repository: olikraus/U8g2.git
+          path: deps/U8g2
+          fetch-depth: 1
+          ref: master
+
+      - uses: actions/checkout@v2
+        with:
+          repository: adafruit/Adafruit_MPR121.git
+          path: deps/Adafruit_MPR121
+          fetch-depth: 1
+          ref: 1.1.1
+
+      - uses: actions/checkout@v2
+        with:
+          repository: Chris--A/Keypad.git
+          path: deps/Keypad
+          fetch-depth: 1
+          ref: 3.1.1
+
+      - uses: actions/checkout@v2
+        with:
+          repository: midilab/uClock.git
+          path: deps/uClock
+          fetch-depth: 1
+          ref: v1.5.1
+
+      - uses: actions/checkout@v2
+        with:
+          repository: PaulStoffregen/Time
+          path: deps/Time
+          fetch-depth: 1
+          ref: master
+
+      - name: download toolchain
+        run: |
+          curl  -L "https://developer.arm.com/-/media/Files/downloads/gnu-rm/10.3-2021.10/gcc-arm-none-eabi-10.3-2021.10-x86_64-linux.tar.bz2?rev=78196d3461ba4c9089a67b5f33edf82a&hash=5631ACEF1F8F237389F14B41566964EC" --output /tmp/gcc-arm-none-eabi.tar.bz2
+          mkdir -p /opt
+          cd /opt
+          tar xjf /tmp/gcc-arm-none-eabi.tar.bz2
+          rm /tmp/gcc-arm-none-eabi.tar.bz2
+
+      - name: install teensy-cmake-macros
+        run: cd deps/teensy-cmake-macros && mkdir cmake-build-debug && cd cmake-build-debug && cmake -DCMAKE_BUILD_TYPE=Debug .. && sudo make install
+
+      - name: build
+        run: mkdir cmake-build-debug && cd cmake-build-debug && cmake .. && make xr1firmware_hex
