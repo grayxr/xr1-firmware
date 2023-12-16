@@ -9,7 +9,7 @@ set(COMPILERPATH "/opt/gcc-arm-none-eabi-10.3-2021.10/bin/")
 #set(COMPILERPATH "/Applications/ARM_10/bin/")
 
 #teensy compiler options - CHANGE THIS TO POINT TO YOUR Dependencies folder
-set(DEPSPATH "/home/runner/work/xr-1/xr-1/dependencies")
+set(DEPSPATH "/home/runner/work/xr-1/xr-1/deps")
 set(COREPATH "${DEPSPATH}/cores/teensy4/")
 
 find_package(teensy_cmake_macros)
