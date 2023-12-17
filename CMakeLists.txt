@@ -46,6 +46,7 @@ teensy_include_directories(lib/synth_dexed/src)
 
 teensy_add_executable(xr1firmware
         src/main.cpp
+        src/XRAsyncPSRAMLoader.cpp
         src/XRAudio.cpp
         src/XRAudioConfig.cpp
         src/XRClock.cpp

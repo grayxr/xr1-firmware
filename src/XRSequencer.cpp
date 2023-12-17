@@ -7,7 +7,7 @@
 #include <XRSD.h>
 #include <XRClock.h>
 #include <map>
-
+#include <XRAsyncPSRAMLoader.h>
 namespace XRSequencer
 {
     DMAMEM SEQUENCER_EXTERNAL _seqExternal;
@@ -908,12 +908,15 @@ namespace XRSequencer
             Serial.println("enter _dequeuePattern!");
 
             _dequeuePattern = false;
+            XRAsyncPSRAMLoader::prePatternChange();
 
             swapSequencerMemoryForPattern(_queuedPattern.bank, _queuedPattern.number);
             Serial.println("finished swapping seq mem!");
 
             // clearing samples manually not working
-            // XRSound::clearSamples();
+            XRAsyncPSRAMLoader::postPatternChange();
+            XRAsyncPSRAMLoader::startAsyncInitOfNextPattern();
+
             // Serial.println("finished clearing samples!");
 
             // reset queue flags

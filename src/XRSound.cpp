@@ -6,8 +6,9 @@
 #include <XRCV.h>
 #include <XRSD.h>
 #include <XRKeyMatrix.h>
-#include <flashloader.h>
+#include <dualheapasyncflashloader.h>
 #include <map>
+#include <XRAsyncPSRAMLoader.h>
 
 namespace XRSound
 {
@@ -96,7 +97,7 @@ namespace XRSound
 
     // 8MB max of samples per pattern in external PSRAM, 1 sample allowed per track for now    
     newdigate::audiosample *_extPatternSamples[MAXIMUM_SEQUENCER_TRACKS];
-    newdigate::flashloader _loader;
+    newdigate::dualheapasyncflashloader _loader;
     uint8_t _numChannels = 1;
     
     void init()
@@ -899,6 +900,7 @@ namespace XRSound
         }
     }
 
+
     void initSoundsForTrack(int t)
     {
     AudioNoInterrupts();
@@ -907,14 +909,7 @@ namespace XRSound
         auto &currTrack = XRSequencer::getHeapTrack(t);
 
         if (currTrack.track_type == XRSequencer::RAW_SAMPLE) {
-            std::string sampleName = "/audio enjoyer/xr-1/samples/";
-            sampleName += currTrack.sample_name;
-
-            if (sampleName != "/audio enjoyer/xr-1/samples/") {
-                Serial.printf("initializing this sample name: %s\n", sampleName.c_str());
-
-                _extPatternSamples[t] = _loader.loadSample(sampleName.c_str());
-            }
+            // psram should already be loaded previously (hopefully)
         }
 
         if (t < 4) { // combo voice tracks
@@ -1915,12 +1910,12 @@ namespace XRSound
 
         XRSequencer::assignSampleNameToTrack(selected);
 
-        _extPatternSamples[currTrackNum] = _loader.loadSample(sampleName.c_str());
+        //_extPatternSamples[currTrackNum] = _loader.loadSample(sampleName.c_str());
     }
 
     void clearSamples()
     {
-        _loader.clearSamples();
+        //_loader.clearSamples();
     }
 
     void changeSampleTrackSoundType(uint8_t t, int8_t newType)

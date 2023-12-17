@@ -1,6 +1,7 @@
 #include <XRMain.h>
 #include <XRHelpers.h>
 #include <XRSequencer.h>
+#include "XRAsyncPSRAMLoader.h"
 
 namespace XRMain
 {
@@ -76,5 +77,6 @@ namespace XRMain
         XRVersa::handleStates();
         XREncoder::handleStates();
         XRSequencer::handleQueueActions();
+        XRAsyncPSRAMLoader::handleAsyncPSRAMLoading();
     }
 }
