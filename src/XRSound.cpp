@@ -8,7 +8,7 @@
 #include <XRKeyMatrix.h>
 #include <flashloader.h>
 #include <map>
-#include <audiosample.h>
+
 namespace XRSound
 {
     ComboVoice comboVoices[COMBO_VOICE_COUNT] = {
