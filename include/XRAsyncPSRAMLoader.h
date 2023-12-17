@@ -13,6 +13,6 @@ namespace XRAsyncPSRAMLoader
     void prePatternChange();
     void addSampleFileNameForNextAsyncLoadBatch(std::string filename);
     void startAsyncInitOfNextPattern();
+    newdigate::audiosample *getReadSample(const std::string &filename);
 }
-
 #endif /* XRAsyncPSRAMLoader_h */

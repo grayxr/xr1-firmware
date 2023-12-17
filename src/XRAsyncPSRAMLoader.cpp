@@ -3,6 +3,7 @@
 #include <string>
 #include <utility>
 #include <XRSequencer.h>
+#include <algorithm>
 
 namespace XRAsyncPSRAMLoader
 {
@@ -64,6 +65,10 @@ namespace XRAsyncPSRAMLoader
 
         std::vector<newdigate::audiosample*> &samples_write = samples[currentWriteHeap];
         samples_write.clear();
+
+        std::vector<std::string> &filenames_write = fileNames[currentWriteHeap];
+        filenames_write.clear();
+
         Serial.printf("Heap switch complete: currentWriteHeap=%d currentReadHeap=%d !\n", currentWriteHeap, currentReadHeap);
     }
 
@@ -106,4 +111,16 @@ namespace XRAsyncPSRAMLoader
             }
         }
     }
+
+    newdigate::audiosample* getReadSample(const std::string &filename) {
+        auto it = std::find( fileNames[currentReadHeap].begin(), fileNames[currentReadHeap].end(), filename);
+        size_t index = it - fileNames[currentReadHeap].begin();
+        if (it != std::end(fileNames[currentReadHeap])) {
+            if (index < samples[currentReadHeap].size())
+                return samples[currentReadHeap][index];
+        }
+
+        return nullptr;
+    }
+
 }

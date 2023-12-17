@@ -1910,7 +1910,7 @@ namespace XRSound
 
         XRSequencer::assignSampleNameToTrack(selected);
 
-        //_extPatternSamples[currTrackNum] = _loader.loadSample(sampleName.c_str());
+        _extPatternSamples[currTrackNum] = XRAsyncPSRAMLoader::getReadSample(sampleName);
     }
 
     void clearSamples()
