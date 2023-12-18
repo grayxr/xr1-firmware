@@ -35,7 +35,7 @@ namespace XRUX
         UNDO,
         REDO,
         SOUND_MENU_MAIN,
-        ASSIGN_SAMPLE_TO_TRACK
+        ASSIGN_SAMPLE_TO_TRACK_SOUND
     };
 
     void setCurrentMode(UX_MODE mode);

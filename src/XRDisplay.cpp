@@ -447,11 +447,12 @@ namespace XRDisplay
             currentUXMode == XRUX::SUBMITTING_STEP_VALUE)
         {
             auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
-            auto currTrackType = currTrack.track_type;
+            auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+            auto currSoundForTrack = XRSound::currentPatternSounds[currTrackNum];
 
             // draw track meta type box
             int trackMetaStrX = 2;
-            if (currTrackType == XRSequencer::SUBTRACTIVE_SYNTH || currTrackType == XRSequencer::MIDI_OUT)
+            if (currSoundForTrack.type == XRSound::T_MONO_SYNTH || currSoundForTrack.type == XRSound::T_MIDI)
             {
                 trackMetaStrX = 4;
             }
@@ -460,32 +461,32 @@ namespace XRDisplay
             u8g2.drawBox(0, 9, 128, 9);
             u8g2.setColorIndex((u_int8_t)0);
 
-            std::string trackMetaStr = XRSequencer::getTrackMetaStr(currTrackType);
+            std::string trackMetaStr = XRSequencer::getTrackMetaStr(currSoundForTrack.type);
             std::string trackInfoStr;
 
-            if (currTrackType == XRSequencer::SUBTRACTIVE_SYNTH)
+            if (currSoundForTrack.type == XRSound::T_MONO_SYNTH)
             {
-                trackInfoStr += XRSequencer::getTrackTypeNameStr(currTrackType);
+                trackInfoStr += XRSequencer::getTrackTypeNameStr(currSoundForTrack.type);
             }
-            else if (currTrackType == XRSequencer::DEXED)
+            else if (currSoundForTrack.type == XRSound::T_DEXED_SYNTH)
             {
-                trackInfoStr += XRSD::dexedPatchName.length() > 0 ? XRSD::dexedPatchName : "";
+                trackInfoStr += XRSequencer::getTrackTypeNameStr(currSoundForTrack.type);
             }
-            else if (currTrackType == XRSequencer::FM_DRUM)
+            else if (currSoundForTrack.type == XRSound::T_FM_DRUM)
             {
-                trackInfoStr += "N/A";
+                trackInfoStr += XRSequencer::getTrackTypeNameStr(currSoundForTrack.type);
             }
-            else if (currTrackType == XRSequencer::RAW_SAMPLE || currTrackType == XRSequencer::WAV_SAMPLE)
+            else if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE)
             {
-                std::string sampleName(currTrack.sample_name);
+                std::string sampleName(currSoundForTrack.sampleName);
                 
-                trackInfoStr += sampleName.length() > 0 ? sampleName : "N/A";
+                trackInfoStr += sampleName.length() > 0 ? sampleName : "N/A"; // TODO change to use patch name?
             }
-            else if (currTrackType == XRSequencer::MIDI_OUT)
+            else if (currSoundForTrack.type == XRSound::T_MIDI)
             {
                 trackInfoStr += "";
             }
-            else if (currTrackType == XRSequencer::CV_GATE || currTrackType == XRSequencer::CV_TRIG)
+            else if (currSoundForTrack.type == XRSound::T_CV_GATE || currSoundForTrack.type == XRSound::T_CV_TRIG)
             {
                 trackInfoStr += "";
             }
@@ -498,16 +499,15 @@ namespace XRDisplay
 
             // draw track description / main icon area
             if (
-                currTrackType == XRSequencer::SUBTRACTIVE_SYNTH ||
-                currTrackType == XRSequencer::DEXED ||
-                currTrackType == XRSequencer::FM_DRUM ||
-                currTrackType == XRSequencer::MIDI_OUT ||
-                currTrackType == XRSequencer::CV_GATE)
+                currSoundForTrack.type == XRSound::T_MONO_SYNTH ||
+                currSoundForTrack.type == XRSound::T_DEXED_SYNTH ||
+                currSoundForTrack.type == XRSound::T_MIDI ||
+                currSoundForTrack.type == XRSound::T_CV_GATE)
             {
                 if (
-                    (currTrackType != XRSequencer::SUBTRACTIVE_SYNTH) ||
-                    ((currTrack.track_type == XRSequencer::SUBTRACTIVE_SYNTH && currentSelectedPage != 3) &&
-                     (currTrack.track_type == XRSequencer::SUBTRACTIVE_SYNTH && currentSelectedPage != 4)))
+                    (currSoundForTrack.type != XRSound::T_MONO_SYNTH) ||
+                    ((currSoundForTrack.type == XRSound::T_MONO_SYNTH && currentSelectedPage != 3) &&
+                     (currSoundForTrack.type == XRSound::T_MONO_SYNTH && currentSelectedPage != 4)))
                 {
                     u8g2.drawStr(6, 23, "NOTE");
                     u8g2.setFont(bitocra13_c);
@@ -515,7 +515,7 @@ namespace XRDisplay
                     u8g2.setFont(bitocra7_c);
                 }
             }
-            else if (currTrackType == XRSequencer::CV_TRIG)
+            else if (currSoundForTrack.type == XRSound::T_CV_TRIG)
             {
                 // u8g2.drawLine(3,42,14,42);
                 // u8g2.drawLine(14,42,14,28);
@@ -684,30 +684,49 @@ namespace XRDisplay
     void drawControlMods()
     {
         auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currPageSelected = XRSequencer::getCurrentSelectedPage();
+        auto currSoundForTrack = XRSound::currentPatternSounds[currTrackNum];
 
-        if (
-            (currTrack.track_type == XRSequencer::RAW_SAMPLE && currPageSelected == 2) ||
-            (currTrack.track_type == XRSequencer::SUBTRACTIVE_SYNTH && currPageSelected == 4))
+        if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 2)
         {
-            drawControlModsForADSR(currTrack.amp_attack, currTrack.amp_decay, currTrack.amp_sustain, currTrack.amp_release);
+            auto msmpAatt = XRSound::getValueNormalizedAsUInt32(currSoundForTrack.params[XRSound::MSMP_AMP_ATTACK]);
+            auto msmpAdec = XRSound::getValueNormalizedAsUInt32(currSoundForTrack.params[XRSound::MSMP_AMP_DECAY]);
+            auto msmpAsus = XRSound::getValueNormalizedAsFloat(currSoundForTrack.params[XRSound::MSMP_AMP_SUSTAIN]);
+            auto msmpArel = XRSound::getValueNormalizedAsUInt32(currSoundForTrack.params[XRSound::MSMP_AMP_RELEASE]);
+
+            drawControlModsForADSR(msmpAatt, msmpAdec, msmpAsus, msmpArel);
         }
-        else if (currTrack.track_type == XRSequencer::SUBTRACTIVE_SYNTH && currPageSelected == 3)
+        else if (currSoundForTrack.type == XRSound::T_MONO_SYNTH && currPageSelected == 4)
         {
-            drawControlModsForADSR(currTrack.filter_attack, currTrack.filter_decay, currTrack.filter_sustain, currTrack.filter_release);
+            auto msynAatt = XRSound::getValueNormalizedAsUInt32(currSoundForTrack.params[XRSound::MSYN_AMP_ATTACK]);
+            auto msynAdec = XRSound::getValueNormalizedAsUInt32(currSoundForTrack.params[XRSound::MSYN_AMP_DECAY]);
+            auto msynAsus = XRSound::getValueNormalizedAsFloat(currSoundForTrack.params[XRSound::MSYN_AMP_SUSTAIN]);
+            auto msynArel = XRSound::getValueNormalizedAsUInt32(currSoundForTrack.params[XRSound::MSYN_AMP_RELEASE]);
+
+            drawControlModsForADSR(msynAatt, msynAdec, msynAsus, msynArel);
+        }
+        else if (currSoundForTrack.type == XRSound::T_MONO_SYNTH && currPageSelected == 3)
+        {
+            auto msynFatt = XRSound::getValueNormalizedAsUInt32(currSoundForTrack.params[XRSound::MSYN_FILTER_ATTACK]);
+            auto msynFdec = XRSound::getValueNormalizedAsUInt32(currSoundForTrack.params[XRSound::MSYN_FILTER_DECAY]);
+            auto msynFsus = XRSound::getValueNormalizedAsFloat(currSoundForTrack.params[XRSound::MSYN_FILTER_SUSTAIN]);
+            auto msynFrel = XRSound::getValueNormalizedAsUInt32(currSoundForTrack.params[XRSound::MSYN_FILTER_RELEASE]);
+
+            drawControlModsForADSR(msynFatt, msynFdec, msynFsus, msynFrel);
         }
         else if (
-            (currTrack.track_type == XRSequencer::CV_TRIG) ||
-            (currTrack.track_type == XRSequencer::WAV_SAMPLE) ||
-            (currTrack.track_type == XRSequencer::FM_DRUM) ||
-            (currTrack.track_type == XRSequencer::RAW_SAMPLE && currPageSelected == 0) ||
-            (currTrack.track_type == XRSequencer::RAW_SAMPLE && currPageSelected == 1) ||
-            (currTrack.track_type == XRSequencer::RAW_SAMPLE && currPageSelected == 3))
+            (currSoundForTrack.type == XRSound::T_EMPTY) ||
+            (currSoundForTrack.type == XRSound::T_CV_TRIG) ||
+            (currSoundForTrack.type == XRSound::T_FM_DRUM) ||
+            (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 0) ||
+            (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 1) ||
+            (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 3))
         {
             drawExtendedControlMods();
 
             // sample folder icon
-            if (currTrack.track_type == XRSequencer::RAW_SAMPLE && currPageSelected == 0) {
+            if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 0) {
                 u8g2.setColorIndex((u_int8_t)0);
                 u8g2.drawBox(105, 36, 15, 10);
                 u8g2.setColorIndex((u_int8_t)1);
@@ -899,20 +918,20 @@ namespace XRDisplay
 
         auto currentSelectedStep = XRSequencer::getCurrentSelectedStepNum();
 
-        if (XRUX::getCurrentMode() == XRUX::SUBMITTING_STEP_VALUE && currentSelectedStep > -1)
-        {
-            auto &trackStepMods = XRSequencer::getModsForCurrentTrackStep();
+        // if (XRUX::getCurrentMode() == XRUX::SUBMITTING_STEP_VALUE && currentSelectedStep > -1)
+        // {
+        //     auto &trackStepMods = XRSequencer::getModsForCurrentTrackStep();
 
-            outputStr += XRHelpers::getNoteStringForBaseNoteNum(trackStepMods.note);
-            outputStr += std::to_string(trackStepMods.octave);
-        }
-        else
-        {
+        //     outputStr += XRHelpers::getNoteStringForBaseNoteNum(trackStepMods.note);
+        //     outputStr += std::to_string(trackStepMods.octave);
+        // }
+        // else
+        // {
             auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
 
             outputStr += XRHelpers::getNoteStringForBaseNoteNum(currTrack.note);
             outputStr += std::to_string(currTrack.octave);
-        }
+        //}
 
         return outputStr;
     }

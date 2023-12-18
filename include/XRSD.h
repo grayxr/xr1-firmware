@@ -39,6 +39,9 @@ namespace XRSD
     void savePatternModsToSdCard();
     void loadPatternModsFromSdCard();
 
+    void saveCurrentPatternSounds();
+    bool loadNextPatternSounds(int nextBank, int nextPattern);
+
     void loadDexedVoiceToCurrentTrack(int t = -1);
     
     std::string *getSampleList(int16_t cursor);

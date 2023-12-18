@@ -34,7 +34,6 @@ namespace XRMain
 
         XRMIDI::init();
         XRClock::init();
-        XRSound::init();
 
         XRDisplay::drawIntro();
 
@@ -53,7 +52,8 @@ namespace XRMain
             {
                 XRDisplay::drawError("ERROR LOADING PROJECT!");
 
-                // TODO: impl dialog to create new project
+                XRUX::setCurrentMode(XRUX::UX_MODE::PROJECT_INITIALIZE);
+                XRDisplay::drawCreateProjectDialog();
 
                 return;
             }
@@ -61,9 +61,11 @@ namespace XRMain
             XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_WRITE);
 
             XRSequencer::init();
+            XRSound::init();
             
-            XRSound::initAllTrackSounds();
-            XRSound::loadVoiceSettings();
+            // TODO: load current pattern sounds
+            // XRSound::loadCurrentPatternSounds();
+            Serial.println("TODO: load current pattern sounds on boot!");
         }
 
         XRAudio::resetMetrics();
@@ -72,9 +74,11 @@ namespace XRMain
     void update()
     {
         XRAudio::handleHeadphones();
+
         XRKeyMatrix::handleStates();
         XRVersa::handleStates();
         XREncoder::handleStates();
+
         XRSequencer::handleQueueActions();
     }
 }

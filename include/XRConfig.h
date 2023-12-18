@@ -37,6 +37,7 @@
 #define FAST_TOUCH_PIN 32
 #define MAX_USABLE_SAMPLE_IDS 256
 #define MAX_USABLE_WAV_SAMPLE_IDS 512
+#define MAX_SOUND_NAME_LENGTH 32
 #define MAX_SAMPLE_NAME_LENGTH 32
 #define MAX_PATTERN_SAMPLES 16 // there are only 16 tracks per patter, so a max of 16 samples per pattern, for now
 // Sequencer data
@@ -44,6 +45,8 @@
 #define MAXIMUM_SEQUENCER_TRACKS 16
 #define MAXIMUM_SEQUENCER_PATTERNS 16
 #define MAXIMUM_SEQUENCER_BANKS 1
+#define MAXIMUM_SOUND_PARAMS 30
+#define MAXIMUM_DEXED_SOUND_PARAMS 156
 #define DEFAULT_LAST_STEP 16
 #define MAX_STEP_MOD_ATTRS 32
 #define COMBO_VOICE_COUNT 4
@@ -75,6 +78,8 @@
 #define MOD2_ENCODER_ADDRESS 2
 #define MOD3_ENCODER_ADDRESS 3
 #define MOD4_ENCODER_ADDRESS 4
+
+#define NOTE_FREQ_C4 261.63
 
 #ifndef _BV
 #define _BV(bit) (1 << (bit))

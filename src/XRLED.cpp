@@ -198,7 +198,7 @@ namespace XRLED
         //Serial.println("fix displayCurrentlySelectedTrack");
         //return;
 
-        //auto &seqHeap = XRSequencer::getSequencerHeap();
+        //auto &seqHeap = XRSequencer::getHeapPattern();
         auto currentSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
 
         for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
@@ -253,13 +253,13 @@ namespace XRLED
             int8_t curr_led_char = XRHelpers::stepCharMap[l];
             int8_t keyLED = getKeyLED(curr_led_char);
 
-            if (stepToUse > currTrack.last_step)
+            if (stepToUse > currTrack.lstep)
             {
                 setPWM(keyLED, 0);
                 continue;
             }
 
-            if (currTrackStepForLED.state == XRSequencer::TRACK_STEP_STATE::STATE_OFF)
+            if (currTrackStepForLED.state == XRSequencer::STEP_STATE::STATE_OFF)
             {
                 if (keyLED < 0)
                 {
@@ -270,11 +270,11 @@ namespace XRLED
                     setPWM(keyLED, 0);
                 }
             }
-            else if (currTrackStepForLED.state == XRSequencer::TRACK_STEP_STATE::STATE_ON)
+            else if (currTrackStepForLED.state == XRSequencer::STEP_STATE::STATE_ON)
             {
                 setPWM(keyLED, 512); // 256 might be better
             }
-            else if (currTrackStepForLED.state == XRSequencer::TRACK_STEP_STATE::STATE_ACCENTED)
+            else if (currTrackStepForLED.state == XRSequencer::STEP_STATE::STATE_ACCENTED)
             {
                 setPWM(keyLED, 4095);
             }
@@ -361,7 +361,7 @@ namespace XRLED
 
         for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
         {
-            if (!currPattern.tracks[t].muted)
+            if (!XRSequencer::trackPerformState[t].muted)
             {
                 setPWM(_stepLEDPins[t], 0);
             }

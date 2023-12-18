@@ -313,11 +313,11 @@ namespace XRSD
         seqFileR.close();
 
         // setup current pattern in heap from first pattern from first bank off-heap
-        auto &seqHeap = XRSequencer::getSequencerHeap();
-        seqHeap.pattern = seqExt.banks[0].patterns[0];
+        auto &heapPattern = XRSequencer::getHeapPattern();
+        heapPattern = seqExt.banks[0].patterns[0];
 
         // load pattern mods
-        XRSequencer::initExternalPatternMods();
+        // XRSequencer::initExternalPatternMods();
 
         // get project path
         char mProjectsPathPrefixBuf[50];
@@ -342,20 +342,21 @@ namespace XRSD
 
         // only load bank:0->pattern:0 mods
         // pattern mod file names are {bank}_{pattern}.bin
-        std::string currProjectPatternModFilePath;
-        currProjectPatternModFilePath = mProjectDataDir;
-        currProjectPatternModFilePath += "/";
-        currProjectPatternModFilePath += std::to_string(XRSequencer::getCurrentSelectedBankNum());
-        currProjectPatternModFilePath += "_";
-        currProjectPatternModFilePath += std::to_string(XRSequencer::getCurrentSelectedPatternNum()); 
-        currProjectPatternModFilePath += ".bin";
 
-        File currentPatternModsFile = SD.open(currProjectPatternModFilePath.c_str(), FILE_READ);
-        if (currentPatternModsFile.available()) {
-            auto &patternMods = XRSequencer::getModsForCurrentPattern();
-            currentPatternModsFile.read((byte *)&patternMods, sizeof(patternMods));
-            currentPatternModsFile.close();
-        }
+        // std::string currProjectPatternModFilePath;
+        // currProjectPatternModFilePath = mProjectDataDir;
+        // currProjectPatternModFilePath += "/";
+        // currProjectPatternModFilePath += std::to_string(XRSequencer::getCurrentSelectedBankNum());
+        // currProjectPatternModFilePath += "_";
+        // currProjectPatternModFilePath += std::to_string(XRSequencer::getCurrentSelectedPatternNum()); 
+        // currProjectPatternModFilePath += ".bin";
+
+        // File currentPatternModsFile = SD.open(currProjectPatternModFilePath.c_str(), FILE_READ);
+        // if (currentPatternModsFile.available()) {
+        //     auto &patternMods = XRSequencer::getModsForCurrentPattern();
+        //     currentPatternModsFile.read((byte *)&patternMods, sizeof(patternMods));
+        //     currentPatternModsFile.close();
+        // }
 
         Serial.printf(
             "proj name: %s proj machineVersion: %s proj tempo: %f\n",
@@ -388,14 +389,14 @@ namespace XRSD
         currProjectPatternModFilePath += std::to_string(XRSequencer::getCurrentSelectedPatternNum()); 
         currProjectPatternModFilePath += ".bin";
 
-        auto &patternMods = XRSequencer::getModsForCurrentPattern();
+        // auto &patternMods = XRSequencer::getModsForCurrentPattern();
 
-        File currentPatternModsFile = SD.open(currProjectPatternModFilePath.c_str(), FILE_WRITE);
-        currentPatternModsFile.truncate();
-        currentPatternModsFile.write((byte *)&patternMods, sizeof(patternMods));
-        currentPatternModsFile.close();
+        // File currentPatternModsFile = SD.open(currProjectPatternModFilePath.c_str(), FILE_WRITE);
+        // currentPatternModsFile.truncate();
+        // currentPatternModsFile.write((byte *)&patternMods, sizeof(patternMods));
+        // currentPatternModsFile.close();
 
-        Serial.printf("sizeof(patternMods): %d\n", sizeof(patternMods));
+        // Serial.printf("sizeof(patternMods): %d\n", sizeof(patternMods));
     }
 
     void loadPatternModsFromSdCard()
@@ -419,12 +420,12 @@ namespace XRSD
         currProjectPatternModFilePath += std::to_string(XRSequencer::getCurrentSelectedPatternNum()); 
         currProjectPatternModFilePath += ".bin";
 
-        File currentPatternModsFile = SD.open(currProjectPatternModFilePath.c_str(), FILE_READ);
-        if (currentPatternModsFile.available()) {
-            auto &patternMods = XRSequencer::getModsForCurrentPattern();
-            currentPatternModsFile.read((byte *)&patternMods, sizeof(patternMods));
-            currentPatternModsFile.close();
-        }
+        // File currentPatternModsFile = SD.open(currProjectPatternModFilePath.c_str(), FILE_READ);
+        // if (currentPatternModsFile.available()) {
+        //     auto &patternMods = XRSequencer::getModsForCurrentPattern();
+        //     currentPatternModsFile.read((byte *)&patternMods, sizeof(patternMods));
+        //     currentPatternModsFile.close();
+        // }
     }
 
     std::string *getSampleList(int16_t cursor)
@@ -631,5 +632,62 @@ namespace XRSD
     std::string getCurrSampleFileHighlighted()
     {
         return _currSampleFileHighlighted;
+    }
+
+    void saveCurrentPatternSounds()
+    {
+        // get project path
+        char projectsPathPrefixBuf[50];
+        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
+        std::string projectPath(projectsPathPrefixBuf); // read char array into string
+
+        // pattern sounds file names are {bank}_{pattern}_sounds.bin
+        std::string fileDir = projectPath;
+        fileDir += "/";
+        fileDir += _current_project.name;
+        fileDir += "/.data/";
+        fileDir += std::to_string(XRSequencer::getCurrentSelectedBankNum());
+        fileDir += "_";
+        fileDir += std::to_string(XRSequencer::getCurrentSelectedPatternNum()); 
+        fileDir += "_sounds.bin";
+
+        File soundsFile = SD.open(fileDir.c_str(), FILE_WRITE);
+        soundsFile.truncate();
+        soundsFile.write((byte *)&XRSound::currentPatternSounds, sizeof(XRSound::currentPatternSounds));
+        soundsFile.close();
+
+        Serial.printf("sizeof(currentPatternSounds): %d\n", sizeof(XRSound::currentPatternSounds));
+    }
+
+    bool loadNextPatternSounds(int nextBank, int nextPattern)
+    {
+        // get project path
+        char projectsPathPrefixBuf[50];
+        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
+        std::string projectPath(projectsPathPrefixBuf); // read char array into string
+
+        // pattern sounds file names are {bank}_{pattern}_sounds.bin
+        std::string fileDir = projectPath;
+        fileDir += "/";
+        fileDir += _current_project.name;
+        fileDir += "/.data/";
+        fileDir += std::to_string(nextBank);
+        fileDir += "_";
+        fileDir += std::to_string(nextPattern); 
+        fileDir += "_sounds.bin";
+
+        File soundsFile = SD.open(fileDir.c_str(), FILE_READ);
+        if (!soundsFile.available()) {
+            Serial.println("Next pattern sounds not available!");
+
+            return false;
+        }
+
+        soundsFile.read((byte *)&XRSound::nextPatternSounds, sizeof(XRSound::nextPatternSounds));
+        soundsFile.close();
+
+        Serial.printf("sizeof(nextPatternSounds): %d\n", sizeof(XRSound::nextPatternSounds));
+
+        return true;
     }
 }
