@@ -102,9 +102,8 @@ namespace XRSound
     // extern globals
     
     SOUND currentPatternSounds[MAXIMUM_SEQUENCER_TRACKS];
-
     DMAMEM SOUND nextPatternSounds[MAXIMUM_SEQUENCER_TRACKS];
-    DMAMEM PATTERN_SOUND_MODS patternSoundMods;
+    DMAMEM PATTERN_SOUND_MODS patternSoundStepMods;
 
     bool soundNeedsReinit[MAXIMUM_SEQUENCER_TRACKS] = {
         false, false, false, false,
@@ -191,8 +190,7 @@ namespace XRSound
         }
 
         initNextPatternSounds();
-        initNextPatternSoundMods();
-
+        initPatternSoundStepMods();
         initVoices();
     }
 
@@ -216,19 +214,19 @@ namespace XRSound
         }
     }
 
-    // Since initNextPatternSoundMods lives in DMAMEM, we need to initialize its contents
-    void initNextPatternSoundMods()
+    // Since initPatternSoundStepMods lives in DMAMEM, we need to initialize its contents
+    void initPatternSoundStepMods()
     {
-        // for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
-        // {
-        //     for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
-        //     {
-        //         for (int p = 0; p < MAXIMUM_SOUND_PARAMS; p++) {
-        //             nextPatternSoundMods.sounds[t].steps[s].params[p] = 0;
-        //             nextPatternSoundMods.sounds[t].steps[s].paramMods[p] = false;
-        //         }
-        //     }
-        // }
+        for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+        {
+            for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
+            {
+                for (int p = 0; p < MAXIMUM_SOUND_PARAMS; p++) {
+                    patternSoundStepMods.sounds[t].steps[s].mods[p] = 0;
+                    patternSoundStepMods.sounds[t].steps[s].flags[p] = false;
+                }
+            }
+        }
     }
 
     void initVoices()
@@ -487,17 +485,24 @@ namespace XRSound
 
     void manageSoundDataForPatternChange(int nextBank, int nextPattern)
     {
-        XRSD::saveCurrentPatternSounds();
+        XRSD::savePatternSounds();
 
-        if (!XRSD::loadNextPatternSounds(nextBank, nextPattern))
+        // save any sound step mods for current pattern to SD
+        XRSD::savePatternSoundStepModsToSdCard();
+
+        if (!XRSD::loadPatternSounds(nextBank, nextPattern))
         {
-            // could not find next pattern sounds, so just fill them with init data
             initNextPatternSounds();
+        }
+
+        // load any track step mods for new bank/pattern from SD
+        if (!XRSD::loadPatternSoundStepModsFromSdCard(nextBank, nextPattern)) {
+            initPatternSoundStepMods();
         }
 
         for (int s = 0; s < MAXIMUM_SEQUENCER_TRACKS; s++)
         {
-            XRSound::setSoundNeedsReinit(s, true);
+            setSoundNeedsReinit(s, true);
         }
     }
 

@@ -29,25 +29,30 @@ namespace XRSD
     extern std::string dexedPatchName;
 
     bool init();
-    bool loadMachineState();
-    bool loadLastProject();
 
     void initMachineState();
+    bool loadMachineState();
+
     void createNewProject();
+    bool loadLastProject();
     void saveProject();
 
-    void savePatternModsToSdCard();
-    void loadPatternModsFromSdCard();
+    bool loadSequencer();
+    bool loadPatternTrackStepModsFromSdCard(int bank, int pattern);
+    void saveSequencer();
+    void savePatternTrackStepModsToSdCard();
 
-    void saveCurrentPatternSounds();
-    bool loadNextPatternSounds(int nextBank, int nextPattern);
+    bool loadPatternSounds(int bank, int pattern);
+    bool loadPatternSoundStepModsFromSdCard(int bank, int pattern);
+    void savePatternSounds();
+    void savePatternSoundStepModsToSdCard();
 
     void loadDexedVoiceToCurrentTrack(int t = -1);
     
     std::string *getSampleList(int16_t cursor);
+    std::string getCurrSampleFileHighlighted();
     void rewindSampleDir();
     void unloadSampleFileListPaged();
-    std::string getCurrSampleFileHighlighted();
 }
 
 #endif /* XRSD_h */

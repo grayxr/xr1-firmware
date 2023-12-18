@@ -102,8 +102,6 @@ namespace XRSound
     /*** BEGIN SOUND MODS ***/
 
     /**
-     * 1 active pattern * 16 tracks * 64 steps * ~124 bytes = ~126,976 bytes in heap.
-     * 
      * All sound step mods for all other banks and patterns are stored in SD card,
      * they are fetched when changing patterns, stored in RAM2 / DMAMEM,
      * and then they replace the step mods in RAM1 / heap once the pattern change occurs
@@ -113,7 +111,7 @@ namespace XRSound
     {
         int32_t mods[MAXIMUM_SOUND_PARAMS]; // divide by 100 to get real param mod values
         bool flags[MAXIMUM_SOUND_PARAMS]; // whether the param mod should apply or not
-    } SOUND_STEP_MODS; // ~124b
+    } SOUND_STEP_MODS;
 
     typedef struct
     {
@@ -272,7 +270,7 @@ namespace XRSound
     extern DMAMEM SOUND nextPatternSounds[MAXIMUM_SEQUENCER_TRACKS];
     // we only keep the current pattern's sound mods in memory,
     // when a pattern change occurs, the next pattern's sound mods are loaded from the SD card
-    extern DMAMEM PATTERN_SOUND_MODS patternSoundMods;
+    extern DMAMEM PATTERN_SOUND_MODS patternSoundStepMods;
     
     extern bool soundNeedsReinit[MAXIMUM_SEQUENCER_TRACKS];
 
@@ -313,7 +311,7 @@ namespace XRSound
 
     void init();
     void initNextPatternSounds();
-    void initNextPatternSoundMods();
+    void initPatternSoundStepMods();
     void initVoices();
     void setSoundNeedsReinit(int sound, bool reinit);
     void reinitSoundForTrack(int track);

@@ -59,13 +59,7 @@ namespace XRMain
             }
 
             XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_WRITE);
-
-            XRSequencer::init();
-            XRSound::init();
-            
-            // TODO: load current pattern sounds
-            // XRSound::loadCurrentPatternSounds();
-            Serial.println("TODO: load current pattern sounds on boot!");
+            XRDisplay::drawSequencerScreen(false);
         }
 
         XRAudio::resetMetrics();

@@ -96,8 +96,10 @@ namespace XRSequencer
 
     TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
 
-    DMAMEM EXTERNAL_SEQUENCER externalSequencer;
-    DMAMEM PATTERN_TRACK_MODS patternTrackMods;
+    DMAMEM EXTERNAL_SEQUENCER sequencer;
+    DMAMEM PATTERN_TRACK_MODS patternTrackStepMods;
+
+    void initPatternTrackStepMods();
 
     bool init()
     {
@@ -105,7 +107,8 @@ namespace XRSequencer
         _currentSelectedPattern = 0;
         _currentSelectedTrack = 0;
 
-        XRDisplay::drawSequencerScreen(false);
+        initSequencer();
+        initPatternTrackStepMods();
 
         return true;
     }
@@ -420,7 +423,7 @@ namespace XRSequencer
 
     EXTERNAL_SEQUENCER &getExternalSequencer()
     {
-        return externalSequencer;
+        return sequencer;
     }
 
     TRACK &getHeapTrack(int track)
@@ -766,88 +769,56 @@ namespace XRSequencer
         }
     }
 
-    void initExternalSequencer()
+    void initSequencer()
     {
         for (int b = 0; b < MAXIMUM_SEQUENCER_BANKS; b++)
         {
             for (int p = 0; p < MAXIMUM_SEQUENCER_PATTERNS; p++)
             {
-                externalSequencer.banks[b].patterns[p].lstep = DEFAULT_LAST_STEP;
-                externalSequencer.banks[b].patterns[p].groove.amount = 0;
-                externalSequencer.banks[b].patterns[p].groove.id = -1;
-                externalSequencer.banks[b].patterns[p].initialized = false;
+                sequencer.banks[b].patterns[p].lstep = DEFAULT_LAST_STEP;
+                sequencer.banks[b].patterns[p].groove.amount = 0;
+                sequencer.banks[b].patterns[p].groove.id = -1;
+                sequencer.banks[b].patterns[p].initialized = false;
 
                 if (p == 0)
-                    externalSequencer.banks[b].patterns[p].initialized = true;
+                    sequencer.banks[b].patterns[p].initialized = true;
 
                 for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
                 {
-                    externalSequencer.banks[b].patterns[p].tracks[t].length = 4;
-                    externalSequencer.banks[b].patterns[p].tracks[t].note = 0;
-                    externalSequencer.banks[b].patterns[p].tracks[t].octave = 4;
-                    externalSequencer.banks[b].patterns[p].tracks[t].velocity = 50;
-                    externalSequencer.banks[b].patterns[p].tracks[t].probability = 100;
-                    externalSequencer.banks[b].patterns[p].tracks[t].initialized = false;
+                    sequencer.banks[b].patterns[p].tracks[t].length = 4;
+                    sequencer.banks[b].patterns[p].tracks[t].note = 0;
+                    sequencer.banks[b].patterns[p].tracks[t].octave = 4;
+                    sequencer.banks[b].patterns[p].tracks[t].velocity = 50;
+                    sequencer.banks[b].patterns[p].tracks[t].probability = 100;
+                    sequencer.banks[b].patterns[p].tracks[t].initialized = false;
 
                     if (t == 0)
-                        externalSequencer.banks[b].patterns[p].tracks[t].initialized = true;
+                        sequencer.banks[b].patterns[p].tracks[t].initialized = true;
 
                     // now fill in steps
                     for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
                     {
-                        externalSequencer.banks[b].patterns[p].tracks[t].steps[s].state = STEP_STATE::STATE_OFF;
+                        sequencer.banks[b].patterns[p].tracks[t].steps[s].state = STEP_STATE::STATE_OFF;
                     }
                 }
             }
         }
     }
 
-    // void initExternalPatternMods()
-    // {
-    //     for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
-    //     {
-    //         // now fill in mod flags
-    //         for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
-    //         {
-    //             for (int f = 0; f < MAX_STEP_MOD_ATTRS; f++)
-    //             {
-    //                 _patternMods.tracks[t].step_mod_flags[s].flags[f] = false;
-    //             }
-    //         }
-
-    //         // now fill in mods
-    //         for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
-    //         {
-    //             //_patternMods.tracks[t].steps[s].sample_name;
-    //             strcpy(_patternMods.tracks[t].steps[s].sample_name, "");
-    //             _patternMods.tracks[t].steps[s].waveform = XRSound::WAVEFORM_TYPE::SAW;
-    //             _patternMods.tracks[t].steps[s].detune = 0;
-    //             _patternMods.tracks[t].steps[s].fine = 0;
-    //             _patternMods.tracks[t].steps[s].looptype = 0;
-    //             _patternMods.tracks[t].steps[s].loopstart = 0;
-    //             _patternMods.tracks[t].steps[s].loopfinish = 5000;
-    //             _patternMods.tracks[t].steps[s].playstart = play_start_sample;
-    //             _patternMods.tracks[t].steps[s].level = 0.7;
-    //             _patternMods.tracks[t].steps[s].pan = 0;
-    //             _patternMods.tracks[t].steps[s].sample_play_rate = 1.0;
-    //             _patternMods.tracks[t].steps[s].width = 0.5;
-    //             _patternMods.tracks[t].steps[s].oscalevel = 1.0;
-    //             _patternMods.tracks[t].steps[s].oscblevel = 0.5;
-    //             _patternMods.tracks[t].steps[s].cutoff = 1600;
-    //             _patternMods.tracks[t].steps[s].res = 0;
-    //             _patternMods.tracks[t].steps[s].filterenvamt = 1.0;
-    //             _patternMods.tracks[t].steps[s].filter_attack = 0;
-    //             _patternMods.tracks[t].steps[s].filter_decay = 1000;
-    //             _patternMods.tracks[t].steps[s].filter_sustain = 1.0;
-    //             _patternMods.tracks[t].steps[s].filter_release = 5000;
-    //             _patternMods.tracks[t].steps[s].amp_attack = 0;
-    //             _patternMods.tracks[t].steps[s].amp_decay = 1000;
-    //             _patternMods.tracks[t].steps[s].amp_sustain = 1.0;
-    //             _patternMods.tracks[t].steps[s].amp_release = 5000;
-    //             _patternMods.tracks[t].steps[s].noise = 0;
-    //         }
-    //     }
-    // }
+    void initPatternTrackStepMods()
+    {
+        for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+        {
+            for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
+            {
+                for (int m = 0; m < MAXIMUM_TRACK_MODS; m++)
+                {
+                    patternTrackStepMods.tracks[t].steps[s].mods[m] = 0;
+                    patternTrackStepMods.tracks[t].steps[s].flags[m] = false;
+                }
+            }
+        }
+    }
 
     void handleQueueActions()
     {
@@ -876,6 +847,7 @@ namespace XRSequencer
             // IMPORTANT: must change sounds before changing sequencer data!
             XRSound::manageSoundDataForPatternChange(_queuedPattern.bank, _queuedPattern.number);
             swapSequencerMemoryForPattern(_queuedPattern.bank, _queuedPattern.number);
+            
             Serial.println("finished swapping seq mem!");
 
             // reset queue flags
@@ -912,14 +884,13 @@ namespace XRSequencer
     void swapSequencerMemoryForPattern(int newBank, int newPattern)
     {
         // AudioNoInterrupts();
-        auto currPatternData = heapPattern;
-        auto newPatternData = externalSequencer.banks[newBank].patterns[newPattern];
+        auto newPatternData = sequencer.banks[newBank].patterns[newPattern];
 
-        // save any mods for current pattern to SD
-        // XRSD::savePatternModsToSdCard();
+        // save any track step mods for current pattern to SD
+        XRSD::savePatternTrackStepModsToSdCard();
 
         // swap sequencer memory data
-        externalSequencer.banks[_currentSelectedBank].patterns[_currentSelectedPattern] = currPatternData;
+        sequencer.banks[_currentSelectedBank].patterns[_currentSelectedPattern] = heapPattern;
         heapPattern = newPatternData;
 
         // initialize new pattern
@@ -930,8 +901,10 @@ namespace XRSequencer
         _currentSelectedPattern = newPattern;
         _currentSelectedTrack = 0;
 
-        // load any mods for new bank/pattern from SD
-        // XRSD::loadPatternModsFromSdCard();
+        // load any track step mods for new bank/pattern from SD
+        if (!XRSD::loadPatternTrackStepModsFromSdCard(_currentSelectedBank, _currentSelectedPattern)) {
+            initPatternTrackStepMods();
+        }
     }
 
     void setSelectedTrack(int8_t track)
@@ -995,7 +968,7 @@ namespace XRSequencer
             heapPattern.tracks[_currentSelectedTrack].steps[adjStep].state = STEP_STATE::STATE_OFF;
         }
 
-        externalSequencer.banks[_currentSelectedBank].patterns[_currentSelectedPattern].tracks[_currentSelectedTrack].steps[adjStep] = heapPattern.tracks[_currentSelectedTrack].steps[adjStep];
+        sequencer.banks[_currentSelectedBank].patterns[_currentSelectedPattern].tracks[_currentSelectedTrack].steps[adjStep] = heapPattern.tracks[_currentSelectedTrack].steps[adjStep];
     }
 
     void toggleSequencerPlayback(char btn)
@@ -1205,7 +1178,7 @@ namespace XRSequencer
     void saveCurrentPatternOffHeap()
     {
         // push current heap memory to RAM2/DMAMEM
-        externalSequencer.banks[_currentSelectedBank].patterns[_currentSelectedPattern] = heapPattern;
+        sequencer.banks[_currentSelectedBank].patterns[_currentSelectedPattern] = heapPattern;
     }
 
     void setCurrentSelectedStep(int step)
@@ -1232,7 +1205,7 @@ namespace XRSequencer
 
     void setCopyBufferForPattern(int pattern)
     {
-        _patternCopyBuffer = externalSequencer.banks[_currentSelectedBank].patterns[pattern];
+        _patternCopyBuffer = sequencer.banks[_currentSelectedBank].patterns[pattern];
     }
 
     PATTERN &getCopyBufferForPattern()

@@ -8,49 +8,6 @@
 
 namespace XRSequencer
 {
-    // mods
-
-    // 1 active pattern * 16 tracks * 64 steps * ~11 bytes = ~11,264 bytes in heap
-
-    // PATTERN_TRACK_MODS _currPatternTrackMods; = ~11kb in heap
-    // PATTERN_TRACK_MODS _nextPatternTrackMods; = ~11kb in heap (or maybe DMAMEM?)
-    
-    // all track step mods for all other banks and patterns are stored in SD card,
-    // they are fetched when changing patterns, stored in _nextPatternTrackMods,
-    // and then _nextPatternTrackMods replaces _currPatternTrackMods as soon as next pattern starts
-
-    // typedef struct
-    // {
-    //     uint8_t note;        // 0 = C
-    //     bool noteMod;
-    //     uint8_t octave;      // 4 = middle C (C4)
-    //     bool octaveMod;
-    //     uint8_t length;      // 4 = 1/16
-    //     bool lengthMod;
-    //     uint8_t velocity;   // 50 = 50%
-    //     bool velocityMod;
-    //     uint8_t probability;
-    //     bool probabilityMod;
-    //     int8_t microtiming;
-    //     bool microtimingMod;
-    // } TRACK_STEP_MODS;
-
-    typedef struct
-    {
-        int8_t mods[MAXIMUM_TRACK_MODS]; // divide by 100 to get real param mod values
-        bool flags[MAXIMUM_TRACK_MODS]; // whether the param mod should apply or not
-    } TRACK_STEP_MODS; // ~11b
-
-    typedef struct
-    {
-        TRACK_STEP_MODS steps[MAXIMUM_SEQUENCER_STEPS];
-    } TRACK_MODS;
-
-    typedef struct
-    {
-        TRACK_MODS tracks[MAXIMUM_SEQUENCER_STEPS];
-    } PATTERN_TRACK_MODS;
-
     // step
 
     enum STEP_STATE
@@ -165,18 +122,50 @@ namespace XRSequencer
         int8_t length = -1;
     } STACK_RATCHET_DATA;
 
+    // mods
+
+    enum TRACK_MOD
+    {
+        NOTE = 0,
+        OCTAVE = 1,
+        LENGTH = 2,
+        VELOCITY = 3,
+        PROBABILITY = 4,
+        MICROTIMING = 5
+    };
+    
+    // all track step mods for all other banks and patterns are stored in SD card,
+    // they are fetched when changing patterns, stored in _nextPatternTrackMods,
+    // and then _nextPatternTrackMods replaces _currPatternTrackMods as soon as next pattern starts
+
+    typedef struct
+    {
+        int8_t mods[MAXIMUM_TRACK_MODS]; // divide by 100 to get real param mod values
+        bool flags[MAXIMUM_TRACK_MODS]; // whether the param mod should apply or not
+    } TRACK_STEP_MODS; // ~11b
+
+    typedef struct
+    {
+        TRACK_STEP_MODS steps[MAXIMUM_SEQUENCER_STEPS];
+    } TRACK_MODS;
+
+    typedef struct
+    {
+        TRACK_MODS tracks[MAXIMUM_SEQUENCER_STEPS];
+    } PATTERN_TRACK_MODS;
+
     // extern globals
     extern PATTERN heapPattern;
     extern TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
-    extern DMAMEM EXTERNAL_SEQUENCER externalSequencer;
+    extern DMAMEM EXTERNAL_SEQUENCER sequencer;
     // we only keep the current pattern's sound mods in memory,
     // when a pattern change occurs, the next pattern's sound mods are loaded from the SD card
-    extern DMAMEM PATTERN_TRACK_MODS patternTrackMods;
+    extern DMAMEM PATTERN_TRACK_MODS patternTrackStepMods;
 
     bool init();
 
-    void initExternalSequencer();
-    void initExternalPatternMods();
+    void initSequencer();
+    void initPatternTrackStepMods();
     
     void swapSequencerMemoryForPattern(int newBank, int newPattern);
     void saveCurrentPatternOffHeap();
