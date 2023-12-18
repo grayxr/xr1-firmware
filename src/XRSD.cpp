@@ -235,7 +235,7 @@ namespace XRSD
 
         Serial.println("Write current project sequencer data binary file to SD card!");
 
-        auto &seqExt = XRSequencer::getSequencerExternal();
+        auto &seqExt = XRSequencer::getExternalSequencer();
 
         File seqFileW = SD.open(currProjectSequencerFilePath.c_str(), FILE_WRITE);
         seqFileW.truncate();
@@ -305,7 +305,7 @@ namespace XRSD
             return false;
         }
 
-        auto &seqExt = XRSequencer::getSequencerExternal();
+        auto &seqExt = XRSequencer::getExternalSequencer();
         XRSequencer::initExternalSequencer();
 
         File seqFileR = SD.open(currProjectSequencerFilePath.c_str(), FILE_READ);

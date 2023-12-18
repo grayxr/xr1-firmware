@@ -9,7 +9,7 @@
 #include <map>
 
 namespace XRSound
-{   
+{
     /*** BEGIN SOUNDS ***/
 
     enum SOUND_TYPE
@@ -97,14 +97,12 @@ namespace XRSound
         FMD_PAN = 16,
     };
 
-    extern std::map<SOUND_TYPE, int32_t*> _soundTypeInitParams;
-
     /*** END SOUNDS ***/
 
     /*** BEGIN SOUND MODS ***/
 
     /**
-     * 1 active pattern * 16 tracks * 64 steps * ~20 bytes = ~20,480 bytes in heap.
+     * 1 active pattern * 16 tracks * 64 steps * ~124 bytes = ~126,976 bytes in heap.
      * 
      * All sound step mods for all other banks and patterns are stored in SD card,
      * they are fetched when changing patterns, stored in RAM2 / DMAMEM,
@@ -113,9 +111,9 @@ namespace XRSound
 
     typedef struct
     {
-        int32_t params[MAXIMUM_SOUND_PARAMS]; // divide by 100 to get real param values
-        bool paramMods[MAXIMUM_SOUND_PARAMS];
-    } SOUND_STEP_MODS;
+        int32_t mods[MAXIMUM_SOUND_PARAMS]; // divide by 100 to get real param mod values
+        bool flags[MAXIMUM_SOUND_PARAMS]; // whether the param mod should apply or not
+    } SOUND_STEP_MODS; // ~124b
 
     typedef struct
     {
@@ -128,14 +126,6 @@ namespace XRSound
     } PATTERN_SOUND_MODS;
 
     /*** END SOUND MODS ***/
-
-    extern SOUND currentPatternSounds[MAXIMUM_SEQUENCER_TRACKS];
-    extern DMAMEM SOUND nextPatternSounds[MAXIMUM_SEQUENCER_TRACKS];
-
-    // extern DMAMEM PATTERN_SOUND_MODS currentPatternSoundMods;
-    // extern DMAMEM PATTERN_SOUND_MODS nextPatternSoundMods;
-
-    extern bool soundNeedsReinit[MAXIMUM_SEQUENCER_TRACKS];
 
     class ComboVoice
     {
@@ -277,13 +267,23 @@ namespace XRSound
         float right;
     } PANNED_AMOUNTS;
 
+    // extern globals
+    extern SOUND currentPatternSounds[MAXIMUM_SEQUENCER_TRACKS];
+    extern DMAMEM SOUND nextPatternSounds[MAXIMUM_SEQUENCER_TRACKS];
+    // we only keep the current pattern's sound mods in memory,
+    // when a pattern change occurs, the next pattern's sound mods are loaded from the SD card
+    extern DMAMEM PATTERN_SOUND_MODS patternSoundMods;
+    
+    extern bool soundNeedsReinit[MAXIMUM_SEQUENCER_TRACKS];
+
     extern ComboVoice comboVoices[COMBO_VOICE_COUNT];
     extern SampleVoice sampleVoices[SAMPLE_VOICE_COUNT];
-
+    
     extern std::map<int, loop_type> loopTypeSelMap;
     extern std::map<loop_type, int> loopTypeFindMap;
     extern std::map<int, play_start> playStartSelMap;
     extern std::map<play_start, int> playStartFindMap;
+    extern std::map<SOUND_TYPE, int32_t*> soundTypeInitParams;
 
     SOUND_CONTROL_MODS getControlModDataForPattern();
     SOUND_CONTROL_MODS getControlModDataForTrack();

@@ -409,7 +409,7 @@ namespace XRKeyMatrix
 
             auto curSelBank = XRSequencer::getCurrentSelectedBankNum();
             auto currSelPattern = XRSequencer::getCurrentSelectedPatternNum();
-            auto &seqExternal = XRSequencer::getSequencerExternal();
+            auto &externalSequencer = XRSequencer::getExternalSequencer();
             auto &heapPattern = XRSequencer::getHeapPattern();
 
             Serial.println("try this:");
@@ -417,7 +417,7 @@ namespace XRKeyMatrix
             // make sure if copying current pattern that the latest state exists in RAM2
             if (currSelPattern == getKeyStepNum(key) - 1)
             {
-                seqExternal.banks[curSelBank].patterns[currSelPattern] = heapPattern;
+                externalSequencer.banks[curSelBank].patterns[currSelPattern] = heapPattern;
             }
 
             Serial.println("finished that");
@@ -482,7 +482,7 @@ namespace XRKeyMatrix
             }
 
             // save pasted step
-            auto &seqExternal = XRSequencer::getSequencerExternal();
+            auto &externalSequencer = XRSequencer::getExternalSequencer();
             auto &heapPattern = XRSequencer::getHeapPattern();
             auto currSelBank = XRSequencer::getCurrentSelectedBankNum();
             auto currSelPattern = XRSequencer::getCurrentSelectedPatternNum();
@@ -520,7 +520,7 @@ namespace XRKeyMatrix
             Serial.println("pasting selected pattern to target pattern!");
 
             uint8_t targetPattern = getKeyStepNum(key) - 1;
-            auto &seqExternal = XRSequencer::getSequencerExternal();
+            auto &externalSequencer = XRSequencer::getExternalSequencer();
             auto &heapPattern = XRSequencer::getHeapPattern();
             auto &seqState = XRSequencer::getSeqState();
             auto currSelBank = XRSequencer::getCurrentSelectedBankNum();
@@ -528,12 +528,12 @@ namespace XRKeyMatrix
             auto &patternCopyBuf = XRSequencer::getCopyBufferForPattern();
 
             // save pasted pattern to RAM2 / DMAMEM
-            seqExternal.banks[currSelBank].patterns[targetPattern] = patternCopyBuf;
+            externalSequencer.banks[currSelBank].patterns[targetPattern] = patternCopyBuf;
 
             // and reload the current pattern into heap if target pattern is current selected pattern
             if (currSelPattern == targetPattern)
             {
-                heapPattern = seqExternal.banks[currSelBank].patterns[currSelPattern];
+                heapPattern = externalSequencer.banks[currSelBank].patterns[currSelPattern];
             }
 
             _patternCopyAvailable = false;

@@ -11,21 +11,18 @@
 
 namespace XRSequencer
 {
-    DMAMEM SEQUENCER_EXTERNAL _seqExternal;
+    // private variables
+ 
+    SEQUENCER_STATE _seqState;
+    QUEUED_PATTERN _queuedPattern;
+
+    STACK_STEP_DATA _stepStack[STEP_STACK_SIZE];
+    STACK_RATCHET_DATA _ratchetStack[RATCHET_STACK_SIZE];
+
     DMAMEM PATTERN _patternCopyBuffer;
     DMAMEM TRACK _trackCopyBuffer;
     DMAMEM STEP _stepCopyBuffer;
     DMAMEM PATTERN _recordPatternBuffer;
-    // DMAMEM PATTERN_MODS _patternMods;
-
-    // SEQUENCER _seqHeap;
-    PATTERN _heapPattern;
-    QUEUED_PATTERN _queuedPattern;
-
-    SEQUENCER_STATE _seqState;
-
-    STACK_STEP_DATA _stepStack[STEP_STACK_SIZE];
-    STACK_RATCHET_DATA _ratchetStack[RATCHET_STACK_SIZE];
 
     int8_t _currentSelectedBank = 0;    // default to 0 (first)
     int8_t _currentSelectedPattern = 0; // default to 0 (first)
@@ -47,10 +44,7 @@ namespace XRSequencer
 
     uint8_t _bpmBlinkTimer = 2;
 
-    // external globals
-    TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
-
-    std::map<XRSound::SOUND_TYPE, int> trackPageNumMap = {
+    std::map<XRSound::SOUND_TYPE, int> _trackPageNumMap = {
         {XRSound::T_MONO_SAMPLE, 4},
         {XRSound::T_MONO_SYNTH, 6},
         {XRSound::T_DEXED_SYNTH, 4},
@@ -60,7 +54,7 @@ namespace XRSequencer
         {XRSound::T_EMPTY, 1},
     };
 
-    std::map<XRSound::SOUND_TYPE, std::map<int, std::string>> trackCurrPageNameMap = {
+    std::map<XRSound::SOUND_TYPE, std::map<int, std::string>> _trackCurrPageNameMap = {
         {XRSound::T_MONO_SAMPLE, {
                          {0, "MAIN"},
                          {1, "LOOP"},
@@ -95,6 +89,15 @@ namespace XRSequencer
                       {0, ""},
                   }},
     };
+
+    // extern globals
+
+    PATTERN heapPattern;
+
+    TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
+
+    DMAMEM EXTERNAL_SEQUENCER externalSequencer;
+    DMAMEM PATTERN_TRACK_MODS patternTrackMods;
 
     bool init()
     {
@@ -306,7 +309,7 @@ namespace XRSequencer
             {
                 XRLED::setDisplayStateForAllStepLEDs();
 
-                int lastStep = (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) ? _heapPattern.lstep : _heapPattern.tracks[_currentSelectedTrack].lstep;
+                int lastStep = (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) ? heapPattern.lstep : heapPattern.tracks[_currentSelectedTrack].lstep;
 
                 if (!XRKeyMatrix::isFunctionActive())
                 {
@@ -412,37 +415,37 @@ namespace XRSequencer
 
     PATTERN &getHeapPattern()
     {
-        return _heapPattern;
+        return heapPattern;
     }
 
-    SEQUENCER_EXTERNAL &getSequencerExternal()
+    EXTERNAL_SEQUENCER &getExternalSequencer()
     {
-        return _seqExternal;
+        return externalSequencer;
     }
 
     TRACK &getHeapTrack(int track)
     {
-        return _heapPattern.tracks[track];
+        return heapPattern.tracks[track];
     }
 
     STEP &getHeapStep(int track, int step)
     {
-        return _heapPattern.tracks[track].steps[step];
+        return heapPattern.tracks[track].steps[step];
     }
 
     PATTERN &getHeapCurrentSelectedPattern()
     {
-        return _heapPattern;
+        return heapPattern;
     }
 
     TRACK &getHeapCurrentSelectedTrack()
     {
-        return _heapPattern.tracks[_currentSelectedTrack];
+        return heapPattern.tracks[_currentSelectedTrack];
     }
 
     STEP &getHeapCurrentSelectedTrackStep()
     {
-        return _heapPattern.tracks[_currentSelectedTrack].steps[_currentSelectedStep];
+        return heapPattern.tracks[_currentSelectedTrack].steps[_currentSelectedStep];
     }
 
     std::string getTrackMetaStr(XRSound::SOUND_TYPE type)
@@ -556,7 +559,7 @@ namespace XRSequencer
         auto currTrackNum = getCurrentSelectedTrackNum();
         auto currSoundForTrack = XRSound::currentPatternSounds[currTrackNum];
 
-        std::string outputStr = trackCurrPageNameMap[currSoundForTrack.type][_currentSelectedPage];
+        std::string outputStr = _trackCurrPageNameMap[currSoundForTrack.type][_currentSelectedPage];
 
         return outputStr;
     }
@@ -567,7 +570,7 @@ namespace XRSequencer
         auto currTrackNum = getCurrentSelectedTrackNum();
         auto currSoundForTrack = XRSound::currentPatternSounds[currTrackNum];
 
-        return trackPageNumMap[currSoundForTrack.type];
+        return _trackPageNumMap[currSoundForTrack.type];
     }
 
     int8_t getRatchetTrack()
@@ -708,7 +711,7 @@ namespace XRSequencer
 
     void updateCurrentPatternStepState()
     {
-        int currPatternLastStep = _heapPattern.lstep;
+        int currPatternLastStep = heapPattern.lstep;
 
         if (_seqState.currentStep <= currPatternLastStep)
         {
@@ -739,7 +742,7 @@ namespace XRSequencer
     {
         for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
         {
-            auto track = _heapPattern.tracks[t];
+            auto track = heapPattern.tracks[t];
             int trackLastStep = track.lstep;
             int8_t trackCurrentStep = _seqState.currentTrackSteps[t].currentStep;
 
@@ -769,30 +772,30 @@ namespace XRSequencer
         {
             for (int p = 0; p < MAXIMUM_SEQUENCER_PATTERNS; p++)
             {
-                _seqExternal.banks[b].patterns[p].lstep = DEFAULT_LAST_STEP;
-                _seqExternal.banks[b].patterns[p].groove.amount = 0;
-                _seqExternal.banks[b].patterns[p].groove.id = -1;
-                _seqExternal.banks[b].patterns[p].initialized = false;
+                externalSequencer.banks[b].patterns[p].lstep = DEFAULT_LAST_STEP;
+                externalSequencer.banks[b].patterns[p].groove.amount = 0;
+                externalSequencer.banks[b].patterns[p].groove.id = -1;
+                externalSequencer.banks[b].patterns[p].initialized = false;
 
                 if (p == 0)
-                    _seqExternal.banks[b].patterns[p].initialized = true;
+                    externalSequencer.banks[b].patterns[p].initialized = true;
 
                 for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
                 {
-                    _seqExternal.banks[b].patterns[p].tracks[t].length = 4;
-                    _seqExternal.banks[b].patterns[p].tracks[t].note = 0;
-                    _seqExternal.banks[b].patterns[p].tracks[t].octave = 4;
-                    _seqExternal.banks[b].patterns[p].tracks[t].velocity = 50;
-                    _seqExternal.banks[b].patterns[p].tracks[t].probability = 100;
-                    _seqExternal.banks[b].patterns[p].tracks[t].initialized = false;
+                    externalSequencer.banks[b].patterns[p].tracks[t].length = 4;
+                    externalSequencer.banks[b].patterns[p].tracks[t].note = 0;
+                    externalSequencer.banks[b].patterns[p].tracks[t].octave = 4;
+                    externalSequencer.banks[b].patterns[p].tracks[t].velocity = 50;
+                    externalSequencer.banks[b].patterns[p].tracks[t].probability = 100;
+                    externalSequencer.banks[b].patterns[p].tracks[t].initialized = false;
 
                     if (t == 0)
-                        _seqExternal.banks[b].patterns[p].tracks[t].initialized = true;
+                        externalSequencer.banks[b].patterns[p].tracks[t].initialized = true;
 
                     // now fill in steps
                     for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
                     {
-                        _seqExternal.banks[b].patterns[p].tracks[t].steps[s].state = STEP_STATE::STATE_OFF;
+                        externalSequencer.banks[b].patterns[p].tracks[t].steps[s].state = STEP_STATE::STATE_OFF;
                     }
                 }
             }
@@ -892,7 +895,7 @@ namespace XRSequencer
             }
             else if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE)
             {
-                int lastStep = (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) ? _heapPattern.lstep : _heapPattern.tracks[_currentSelectedTrack].lstep;
+                int lastStep = (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) ? heapPattern.lstep : heapPattern.tracks[_currentSelectedTrack].lstep;
 
                 XRLED::displayPageLEDs(
                     1,
@@ -909,18 +912,18 @@ namespace XRSequencer
     void swapSequencerMemoryForPattern(int newBank, int newPattern)
     {
         // AudioNoInterrupts();
-        auto currPatternData = _heapPattern;
-        auto newPatternData = _seqExternal.banks[newBank].patterns[newPattern];
+        auto currPatternData = heapPattern;
+        auto newPatternData = externalSequencer.banks[newBank].patterns[newPattern];
 
         // save any mods for current pattern to SD
         // XRSD::savePatternModsToSdCard();
 
         // swap sequencer memory data
-        _seqExternal.banks[_currentSelectedBank].patterns[_currentSelectedPattern] = currPatternData;
-        _heapPattern = newPatternData;
+        externalSequencer.banks[_currentSelectedBank].patterns[_currentSelectedPattern] = currPatternData;
+        heapPattern = newPatternData;
 
         // initialize new pattern
-        _heapPattern.initialized = true;
+        heapPattern.initialized = true;
 
         // update currently selected vars
         _currentSelectedBank = newBank;
@@ -974,25 +977,25 @@ namespace XRSequencer
         // TODO: implement accent state for MIDI, CV/Trig, Sample, Synth track types?
         if (currStepState == STEP_STATE::STATE_OFF)
         {
-            _heapPattern.tracks[_currentSelectedTrack].steps[adjStep].state = STEP_STATE::STATE_ON;
+            heapPattern.tracks[_currentSelectedTrack].steps[adjStep].state = STEP_STATE::STATE_ON;
             // TODO: REMOVE
             // copy track properties to steps
-            // _heapPattern.tracks[_currentSelectedTrack].steps[adjStep].note = currTrack.note;
-            // _heapPattern.tracks[_currentSelectedTrack].steps[adjStep].octave = currTrack.octave;
-            // _heapPattern.tracks[_currentSelectedTrack].steps[adjStep].velocity = currTrack.velocity;
+            // heapPattern.tracks[_currentSelectedTrack].steps[adjStep].note = currTrack.note;
+            // heapPattern.tracks[_currentSelectedTrack].steps[adjStep].octave = currTrack.octave;
+            // heapPattern.tracks[_currentSelectedTrack].steps[adjStep].velocity = currTrack.velocity;
         }
         else if (currStepState == STEP_STATE::STATE_ON)
         {
-            _heapPattern.tracks[_currentSelectedTrack].steps[adjStep].state = STEP_STATE::STATE_ACCENTED;
+            heapPattern.tracks[_currentSelectedTrack].steps[adjStep].state = STEP_STATE::STATE_ACCENTED;
             // TODO: REMOVE
-            // _heapPattern.tracks[_currentSelectedTrack].steps[adjStep].velocity = 100; // TODO: use a "global accent" value here
+            // heapPattern.tracks[_currentSelectedTrack].steps[adjStep].velocity = 100; // TODO: use a "global accent" value here
         }
         else if (currStepState == STEP_STATE::STATE_ACCENTED)
         {
-            _heapPattern.tracks[_currentSelectedTrack].steps[adjStep].state = STEP_STATE::STATE_OFF;
+            heapPattern.tracks[_currentSelectedTrack].steps[adjStep].state = STEP_STATE::STATE_OFF;
         }
 
-        _seqExternal.banks[_currentSelectedBank].patterns[_currentSelectedPattern].tracks[_currentSelectedTrack].steps[adjStep] = _heapPattern.tracks[_currentSelectedTrack].steps[adjStep];
+        externalSequencer.banks[_currentSelectedBank].patterns[_currentSelectedPattern].tracks[_currentSelectedTrack].steps[adjStep] = heapPattern.tracks[_currentSelectedTrack].steps[adjStep];
     }
 
     void toggleSequencerPlayback(char btn)
@@ -1185,7 +1188,7 @@ namespace XRSequencer
 
     void initializeCurrentSelectedTrack()
     {
-        _heapPattern.tracks[_currentSelectedTrack].initialized = true;
+        heapPattern.tracks[_currentSelectedTrack].initialized = true;
     }
 
     void queuePattern(int pattern, int bank)
@@ -1202,12 +1205,12 @@ namespace XRSequencer
     void saveCurrentPatternOffHeap()
     {
         // push current heap memory to RAM2/DMAMEM
-        _seqExternal.banks[_currentSelectedBank].patterns[_currentSelectedPattern] = _heapPattern;
+        externalSequencer.banks[_currentSelectedBank].patterns[_currentSelectedPattern] = heapPattern;
     }
 
     void setCurrentSelectedStep(int step)
     {
-       // _heapPattern.tracks[_currentSelectedTrack].steps[step];
+       // heapPattern.tracks[_currentSelectedTrack].steps[step];
 
         _currentSelectedStep = step;
     }
@@ -1219,17 +1222,17 @@ namespace XRSequencer
 
     void setCopyBufferForStep(int step)
     {
-        _stepCopyBuffer = _heapPattern.tracks[_currentSelectedTrack].steps[step];
+        _stepCopyBuffer = heapPattern.tracks[_currentSelectedTrack].steps[step];
     }
 
     void setCopyBufferForTrack(int track)
     {
-        _trackCopyBuffer = _heapPattern.tracks[track];
+        _trackCopyBuffer = heapPattern.tracks[track];
     }
 
     void setCopyBufferForPattern(int pattern)
     {
-        _patternCopyBuffer = _seqExternal.banks[_currentSelectedBank].patterns[pattern];
+        _patternCopyBuffer = externalSequencer.banks[_currentSelectedBank].patterns[pattern];
     }
 
     PATTERN &getCopyBufferForPattern()

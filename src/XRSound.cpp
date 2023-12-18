@@ -11,71 +11,18 @@
 
 namespace XRSound
 {
+    // private variables
 
-    ComboVoice comboVoices[COMBO_VOICE_COUNT] = {
-        ComboVoice(
-            fmdrum1, dexed1, vmsample1, vosca1, voscb1, vnoise1, voscmix1, vdc1, vlfilter1, vfilterenv1, vmix1, venv1, vleft1, vright1, dleft1, dright1, fdleft1, fdright1, vsubmixl1, vsubmixr1),
-        ComboVoice(
-            fmdrum2, dexed2, vmsample2, vosca2, voscb2, vnoise2, voscmix2, vdc2, vlfilter2, vfilterenv2, vmix2, venv2, vleft2, vright2, dleft2, dright2, fdleft2, fdright2, vsubmixl2, vsubmixr2),
-        ComboVoice(
-            fmdrum3, dexed3, vmsample3, vosca3, voscb3, vnoise3, voscmix3, vdc3, vlfilter3, vfilterenv3, vmix3, venv3, vleft3, vright3, dleft3, dright3, fdleft3, fdright3, vsubmixl3, vsubmixr3),
-        ComboVoice(
-            fmdrum4, dexed4, vmsample4, vosca4, voscb4, vnoise4, voscmix4, vdc4, vlfilter4, vfilterenv4, vmix4, venv4, vleft4, vright4, dleft4, dright4, fdleft4, fdright4, vsubmixl4, vsubmixr4),
-    };
-
-    SampleVoice sampleVoices[SAMPLE_VOICE_COUNT] = {
-        SampleVoice(
-            vmsample5, venv5, vleft5, vright5, vsubmixl5, vsubmixr5),
-        SampleVoice(
-            vmsample6, venv6, vleft6, vright6, vsubmixl6, vsubmixr6),
-        SampleVoice(
-            vmsample7, venv7, vleft7, vright7, vsubmixl7, vsubmixr7),
-        SampleVoice(
-            vmsample8, venv8, vleft8, vright8, vsubmixl8, vsubmixr8),
-        SampleVoice(
-            vmsample9, venv9, vleft9, vright9, vsubmixl9, vsubmixr9),
-        SampleVoice(
-            vmsample10, venv10, vleft10, vright10, vsubmixl10, vsubmixr10),
-        SampleVoice(
-            vmsample11, venv11, vleft11, vright11, vsubmixl11, vsubmixr11),
-        SampleVoice(
-            vmsample12, venv12, vleft12, vright12, vsubmixl12, vsubmixr12),
-        SampleVoice(
-            vmsample13, venv13, vleft13, vright13, vsubmixl13, vsubmixr13),
-        SampleVoice(
-            vmsample14, venv14, vleft14, vright14, vsubmixl14, vsubmixr14),
-        SampleVoice(
-            vmsample15, venv15, vleft15, vright15, vsubmixl15, vsubmixr15),
-        SampleVoice(
-            vmsample16, venv16, vleft16, vright16, vsubmixl16, vsubmixr16),
-    };
+    // 8MB max of samples per pattern in external PSRAM, 1 sample allowed per track for now    
+    newdigate::audiosample *_extPatternSamples[MAXIMUM_SEQUENCER_TRACKS];
+    newdigate::flashloader _loader;
+    uint8_t _numChannels = 1;
 
     float _noteToFreqArr[13] = {
         16.35, 17.32, 18.35, 19.45, 20.60, 21.83, 23.12, 24.50, 25.96, 27.50, 29.14, 30.87, 32.70
     };
 
     int _cvLevels[128];
-
-    std::map<int, loop_type> loopTypeSelMap = {
-        {0, looptype_none},
-        {1, looptype_repeat},
-        {2, looptype_repeat}, // used for chromatic repeat
-    };
-
-    std::map<loop_type, int> loopTypeFindMap = {
-        {looptype_none, 0},
-        {looptype_repeat, 1},
-    };
-
-    std::map<int, play_start> playStartSelMap = {
-        {0, play_start_sample},
-        {1, play_start_loop},
-    };
-
-    std::map<play_start, int> playStartFindMap = {
-        {play_start_sample, 0},
-        {play_start_loop, 1},
-    };
 
     std::map<int, int> _waveformFindMap = {
         {WAVEFORM_SAWTOOTH, 0},
@@ -95,18 +42,6 @@ namespace XRSound
         {5, WAVEFORM_SINE},
     };
 
-    // 8MB max of samples per pattern in external PSRAM, 1 sample allowed per track for now    
-    newdigate::audiosample *_extPatternSamples[MAXIMUM_SEQUENCER_TRACKS];
-    newdigate::flashloader _loader;
-    uint8_t _numChannels = 1;
-
-    bool soundNeedsReinit[MAXIMUM_SEQUENCER_TRACKS] = {
-        false, false, false, false,
-        false, false, false, false,
-        false, false, false, false,
-        false, false, false, false,
-    };
-
     int32_t cvTrigInitParams[MAXIMUM_SOUND_PARAMS] = {
         100,0,0,0,0, // port, n/a, n/a, n/a, n/a
         0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
@@ -123,7 +58,7 @@ namespace XRSound
         0,0,0,0,0  // n/a, n/a, n/a, n/a, n/a
     };
 
-   int32_t midiInitParams[MAXIMUM_SOUND_PARAMS] = {
+    int32_t midiInitParams[MAXIMUM_SOUND_PARAMS] = {
         1,0,0,0,0, // channel, n/a, n/a, n/a, n/a
         0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
@@ -163,8 +98,81 @@ namespace XRSound
         70,0,0,0,0,             // level, pan, n/a, n/a, n/a
         0,0,0,0,0               // n/a, n/a, n/a, n/a, n/a
     };
+  
+    // extern globals
+    
+    SOUND currentPatternSounds[MAXIMUM_SEQUENCER_TRACKS];
 
-    std::map<SOUND_TYPE, int32_t*> _soundTypeInitParams = {
+    DMAMEM SOUND nextPatternSounds[MAXIMUM_SEQUENCER_TRACKS];
+    DMAMEM PATTERN_SOUND_MODS patternSoundMods;
+
+    bool soundNeedsReinit[MAXIMUM_SEQUENCER_TRACKS] = {
+        false, false, false, false,
+        false, false, false, false,
+        false, false, false, false,
+        false, false, false, false,
+    };
+
+    ComboVoice comboVoices[COMBO_VOICE_COUNT] = {
+        ComboVoice(
+            fmdrum1, dexed1, vmsample1, vosca1, voscb1, vnoise1, voscmix1, vdc1, vlfilter1, vfilterenv1, vmix1, venv1, vleft1, vright1, dleft1, dright1, fdleft1, fdright1, vsubmixl1, vsubmixr1),
+        ComboVoice(
+            fmdrum2, dexed2, vmsample2, vosca2, voscb2, vnoise2, voscmix2, vdc2, vlfilter2, vfilterenv2, vmix2, venv2, vleft2, vright2, dleft2, dright2, fdleft2, fdright2, vsubmixl2, vsubmixr2),
+        ComboVoice(
+            fmdrum3, dexed3, vmsample3, vosca3, voscb3, vnoise3, voscmix3, vdc3, vlfilter3, vfilterenv3, vmix3, venv3, vleft3, vright3, dleft3, dright3, fdleft3, fdright3, vsubmixl3, vsubmixr3),
+        ComboVoice(
+            fmdrum4, dexed4, vmsample4, vosca4, voscb4, vnoise4, voscmix4, vdc4, vlfilter4, vfilterenv4, vmix4, venv4, vleft4, vright4, dleft4, dright4, fdleft4, fdright4, vsubmixl4, vsubmixr4),
+    };
+
+    SampleVoice sampleVoices[SAMPLE_VOICE_COUNT] = {
+        SampleVoice(
+            vmsample5, venv5, vleft5, vright5, vsubmixl5, vsubmixr5),
+        SampleVoice(
+            vmsample6, venv6, vleft6, vright6, vsubmixl6, vsubmixr6),
+        SampleVoice(
+            vmsample7, venv7, vleft7, vright7, vsubmixl7, vsubmixr7),
+        SampleVoice(
+            vmsample8, venv8, vleft8, vright8, vsubmixl8, vsubmixr8),
+        SampleVoice(
+            vmsample9, venv9, vleft9, vright9, vsubmixl9, vsubmixr9),
+        SampleVoice(
+            vmsample10, venv10, vleft10, vright10, vsubmixl10, vsubmixr10),
+        SampleVoice(
+            vmsample11, venv11, vleft11, vright11, vsubmixl11, vsubmixr11),
+        SampleVoice(
+            vmsample12, venv12, vleft12, vright12, vsubmixl12, vsubmixr12),
+        SampleVoice(
+            vmsample13, venv13, vleft13, vright13, vsubmixl13, vsubmixr13),
+        SampleVoice(
+            vmsample14, venv14, vleft14, vright14, vsubmixl14, vsubmixr14),
+        SampleVoice(
+            vmsample15, venv15, vleft15, vright15, vsubmixl15, vsubmixr15),
+        SampleVoice(
+            vmsample16, venv16, vleft16, vright16, vsubmixl16, vsubmixr16),
+    };
+
+    std::map<int, loop_type> loopTypeSelMap = {
+        {0, looptype_none},
+        {1, looptype_repeat},
+        {2, looptype_repeat}, // used for chromatic repeat
+    };
+
+    std::map<loop_type, int> loopTypeFindMap = {
+        {looptype_none, 0},
+        {looptype_repeat, 1},
+    };
+
+    std::map<int, play_start> playStartSelMap = {
+        {0, play_start_sample},
+        {1, play_start_loop},
+    };
+
+    std::map<play_start, int> playStartFindMap = {
+        {play_start_sample, 0},
+        {play_start_loop, 1},
+    };
+
+    std::map<SOUND_TYPE, int32_t*> soundTypeInitParams = {
         { T_MONO_SAMPLE, monoSampleInitParams },
         { T_MONO_SYNTH, monoSynthInitParams },
         { T_DEXED_SYNTH, dexedSynthInitParams },
@@ -174,12 +182,6 @@ namespace XRSound
         { T_CV_TRIG, cvTrigInitParams },
     };
 
-    SOUND currentPatternSounds[MAXIMUM_SEQUENCER_TRACKS];
-    DMAMEM SOUND nextPatternSounds[MAXIMUM_SEQUENCER_TRACKS];
-
-    // DMAMEM PATTERN_SOUND_MODS currentPatternSoundMods;
-    // DMAMEM PATTERN_SOUND_MODS nextPatternSoundMods;
-    
     void init()
     {
         // initialize CV level array
@@ -441,7 +443,7 @@ namespace XRSound
 
         // init generic sound params
         auto soundType = currentPatternSounds[track].type;
-        auto initParams = _soundTypeInitParams[soundType];
+        auto initParams = soundTypeInitParams[soundType];
         for (int p=0; p<MAXIMUM_SOUND_PARAMS; p++)
         {
             currentPatternSounds[track].params[p] = initParams[p];

@@ -10,30 +10,36 @@ namespace XRSequencer
 {
     // mods
 
-    // 1 active pattern * 16 tracks * 64 steps * ~8 bytes = ~8192 bytes in heap
+    // 1 active pattern * 16 tracks * 64 steps * ~11 bytes = ~11,264 bytes in heap
 
-    // PATTERN_TRACK_MODS _currPatternTrackMods; = ~8kb in heap
-    // PATTERN_TRACK_MODS _nextPatternTrackMods; = ~8kb in heap (or maybe DMAMEM?)
+    // PATTERN_TRACK_MODS _currPatternTrackMods; = ~11kb in heap
+    // PATTERN_TRACK_MODS _nextPatternTrackMods; = ~11kb in heap (or maybe DMAMEM?)
     
     // all track step mods for all other banks and patterns are stored in SD card,
     // they are fetched when changing patterns, stored in _nextPatternTrackMods,
     // and then _nextPatternTrackMods replaces _currPatternTrackMods as soon as next pattern starts
 
+    // typedef struct
+    // {
+    //     uint8_t note;        // 0 = C
+    //     bool noteMod;
+    //     uint8_t octave;      // 4 = middle C (C4)
+    //     bool octaveMod;
+    //     uint8_t length;      // 4 = 1/16
+    //     bool lengthMod;
+    //     uint8_t velocity;   // 50 = 50%
+    //     bool velocityMod;
+    //     uint8_t probability;
+    //     bool probabilityMod;
+    //     int8_t microtiming;
+    //     bool microtimingMod;
+    // } TRACK_STEP_MODS;
+
     typedef struct
     {
-        uint8_t note;        // 0 = C
-        bool noteMod;
-        uint8_t octave;      // 4 = middle C (C4)
-        bool octaveMod;
-        uint8_t length;      // 4 = 1/16
-        bool lengthMod;
-        uint8_t velocity;   // 50 = 50%
-        bool velocityMod;
-        uint8_t probability;
-        bool probabilityMod;
-        int16_t microtiming;
-        bool microtimingMod;
-    } TRACK_STEP_MODS;
+        int8_t mods[MAXIMUM_TRACK_MODS]; // divide by 100 to get real param mod values
+        bool flags[MAXIMUM_TRACK_MODS]; // whether the param mod should apply or not
+    } TRACK_STEP_MODS; // ~11b
 
     typedef struct
     {
@@ -118,7 +124,7 @@ namespace XRSequencer
     typedef struct
     {
         BANK banks[MAXIMUM_SEQUENCER_BANKS];
-    } SEQUENCER_EXTERNAL;
+    } EXTERNAL_SEQUENCER;
 
     // sequencer state
 
@@ -159,8 +165,13 @@ namespace XRSequencer
         int8_t length = -1;
     } STACK_RATCHET_DATA;
 
-    // external globals
+    // extern globals
+    extern PATTERN heapPattern;
     extern TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
+    extern DMAMEM EXTERNAL_SEQUENCER externalSequencer;
+    // we only keep the current pattern's sound mods in memory,
+    // when a pattern change occurs, the next pattern's sound mods are loaded from the SD card
+    extern DMAMEM PATTERN_TRACK_MODS patternTrackMods;
 
     bool init();
 
@@ -221,7 +232,7 @@ namespace XRSequencer
 
     SEQUENCER_STATE &getSeqState();
 
-    SEQUENCER_EXTERNAL &getSequencerExternal();
+    EXTERNAL_SEQUENCER &getExternalSequencer();
     QUEUED_PATTERN &getQueuedPattern();
     PATTERN &getHeapPattern();
 

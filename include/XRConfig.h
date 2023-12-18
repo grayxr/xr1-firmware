@@ -88,4 +88,6 @@
 #define SOUND_MENU_ITEM_MAX 3
 #define SETUP_MENU_ITEM_MAX 3
 
+#define MAXIMUM_TRACK_MODS 10
+
 #endif /* XRConfig_h */

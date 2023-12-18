@@ -167,7 +167,7 @@ namespace XRLED
 
     void displayCurrentlySelectedPattern()
     {
-        //auto &seqExternal = XRSequencer::getSequencerExternal();
+        //auto &externalSequencer = XRSequencer::getExternalSequencer();
         //auto currentSelectedBank = XRSequencer::getCurrentSelectedBankNum();
         auto currentSelectedPattern = XRSequencer::getCurrentSelectedPatternNum();
 
@@ -175,7 +175,7 @@ namespace XRLED
         {
             // TODO: impl pattern, track, bank initialize properly
 
-            //if (seqExternal.banks[currentSelectedBank].patterns[p].initialized)
+            //if (externalSequencer.banks[currentSelectedBank].patterns[p].initialized)
             //{
                 if (p == currentSelectedPattern)
                 {
@@ -374,12 +374,12 @@ namespace XRLED
 
     void displayInitializedPatternLEDs()
     {
-        auto &seqExternal = XRSequencer::getSequencerExternal();
+        auto &externalSequencer = XRSequencer::getExternalSequencer();
         auto currSelBank = XRSequencer::getCurrentSelectedBankNum();
 
         for (int p = 0; p < MAXIMUM_SEQUENCER_PATTERNS; p++)
         {
-            if (seqExternal.banks[currSelBank].patterns[p].initialized)
+            if (externalSequencer.banks[currSelBank].patterns[p].initialized)
             {
                 setPWM(_stepLEDPins[p], 4095);
             }
