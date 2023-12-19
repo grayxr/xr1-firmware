@@ -80,8 +80,6 @@ namespace XRSD
         // write machine state binary for current version
         if (machineStateVersion == "0.1.0")
         {
-            // Serial.println("here!");
-
             // verify file dir exists first
             if (!SD.exists(machineStateDir.c_str()))
             {
@@ -112,10 +110,7 @@ namespace XRSD
         char machineStateFilenameBuf[50];
         XRHelpers::getMachineStateFile(machineStateFilenameBuf);
         std::string machineStateFilename(machineStateFilenameBuf);
-
         std::string finalPath = machineStateDir + machineStateFilename;
-
-        // Serial.printf("machineStatePath: %s\n", finalPath.c_str());
 
         File machineStateFile = SD.open(finalPath.c_str(), FILE_READ);
         if (!machineStateFile.available())
@@ -177,9 +172,16 @@ namespace XRSD
         File newProjectFile = SD.open(newProjectFilePath.c_str(), FILE_WRITE);
         newProjectFile.write((byte *)&_current_project, sizeof(_current_project));
         newProjectFile.close();
+
+        delay(100);
         
         XRSequencer::init();
         XRSound::init();
+
+        saveProject();
+
+        XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_WRITE);
+        XRDisplay::drawSequencerScreen(false);
     }
 
     void saveProject()
@@ -238,11 +240,20 @@ namespace XRSD
 
         savePatternTrackStepModsToSdCard();
 
+        savePatternSounds();
+        savePatternSoundStepModsToSdCard();
+
         Serial.println("done saving project!");
     }
 
     bool loadLastProject()
     {
+        // // TEMP
+        // SD.remove("/audio enjoyer/xr-1/.data");
+        // SD.remove("/audio enjoyer/xr-1/projects");
+        // XRDisplay::drawError("REBOOT!");
+        // return;
+
         std::string lastKnownProject(_machine_state.lastOpenedProject);
 
         if (lastKnownProject.length() == 0)
@@ -294,6 +305,13 @@ namespace XRSD
             XRSequencer::getCurrentSelectedPatternNum()
         );
 
+        // for now just do this,
+        // TODO: just make another method to populate current pattern sounds from SD card
+        // so we don't need to move next* to current*
+        for (int t=0; t< MAXIMUM_SEQUENCER_TRACKS; t++) {
+            XRSound::reinitSoundForTrack(t);
+        }
+
         loadPatternSoundStepModsFromSdCard(
             XRSequencer::getCurrentSelectedBankNum(),
             XRSequencer::getCurrentSelectedPatternNum()
@@ -305,6 +323,9 @@ namespace XRSD
             _current_project.machineVersion,
             _current_project.tempo
         );
+
+        XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_WRITE);
+        XRDisplay::drawSequencerScreen(false);
 
         return true;
     }
@@ -537,12 +558,17 @@ namespace XRSD
             return false;
         }
 
+        auto &seq = XRSequencer::getSequencer();
+
         File seqFileR = SD.open(currProjectSequencerFilePath.c_str(), FILE_READ);
-        seqFileR.read((byte *)&XRSequencer::sequencer, sizeof(XRSequencer::sequencer));
+        seqFileR.read((byte *)&seq, sizeof(seq));
         seqFileR.close();
 
         // setup current pattern in heap from first pattern from first bank in RAM2/DMAMEM
-        XRSequencer::heapPattern = XRSequencer::sequencer.banks[0].patterns[0];
+        auto &heapPattern = XRSequencer::getHeapPattern();
+        heapPattern = seq.banks[0].patterns[0];
+
+        return true;
     }
 
     bool loadPatternTrackStepModsFromSdCard(int bank, int pattern)

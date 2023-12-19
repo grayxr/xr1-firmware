@@ -409,7 +409,7 @@ namespace XRKeyMatrix
 
             auto curSelBank = XRSequencer::getCurrentSelectedBankNum();
             auto currSelPattern = XRSequencer::getCurrentSelectedPatternNum();
-            auto &sequencer = XRSequencer::getExternalSequencer();
+            auto &sequencer = XRSequencer::getSequencer();
             auto &heapPattern = XRSequencer::getHeapPattern();
 
             Serial.println("try this:");
@@ -482,7 +482,7 @@ namespace XRKeyMatrix
             }
 
             // save pasted step
-            auto &sequencer = XRSequencer::getExternalSequencer();
+            auto &sequencer = XRSequencer::getSequencer();
             auto &heapPattern = XRSequencer::getHeapPattern();
             auto currSelBank = XRSequencer::getCurrentSelectedBankNum();
             auto currSelPattern = XRSequencer::getCurrentSelectedPatternNum();
@@ -520,7 +520,7 @@ namespace XRKeyMatrix
             Serial.println("pasting selected pattern to target pattern!");
 
             uint8_t targetPattern = getKeyStepNum(key) - 1;
-            auto &sequencer = XRSequencer::getExternalSequencer();
+            auto &sequencer = XRSequencer::getSequencer();
             auto &heapPattern = XRSequencer::getHeapPattern();
             auto &seqState = XRSequencer::getSeqState();
             auto currSelBank = XRSequencer::getCurrentSelectedBankNum();
@@ -1018,8 +1018,6 @@ namespace XRKeyMatrix
 
     bool handleCreateProjectReleaseActions(char key)
     {
-        // Serial.println("enter handleCreateProjectReleaseActions!");
-
         XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
 
         if (currentUXMode == XRUX::UX_MODE::PROJECT_INITIALIZE)
@@ -1047,14 +1045,6 @@ namespace XRKeyMatrix
                 delay(100);
 
                 XRSD::createNewProject();
-
-                delay(100);
-
-                XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_WRITE);
-                XRSequencer::init();
-                
-                // TODO: FIX 
-                // XRSound::loadVoiceSettings();
 
                 return true;
 

@@ -96,7 +96,7 @@ namespace XRSequencer
 
     TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
 
-    DMAMEM EXTERNAL_SEQUENCER sequencer;
+    DMAMEM SEQUENCER sequencer;
     DMAMEM PATTERN_TRACK_MODS patternTrackStepMods;
 
     void initPatternTrackStepMods();
@@ -421,7 +421,7 @@ namespace XRSequencer
         return heapPattern;
     }
 
-    EXTERNAL_SEQUENCER &getExternalSequencer()
+    SEQUENCER &getSequencer()
     {
         return sequencer;
     }
@@ -629,8 +629,6 @@ namespace XRSequencer
             auto currTrack = currentPattern.tracks[t];
             auto currTrackStepData = currTrack.steps[currTrackStep];
 
-            // TODO: add 16 perform struct objects to store mutes & solos, etc
-
             if (!trackPerformState[t].muted && ((currTrackStepData.state == STEP_STATE::STATE_ON) || (currTrackStepData.state == STEP_STATE::STATE_ACCENTED)))
             {
                 handleAddToStepStack(tick, t, currTrackStep);
@@ -642,12 +640,8 @@ namespace XRSequencer
     {
         auto trackToUse = getHeapTrack(track);
 
-        // bool lenStepModEnabled = _patternMods.tracks[track].step_mod_flags[step].flags[MOD_ATTRS::LENGTH];
-        // int lenStepMod = _patternMods.tracks[track].steps[step].length;
-
-        // TODO: FIX
-        int lenStepMod = 4;
-        bool lenStepModEnabled = false;
+        int lenStepMod = patternTrackStepMods.tracks[track].steps[step].mods[LENGTH];
+        bool lenStepModEnabled = patternTrackStepMods.tracks[track].steps[step].flags[LENGTH];
 
         for (uint8_t i = 0; i < STEP_STACK_SIZE; i++)
         {
@@ -667,7 +661,6 @@ namespace XRSequencer
     void handleNoteOnForTrackStep(int track, int step)
     {
         auto &trackToUse = getHeapTrack(track);
-        auto currentSoundForTrack = XRSound::currentPatternSounds[track];
 
         if (trackPerformState[track].muted)
         {
@@ -681,7 +674,7 @@ namespace XRSequencer
             XRSound::reinitSoundForTrack(track);
         }
 
-        switch (currentSoundForTrack.type)
+        switch (XRSound::currentPatternSounds[track].type)
         {
         case XRSound::T_MONO_SAMPLE:
             XRSound::handleMonoSampleNoteOnForTrackStep(track, step);
@@ -778,6 +771,7 @@ namespace XRSequencer
                 sequencer.banks[b].patterns[p].lstep = DEFAULT_LAST_STEP;
                 sequencer.banks[b].patterns[p].groove.amount = 0;
                 sequencer.banks[b].patterns[p].groove.id = -1;
+                sequencer.banks[b].patterns[p].accent = DEFAULT_GLOBAL_ACCENT;
                 sequencer.banks[b].patterns[p].initialized = false;
 
                 if (p == 0)

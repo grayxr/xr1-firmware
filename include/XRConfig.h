@@ -89,5 +89,6 @@
 #define SETUP_MENU_ITEM_MAX 3
 
 #define MAXIMUM_TRACK_MODS 10
+#define DEFAULT_GLOBAL_ACCENT 80
 
 #endif /* XRConfig_h */

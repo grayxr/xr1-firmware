@@ -58,6 +58,7 @@ namespace XRSequencer
 
         PATTERN_GROOVE groove;
         uint8_t lstep = DEFAULT_LAST_STEP;
+        uint8_t accent = DEFAULT_GLOBAL_ACCENT;
         float tempo;
 
         bool initialized = false;
@@ -81,7 +82,7 @@ namespace XRSequencer
     typedef struct
     {
         BANK banks[MAXIMUM_SEQUENCER_BANKS];
-    } EXTERNAL_SEQUENCER;
+    } SEQUENCER;
 
     // sequencer state
 
@@ -157,7 +158,7 @@ namespace XRSequencer
     // extern globals
     extern PATTERN heapPattern;
     extern TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
-    extern DMAMEM EXTERNAL_SEQUENCER sequencer;
+    extern DMAMEM SEQUENCER sequencer;
     // we only keep the current pattern's sound mods in memory,
     // when a pattern change occurs, the next pattern's sound mods are loaded from the SD card
     extern DMAMEM PATTERN_TRACK_MODS patternTrackStepMods;
@@ -221,7 +222,7 @@ namespace XRSequencer
 
     SEQUENCER_STATE &getSeqState();
 
-    EXTERNAL_SEQUENCER &getExternalSequencer();
+    SEQUENCER &getSequencer();
     QUEUED_PATTERN &getQueuedPattern();
     PATTERN &getHeapPattern();
 

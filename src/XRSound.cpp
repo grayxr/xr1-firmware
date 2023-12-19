@@ -70,7 +70,7 @@ namespace XRSound
         5000,0,75,0,0, // frequency, fm, decay, noise, overdrive
         0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
+        70,0,0,0,0, // level, pan, n/a, n/a, n/a
         0,0,0,0,0  // n/a, n/a, n/a, n/a, n/a
     };
 
@@ -533,12 +533,12 @@ namespace XRSound
         mods.aName = "L.STEP";
         mods.bName = "GROOVE";
         mods.cName = "GR.AMT";
-        mods.dName = "--";
+        mods.dName = "ACCENT";
 
         mods.aValue = std::to_string(pattern.lstep);
         mods.bValue = pattern.groove.id > -1 ? grooveForPattern : "OFF";
         mods.cValue = pattern.groove.id > -1 ? grooveAmountForPattern : "--";
-        mods.dValue = "--";
+        mods.dValue = std::to_string(pattern.accent);
 
         return mods;
     }
@@ -1170,18 +1170,17 @@ namespace XRSound
     void handleMonoSampleNoteOnForTrack(int track)
     {
         auto &trackToUse = XRSequencer::getHeapTrack(track);
-        auto currentSoundForTrack = currentPatternSounds[track];
 
-        auto msmpSamplePlayRate = getValueNormalizedAsFloat(currentSoundForTrack.params[MSMP_SAMPLEPLAYRATE]);
-        auto msmpLooptype = getValueNormalizedAsUInt8(currentSoundForTrack.params[MSMP_LOOPTYPE]);
-        auto msmpLoopstart = getValueNormalizedAsInt32(currentSoundForTrack.params[MSMP_LOOPSTART]);
-        auto msmpLoopfinish = getValueNormalizedAsInt32(currentSoundForTrack.params[MSMP_LOOPFINISH]);
-        auto msmpPlaystart = (play_start)getValueNormalizedAsUInt8(currentSoundForTrack.params[MSMP_PLAYSTART]);
-        auto msmpAatt = getValueNormalizedAsFloat(currentSoundForTrack.params[MSMP_AMP_ATTACK]);
-        auto msmpAdec = getValueNormalizedAsFloat(currentSoundForTrack.params[MSMP_AMP_DECAY]);
-        auto msmpAsus = getValueNormalizedAsFloat(currentSoundForTrack.params[MSMP_AMP_SUSTAIN]);
-        auto msmpArel = getValueNormalizedAsFloat(currentSoundForTrack.params[MSMP_AMP_RELEASE]);
-        auto msmpPan = getValueNormalizedAsFloat(currentSoundForTrack.params[MSMP_PAN]);
+        auto msmpSamplePlayRate = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSMP_SAMPLEPLAYRATE]);
+        auto msmpLooptype = getValueNormalizedAsUInt8(currentPatternSounds[track].params[MSMP_LOOPTYPE]);
+        auto msmpLoopstart = getValueNormalizedAsInt32(currentPatternSounds[track].params[MSMP_LOOPSTART]);
+        auto msmpLoopfinish = getValueNormalizedAsInt32(currentPatternSounds[track].params[MSMP_LOOPFINISH]);
+        auto msmpPlaystart = (play_start)getValueNormalizedAsUInt8(currentPatternSounds[track].params[MSMP_PLAYSTART]);
+        auto msmpAatt = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSMP_AMP_ATTACK]);
+        auto msmpAdec = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSMP_AMP_DECAY]);
+        auto msmpAsus = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSMP_AMP_SUSTAIN]);
+        auto msmpArel = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSMP_AMP_RELEASE]);
+        auto msmpPan = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSMP_PAN]);
 
         if (track > 3) // sample-only voices
         {
@@ -1201,7 +1200,7 @@ namespace XRSound
 
             sampleVoices[tOffset].ampEnv.noteOn();
 
-            std::string trackSampleName(currentSoundForTrack.sampleName);
+            std::string trackSampleName(currentPatternSounds[track].sampleName);
 
             // if sample has valid name, assume it is loaded in PSRAM and can be played
             if (trackSampleName.length() > 0) {
@@ -1253,7 +1252,7 @@ namespace XRSound
 
             comboVoices[track].ampEnv.noteOn();
 
-            std::string trackSampleName(currentSoundForTrack.sampleName);
+            std::string trackSampleName(currentPatternSounds[track].sampleName);
 
             // if sample has valid name, assume it is loaded in PSRAM and can be played
             if (trackSampleName.length() > 0) {
@@ -1294,27 +1293,26 @@ namespace XRSound
     void handleMonoSynthNoteOnForTrack(int track)
     {
         auto &trackToUse = XRSequencer::getHeapTrack(track);
-        auto currentSoundForTrack = currentPatternSounds[track];
        
-        auto msynPan = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_PAN]);
-        auto msynFine = getValueNormalizedAsInt8(currentSoundForTrack.params[MSYN_FINE]);
-        auto msynDetune = getValueNormalizedAsInt8(currentSoundForTrack.params[MSYN_DETUNE]);
+        auto msynPan = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_PAN]);
+        auto msynFine = getValueNormalizedAsInt8(currentPatternSounds[track].params[MSYN_FINE]);
+        auto msynDetune = getValueNormalizedAsInt8(currentPatternSounds[track].params[MSYN_DETUNE]);
 
-        auto msynFatt = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_FILTER_ATTACK]);
-        auto msynFdec = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_FILTER_DECAY]);
-        auto msynFsus = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_FILTER_SUSTAIN]);
-        auto msynFrel = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_FILTER_RELEASE]);
+        auto msynFatt = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_FILTER_ATTACK]);
+        auto msynFdec = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_FILTER_DECAY]);
+        auto msynFsus = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_FILTER_SUSTAIN]);
+        auto msynFrel = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_FILTER_RELEASE]);
 
-        auto msynAatt = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_AMP_ATTACK]);
-        auto msynAdec = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_AMP_DECAY]);
-        auto msynAsus = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_AMP_SUSTAIN]);
-        auto msynArel = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_AMP_RELEASE]);
-        
-        AudioNoInterrupts();
+        auto msynAatt = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_AMP_ATTACK]);
+        auto msynAdec = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_AMP_DECAY]);
+        auto msynAsus = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_AMP_SUSTAIN]);
+        auto msynArel = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_AMP_RELEASE]);
 
         float foundBaseFreq = _noteToFreqArr[trackToUse.note];
         float octaveFreqA = (foundBaseFreq + (msynFine * 0.01)) * (pow(2, trackToUse.octave));
         float octaveFreqB = (foundBaseFreq * pow(2.0, (float)msynDetune / 12.0)) * (pow(2, trackToUse.octave));
+        
+        AudioNoInterrupts();
 
         comboVoices[track].osca.frequency(octaveFreqA);
         comboVoices[track].oscb.frequency(octaveFreqB);
@@ -1348,18 +1346,12 @@ namespace XRSound
 
         int midiNote = (noteToUse + (12 * (octaveToUse)));
 
-        if (track < 4)
-        {
-            comboVoices[track].dexed.keydown(midiNote, 50); // TODO: parameterize velocity
-        }
+        comboVoices[track].dexed.keydown(midiNote, 50); // TODO: parameterize velocity
     }
     
     void handleFmDrumNoteOnForTrack(int track)
     {
-        if (track < 4)
-        {
-            comboVoices[track].fmdrum.noteOn();
-        }
+        comboVoices[track].fmdrum.noteOn();
     }
 
     void handleMIDINoteOnForTrack(int track)
@@ -1377,18 +1369,18 @@ namespace XRSound
         auto &trackToUse = XRSequencer::getHeapTrack(track);
         auto &stepToUse = XRSequencer::getHeapStep(track, step);
 
-        auto currentSoundForTrack = currentPatternSounds[track];
+        auto msmpSamplePlayRate = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSMP_SAMPLEPLAYRATE]);
+        auto msmpLooptype = getValueNormalizedAsUInt8(currentPatternSounds[track].params[MSMP_LOOPTYPE]);
+        auto msmpLoopstart = getValueNormalizedAsInt32(currentPatternSounds[track].params[MSMP_LOOPSTART]);
+        auto msmpLoopfinish = getValueNormalizedAsInt32(currentPatternSounds[track].params[MSMP_LOOPFINISH]);
+        auto msmpPlaystart = (play_start)getValueNormalizedAsUInt8(currentPatternSounds[track].params[MSMP_PLAYSTART]);
+        auto msmpAatt = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSMP_AMP_ATTACK]);
+        auto msmpAdec = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSMP_AMP_DECAY]);
+        auto msmpAsus = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSMP_AMP_SUSTAIN]);
+        auto msmpArel = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSMP_AMP_RELEASE]);
+        auto msmpPan = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSMP_PAN]);
 
-        auto msmpSamplePlayRate = getValueNormalizedAsFloat(currentSoundForTrack.params[MSMP_SAMPLEPLAYRATE]);
-        auto msmpLooptype = getValueNormalizedAsUInt8(currentSoundForTrack.params[MSMP_LOOPTYPE]);
-        auto msmpLoopstart = getValueNormalizedAsInt32(currentSoundForTrack.params[MSMP_LOOPSTART]);
-        auto msmpLoopfinish = getValueNormalizedAsInt32(currentSoundForTrack.params[MSMP_LOOPFINISH]);
-        auto msmpPlaystart = (play_start)getValueNormalizedAsUInt8(currentSoundForTrack.params[MSMP_PLAYSTART]);
-        auto msmpAatt = getValueNormalizedAsFloat(currentSoundForTrack.params[MSMP_AMP_ATTACK]);
-        auto msmpAdec = getValueNormalizedAsFloat(currentSoundForTrack.params[MSMP_AMP_DECAY]);
-        auto msmpAsus = getValueNormalizedAsFloat(currentSoundForTrack.params[MSMP_AMP_SUSTAIN]);
-        auto msmpArel = getValueNormalizedAsFloat(currentSoundForTrack.params[MSMP_AMP_RELEASE]);
-        auto msmpPan = getValueNormalizedAsFloat(currentSoundForTrack.params[MSMP_PAN]);
+        std::string trackSampleName(currentPatternSounds[track].sampleName);
 
         // TODO: allow sample chromatic note playback
 
@@ -1404,8 +1396,9 @@ namespace XRSound
 
         auto velocityToUse = trackToUse.velocity;
         if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
-            velocityToUse = 100; // 100%
+            velocityToUse = max(trackToUse.velocity, XRSequencer::heapPattern.accent);
         }
+
         // if (patternMods.tracks[track].step_mod_flags[step].flags[XRSequencer::MOD_ATTRS::VELOCITY])
         // {
         //     velocityToUse = patternMods.tracks[track].steps[step].velocity;
@@ -1465,8 +1458,6 @@ namespace XRSound
 
             sampleVoices[tOffset].ampEnv.noteOn();
 
-            std::string trackSampleName(currentSoundForTrack.sampleName);
-
             // if sample has valid name, assume it is loaded in PSRAM and can be played
             if (trackSampleName.length() > 0) {
                 sampleVoices[tOffset].sample.playRaw(
@@ -1516,8 +1507,6 @@ namespace XRSound
 
             comboVoices[track].ampEnv.noteOn();
 
-            std::string trackSampleName(currentSoundForTrack.sampleName);
-
             // if sample has valid name, assume it is loaded in PSRAM and can be played
             if (trackSampleName.length() > 0) {
                 comboVoices[track].sample.playRaw(
@@ -1555,62 +1544,56 @@ namespace XRSound
         auto &trackToUse = XRSequencer::getHeapTrack(track);
         auto &stepToUse = XRSequencer::getHeapStep(track, step);
 
-        auto currentSoundForTrack = currentPatternSounds[track];
-
-        auto msynWave = getValueNormalizedAsUInt8(currentSoundForTrack.params[MSYN_WAVE]);
+        auto msynWave = getValueNormalizedAsUInt8(currentPatternSounds[track].params[MSYN_WAVE]);
        
-        auto msynPan = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_PAN]);
-        auto msynFine = getValueNormalizedAsInt8(currentSoundForTrack.params[MSYN_FINE]);
-        auto msynDetune = getValueNormalizedAsInt8(currentSoundForTrack.params[MSYN_DETUNE]);
+        auto msynPan = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_PAN]);
+        auto msynFine = getValueNormalizedAsInt8(currentPatternSounds[track].params[MSYN_FINE]);
+        auto msynDetune = getValueNormalizedAsInt8(currentPatternSounds[track].params[MSYN_DETUNE]);
 
-        auto msynFatt = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_FILTER_ATTACK]);
-        auto msynFdec = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_FILTER_DECAY]);
-        auto msynFsus = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_FILTER_SUSTAIN]);
-        auto msynFrel = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_FILTER_RELEASE]);
+        auto msynFatt = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_FILTER_ATTACK]);
+        auto msynFdec = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_FILTER_DECAY]);
+        auto msynFsus = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_FILTER_SUSTAIN]);
+        auto msynFrel = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_FILTER_RELEASE]);
 
-        auto msynAatt = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_AMP_ATTACK]);
-        auto msynAdec = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_AMP_DECAY]);
-        auto msynAsus = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_AMP_SUSTAIN]);
-        auto msynArel = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_AMP_RELEASE]);
+        auto msynAatt = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_AMP_ATTACK]);
+        auto msynAdec = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_AMP_DECAY]);
+        auto msynAsus = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_AMP_SUSTAIN]);
+        auto msynArel = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_AMP_RELEASE]);
 
         uint8_t noteToUse = trackToUse.note;
-        // if (patternMods.tracks[track].step_mod_flags[step].flags[XRSequencer::MOD_ATTRS::NOTE])
-        // {
-        //     noteToUse = patternMods.tracks[track].steps[step].note;
-        //     // Serial.println(noteToUse);
-        // }
+        if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::NOTE])
+        {
+            noteToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::NOTE];
+        }
 
         uint8_t octaveToUse = trackToUse.octave;
-        // if (patternMods.tracks[track].step_mod_flags[step].flags[XRSequencer::MOD_ATTRS::OCTAVE])
-        // {
-        //     octaveToUse = patternMods.tracks[track].steps[step].octave;
-        //     // Serial.println(octaveToUse);
-        // }
+        if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::OCTAVE])
+        {
+            octaveToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::OCTAVE];
+        }
 
         uint8_t velocityToUse = trackToUse.velocity;
         if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
-            velocityToUse = 100; // 100%
+            if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::VELOCITY]) {
+                velocityToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::VELOCITY];
+            } else {
+                velocityToUse = max(trackToUse.velocity, XRSequencer::heapPattern.accent);
+            }
         }
-        // if (patternMods.tracks[track].step_mod_flags[step].flags[XRSequencer::MOD_ATTRS::VELOCITY])
-        // {
-        //     velocityToUse = patternMods.tracks[track].steps[step].velocity;
-        // }
-        // else
-        // {
-        //     velocityToUse = stepToUse.velocity;
-        // }
 
-        uint8_t waveformToUse = msynWave;
-        // if (patternMods.tracks[track].step_mod_flags[step].flags[XRSequencer::MOD_ATTRS::WAVEFORM])
-        // {
-        //     waveformToUse = patternMods.tracks[track].steps[step].waveform;
-        // }
-
-    AudioNoInterrupts();
+        int waveformToUse = msynWave;
+        if (patternSoundStepMods.sounds[track].steps[step].flags[MSYN_WAVE])
+        {
+            waveformToUse = getWaveformNumber(
+                getValueNormalizedAsUInt8(patternSoundStepMods.sounds[track].steps[step].mods[MSYN_WAVE])
+            );
+        }
 
         float foundBaseFreq = _noteToFreqArr[noteToUse];
         float octaveFreqA = (foundBaseFreq + (msynFine * 0.01)) * (pow(2, octaveToUse));
         float octaveFreqB = (foundBaseFreq * pow(2.0, (float)msynDetune / 12.0)) * (pow(2, octaveToUse));
+
+        AudioNoInterrupts();
 
         comboVoices[track].osca.begin(waveformToUse);
         comboVoices[track].oscb.begin(waveformToUse);
@@ -1631,7 +1614,7 @@ namespace XRSound
         comboVoices[track].ampEnv.sustain(msynAsus * (velocityToUse * 0.01));
         comboVoices[track].ampEnv.release(msynArel * (velocityToUse * 0.01));
 
-    AudioInterrupts();
+        AudioInterrupts();
 
         // now trigger envs
         comboVoices[track].ampEnv.noteOn();
@@ -1644,34 +1627,65 @@ namespace XRSound
         auto &stepToUse = XRSequencer::getHeapStep(track, step);
 
         uint8_t noteToUse = trackToUse.note;
-        // if (patternMods.tracks[track].step_mod_flags[step].flags[XRSequencer::MOD_ATTRS::NOTE])
-        // {
-        //     noteToUse = patternMods.tracks[track].steps[step].note;
-        //     // Serial.println(noteToUse);
-        // }
+        if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::NOTE])
+        {
+            noteToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::NOTE];
+        }
 
         uint8_t octaveToUse = trackToUse.octave;
-        // if (patternMods.tracks[track].step_mod_flags[step].flags[XRSequencer::MOD_ATTRS::OCTAVE])
-        // {
-        //     octaveToUse = patternMods.tracks[track].steps[step].octave;
-        //     // Serial.println(octaveToUse);
-        // }
+        if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::OCTAVE])
+        {
+            octaveToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::OCTAVE];
+        }
 
         uint8_t velocityToUse = trackToUse.velocity;
         if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
-            velocityToUse = 100; // 100%
+            if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::VELOCITY]) {
+                velocityToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::VELOCITY];
+            } else {
+                velocityToUse = max(trackToUse.velocity, XRSequencer::heapPattern.accent);
+            }
         }
 
-        // if (track < 4)
-        // {
-            int midiNote = (noteToUse + (12 * (octaveToUse)));
+        int midiNote = (noteToUse + (12 * (octaveToUse)));
 
-            comboVoices[track].dexed.keydown(midiNote, velocityToUse);
-        // }
+        comboVoices[track].dexed.keydown(midiNote, velocityToUse);
     }
 
     void handleFmDrumNoteOnForTrackStep(int track, int step)
     {
+        auto &trackToUse = XRSequencer::getHeapTrack(track);
+        auto &stepToUse = XRSequencer::getHeapStep(track, step);
+
+        auto fmdNoise = getValueNormalizedAsFloat(currentPatternSounds[track].params[FMD_NOISE]);
+        auto fmdDecay = getValueNormalizedAsFloat(currentPatternSounds[track].params[FMD_DECAY]);
+        auto fmdFm = getValueNormalizedAsFloat(currentPatternSounds[track].params[FMD_FM]);
+        auto fmdFreq = getValueNormalizedAsUInt8(currentPatternSounds[track].params[FMD_FREQ]);
+        auto fmdPan = getValueNormalizedAsFloat(currentPatternSounds[track].params[FMD_PAN]);
+
+        uint8_t velocityToUse = trackToUse.velocity;
+        if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
+            velocityToUse = max(trackToUse.velocity, XRSequencer::heapPattern.accent);
+        }
+        // if (patternMods.tracks[track].step_mod_flags[step].flags[XRSequencer::MOD_ATTRS::VELOCITY])
+        // {
+        //     velocityToUse = patternMods.tracks[track].steps[step].velocity;
+        // }
+        // else
+        // {
+        //     velocityToUse = stepToUse.velocity;
+        // }
+
+        AudioNoInterrupts();
+        comboVoices[track].fmdrum.noise(fmdNoise);
+        comboVoices[track].fmdrum.decay(fmdDecay);
+        comboVoices[track].fmdrum.fm(fmdFm);
+        comboVoices[track].fmdrum.frequency(fmdFreq);
+
+        comboVoices[track].fmDrumLeftCtrl.gain(getStereoPanValues(fmdPan).right * (velocityToUse * 0.01));
+        comboVoices[track].fmDrumRightCtrl.gain(getStereoPanValues(fmdPan).left * (velocityToUse * 0.01));
+        AudioInterrupts();
+
         comboVoices[track].fmdrum.noteOn();
     }
 
@@ -1842,7 +1856,16 @@ namespace XRSound
         case T_DEXED_SYNTH:
             {
                 uint8_t noteToUse = currTrack.note;
+                if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::NOTE])
+                {
+                    noteToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::NOTE];
+                }
+
                 uint8_t octaveToUse = currTrack.octave;
+                if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::OCTAVE])
+                {
+                    octaveToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::OCTAVE];
+                }
                 
                 int midiNote = (noteToUse + (12 * (octaveToUse)));
 
@@ -1946,45 +1969,51 @@ namespace XRSound
         // make sure voice mix settings are correct for current sound type
         if (newType == T_MONO_SAMPLE)
         {
-            Serial.println("changing mix settings for new MONO_SAMPLE sound type");
+            auto msmpLvl = getValueNormalizedAsFloat(currentPatternSounds[t].params[MSMP_LEVEL]);
 
-            comboVoices[t].mix.gain(0, 1); // MONO_SAMPLE ON
+            comboVoices[t].mix.gain(0, msmpLvl); // MONO_SAMPLE ON
             comboVoices[t].mix.gain(1, 0); // MONO_SYNTH  OFF
 
-            comboVoices[t].leftSubMix.gain(0, 1); // MONO_SAMPLE & MONO_SYNTH ON
+            comboVoices[t].leftSubMix.gain(0, msmpLvl); // MONO_SAMPLE & MONO_SYNTH ON
             comboVoices[t].leftSubMix.gain(1, 0); // DEXED_SYNTH OFF
             comboVoices[t].leftSubMix.gain(2, 0); // FM_DRUM OFF
-            comboVoices[t].rightSubMix.gain(0, 1); // MONO_SAMPLE & MONO_SYNTH ON
+            comboVoices[t].rightSubMix.gain(0, msmpLvl); // MONO_SAMPLE & MONO_SYNTH ON
             comboVoices[t].rightSubMix.gain(1, 0); // DEXED_SYNTH OFF
             comboVoices[t].rightSubMix.gain(2, 0); // FM_DRUM OFF
         }
         else if (newType == T_DEXED_SYNTH)
         {
+            auto dexeLvl = getValueNormalizedAsFloat(currentPatternSounds[t].params[DEXE_LEVEL]);
+
             comboVoices[t].leftSubMix.gain(0, 0); // MONO_SAMPLE & MONO_SYNTH OFF
-            comboVoices[t].leftSubMix.gain(1, 1); // DEXED_SYNTH ON
+            comboVoices[t].leftSubMix.gain(1, dexeLvl); // DEXED_SYNTH ON
             comboVoices[t].leftSubMix.gain(2, 0); // FM_DRUM OFF
             comboVoices[t].rightSubMix.gain(0, 0); // MONO_SAMPLE & MONO_SYNTH OFF
-            comboVoices[t].rightSubMix.gain(1, 1); // DEXED_SYNTH ON
+            comboVoices[t].rightSubMix.gain(1, dexeLvl); // DEXED_SYNTH ON
             comboVoices[t].rightSubMix.gain(2, 0); // FM_DRUM OFF
         }
         else if (newType == T_FM_DRUM)
         {
+            auto fmdLvl = getValueNormalizedAsFloat(currentPatternSounds[t].params[FMD_LEVEL]);
+
             comboVoices[t].leftSubMix.gain(0, 0); // MONO_SAMPLE & MONO_SYNTH OFF
             comboVoices[t].leftSubMix.gain(1, 0); // DEXED_SYNTH OFF
-            comboVoices[t].leftSubMix.gain(2, 1); // FM_DRUM ON
+            comboVoices[t].leftSubMix.gain(2, fmdLvl); // FM_DRUM ON
             comboVoices[t].rightSubMix.gain(0, 0); // MONO_SAMPLE & MONO_SYNTH OFF
             comboVoices[t].rightSubMix.gain(1, 0); // DEXED_SYNTH OFF
-            comboVoices[t].rightSubMix.gain(2, 1); // FM_DRUM ON
+            comboVoices[t].rightSubMix.gain(2, fmdLvl); // FM_DRUM ON
         }
         else if (newType == T_MONO_SYNTH)
         {
-            comboVoices[t].mix.gain(0, 0); // MONO_SAMPLE OFF
-            comboVoices[t].mix.gain(1, 1); // MONO_SYNTH  ON
+            auto msynLvl = getValueNormalizedAsFloat(currentPatternSounds[t].params[MSYN_LEVEL]);
 
-            comboVoices[t].leftSubMix.gain(0, 1); // MONO_SAMPLE & MONO_SYNTH ON
+            comboVoices[t].mix.gain(0, 0); // MONO_SAMPLE OFF
+            comboVoices[t].mix.gain(1, msynLvl); // MONO_SYNTH  ON
+
+            comboVoices[t].leftSubMix.gain(0, msynLvl); // MONO_SAMPLE & MONO_SYNTH ON
             comboVoices[t].leftSubMix.gain(1, 0); // DEXED_SYNTH OFF
             comboVoices[t].leftSubMix.gain(2, 0); // FM_DRUM OFF
-            comboVoices[t].rightSubMix.gain(0, 1); // MONO_SAMPLE & MONO_SYNTH ON
+            comboVoices[t].rightSubMix.gain(0, msynLvl); // MONO_SAMPLE & MONO_SYNTH ON
             comboVoices[t].rightSubMix.gain(1, 0); // DEXED_SYNTH OFF
             comboVoices[t].rightSubMix.gain(2, 0); // FM_DRUM OFF
         }

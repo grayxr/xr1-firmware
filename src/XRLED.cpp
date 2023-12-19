@@ -167,7 +167,7 @@ namespace XRLED
 
     void displayCurrentlySelectedPattern()
     {
-        //auto &sequencer = XRSequencer::getExternalSequencer();
+        //auto &sequencer = XRSequencer::getSequencer();
         //auto currentSelectedBank = XRSequencer::getCurrentSelectedBankNum();
         auto currentSelectedPattern = XRSequencer::getCurrentSelectedPatternNum();
 
@@ -374,7 +374,7 @@ namespace XRLED
 
     void displayInitializedPatternLEDs()
     {
-        auto &sequencer = XRSequencer::getExternalSequencer();
+        auto &sequencer = XRSequencer::getSequencer();
         auto currSelBank = XRSequencer::getCurrentSelectedBankNum();
 
         for (int p = 0; p < MAXIMUM_SEQUENCER_PATTERNS; p++)

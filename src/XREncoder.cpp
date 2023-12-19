@@ -366,7 +366,24 @@ namespace XREncoder
 
     void handleEncoderPatternModD(int diff)
     {
-        Serial.println("TODO: impl patter mod D");
+        auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
+
+        int currAccent = currPattern.accent;
+        int newAccent = currPattern.accent + diff;
+
+        // TODO: allow global accent to go to 0 or 1?
+        if (newAccent < 1) {
+            newAccent = 1;
+        } else if (newAccent > 100) {
+            newAccent = 100;
+        }
+
+        if (newAccent != currAccent)
+        {
+            currPattern.accent = newAccent;
+
+            XRDisplay::drawSequencerScreen(false);
+        }
     }
 
     void handleEncoderSetTrackMods()
@@ -1880,13 +1897,21 @@ namespace XREncoder
         auto currSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedStep = XRSequencer::getCurrentSelectedStepNum();
         auto currentUXMode = XRUX::getCurrentMode();
+
         int currWaveform = getWaveformNumber(
             getValueNormalizedAsUInt8(XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_WAVE])
         );
 
-        // if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStep > -1) {
-        //     currWaveform = getWaveformNumber(patternMods.tracks[currSelectedTrack].steps[currSelectedStep].waveform);
-        // }
+        // when param locking, use the existing param lock value as the current value
+        if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStep > -1) {
+            if (XRSound::patternSoundStepMods.sounds[currSelectedTrack].steps[currSelectedStep].flags[XRSound::MSYN_WAVE]) {
+                currWaveform = getWaveformNumber(
+                    getValueNormalizedAsUInt8(
+                        XRSound::patternSoundStepMods.sounds[currSelectedTrack].steps[currSelectedStep].mods[XRSound::MSYN_WAVE]
+                    )
+                );
+            }
+        }
 
         int newWaveform = currWaveform + diff;
 
@@ -1898,12 +1923,12 @@ namespace XREncoder
 
         int waveformSel = getWaveformTypeSelection(newWaveform);
 
-        // if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE) {
-        //     patternMods.tracks[currSelectedTrack].step_mod_flags[currSelectedStep].flags[XRSequencer::MOD_ATTRS::WAVEFORM] = true;
-        //    patternMods.tracks[currSelectedTrack].steps[currSelectedStep].waveform = waveformSel;
-        // } else {
+        if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE) {
+            XRSound::patternSoundStepMods.sounds[currSelectedTrack].steps[currSelectedStep].flags[XRSound::MSYN_WAVE] = true;
+            XRSound::patternSoundStepMods.sounds[currSelectedTrack].steps[currSelectedStep].mods[XRSound::MSYN_WAVE] = getInt32ValuePaddedAsInt32(waveformSel);
+        } else {
             XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_WAVE] = getInt32ValuePaddedAsInt32(waveformSel);
-        // }
+        }
 
         auto &comboVoice = getComboVoiceForCurrentTrack();
         comboVoice.osca.begin(waveformSel);

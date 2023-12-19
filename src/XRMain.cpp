@@ -57,9 +57,6 @@ namespace XRMain
 
                 return;
             }
-
-            XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_WRITE);
-            XRDisplay::drawSequencerScreen(false);
         }
 
         XRAudio::resetMetrics();

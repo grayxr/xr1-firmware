@@ -90,7 +90,7 @@ namespace XRDisplay
         u8g2.drawBox(2, 2, width, height);
         u8g2.setColorIndex((u_int8_t)1);
         u8g2.drawFrame(2, 2, width, height);
-        u8g2.drawLine(2, 12, width, 12);
+        u8g2.drawLine(2, 14, width, 14);
     }
 
     void drawKeyboard(int verticalOffset)
@@ -118,13 +118,13 @@ namespace XRDisplay
         drawGenericOverlayFrame();
 
         std::string headerStr = "NEW PROJ.";
-        u8g2.drawStr(8, 6, headerStr.c_str());
+        u8g2.drawStr(8, 5, headerStr.c_str());
 
         std::string projectNameStr = XRKeyInput::get();
 
-        u8g2.drawStr(50, 6, "ESC BACK  SEL SAVE");
-        u8g2.drawFrame(48, 5, 15, 9);
-        u8g2.drawFrame(88, 5, 15, 9);
+        u8g2.drawStr(50, 5, "ESC BACK  SEL SAVE");
+        u8g2.drawFrame(48, 4, 15, 9);
+        u8g2.drawFrame(88, 4, 15, 9);
 
         // draw actual project name
         u8g2.setCursor(9, 20);
@@ -917,21 +917,25 @@ namespace XRDisplay
         std::string outputStr;
 
         auto currentSelectedStep = XRSequencer::getCurrentSelectedStepNum();
+        auto currentTrackNum = XRSequencer::getCurrentSelectedTrackNum();
 
-        // if (XRUX::getCurrentMode() == XRUX::SUBMITTING_STEP_VALUE && currentSelectedStep > -1)
-        // {
-        //     auto &trackStepMods = XRSequencer::getModsForCurrentTrackStep();
+        if (
+            XRUX::getCurrentMode() == XRUX::SUBMITTING_STEP_VALUE && currentSelectedStep > -1 &&
+            XRSequencer::patternTrackStepMods.tracks[currentTrackNum].steps[currentSelectedStep].flags[XRSequencer::NOTE]
+        ) {
+            auto noteMod = XRSequencer::patternTrackStepMods.tracks[currentTrackNum].steps[currentSelectedStep].mods[XRSequencer::NOTE];
+            auto octaveMod = XRSequencer::patternTrackStepMods.tracks[currentTrackNum].steps[currentSelectedStep].mods[XRSequencer::OCTAVE];
 
-        //     outputStr += XRHelpers::getNoteStringForBaseNoteNum(trackStepMods.note);
-        //     outputStr += std::to_string(trackStepMods.octave);
-        // }
-        // else
-        // {
+            outputStr += XRHelpers::getNoteStringForBaseNoteNum(noteMod);
+            outputStr += std::to_string(octaveMod);
+        }
+        else
+        {
             auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
 
             outputStr += XRHelpers::getNoteStringForBaseNoteNum(currTrack.note);
             outputStr += std::to_string(currTrack.octave);
-        //}
+        }
 
         return outputStr;
     }
@@ -1005,11 +1009,11 @@ namespace XRDisplay
         drawGenericOverlayFrame();
 
         // menu header
-        u8g2.drawStr(6, 4, headerStr.c_str());
+        u8g2.drawStr(6, 5, headerStr.c_str());
 
         // menu items
         int menuItemStartX = 12;
-        int menuItemStartY = 15;
+        int menuItemStartY = 17;
         int menuItemLineSpacingY = 9;
         int menuCurrentLine = 0;
 
@@ -1035,9 +1039,9 @@ namespace XRDisplay
         int menuCursorStartX = 6;
         int menuCursorLineSpacingY = 9;
         int menuCursorTriangleSize = 3;
-        int menuCursorTriangleY1 = 21 + (menuItemCursorIdx * menuCursorLineSpacingY);
-        int menuCursorTriangleY2 = 15 + (menuItemCursorIdx * menuCursorLineSpacingY);
-        int menuCursorTriangleY3 = 18 + (menuItemCursorIdx * menuCursorLineSpacingY);
+        int menuCursorTriangleY1 = 23 + (menuItemCursorIdx * menuCursorLineSpacingY);
+        int menuCursorTriangleY2 = 17 + (menuItemCursorIdx * menuCursorLineSpacingY);
+        int menuCursorTriangleY3 = 20 + (menuItemCursorIdx * menuCursorLineSpacingY);
 
         u8g2.drawTriangle(
             menuCursorStartX,
