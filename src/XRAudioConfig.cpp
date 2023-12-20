@@ -56,21 +56,21 @@ AudioEffectEnvelope      venv4;          //xy=1041.5713996887207,1229.2857675552
 AudioEffectEnvelope      venv2;          //xy=1046.8254089355469,478.8095998764038
 AudioSynthDexed          dexed3(4, SAMPLE_RATE); //xy=1045.6111736297607,944.8055458068848
 AudioSynthFMDrum         fmdrum2; //xy=1046.9048233032227,647.5397396087646
-// AudioSynthBraids         braids1;        //xy=1050.555648803711,355.55557346343994
+AudioSynthBraids         braids1;        //xy=1050.555648803711,355.55557346343994
 AudioSynthDexed          dexed2(4, SAMPLE_RATE); //xy=1050.520004272461,571.3373847007751
 AudioEffectEnvelope      venv3;          //xy=1050.2223224639893,852.7777900695801
 AudioSynthFMDrum         fmdrum3; //xy=1050.8335208892822,1022.5000081062317
 AudioSynthDexed          dexed4(4, SAMPLE_RATE); //xy=1051.3212871551514,1331.785726070404
-// AudioSynthBraids         braids2; //xy=1055.8729858398438,735.3968105316162
+AudioSynthBraids         braids2; //xy=1055.8729858398438,735.3968105316162
 AudioEffectEnvelope      venv5; //xy=1053.166660308838,1670.0000171661377
-// AudioSynthBraids         braids3; //xy=1055.5555515289307,1109.9998607635498
+AudioSynthBraids         braids3; //xy=1055.5555515289307,1109.9998607635498
 AudioEffectEnvelope      venv7; //xy=1051.6666564941406,2088.333293914795
 AudioSynthFMDrum         fmdrum4; //xy=1054.5237846374512,1420.2381176948547
 AudioEffectEnvelope      venv6; //xy=1054.9999923706055,1878.333369255066
 AudioEffectEnvelope      venv8; //xy=1053.3332824707031,2298.333179473877
 AudioEffectEnvelope      venv12; //xy=1051.8333702087402,3178.333498954773
 AudioEffectEnvelope      venv16; //xy=1049.3333702087402,4131.666864395142
-// AudioSynthBraids         braids4; //xy=1060,1507.142822265625
+AudioSynthBraids         braids4; //xy=1060,1507.142822265625
 AudioEffectEnvelope      venv9; //xy=1058.3334312438965,2611.6668729782104
 AudioEffectEnvelope      venv13; //xy=1055.8334312438965,3565.000238418579
 AudioEffectEnvelope      venv11; //xy=1058.500057220459,2978.333498954773
@@ -250,8 +250,8 @@ AudioConnection          patchCord63(dexed3, 0, dleft3, 0);
 AudioConnection          patchCord64(dexed3, 0, dright3, 0);
 AudioConnection          patchCord65(fmdrum2, fdleft2);
 AudioConnection          patchCord66(fmdrum2, fdright2);
-// AudioConnection          patchCord67(braids1, bleft1);
-// AudioConnection          patchCord68(braids1, bright1);
+AudioConnection          patchCord67(braids1, bleft1);
+AudioConnection          patchCord68(braids1, bright1);
 AudioConnection          patchCord69(dexed2, 0, dleft2, 0);
 AudioConnection          patchCord70(dexed2, 0, dright2, 0);
 AudioConnection          patchCord71(venv3, vleft3);
@@ -260,12 +260,12 @@ AudioConnection          patchCord73(fmdrum3, fdleft3);
 AudioConnection          patchCord74(fmdrum3, fdright3);
 AudioConnection          patchCord75(dexed4, 0, dleft4, 0);
 AudioConnection          patchCord76(dexed4, 0, dright4, 0);
-// AudioConnection          patchCord77(braids2, bleft2);
-// AudioConnection          patchCord78(braids2, bright2);
+AudioConnection          patchCord77(braids2, bleft2);
+AudioConnection          patchCord78(braids2, bright2);
 AudioConnection          patchCord79(venv5, vleft5);
 AudioConnection          patchCord80(venv5, vright5);
-// AudioConnection          patchCord81(braids3, bleft3);
-// AudioConnection          patchCord82(braids3, bright3);
+AudioConnection          patchCord81(braids3, bleft3);
+AudioConnection          patchCord82(braids3, bright3);
 AudioConnection          patchCord83(venv7, vleft7);
 AudioConnection          patchCord84(venv7, vright7);
 AudioConnection          patchCord85(fmdrum4, fdleft4);
@@ -278,8 +278,8 @@ AudioConnection          patchCord91(venv12, vleft12);
 AudioConnection          patchCord92(venv12, vright12);
 AudioConnection          patchCord93(venv16, vleft16);
 AudioConnection          patchCord94(venv16, vright16);
-// AudioConnection          patchCord95(braids4, bleft4);
-// AudioConnection          patchCord96(braids4, bright4);
+AudioConnection          patchCord95(braids4, bleft4);
+AudioConnection          patchCord96(braids4, bright4);
 AudioConnection          patchCord97(venv9, vleft9);
 AudioConnection          patchCord98(venv9, vright9);
 AudioConnection          patchCord99(venv13, vleft13);

@@ -35,7 +35,8 @@ namespace XRUX
         UNDO,
         REDO,
         SOUND_MENU_MAIN,
-        ASSIGN_SAMPLE_TO_TRACK_SOUND
+        SOUND_MENU_DEXED_SYSEX_BROWSER,
+        ASSIGN_SAMPLE_TO_TRACK_SOUND,
     };
 
     void setCurrentMode(UX_MODE mode);

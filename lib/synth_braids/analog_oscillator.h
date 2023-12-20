@@ -29,7 +29,7 @@
 #ifndef BRAIDS_ANALOG_OSCILLATOR_H_
 #define BRAIDS_ANALOG_OSCILLATOR_H_
 
-#include <libraries/stmlib/stmlib.h>
+#include <stmlib.h>
 
 #include <cstring>
 #include <cstdio>

@@ -85,6 +85,7 @@
 #define _BV(bit) (1 << (bit))
 #endif
 
+#define DEXED_SOUND_MENU_ITEM_MAX 4
 #define SOUND_MENU_ITEM_MAX 3
 #define SETUP_MENU_ITEM_MAX 3
 

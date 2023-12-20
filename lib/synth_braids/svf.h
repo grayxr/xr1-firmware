@@ -29,10 +29,10 @@
 #ifndef BRAIDS_SVF_H_
 #define BRAIDS_SVF_H_
 
-#include <libraries/stmlib/stmlib.h>
+#include <stmlib.h>
 
 #include "resources.h"
-#include <libraries/dsp/dsp.h>
+#include <dsp.h>
 
 namespace braids {
 

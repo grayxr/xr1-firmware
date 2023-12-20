@@ -60,7 +60,6 @@ namespace XRKeyMatrix
     int8_t _trackHeldForSelection = -1; // default to -1 (none)
     int8_t _ptnHeldForSelection = -1;
     int8_t _performModeHeldForSelection = -1;
-
     int8_t _currentTracksSoloed = 0;
 
     Keypad kpd = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
@@ -157,7 +156,11 @@ namespace XRKeyMatrix
         // start/pause or stop
         if (key == 'q' || key == 'w') {
             XRSequencer::toggleSequencerPlayback(key);
-            XRDisplay::drawSequencerScreen(false);
+
+            // TODO: allowedModesToDrawSequencerFrom ?
+            if (currentUXMode != XRUX::UX_MODE::SOUND_MENU_DEXED_SYSEX_BROWSER) {
+                XRDisplay::drawSequencerScreen(false);
+            }
 
             return;
         }
@@ -942,13 +945,20 @@ namespace XRKeyMatrix
                 break;
 
             case SELECT_BTN_CHAR:
-                XRMenu::resetCursor();
-
                 if (currentUXMode == XRUX::UX_MODE::SOUND_MENU_MAIN) {
-                    Serial.println("enter sound sub menu");
+                    Serial.println("entering sound sub menu");
 
-                    // todo: get ux mode for selected cursor position in sub menu
-                    XRUX::setCurrentMode(XRUX::UX_MODE::ASSIGN_SAMPLE_TO_TRACK_SOUND);
+                    auto cursorPos = XRMenu::getCursorPosition();
+                    auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+
+                    if (XRSound::currentPatternSounds[currTrackNum].type == XRSound::T_DEXED_SYNTH) {
+                        if (XRMenu::getDexedSoundMenuItems()[cursorPos] == "BROWSE DEXED SYSEX") {
+                            Serial.println("in browse dexed sysex sub menu");
+                            
+                            XRUX::setCurrentMode(XRUX::UX_MODE::SOUND_MENU_DEXED_SYSEX_BROWSER);
+                            XRDisplay::drawDexedSysexBrowser();
+                        }
+                    }
 
                     return true;
                 }
@@ -983,6 +993,7 @@ namespace XRKeyMatrix
                 }
 
                 if (currentUXMode == XRUX::UX_MODE::ASSIGN_SAMPLE_TO_TRACK_SOUND) {
+                    XRMenu::resetCursor();
                     XRUX::setCurrentMode(prevMode);
                     XRSound::assignSampleToTrackSound();
                     XRDisplay::drawSequencerScreen();
@@ -1147,7 +1158,8 @@ namespace XRKeyMatrix
 
         bool allowedModeToActivateFunctionFrom = (
             currentUXMode == XRUX::UX_MODE::PATTERN_WRITE || 
-            currentUXMode == XRUX::UX_MODE::TRACK_WRITE
+            currentUXMode == XRUX::UX_MODE::TRACK_WRITE || 
+            currentUXMode == XRUX::UX_MODE::SOUND_MENU_DEXED_SYSEX_BROWSER
         );
 
         if (allowedModeToActivateFunctionFrom) {

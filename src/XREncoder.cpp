@@ -67,6 +67,9 @@ namespace XREncoder
     void updateTrackAmpEnvAttack(int diff);
     void updateComboTrackLevel(int diff);
 
+    bool handleMenuCursor(XRUX::UX_MODE menuMode);
+    void handleDexedBrowser();
+
     int getDiff(int address);
 
     void init()
@@ -139,20 +142,14 @@ namespace XREncoder
         );
 
         if (!(elapsedMs % 25) && uxModesWithMenu) {
-            if (currentUXMode == XRUX::UX_MODE::SOUND_MENU_MAIN) {
-                if (handleMenuCursor(SOUND_MENU_ITEM_MAX)) {
-                    XRDisplay::drawSoundMenuMain();
-                }
-            } else if (currentUXMode == XRUX::UX_MODE::CHANGE_SETUP) {
-                if (handleMenuCursor(SETUP_MENU_ITEM_MAX)) {
-                    XRDisplay::drawSetupMenu();
-                }
-            } else if (currentUXMode == XRUX::UX_MODE::ASSIGN_SAMPLE_TO_TRACK_SOUND) {
-                if (handleMenuCursor(255)) {
-                    XRDisplay::drawSampleBrowser();
-                }
-            }
+            handleMenuCursor(currentUXMode);
             
+            return;
+        }
+
+        if (!(elapsedMs % 25) && currentUXMode == XRUX::UX_MODE::SOUND_MENU_DEXED_SYSEX_BROWSER) {
+            handleDexedBrowser();
+
             return;
         }
 
@@ -205,16 +202,44 @@ namespace XREncoder
         }
     }
 
-    bool handleMenuCursor(int menuItems)
+    bool handleMenuCursor(XRUX::UX_MODE menuMode)
     {
         int diff = getDiff(MAIN_ENCODER_ADDRESS);
 
-        if (menuItems > 2 && diff != 0)
+        if (diff != 0)
         {
-            uint8_t currPos = XRMenu::getCursorPosition();
-            uint8_t newPos = constrain(currPos + diff, 0, menuItems - 1);
+            auto menuItems = 0;
 
-            XRMenu::setCursorPosition(newPos);
+            if (menuMode == XRUX::UX_MODE::SOUND_MENU_MAIN) {
+                menuItems = SOUND_MENU_ITEM_MAX;
+
+                auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+
+                if (currentPatternSounds[currTrackNum].type == T_DEXED_SYNTH) {
+                    menuItems = DEXED_SOUND_MENU_ITEM_MAX;
+                }
+            } else if (menuMode == XRUX::UX_MODE::CHANGE_SETUP) {
+                menuItems = SETUP_MENU_ITEM_MAX;
+            } else if (menuMode == XRUX::UX_MODE::ASSIGN_SAMPLE_TO_TRACK_SOUND) {
+                menuItems = 255;
+            } else {
+                return false;
+            }
+
+            if (menuItems > 2) {
+                uint8_t currPos = XRMenu::getCursorPosition();
+                uint8_t newPos = constrain(currPos + diff, 0, menuItems - 1);
+
+                XRMenu::setCursorPosition(newPos);
+            }
+
+            if (menuMode == XRUX::UX_MODE::SOUND_MENU_MAIN) {
+                XRDisplay::drawSoundMenuMain();
+            } else if (menuMode == XRUX::UX_MODE::CHANGE_SETUP) {
+                XRDisplay::drawSetupMenu();
+            } else if (menuMode == XRUX::UX_MODE::ASSIGN_SAMPLE_TO_TRACK_SOUND) {
+                XRDisplay::drawSampleBrowser();
+            }
 
             return true;
         }
@@ -1282,67 +1307,11 @@ namespace XREncoder
         default:
             break;
         }
-
-        // auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-
-        // if (currSelectedPageNum == 0) {
-        //     int dif = XRSD::dexedCurrentBank + diff;
-        //     if (dif == XRSD::dexedCurrentBank) {
-        //         return;
-        //     }
-
-        //     XRSD::dexedCurrentBank = XRSD::dexedCurrentBank + diff;
-
-        //     if (XRSD::dexedCurrentBank < 0)
-        //     {
-        //         XRSD::dexedCurrentBank = 98;
-        //     }
-        //     else if (XRSD::dexedCurrentBank > 98)
-        //     {
-        //         XRSD::dexedCurrentBank = 0;
-        //     }
-
-        //     Serial.print("dexed_current_bank: ");
-        //     Serial.print(XRSD::dexedCurrentBank);
-
-        //     Serial.print(" dexed_current_patch: ");
-        //     Serial.println(XRSD::dexedCurrentPatch);
-
-        //     XRSD::loadDexedVoiceToCurrentTrack();
-        //     XRDisplay::drawSequencerScreen(false);
-        // }
     }
 
     void handleEncoderDexedSynthModD(int diff)
     {
-        // auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-
-        // if (currSelectedPageNum == 0) {
-        //     int dif = XRSD::dexedCurrentPatch + diff;
-        //     if (dif == XRSD::dexedCurrentPatch) {
-        //         return;
-        //     }
-
-        //     XRSD::dexedCurrentPatch = XRSD::dexedCurrentPatch + diff;
-
-        //     if (XRSD::dexedCurrentPatch < 0)
-        //     {
-        //         XRSD::dexedCurrentPatch = 31;
-        //     }
-        //     else if (XRSD::dexedCurrentPatch > 31)
-        //     {
-        //         XRSD::dexedCurrentPatch = 0;
-        //     }
-
-        //     Serial.print("dexed_current_bank: ");
-        //     Serial.print(XRSD::dexedCurrentBank);
-
-        //     Serial.print(" dexed_current_patch: ");
-        //     Serial.println(XRSD::dexedCurrentPatch);
-
-        //     XRSD::loadDexedVoiceToCurrentTrack();
-        //     XRDisplay::drawSequencerScreen(false);
-        // }
+        //
     }
 
     void handleEncoderFmDrumModA(int diff)
@@ -2213,6 +2182,47 @@ namespace XREncoder
             XRLED::setDisplayStateForAllStepLEDs();
 
             XRDisplay::drawSequencerScreen(false);
+        }
+    }
+
+    void handleDexedBrowser()
+    {
+        // auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+        int diff = getDiff(MAIN_ENCODER_ADDRESS);
+
+        if (diff != 0) {
+            int dif = XRSD::dexedCurrentPatch + diff;
+            if (dif == XRSD::dexedCurrentPatch)
+            {
+                return;
+            }
+
+            XRSD::dexedCurrentPatch = XRSD::dexedCurrentPatch + diff;
+
+            if (XRSD::dexedCurrentPatch < 0)
+            {
+                auto nextBank = XRSD::dexedCurrentBank - 1;
+                XRSD::dexedCurrentBank = constrain(nextBank, 0, 98);
+
+                XRSD::dexedCurrentPatch = 31;
+            }
+            else if (XRSD::dexedCurrentPatch > 31)
+            {
+                auto nextBank = XRSD::dexedCurrentBank + 1;
+                XRSD::dexedCurrentBank = constrain(nextBank, 0, 98);
+
+                XRSD::dexedCurrentPatch = 0;
+            }
+
+            Serial.print("dexed_current_bank: ");
+            Serial.print(XRSD::dexedCurrentBank);
+
+            Serial.print(" dexed_current_patch: ");
+            Serial.println(XRSD::dexedCurrentPatch);
+
+            XRSD::loadDexedVoiceToCurrentTrack();
+            
+            XRDisplay::drawDexedSysexBrowser();
         }
     }
 }

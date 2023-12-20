@@ -30,7 +30,7 @@
 
 #include <algorithm>
 
-#include <libraries/dsp/dsp.h>
+#include <dsp.h>
 
 #include "parameter_interpolation.h"
 #include "resources.h"

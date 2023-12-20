@@ -6,7 +6,7 @@
 #include <TeensyVariablePlayback.h>
 #include <synth_dexed.h>
 #include <synth_fm_drum.h>
-// #include <synth_braids.h>
+#include <synth_braids.h>
 
 // GUItool: begin automatically generated code
 extern AudioSynthNoiseWhite     vnoise1;        //xy=395.999942779541,163.99999713897705
@@ -64,21 +64,21 @@ extern AudioEffectEnvelope      venv4;          //xy=1041.5713996887207,1229.285
 extern AudioEffectEnvelope      venv2;          //xy=1046.8254089355469,478.8095998764038
 extern AudioSynthDexed          dexed3; //xy=1045.6111736297607,944.8055458068848
 extern AudioSynthFMDrum         fmdrum2; //xy=1046.9048233032227,647.5397396087646
-//extern AudioSynthBraids         braids1;        //xy=1050.555648803711,355.55557346343994
+extern AudioSynthBraids         braids1;        //xy=1050.555648803711,355.55557346343994
 extern AudioSynthDexed          dexed2; //xy=1050.520004272461,571.3373847007751
 extern AudioEffectEnvelope      venv3;          //xy=1050.2223224639893,852.7777900695801
 extern AudioSynthFMDrum         fmdrum3; //xy=1050.8335208892822,1022.5000081062317
 extern AudioSynthDexed          dexed4; //xy=1051.3212871551514,1331.785726070404
-//extern AudioSynthBraids         braids2; //xy=1055.8729858398438,735.3968105316162
+extern AudioSynthBraids         braids2; //xy=1055.8729858398438,735.3968105316162
 extern AudioEffectEnvelope      venv5; //xy=1053.166660308838,1670.0000171661377
-//extern AudioSynthBraids         braids3; //xy=1055.5555515289307,1109.9998607635498
+extern AudioSynthBraids         braids3; //xy=1055.5555515289307,1109.9998607635498
 extern AudioEffectEnvelope      venv7; //xy=1051.6666564941406,2088.333293914795
 extern AudioSynthFMDrum         fmdrum4; //xy=1054.5237846374512,1420.2381176948547
 extern AudioEffectEnvelope      venv6; //xy=1054.9999923706055,1878.333369255066
 extern AudioEffectEnvelope      venv8; //xy=1053.3332824707031,2298.333179473877
 extern AudioEffectEnvelope      venv12; //xy=1051.8333702087402,3178.333498954773
 extern AudioEffectEnvelope      venv16; //xy=1049.3333702087402,4131.666864395142
-//extern AudioSynthBraids         braids4; //xy=1060,1507.142822265625
+extern AudioSynthBraids         braids4; //xy=1060,1507.142822265625
 extern AudioEffectEnvelope      venv9; //xy=1058.3334312438965,2611.6668729782104
 extern AudioEffectEnvelope      venv13; //xy=1055.8334312438965,3565.000238418579
 extern AudioEffectEnvelope      venv11; //xy=1058.500057220459,2978.333498954773

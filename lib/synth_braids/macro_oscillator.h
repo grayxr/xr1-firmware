@@ -29,7 +29,7 @@
 #ifndef BRAIDS_MACRO_OSCILLATOR_H_
 #define BRAIDS_MACRO_OSCILLATOR_H_
 
-#include <libraries/stmlib/stmlib.h>
+#include <stmlib.h>
 
 #include <cstring>
 
@@ -100,7 +100,7 @@ class MacroOscillator {
   int16_t previous_parameter_[2];
   int16_t pitch_;
   uint8_t sync_buffer_[24];
-  int16_t temp_buffer_[24];
+  int16_t temp_buffer_[128];
   int32_t lp_state_;
 
   AnalogOscillator analog_oscillator_[3];

@@ -413,7 +413,7 @@ namespace XRSD
     {
         File sysexDir;
 
-        std::string voiceBankName = "/DEXED/0/";
+        std::string voiceBankName = "/audio enjoyer/xr-1/sysex/dexed/0/";
         voiceBankName += std::to_string(dexedCurrentBank);
 
         Serial.print("voice bank dir name: ");
@@ -752,5 +752,15 @@ namespace XRSD
         sFile.close();
 
         Serial.printf("sizeof(currentPatternSounds): %d\n", sizeof(XRSound::currentPatternSounds));
+    }
+
+    std::string getCurrentDexedSysexBank()
+    {
+        return std::to_string(dexedCurrentBank);
+    }
+
+    std::string getCurrentDexedSysexPatchName()
+    {
+        return std::to_string(dexedCurrentPatch);
     }
 }

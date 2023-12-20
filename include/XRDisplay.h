@@ -5,6 +5,7 @@
 #include <U8g2lib.h>
 #include <XRConfig.h>
 #include <string>
+#include <vector>
 
 namespace XRDisplay
 {
@@ -31,6 +32,7 @@ namespace XRDisplay
     void drawSoundMenuMain();
     void drawSetupMenu();
     void drawSampleBrowser();
+    void drawDexedSysexBrowser();
     void drawCopyConfirmOverlay(std::string type, uint8_t num);
     void drawCopySelOverlay(std::string type);
     void drawPasteConfirmOverlay(std::string type, uint8_t num);

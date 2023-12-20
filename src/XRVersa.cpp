@@ -138,7 +138,8 @@ namespace XRVersa
             currentUXMode == XRUX::UX_MODE::PERFORM_MUTE ||
             currentUXMode == XRUX::UX_MODE::PERFORM_SOLO ||
             currentUXMode == XRUX::UX_MODE::PERFORM_RATCHET ||
-            currentUXMode == XRUX::UX_MODE::SUBMITTING_STEP_VALUE
+            currentUXMode == XRUX::UX_MODE::SUBMITTING_STEP_VALUE ||
+            currentUXMode == XRUX::UX_MODE::SOUND_MENU_DEXED_SYSEX_BROWSER
         );
 
         if (allowedModeToPlayKeysFrom) {

@@ -29,7 +29,7 @@
 #ifndef BRAIDS_DIGITAL_OSCILLATOR_H_
 #define BRAIDS_DIGITAL_OSCILLATOR_H_
 
-#include <libraries/stmlib/stmlib.h>
+#include <stmlib.h>
 
 #include "excitation.h"
 #include "svf.h"
@@ -311,10 +311,10 @@ class DigitalOscillator {
   void RenderBlown(const uint8_t*, int16_t*, size_t);
   void RenderFluted(const uint8_t*, int16_t*, size_t);
 
-  void RenderWavetables(const uint8_t*, int16_t*, size_t);
-  void RenderWaveMap(const uint8_t*, int16_t*, size_t);
-  void RenderWaveLine(const uint8_t*, int16_t*, size_t);
-  void RenderWaveParaphonic(const uint8_t*, int16_t*, size_t);
+//  void RenderWavetables(const uint8_t*, int16_t*, size_t);
+//  void RenderWaveMap(const uint8_t*, int16_t*, size_t);
+//  void RenderWaveLine(const uint8_t*, int16_t*, size_t);
+//  void RenderWaveParaphonic(const uint8_t*, int16_t*, size_t);
 
   void RenderTwinPeaksNoise(const uint8_t*, int16_t*, size_t);
   void RenderFilteredNoise(const uint8_t*, int16_t*, size_t);
@@ -326,7 +326,7 @@ class DigitalOscillator {
   void RenderKick(const uint8_t*, int16_t*, size_t);
   void RenderSnare(const uint8_t*, int16_t*, size_t);
   void RenderCymbal(const uint8_t*, int16_t*, size_t);
-  void RenderQuestionMark(const uint8_t*, int16_t*, size_t);
+//  void RenderQuestionMark(const uint8_t*, int16_t*, size_t);
 
   // void RenderYourAlgo(const uint8_t*, int16_t*, size_t);
 

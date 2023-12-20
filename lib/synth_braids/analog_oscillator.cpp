@@ -28,7 +28,7 @@
 
 #include "analog_oscillator.h"
 
-#include <libraries/dsp/dsp.h>
+#include <dsp.h>
 
 #include "resources.h"
 #include "parameter_interpolation.h"

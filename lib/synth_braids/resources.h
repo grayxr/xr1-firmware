@@ -34,7 +34,7 @@
 #define BRAIDS_RESOURCES_H_
 
 
-#include <libraries/stmlib/stmlib.h>
+#include <stmlib.h>
 
 
 

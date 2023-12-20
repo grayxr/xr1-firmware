@@ -53,6 +53,9 @@ namespace XRSD
     std::string getCurrSampleFileHighlighted();
     void rewindSampleDir();
     void unloadSampleFileListPaged();
+
+    std::string getCurrentDexedSysexBank();
+    std::string getCurrentDexedSysexPatchName();
 }
 
 #endif /* XRSD_h */

@@ -999,18 +999,29 @@ namespace XRDisplay
 
     void drawSoundMenuMain()
     {
-        Serial.println("enter drawSoundMenuMain!");
+        auto menuItems = XRMenu::getSoundMenuItems();
+        auto menuItemMax = SOUND_MENU_ITEM_MAX;
 
-        drawGenericMenuList("SOUND", XRMenu::getSoundMenuItems(), SOUND_MENU_ITEM_MAX);
+        auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+
+        if (XRSound::currentPatternSounds[currTrackNum].type == XRSound::T_DEXED_SYNTH) {
+            menuItems = XRMenu::getDexedSoundMenuItems();
+            menuItemMax = DEXED_SOUND_MENU_ITEM_MAX;
+        }
+
+        drawGenericMenuList("SOUND", menuItems, menuItemMax);
 
         u8g2.sendBuffer();
     }
 
     void drawSetupMenu()
     {
-        drawGenericMenuList("SETUP", XRMenu::getSetupMenuItems(), SETUP_MENU_ITEM_MAX);
+        // std::vector<std::string> menuItems;
+        // menuItems.emplace_back(XRMenu::getSetupMenuItems());
 
-        u8g2.sendBuffer();
+        // drawGenericMenuList("SETUP", menuItems, SETUP_MENU_ITEM_MAX);
+
+        // u8g2.sendBuffer();
     }
 
     void drawGenericMenuList(std::string headerStr, std::string *menuItems, int menuItemMax)
@@ -1126,6 +1137,35 @@ namespace XRDisplay
 
         // todo: impl minimap scroll bar
         drawPagedMenuList("SAMPLES", list, 5);
+
+        u8g2.sendBuffer();
+    }
+
+    void drawDexedSysexBrowser()
+    {
+        auto bank = XRSD::getCurrentDexedSysexBank();
+
+        // todo: impl minimap scroll bar
+        drawGenericOverlayFrame();
+
+        // menu header
+        u8g2.drawStr(6, 4, "LOAD DEXED SYSEX TO TRACK");
+
+        std::string bankStr = "BANK: ";
+        bankStr += bank;
+        std::string patchStr = "PATCH: ";
+        patchStr += XRSD::dexedPatchName;
+
+        u8g2.drawStr(6, 19, bankStr.c_str());
+        u8g2.drawStr(6, 28, patchStr.c_str());
+
+        // drawKeyboard(4);
+
+        // esc / sel button legend
+        // u8g2.drawStr(93, 5, "ESC");
+        // u8g2.drawStr(110, 5, "SEL");
+        // u8g2.drawFrame(91, 4, 15, 9);
+        // u8g2.drawFrame(108, 4, 15, 9);
 
         u8g2.sendBuffer();
     }

@@ -10,16 +10,13 @@ using namespace braids;
 class AudioSynthBraids: public AudioStream
 {
 public:
-        AudioSynthBraids(): AudioStream(0, NULL), kSampleRate(AUDIO_SAMPLE_RATE_EXACT), kAudioBlockSize(AUDIO_BLOCK_SAMPLES), magnitude(65536.0) { }
+        AudioSynthBraids(): AudioStream(0, NULL), kAudioBlockSize(AUDIO_BLOCK_SAMPLES), magnitude(65536.0) { }
         ~AudioSynthBraids() { }
 
         void set_braids_shape(int16_t shape) {
-      		shapebraids = shape;
-          // Trims the shape to the valid values
-          shapebraids = shapebraids >= MACRO_OSC_SHAPE_QUESTION_MARK ? MACRO_OSC_SHAPE_QUESTION_MARK : shapebraids<0 ? 0 : shapebraids;
 
           // Sets the shape
-          MacroOscillatorShape osc_shape = static_cast<MacroOscillatorShape>(shapebraids);//
+          MacroOscillatorShape osc_shape = static_cast<MacroOscillatorShape>(shape);
           osc.set_shape(osc_shape);
       	}
 
@@ -41,11 +38,11 @@ public:
     			}
       		osc.Strike();
       	}
-
+    const char* get_name(uint8_t n)
+       {
+         return (settings.metadata(SETTING_OSCILLATOR_SHAPE).strings[n]);
+       }
         inline void init_braids(){
-            // Global used to trigger the next buffer to render
-            // wait = 0;
-
             // Initializes the objects
             osc.Init();
             osc.set_shape(MACRO_OSC_SHAPE_CSAW);
@@ -53,15 +50,12 @@ public:
 
             pitch = 32 << 7;
         }
-
         virtual void update(void);
 
 private:
         MacroOscillator osc;
 
-        const uint32_t kSampleRate;
         const uint16_t kAudioBlockSize;
-        //
         // Globals that define the parameters of the oscillator
         volatile int16_t pitch,pre_pitch;
         volatile int16_t timbre;
@@ -71,9 +65,6 @@ private:
       	int16_t buffer[AUDIO_BLOCK_SAMPLES] = { 0 };
 
         volatile int32_t magnitude;
-
-        // volatile uint8_t wait;
-
 };
 
 #endif
