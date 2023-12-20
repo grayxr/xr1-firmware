@@ -484,14 +484,8 @@ namespace XREncoder
     {
         auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
         auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
-        auto &currStep = XRSequencer::getHeapCurrentSelectedTrackStep();
-        //auto &patternMods = XRSequencer::getModsForCurrentPattern();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        auto numNotesHeldOfKeyboard = XRVersa::getKeyboardNotesHeld();
-        auto noteOnKeyboard = XRVersa::getNoteOnKeyboard();
-        auto currUXMode = XRUX::getCurrentMode();
 
         auto &comboVoice = getComboVoiceForCurrentTrack();
 
@@ -698,17 +692,9 @@ namespace XREncoder
 
     void handleEncoderMonoSampleModB(int diff)
     {
-        auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
-        auto &currStep = XRSequencer::getHeapCurrentSelectedTrackStep();
-        // auto &patternMods = XRSequencer::getModsForCurrentPattern();
         auto &comboVoice = getComboVoiceForCurrentTrack();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        //auto numNotesHeldOfKeyboard = XRVersa::getKeyboardNotesHeld();
-        //auto noteOnKeyboard = XRVersa::getNoteOnKeyboard();
-        auto currUXMode = XRUX::getCurrentMode();
 
         switch (currSelectedPageNum)
         {
@@ -853,16 +839,10 @@ namespace XREncoder
 
     void handleEncoderMonoSampleModC(int diff)
     {
-        auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
         auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
-        auto &currStep = XRSequencer::getHeapCurrentSelectedTrackStep();
-        //auto &patternMods = XRSequencer::getModsForCurrentPattern();
         auto &comboVoice = getComboVoiceForCurrentTrack();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        //auto numNotesHeldOfKeyboard = XRVersa::getKeyboardNotesHeld();
-        //auto noteOnKeyboard = XRVersa::getNoteOnKeyboard();
-        auto currUXMode = XRUX::getCurrentMode();
 
         switch (currSelectedPageNum)
         {
@@ -985,17 +965,9 @@ namespace XREncoder
 
     void handleEncoderMonoSampleModD(int diff)
     {
-        auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
-        auto &currStep = XRSequencer::getHeapCurrentSelectedTrackStep();
-        //auto &patternMods = XRSequencer::getModsForCurrentPattern();
         auto &comboVoice = getComboVoiceForCurrentTrack();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        // auto numNotesHeldOfKeyboard = XRVersa::getKeyboardNotesHeld();
-        // auto noteOnKeyboard = XRVersa::getNoteOnKeyboard();
-        auto currUXMode = XRUX::getCurrentMode();
 
         switch (currSelectedPageNum)
         {
@@ -1098,15 +1070,8 @@ namespace XREncoder
     {
         auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
         auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
-        auto &currStep = XRSequencer::getHeapCurrentSelectedTrackStep();
-        //auto &patternMods = XRSequencer::getModsForCurrentPattern();
-        auto &comboVoice = getComboVoiceForCurrentTrack();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        auto numNotesHeldOfKeyboard = XRVersa::getKeyboardNotesHeld();
-        auto noteOnKeyboard = XRVersa::getNoteOnKeyboard();
-        auto currUXMode = XRUX::getCurrentMode();
 
         switch (currSelectedPageNum)
         {
@@ -1182,17 +1147,9 @@ namespace XREncoder
 
     void handleEncoderDexedSynthModB(int diff)
     {
-        auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
-        auto &currStep = XRSequencer::getHeapCurrentSelectedTrackStep();
-        //auto &patternMods = XRSequencer::getModsForCurrentPattern();
         auto &comboVoice = getComboVoiceForCurrentTrack();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        auto numNotesHeldOfKeyboard = XRVersa::getKeyboardNotesHeld();
-        auto noteOnKeyboard = XRVersa::getNoteOnKeyboard();
-        auto currUXMode = XRUX::getCurrentMode();
 
         switch (currSelectedPageNum)
         {
@@ -1248,18 +1205,9 @@ namespace XREncoder
 
     void handleEncoderDexedSynthModC(int diff)
     {
-        auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
         auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
-        auto &currStep = XRSequencer::getHeapCurrentSelectedTrackStep();
-        //auto &patternMods = XRSequencer::getModsForCurrentPattern();
-        auto &comboVoice = getComboVoiceForCurrentTrack();
-        auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        auto numNotesHeldOfKeyboard = XRVersa::getKeyboardNotesHeld();
-        auto noteOnKeyboard = XRVersa::getNoteOnKeyboard();
-        auto currUXMode = XRUX::getCurrentMode();
-
+        
         switch (currSelectedPageNum)
         {
         case 0:
@@ -1316,11 +1264,9 @@ namespace XREncoder
 
     void handleEncoderFmDrumModA(int diff)
     {
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto &comboVoice = getComboVoiceForCurrentTrack();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        auto currUXMode = XRUX::getCurrentMode();
 
         switch (currSelectedPageNum)
         {
@@ -1370,9 +1316,8 @@ namespace XREncoder
             return;
         }
 
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
-        auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto &comboVoice = getComboVoiceForCurrentTrack();
+        auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
 
         switch (currSelectedPageNum)
@@ -1508,13 +1453,9 @@ namespace XREncoder
 
     void handleEncoderMonoSynthModB(int diff)
     {
-        //auto &seqState = XRSequencer::getSeqState();
-        auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
         auto &comboVoice = getComboVoiceForCurrentTrack();
+        auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPage = XRSequencer::getCurrentSelectedPage();
-        auto numNotesHeldOfKeyboard = XRVersa::getKeyboardNotesHeld();
-        auto noteOnKeyboard = XRVersa::getNoteOnKeyboard();
 
         switch (currSelectedPage)
         {
@@ -1535,11 +1476,11 @@ namespace XREncoder
                 );
 
                 if (!(newDetune < -24 || newDetune > 24) && newDetune != currDetune) {
-                    uint8_t noteToUse = currTrack.note;
+                    // uint8_t noteToUse = currTrack.note;
 
-                    if (numNotesHeldOfKeyboard != 0) {
-                        noteToUse = noteOnKeyboard;
-                    }
+                    // if (numNotesHeldOfKeyboard != 0) {
+                    //     noteToUse = noteOnKeyboard;
+                    // }
 
                     XRSound::currentPatternSounds[currTrackNum].params[MSYN_DETUNE] = getFloatValuePaddedAsInt32(newDetune);
 
@@ -1548,7 +1489,7 @@ namespace XREncoder
                         XRSound::currentPatternSounds[currTrackNum].params[MSYN_DETUNE]
                     );
 
-                    auto oscFreqB = getDetunedOscFreqB(noteToUse, newDetune);
+                    // auto oscFreqB = getDetunedOscFreqB(noteToUse, newDetune);
 
                     // TODO: allow adjust detune in realtime
                     // auto &seqState = XRSequencer::getSeqState();
@@ -1679,15 +1620,9 @@ namespace XREncoder
     void handleEncoderMonoSynthModC(int diff)
     {
         auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
-        auto &currStep = XRSequencer::getHeapCurrentSelectedTrackStep();
-        //auto &patternMods = XRSequencer::getModsForCurrentPattern();
         auto &comboVoice = getComboVoiceForCurrentTrack();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        auto numNotesHeldOfKeyboard = XRVersa::getKeyboardNotesHeld();
-        auto noteOnKeyboard = XRVersa::getNoteOnKeyboard();
-        auto currUXMode = XRUX::getCurrentMode();
 
         switch (currSelectedPageNum)
         {
@@ -1730,12 +1665,12 @@ namespace XREncoder
                     XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_FINE] = getFloatValuePaddedAsInt32(newFine);
 
                     // TODO: also use step note
-                    uint8_t noteToUse = currTrack.note;
-                    if (numNotesHeldOfKeyboard != 0) {
-                        noteToUse = noteOnKeyboard;
-                    } else  {
-                        // note_to_use = currStep.note;
-                    }
+                    // uint8_t noteToUse = currTrack.note;
+                    // if (numNotesHeldOfKeyboard != 0) {
+                    //     noteToUse = noteOnKeyboard;
+                    // } else  {
+                    //     // note_to_use = currStep.note;
+                    // }
 
                     // TODO: allow adjust fine freq in realtime?
                     // auto &seqState = XRSequencer::getSeqState();
@@ -1825,17 +1760,9 @@ namespace XREncoder
 
     void handleEncoderMonoSynthModD(int diff)
     {
-        //auto &seqState = XRSequencer::getSeqState();
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
-        //auto &currStep = XRSequencer::getHeapCurrentSelectedTrackStep();
-        //auto &patternMods = XRSequencer::getModsForCurrentPattern();
         auto &comboVoice = getComboVoiceForCurrentTrack();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        //auto currSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        //auto numNotesHeldOfKeyboard = XRVersa::getKeyboardNotesHeld();
-        //auto noteOnKeyboard = XRVersa::getNoteOnKeyboard();
-        //auto currUXMode = XRUX::getCurrentMode();
 
         switch (currSelectedPageNum)
         {
@@ -1957,8 +1884,6 @@ namespace XREncoder
 
     void updateMonoSynthWaveform(int diff)
     {
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
-        //auto &patternMods = XRSequencer::getModsForCurrentPattern();
         auto currSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedStep = XRSequencer::getCurrentSelectedStepNum();
         auto currentUXMode = XRUX::getCurrentMode();
@@ -2004,7 +1929,6 @@ namespace XREncoder
 
     void updateMonoSynthNoiseAmt(int diff)
     {
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
         auto currSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
 
         float currNoise = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_NOISE]);
@@ -2025,7 +1949,6 @@ namespace XREncoder
 
     void updateMonoSynthFilterEnvAttack(int diff)
     {
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
         auto currSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
 
         float currAtt = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_FILTER_ATTACK]);
@@ -2059,7 +1982,6 @@ namespace XREncoder
 
     void updateTrackAmpEnvAttack(int diff)
     {
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
         auto currSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
 
         float currAtt = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_AMP_ATTACK]);
@@ -2092,7 +2014,6 @@ namespace XREncoder
 
     void updateComboTrackLevel(int diff)
     {
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
         auto currSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
 
         float currLvl = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_LEVEL]);
@@ -2125,10 +2046,6 @@ namespace XREncoder
     void updateTrackLength(int diff)
     {
         auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
-        // auto &patternMods = XRSequencer::getModsForCurrentPattern();
-        auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currStepNum = XRSequencer::getCurrentSelectedStepNum();
-        auto currUXMode = XRUX::getCurrentMode();
 
         // length adj
         int currLen = currTrack.length;

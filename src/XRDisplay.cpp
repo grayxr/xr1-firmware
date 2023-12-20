@@ -446,7 +446,6 @@ namespace XRDisplay
             currentUXMode == XRUX::TRACK_SEL ||
             currentUXMode == XRUX::SUBMITTING_STEP_VALUE)
         {
-            auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
             auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
             auto currSoundForTrack = XRSound::currentPatternSounds[currTrackNum];
 
@@ -683,7 +682,6 @@ namespace XRDisplay
 
     void drawControlMods()
     {
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currPageSelected = XRSequencer::getCurrentSelectedPage();
         auto currSoundForTrack = XRSound::currentPatternSounds[currTrackNum];
