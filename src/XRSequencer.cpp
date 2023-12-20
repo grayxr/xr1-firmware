@@ -621,6 +621,8 @@ namespace XRSequencer
 
     void initSequencer()
     {
+        sequencer.banks[0].patterns[0].initialized = true; // always initialize first pattern?
+
         for (int b = 0; b < MAXIMUM_SEQUENCER_BANKS; b++)
         {
             for (int p = 0; p < MAXIMUM_SEQUENCER_PATTERNS; p++)
@@ -631,9 +633,6 @@ namespace XRSequencer
                 sequencer.banks[b].patterns[p].accent = DEFAULT_GLOBAL_ACCENT;
                 sequencer.banks[b].patterns[p].initialized = false;
 
-                if (p == 0)
-                    sequencer.banks[b].patterns[p].initialized = true;
-
                 for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
                 {
                     sequencer.banks[b].patterns[p].tracks[t].length = 4;
@@ -642,9 +641,6 @@ namespace XRSequencer
                     sequencer.banks[b].patterns[p].tracks[t].velocity = 50;
                     sequencer.banks[b].patterns[p].tracks[t].probability = 100;
                     sequencer.banks[b].patterns[p].tracks[t].initialized = false;
-
-                    if (t == 0)
-                        sequencer.banks[b].patterns[p].tracks[t].initialized = true;
 
                     // now fill in steps
                     for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
@@ -974,21 +970,16 @@ namespace XRSequencer
 
     void handleNoteOnForTrack(int track)
     {
-        auto trackToUse = getHeapTrack(track);
-
-        // TODO: extract all of below out into XRSound method
-        auto currentSoundForTrack = XRSound::currentPatternSounds[track];
-
-        switch (currentSoundForTrack.type)
+        switch (XRSound::currentPatternSounds[track].type)
         {
         case XRSound::T_MONO_SAMPLE:
             XRSound::handleMonoSampleNoteOnForTrack(track);
             break;
         case XRSound::T_MONO_SYNTH:
-            XRSound::handleDexedSynthNoteOnForTrack(track);
+            XRSound::handleMonoSynthNoteOnForTrack(track);
             break;
         case XRSound::T_DEXED_SYNTH:
-            XRSound::handleFmDrumNoteOnForTrack(track);
+            XRSound::handleDexedSynthNoteOnForTrack(track);
             break;
         case XRSound::T_FM_DRUM:
             XRSound::handleFmDrumNoteOnForTrack(track);

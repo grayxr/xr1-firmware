@@ -564,6 +564,7 @@ namespace XRSound
             for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
             {
                 if (tracks[t].initialized) {
+                    Serial.printf("track %d initialized\n", t);
                     setSoundNeedsReinit(t, true); // reinit sound asynchronously since the upcoming track is active
                 } else {
                     reinitSoundForTrack(t); // reinit (empty) sound synchronously since the upcoming track is empty
