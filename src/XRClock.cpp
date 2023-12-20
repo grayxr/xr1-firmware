@@ -24,7 +24,6 @@ namespace XRClock
 
     void init()
     {
-
         uClock.init();
         uClock.setClock96PPQNOutput(XRSequencer::ClockOut96PPQN);
         uClock.setClock16PPQNOutput(XRSequencer::ClockOut16PPQN);

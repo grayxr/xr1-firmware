@@ -28,8 +28,10 @@ namespace XRSequencer
     int8_t _currentSelectedPattern = 0; // default to 0 (first)
     int8_t _currentSelectedTrack = 0;   // default to 0 (first)
     int8_t _currentSelectedStep = -1;   // default to -1 (none)
-    int8_t _currentSelectedPage = 0;
     int8_t _currentStepPage = 1;
+
+    int8_t _currentSelectedPage = 0;
+    uint8_t _currentSelectedLayer = LAYER::SOUND;
 
     int8_t _ratchetTrack = -1;
     int8_t _ratchetDivision = -1;
@@ -43,52 +45,6 @@ namespace XRSequencer
     int _drawQueueBlink = -1;
 
     uint8_t _bpmBlinkTimer = 2;
-
-    std::map<XRSound::SOUND_TYPE, int> _trackPageNumMap = {
-        {XRSound::T_MONO_SAMPLE, 4},
-        {XRSound::T_MONO_SYNTH, 6},
-        {XRSound::T_DEXED_SYNTH, 4},
-        {XRSound::T_FM_DRUM, 2},
-        {XRSound::T_MIDI, 1},
-        {XRSound::T_CV_GATE, 1},
-        {XRSound::T_EMPTY, 1},
-    };
-
-    std::map<XRSound::SOUND_TYPE, std::map<int, std::string>> _trackCurrPageNameMap = {
-        {XRSound::T_MONO_SAMPLE, {
-                         {0, "MAIN"},
-                         {1, "LOOP"},
-                         {2, "AMP ENV"},
-                         {3, "OUTPUT"},
-                     }},
-        {XRSound::T_MONO_SYNTH, {
-                                {0, "MAIN"},
-                                {1, "OSC"},
-                                {2, "FILTER"},
-                                {3, "FILTER ENV"},
-                                {4, "AMP ENV"},
-                                {5, "OUTPUT"},
-                            }},
-        {XRSound::T_DEXED_SYNTH, {
-                         {0, "MAIN"},
-                         {1, "FM1"},
-                         {2, "FM2"},
-                         {3, "OUTPUT"},
-                     }},
-        {XRSound::T_FM_DRUM, {
-                         {0, "MAIN"},
-                         {1, "OUTPUT"},
-                     }},
-        {XRSound::T_MIDI, {
-                       {0, "MAIN"},
-                   }},
-        {XRSound::T_CV_GATE, {
-                      {0, "MAIN"},
-                  }},
-        {XRSound::T_EMPTY, {
-                      {0, ""},
-                  }},
-    };
 
     // extern globals
 
@@ -401,14 +357,30 @@ namespace XRSequencer
         return _currentSelectedStep;
     }
 
+    int8_t getCurrentStepPage()
+    {
+        return _currentStepPage;
+    }
+
     int8_t getCurrentSelectedPage()
     {
         return _currentSelectedPage;
     }
 
-    int8_t getCurrentStepPage()
+    uint8_t getCurrentSelectedTrackLayer()
     {
-        return _currentStepPage;
+        return _currentSelectedLayer;
+    }
+
+    int8_t getPageCountForCurrentTrackLayer()
+    {
+        int8_t count = 0;
+
+        if (_currentSelectedLayer == LAYER::SOUND) {
+            count = XRSound::getPageCountForTrack(_currentSelectedTrack);
+        }
+
+        return count;
     }
 
     QUEUED_PATTERN &getQueuedPattern()
@@ -451,101 +423,6 @@ namespace XRSequencer
         return heapPattern.tracks[_currentSelectedTrack].steps[_currentSelectedStep];
     }
 
-    std::string getTrackMetaStr(XRSound::SOUND_TYPE type)
-    {
-        std::string outputStr;
-
-        switch (type)
-        {
-
-        case XRSound::T_EMPTY:
-            outputStr = "EMPTY";
-            break;
-
-        case XRSound::T_MONO_SAMPLE:
-            outputStr = "MONOSAMPLE >";
-            break;
-
-        case XRSound::T_MONO_SYNTH:
-            outputStr = "MONOSYNTH >";
-            break;
-
-        case XRSound::T_DEXED_SYNTH:
-            outputStr = "DEXED >";
-            break;
-
-        case XRSound::T_FM_DRUM:
-            outputStr = "FM DRUM >";
-            break;
-
-        case XRSound::T_MIDI:
-            outputStr = "MIDI";
-            break;
-
-        case XRSound::T_CV_GATE:
-            outputStr = "CV/GATE";
-            break;
-
-        case XRSound::T_CV_TRIG:
-            outputStr = "CV/TRIG";
-            break;
-
-        default:
-            break;
-        }
-
-        return outputStr;
-    }
-
-    // TODO: reuse this as a sound/patch name method?
-    std::string getTrackTypeNameStr(XRSound::SOUND_TYPE type)
-    {
-        std::string str = "EMPTY"; // default
-
-        switch (type)
-        {
-        case XRSound::T_MONO_SAMPLE:
-            str = "N/A";
-
-            break;
-
-        case XRSound::T_MONO_SYNTH:
-            str = "INIT";
-
-            break;
-
-        case XRSound::T_DEXED_SYNTH:
-            str = "INIT";
-
-            break;
-
-        case XRSound::T_FM_DRUM:
-            str = "INIT";
-
-            break;
-
-        case XRSound::T_MIDI:
-            str = "MIDI";
-
-            break;
-
-        case XRSound::T_CV_GATE:
-            str = "CV/GATE";
-
-            break;
-
-        case XRSound::T_CV_TRIG:
-            str = "CV/TRIG";
-
-            break;
-
-        default:
-            break;
-        }
-
-        return str;
-    }
-
     // PATTERN_MODS &getModsForCurrentPattern()
     // {
     //     return _patternMods;
@@ -555,26 +432,6 @@ namespace XRSequencer
     // {
     //     return _patternMods.tracks[_currentSelectedTrack].steps[_currentSelectedStep];
     // }
-
-    std::string getCurrPageNameForTrack()
-    {
-        auto currTrack = getHeapCurrentSelectedTrack();
-        auto currTrackNum = getCurrentSelectedTrackNum();
-        auto currSoundForTrack = XRSound::currentPatternSounds[currTrackNum];
-
-        std::string outputStr = _trackCurrPageNameMap[currSoundForTrack.type][_currentSelectedPage];
-
-        return outputStr;
-    }
-
-    uint8_t getCurrentTrackPageCount()
-    {
-        TRACK currTrack = getHeapCurrentSelectedTrack();
-        auto currTrackNum = getCurrentSelectedTrackNum();
-        auto currSoundForTrack = XRSound::currentPatternSounds[currTrackNum];
-
-        return _trackPageNumMap[currSoundForTrack.type];
-    }
 
     int8_t getRatchetTrack()
     {
@@ -1225,5 +1082,20 @@ namespace XRSequencer
     void setRatchetDivision(int track)
     {
         _ratchetDivision = track;
+    }
+
+    bool * getInitializedTracksForPattern(int bank, int pattern)
+    {
+        bool initTracks[MAXIMUM_SEQUENCER_TRACKS];
+
+        for (int t=0; t<MAXIMUM_SEQUENCER_TRACKS; t++) {
+            if (sequencer.banks[bank].patterns[pattern].tracks[t].initialized) {
+                initTracks[t] = true;
+            } else {
+                initTracks[t] = false;
+            }
+        }
+
+        return initTracks;
     }
 }

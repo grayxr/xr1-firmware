@@ -134,10 +134,6 @@ namespace XRSequencer
         PROBABILITY = 4,
         MICROTIMING = 5
     };
-    
-    // all track step mods for all other banks and patterns are stored in SD card,
-    // they are fetched when changing patterns, stored in _nextPatternTrackMods,
-    // and then _nextPatternTrackMods replaces _currPatternTrackMods as soon as next pattern starts
 
     typedef struct
     {
@@ -154,6 +150,11 @@ namespace XRSequencer
     {
         TRACK_MODS tracks[MAXIMUM_SEQUENCER_STEPS];
     } PATTERN_TRACK_MODS;
+
+    // layers
+    enum LAYER {
+        SOUND = 0,
+    };
 
     // extern globals
     extern PATTERN heapPattern;
@@ -243,14 +244,13 @@ namespace XRSequencer
 
     // the current page for the current track layer (default layer is "sound")
     int8_t getCurrentSelectedPage();
-    uint8_t getCurrentTrackPageCount();
-
-    std::string getTrackMetaStr(XRSound::SOUND_TYPE type);
-    std::string getTrackTypeNameStr(XRSound::SOUND_TYPE type);
-    std::string getCurrPageNameForTrack();
+    uint8_t getCurrentSelectedTrackLayer();
+    int8_t getPageCountForCurrentTrackLayer();
 
     int8_t getRatchetTrack();
     int8_t getRatchetDivision();
+
+    bool * getInitializedTracksForPattern(int bank, int pattern);
 }
 
 #endif /* XRSequencer_h */

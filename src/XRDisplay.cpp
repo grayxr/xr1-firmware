@@ -461,20 +461,20 @@ namespace XRDisplay
             u8g2.drawBox(0, 9, 128, 9);
             u8g2.setColorIndex((u_int8_t)0);
 
-            std::string trackMetaStr = XRSequencer::getTrackMetaStr(currSoundForTrack.type);
+            std::string trackMetaStr = XRSound::getSoundMetaStr(currSoundForTrack.type);
             std::string trackInfoStr;
 
             if (currSoundForTrack.type == XRSound::T_MONO_SYNTH)
             {
-                trackInfoStr += XRSequencer::getTrackTypeNameStr(currSoundForTrack.type);
+                trackInfoStr += XRSound::getSoundTypeNameStr(currSoundForTrack.type);
             }
             else if (currSoundForTrack.type == XRSound::T_DEXED_SYNTH)
             {
-                trackInfoStr += XRSequencer::getTrackTypeNameStr(currSoundForTrack.type);
+                trackInfoStr += XRSound::getSoundTypeNameStr(currSoundForTrack.type);
             }
             else if (currSoundForTrack.type == XRSound::T_FM_DRUM)
             {
-                trackInfoStr += XRSequencer::getTrackTypeNameStr(currSoundForTrack.type);
+                trackInfoStr += XRSound::getSoundTypeNameStr(currSoundForTrack.type);
             }
             else if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE)
             {
@@ -942,9 +942,18 @@ namespace XRDisplay
 
     void drawPageNumIndicators()
     {
+        auto currSelectedLayer = XRSequencer::getCurrentSelectedTrackLayer();
         auto currSelectedPage = XRSequencer::getCurrentSelectedPage();
-        auto currTrackPageCount = XRSequencer::getCurrentTrackPageCount();
-        auto currPageNameForTrack = XRSequencer::getCurrPageNameForTrack();
+        auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+
+        uint8_t currTrackPageCount = 0;
+        std::string currPageNameForTrack = "";
+
+        if (currSelectedLayer == XRSequencer::LAYER::SOUND) {
+            currTrackPageCount = XRSound::getPageCountForCurrentTrack();
+            currPageNameForTrack = XRSound::currentPatternSounds[currTrackNum].type != XRSound::T_EMPTY ? "SOUND > " : "";
+            currPageNameForTrack += XRSound::getPageNameForCurrentTrack();
+        }
 
         int pageNumBasedStartX = 81 - (3 * currTrackPageCount);
         int pageTabPosY = 56;

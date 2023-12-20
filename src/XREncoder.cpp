@@ -14,12 +14,6 @@ namespace XREncoder
 {
     elapsedMillis elapsedMs;
 
-    float _tempFm = 0;
-    int _tempFreq = 50;
-    float _tempDecay = 0.75;
-    float _tempNoise = 0;
-    float _tempOverDrive = 0;
-
     int addresses[5] = {
         0x36, 0x37, 0x38, 0x39, 0x40
     };
@@ -235,15 +229,15 @@ namespace XREncoder
         int newPage = tPage + diff;
 
         if (newPage != tPage) {
-            int maxPagesForCurrTrack = XRSequencer::getCurrentTrackPageCount();
+            int maxPagesForCurrTrack = XRSequencer::getPageCountForCurrentTrackLayer();
 
             if (maxPagesForCurrTrack == 1) {
                 return;
             }
+
             if (newPage > (maxPagesForCurrTrack - 1)) {
                 newPage = 0;
-            }
-            else if (newPage < 0) {
+            } else if (newPage < 0) {
                 newPage = maxPagesForCurrTrack - 1;
             }
 
@@ -512,6 +506,58 @@ namespace XREncoder
         break;
         case 1:
         {
+            float currSpeed = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_SAMPLEPLAYRATE]);
+
+            // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1)
+            // {
+            //     currSpeed = patternMods.tracks[currSelectedTrackNum].steps[currSelectedStepNum].sample_play_rate;
+            // }
+
+            float newSpeed = currSpeed + (diff * 0.1);
+
+            if (!(newSpeed < -1.1 || newSpeed > 10.1) && newSpeed != currSpeed)
+            {
+                if ((currSpeed > 0.0 && newSpeed < 0.1) || (currSpeed == -1.0 && newSpeed < -1.0))
+                {
+                    newSpeed = -1.0;
+                }
+                else if (currSpeed <= -1.0 && newSpeed > -1.0)
+                {
+                    newSpeed = 0.1;
+                }
+
+                // Serial.printf("debug param lock -- currUXMode: %d, selTrack: %d, selStep: %d\n",currUXMode,currSelectedTrackNum,currSelectedStepNum);
+
+                // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1)
+                // {
+                //     patternMods.tracks[currSelectedTrackNum].step_mod_flags[currSelectedStepNum].flags[XRSequencer::MOD_ATTRS::SAMPLE_PLAY_RATE] = true;
+                //     patternMods.tracks[currSelectedTrackNum].steps[currSelectedStepNum].sample_play_rate = newSpeed;
+                // }
+                // else
+                // {
+                    XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_SAMPLEPLAYRATE] = getFloatValuePaddedAsInt32(newSpeed);
+                // }
+
+                if (currSelectedTrackNum > 3)
+                {
+                    auto &sampleVoice = getSampleVoiceForTrack(currSelectedTrackNum - 4);
+                    AudioNoInterrupts();
+                    sampleVoice.sample.setPlaybackRate(newSpeed);
+                    AudioInterrupts();
+                }
+                else
+                {
+                    AudioNoInterrupts();
+                    comboVoice.sample.setPlaybackRate(newSpeed);
+                    AudioInterrupts();
+                }
+
+                XRDisplay::drawSequencerScreen(false);
+            }
+        }
+        break;
+        case 2:
+        {
             int currLoopType = getValueNormalizedAsUInt8(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_LOOPTYPE]);
 
             // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1)
@@ -545,8 +591,7 @@ namespace XREncoder
 
             XRDisplay::drawSequencerScreen(false);
         }
-        break;
-        case 2:
+        case 3:
         {
             float currAtt = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_AMP_ATTACK]);
 
@@ -588,7 +633,7 @@ namespace XREncoder
             }
         }
         break;
-        case 3:
+        case 4:
         {
             float currLvl = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_LEVEL]);
             float newLvl = currLvl + (diff * 0.01);
@@ -643,10 +688,15 @@ namespace XREncoder
         switch (currSelectedPageNum)
         {
         case 0:
-            /* code */
+            updateTrackLength(diff);
+
+            break;
+        case 1:
+            //
+            
             break;
 
-        case 1:
+        case 2:
         {
             uint32_t currLoopStart = getValueNormalizedAsUInt32(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_LOOPSTART]);
 
@@ -683,9 +733,9 @@ namespace XREncoder
                 XRDisplay::drawSequencerScreen(false);
             }
         }
-        break;
+            break;
 
-        case 2:
+        case 3:
         {
             float currDecay = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_AMP_DECAY]);
 
@@ -723,9 +773,9 @@ namespace XREncoder
                 XRDisplay::drawSequencerScreen(false);
             }
         }
-        break;
+            break;
 
-        case 3:
+        case 4:
         {
             float currPan = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_PAN]);
             float newPan = currPan + (diff * 0.1);
@@ -769,7 +819,7 @@ namespace XREncoder
                 XRDisplay::drawSequencerScreen(false);
             }
         }
-        break;
+            break;
 
         default:
             break;
@@ -784,7 +834,6 @@ namespace XREncoder
         //auto &patternMods = XRSequencer::getModsForCurrentPattern();
         auto &comboVoice = getComboVoiceForCurrentTrack();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
         //auto numNotesHeldOfKeyboard = XRVersa::getKeyboardNotesHeld();
         //auto noteOnKeyboard = XRVersa::getNoteOnKeyboard();
@@ -794,57 +843,39 @@ namespace XREncoder
         {
         case 0:
             {
-                float currSpeed = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_SAMPLEPLAYRATE]);
+                float currVel = currTrack.velocity;
+                float newVel = currVel + diff;
 
-                // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1)
-                // {
-                //     currSpeed = patternMods.tracks[currSelectedTrackNum].steps[currSelectedStepNum].sample_play_rate;
+                // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1) {
+                //     currVel = currStep.velocity;
+                //     newVel = currVel + diff;
                 // }
 
-                float newSpeed = currSpeed + (diff * 0.1);
-
-                if (!(newSpeed < -1.1 || newSpeed > 10.1) && newSpeed != currSpeed)
+                if (!(newVel < 1 || newVel > 100) && newVel != currVel)
                 {
-                    if ((currSpeed > 0.0 && newSpeed < 0.1) || (currSpeed == -1.0 && newSpeed < -1.0))
-                    {
-                        newSpeed = -1.0;
-                    }
-                    else if (currSpeed <= -1.0 && newSpeed > -1.0)
-                    {
-                        newSpeed = 0.1;
-                    }
-
-                    // Serial.printf("debug param lock -- currUXMode: %d, selTrack: %d, selStep: %d\n",currUXMode,currSelectedTrackNum,currSelectedStepNum);
-
-                    // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1)
-                    // {
-                    //     patternMods.tracks[currSelectedTrackNum].step_mod_flags[currSelectedStepNum].flags[XRSequencer::MOD_ATTRS::SAMPLE_PLAY_RATE] = true;
-                    //     patternMods.tracks[currSelectedTrackNum].steps[currSelectedStepNum].sample_play_rate = newSpeed;
-                    // }
-                    // else
-                    // {
-                        XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_SAMPLEPLAYRATE] = getFloatValuePaddedAsInt32(newSpeed);
+                    // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1) {
+                    //     patternMods.tracks[currSelectedTrackNum].step_mod_flags[currSelectedStepNum].flags[XRSequencer::MOD_ATTRS::VELOCITY] = true;
+                    //     patternMods.tracks[currSelectedTrackNum].steps[currSelectedStepNum].velocity = newVel;
+                    // } else {
+                        currTrack.velocity = newVel;
                     // }
 
-                    if (currSelectedTrackNum > 3)
-                    {
-                        auto &sampleVoice = getSampleVoiceForTrack(currSelectedTrackNum - 4);
-                        AudioNoInterrupts();
-                        sampleVoice.sample.setPlaybackRate(newSpeed);
-                        AudioInterrupts();
-                    }
-                    else
-                    {
-                        AudioNoInterrupts();
-                        comboVoice.sample.setPlaybackRate(newSpeed);
-                        AudioInterrupts();
-                    }
+                    // AudioNoInterrupts();
+                    // voices[current_selected_track].leftCtrl.gain(newVel * 0.01);
+                    // voices[current_selected_track].rightCtrl.gain(newVel * 0.01);
+                    // AudioInterrupts();
 
                     XRDisplay::drawSequencerScreen(false);
                 }
             }
             break;
         case 1:
+            {
+                
+            }
+            break;
+        
+        case 2:
             {
                 uint32_t currLoopFinish = getValueNormalizedAsUInt32(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_LOOPFINISH]);
 
@@ -889,7 +920,7 @@ namespace XREncoder
             }
         break;
 
-        case 2:
+        case 3:
             {
                 float curSus = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_AMP_SUSTAIN]);
                 float newSus = curSus + (diff * 0.01);
@@ -916,7 +947,7 @@ namespace XREncoder
                 }
             }
             break;
-        case 3:
+        case 4:
             {
                 
             }
@@ -945,10 +976,15 @@ namespace XREncoder
         {
         case 0:
         {
-            //
+            // TODO: allow selecting sample file by turning the MOD-D encoder here
         }
         break;
         case 1:
+        {
+            //
+        }
+        break;
+        case 2:
         {
             play_start currPlaystart = (play_start)getValueNormalizedAsUInt8(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_PLAYSTART]);
 
@@ -983,7 +1019,7 @@ namespace XREncoder
             XRDisplay::drawSequencerScreen(false);
         }
         break;
-        case 2:
+        case 3:
         {
             float curRel = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_AMP_RELEASE]);
 
@@ -1022,7 +1058,7 @@ namespace XREncoder
             }
         }
         break;
-        case 3:
+        case 4:
         {
             //
         }
@@ -1187,6 +1223,66 @@ namespace XREncoder
 
     void handleEncoderDexedSynthModC(int diff)
     {
+        auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
+        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &currStep = XRSequencer::getHeapCurrentSelectedTrackStep();
+        //auto &patternMods = XRSequencer::getModsForCurrentPattern();
+        auto &comboVoice = getComboVoiceForCurrentTrack();
+        auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+        auto currSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
+        auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        auto numNotesHeldOfKeyboard = XRVersa::getKeyboardNotesHeld();
+        auto noteOnKeyboard = XRVersa::getNoteOnKeyboard();
+        auto currUXMode = XRUX::getCurrentMode();
+
+        switch (currSelectedPageNum)
+        {
+        case 0:
+        {
+            float currVel = currTrack.velocity;
+            float newVel = currVel + diff;
+
+            // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1) {
+            //     currVel = currStep.velocity;
+            //     newVel = currVel + diff;
+            // }
+
+            if (!(newVel < 1 || newVel > 100) && newVel != currVel)
+            {
+                // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1) {
+                //     patternMods.tracks[currSelectedTrackNum].step_mod_flags[currSelectedStepNum].flags[XRSequencer::MOD_ATTRS::VELOCITY] = true;
+                //     patternMods.tracks[currSelectedTrackNum].steps[currSelectedStepNum].velocity = newVel;
+                // } else {
+                    currTrack.velocity = newVel;
+                // }
+
+                // AudioNoInterrupts();
+                // voices[current_selected_track].leftCtrl.gain(newVel * 0.01);
+                // voices[current_selected_track].rightCtrl.gain(newVel * 0.01);
+                // AudioInterrupts();
+
+                XRDisplay::drawSequencerScreen(false);
+            }
+        }
+            
+            break;
+
+        case 1:
+            /* code */
+            break;
+
+        case 2:
+            /* code */
+            break;
+
+        case 3:
+            /* code */
+            break;
+
+        default:
+            break;
+        }
+
         // auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
 
         // if (currSelectedPageNum == 0) {

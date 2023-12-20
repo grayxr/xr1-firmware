@@ -282,6 +282,8 @@ namespace XRSound
     extern std::map<int, play_start> playStartSelMap;
     extern std::map<play_start, int> playStartFindMap;
     extern std::map<SOUND_TYPE, int32_t*> soundTypeInitParams;
+    extern std::map<SOUND_TYPE, int> soundPageNumMap;
+    extern std::map<SOUND_TYPE, std::map<int, std::string>> soundCurrPageNameMap;
 
     SOUND_CONTROL_MODS getControlModDataForPattern();
     SOUND_CONTROL_MODS getControlModDataForTrack();
@@ -304,6 +306,12 @@ namespace XRSound
     int getWaveformTypeSelection(uint8_t waveformNumber);
     float getOscFreqA(uint8_t note, int8_t fine);
     float getDetunedOscFreqB(uint8_t note, float detuneAmount);
+
+    std::string getSoundMetaStr(XRSound::SOUND_TYPE type);
+    std::string getSoundTypeNameStr(XRSound::SOUND_TYPE type);
+    std::string getPageNameForCurrentTrack();
+    uint8_t getPageCountForCurrentTrack();
+    uint8_t getPageCountForTrack(int track);
 
     std::string getWaveformName(uint8_t waveform);
     std::string getPlaybackSpeedStr(float rate);

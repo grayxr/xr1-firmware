@@ -42,8 +42,49 @@ namespace XRSound
         {5, WAVEFORM_SINE},
     };
 
-    int32_t cvTrigInitParams[MAXIMUM_SOUND_PARAMS] = {
-        100,0,0,0,0, // port, n/a, n/a, n/a, n/a
+    int32_t monoSampleInitParams[MAXIMUM_SOUND_PARAMS] = {
+        100,0,300000,100,0,       // sampleplayrate, looptype, loopstart, loopfinish, chromatic
+        0,0,0,0,0,              // playstart, n/a, n/a, n/a, n/a
+        0,100000,100,500000,0,  // a. attack, a. decay, a. sustain, a. release, n/a
+        70,0,0,0,0,             // level, pan, n/a, n/a, n/a
+        0,0,0,0,0               // n/a, n/a, n/a, n/a, n/a
+    };
+
+    int32_t monoSynthInitParams[MAXIMUM_SOUND_PARAMS] = {
+        100,-700,0,100,50,          // waveform, detune, fine, osc-a level, osc-b level
+        50,0,160000,0,0,            // width, noise, cutoff, resonance, n/a
+        0,100000,100,500000,100,    // f. attack, f. decay, f. sustain, f. release, f. env amount
+        0,100000,100,500000,0,      // a. attack, a. decay, a. sustain, a. release, n/a
+        70,0,0,0,0,                 // level, pan, n/a, n/a, n/a
+        0,0,0,0,0                   // n/a, n/a, n/a, n/a, n/a
+    };
+
+    int32_t dexedSynthInitParams[MAXIMUM_SOUND_PARAMS] = {
+        1,0,0,0,0, // algorithm, n/a, n/a, n/a, n/a
+        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
+        70,0,0,0,0, // level, pan, n/a, n/a, n/a
+        0,0,0,0,0  // n/a, n/a, n/a, n/a, n/a
+    };
+
+    int32_t braidsSynthInitParams[MAXIMUM_SOUND_PARAMS] = {
+        0,0,0,0,0, // timbre, color, modulation, fm, n/a
+        0,0,0,0,0, // coarse, fine, n/a, n/a, n/a
+        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
+        70,0,0,0,0, // level, pan, n/a, n/a, n/a
+        0,0,0,0,0  // n/a, n/a, n/a, n/a, n/a
+    };
+
+    int32_t fmDrumInitParams[MAXIMUM_SOUND_PARAMS] = {
+        5000,0,75,0,0, // frequency, fm, decay, noise, overdrive
+        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
+        70,0,0,0,0, // level, pan, n/a, n/a, n/a
+        0,0,0,0,0  // n/a, n/a, n/a, n/a, n/a
+    };
+
+    int32_t midiInitParams[MAXIMUM_SOUND_PARAMS] = {
+        1,0,0,0,0, // channel, n/a, n/a, n/a, n/a
         0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
@@ -58,45 +99,12 @@ namespace XRSound
         0,0,0,0,0  // n/a, n/a, n/a, n/a, n/a
     };
 
-    int32_t midiInitParams[MAXIMUM_SOUND_PARAMS] = {
-        1,0,0,0,0, // channel, n/a, n/a, n/a, n/a
+    int32_t cvTrigInitParams[MAXIMUM_SOUND_PARAMS] = {
+        100,0,0,0,0, // port, n/a, n/a, n/a, n/a
         0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0  // n/a, n/a, n/a, n/a, n/a
-    };
-
-    int32_t fmDrumInitParams[MAXIMUM_SOUND_PARAMS] = {
-        5000,0,75,0,0, // frequency, fm, decay, noise, overdrive
-        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
-        70,0,0,0,0, // level, pan, n/a, n/a, n/a
-        0,0,0,0,0  // n/a, n/a, n/a, n/a, n/a
-    };
-
-    int32_t dexedSynthInitParams[MAXIMUM_SOUND_PARAMS] = {
-        1,0,0,0,0, // algorithm, n/a, n/a, n/a, n/a
-        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
-        70,0,0,0,0, // level, pan, n/a, n/a, n/a
-        0,0,0,0,0  // n/a, n/a, n/a, n/a, n/a
-    };
-
-    int32_t monoSynthInitParams[MAXIMUM_SOUND_PARAMS] = {
-        100,-700,0,100,50,          // waveform, detune, fine, osc-a level, osc-b level
-        50,0,160000,0,0,            // width, noise, cutoff, resonance, n/a
-        0,100000,100,500000,100,    // f. attack, f. decay, f. sustain, f. release, f. env amount
-        0,100000,100,500000,0,      // a. attack, a. decay, a. sustain, a. release, n/a
-        70,0,0,0,0,                 // level, pan, n/a, n/a, n/a
-        0,0,0,0,0                   // n/a, n/a, n/a, n/a, n/a
-    };
-
-    int32_t monoSampleInitParams[MAXIMUM_SOUND_PARAMS] = {
-        100,0,300000,100,0,       // sampleplayrate, looptype, loopstart, loopfinish, chromatic
-        0,0,0,0,0,              // playstart, n/a, n/a, n/a, n/a
-        0,100000,100,500000,0,  // a. attack, a. decay, a. sustain, a. release, n/a
-        70,0,0,0,0,             // level, pan, n/a, n/a, n/a
-        0,0,0,0,0               // n/a, n/a, n/a, n/a, n/a
     };
   
     // extern globals
@@ -179,6 +187,57 @@ namespace XRSound
         { T_MIDI, midiInitParams },
         { T_CV_GATE, cvGateInitParams },
         { T_CV_TRIG, cvTrigInitParams },
+    };
+
+    std::map<SOUND_TYPE, int> soundPageNumMap = {
+        {T_MONO_SAMPLE, 5},
+        {T_MONO_SYNTH, 6},
+        {T_DEXED_SYNTH, 4},
+        {T_FM_DRUM, 2},
+        {T_MIDI, 1},
+        {T_CV_GATE, 1},
+        {T_CV_TRIG, 1},
+        {T_EMPTY, 1},
+    };
+
+    std::map<SOUND_TYPE, std::map<int, std::string>> soundCurrPageNameMap = {
+        {T_MONO_SAMPLE, {
+                         {0, "MAIN"},
+                         {1, "SAMPLE"},
+                         {2, "LOOP"},
+                         {3, "A.ADSR"},
+                         {4, "OUTPUT"},
+                     }},
+        {T_MONO_SYNTH, {
+                                {0, "MAIN"},
+                                {1, "OSC"},
+                                {2, "FILTER"},
+                                {3, "F.ADSR"},
+                                {4, "A.ADSR"},
+                                {5, "OUTPUT"},
+                            }},
+        {T_DEXED_SYNTH, {
+                         {0, "MAIN"},
+                         {1, "FM1"},
+                         {2, "FM2"},
+                         {3, "OUTPUT"},
+                     }},
+        {T_FM_DRUM, {
+                         {0, "MAIN"},
+                         {1, "OUTPUT"},
+                     }},
+        {T_MIDI, {
+                       {0, "MAIN"},
+                   }},
+        {T_CV_GATE, {
+                      {0, "MAIN"},
+                  }},
+        {T_CV_TRIG, {
+                      {0, "MAIN"},
+                  }},
+        {T_EMPTY, {
+                      {0, ""},
+                  }},
     };
 
     void init()
@@ -486,8 +545,6 @@ namespace XRSound
     void manageSoundDataForPatternChange(int nextBank, int nextPattern)
     {
         XRSD::savePatternSounds();
-
-        // save any sound step mods for current pattern to SD
         XRSD::savePatternSoundStepModsToSdCard();
 
         if (!XRSD::loadPatternSounds(nextBank, nextPattern))
@@ -495,14 +552,28 @@ namespace XRSound
             initNextPatternSounds();
         }
 
-        // load any track step mods for new bank/pattern from SD
         if (!XRSD::loadPatternSoundStepModsFromSdCard(nextBank, nextPattern)) {
             initPatternSoundStepMods();
         }
 
-        for (int s = 0; s < MAXIMUM_SEQUENCER_TRACKS; s++)
-        {
-            setSoundNeedsReinit(s, true);
+        auto &seqState = XRSequencer::getSeqState();
+
+        if (seqState.playbackState == XRSequencer::SEQUENCER_PLAYBACK_STATE::RUNNING) {
+            auto &tracks = XRSequencer::sequencer.banks[nextBank].patterns[nextPattern].tracks;
+
+            for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+            {
+                if (tracks[t].initialized) {
+                    setSoundNeedsReinit(t, true); // reinit sound asynchronously since the upcoming track is active
+                } else {
+                    reinitSoundForTrack(t); // reinit (empty) sound synchronously since the upcoming track is empty
+                }
+            }
+        } else {
+            for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+            {
+                reinitSoundForTrack(t); // reinit all sounds synchronously since the sequencer isn't running
+            }
         }
     }
 
@@ -611,23 +682,37 @@ namespace XRSound
         case 0: // MAIN
             {
                 mods.aName = "L.STEP";
-                mods.bName = "--";
-                mods.cName = "SPEED";
+                mods.bName = "VELO";
+                mods.cName = "PROB";
                 mods.dName = "FILE";
 
-                auto sampleplayrate = getValueNormalizedAsFloat(currentSoundForTrack.params[MSMP_SAMPLEPLAYRATE]);
-
-                Serial.printf("sampleplayrate raw: %d, sampleplayrate normal: %f\n", currentSoundForTrack.params[MSMP_SAMPLEPLAYRATE], sampleplayrate);
-
                 mods.aValue = std::to_string(currentSelectedTrack.lstep);
+                mods.bValue = std::to_string(currentSelectedTrack.velocity);
+                mods.cValue = "--";
+                mods.dValue = "--";
+            }
+
+            break;
+        case 1: // SAMPLE
+            {
+                mods.aName = "SPEED";
+                mods.bName = "--";
+                mods.cName = "--";
+                mods.dName = "--";
+
+                auto sampleplayrate = getValueNormalizedAsFloat(
+                    currentPatternSounds[currentSelectedTrackNum].params[MSMP_SAMPLEPLAYRATE]
+                );
+
+                mods.aValue = getPlaybackSpeedStr(sampleplayrate);
                 mods.bValue = "--";
-                mods.cValue = getPlaybackSpeedStr(sampleplayrate);
+                mods.cValue = "--";
                 mods.dValue = "--";
             }
 
             break;
 
-        case 1: // LOOPING
+        case 2: // LOOPING
             {
                 mods.aName = "TYPE";
                 mods.bName = "START";
@@ -636,7 +721,9 @@ namespace XRSound
 
                 mods.aValue = getLoopTypeName();
 
-                auto loopstartToUse = getValueNormalizedAsUInt32(currentSoundForTrack.params[MSMP_LOOPSTART]);
+                auto loopstartToUse = getValueNormalizedAsUInt32(
+                    currentPatternSounds[currentSelectedTrackNum].params[MSMP_LOOPSTART]
+                );
 
                 // if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currentSelectedStepNum > -1)
                 // {
@@ -648,7 +735,9 @@ namespace XRSound
 
                 mods.bValue = lsStr;
 
-                auto loopfinishToUse = getValueNormalizedAsUInt32(currentSoundForTrack.params[MSMP_LOOPFINISH]);
+                auto loopfinishToUse = getValueNormalizedAsUInt32(
+                    currentPatternSounds[currentSelectedTrackNum].params[MSMP_LOOPFINISH]
+                );
 
                 // if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currentSelectedStepNum > -1)
                 // {
@@ -660,7 +749,9 @@ namespace XRSound
 
                 mods.cValue = lfStr;
 
-                auto playstartToUse = (play_start)getValueNormalizedAsInt8(currentSoundForTrack.params[MSMP_LOOPSTART]);
+                auto playstartToUse = (play_start)getValueNormalizedAsInt8(
+                    currentPatternSounds[currentSelectedTrackNum].params[MSMP_LOOPSTART]
+                );
 
                 // if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currentSelectedStepNum > -1)
                 // {
@@ -671,17 +762,17 @@ namespace XRSound
             }
 
             break;
-        case 2: // AMP ENV
+        case 3: // AMP ENV
             {
                 mods.aName = "ATT";
                 mods.bName = "DEC";
                 mods.cName = "SUS";
                 mods.dName = "REL";
 
-                auto aatt = getValueNormalizedAsFloat(currentSoundForTrack.params[MSMP_AMP_ATTACK]);
-                auto adec = getValueNormalizedAsFloat(currentSoundForTrack.params[MSMP_AMP_DECAY]);
-                auto asus = getValueNormalizedAsFloat(currentSoundForTrack.params[MSMP_AMP_SUSTAIN]);
-                auto arel = getValueNormalizedAsFloat(currentSoundForTrack.params[MSMP_AMP_RELEASE]);
+                auto aatt = getValueNormalizedAsFloat(currentPatternSounds[currentSelectedTrackNum].params[MSMP_AMP_ATTACK]);
+                auto adec = getValueNormalizedAsFloat(currentPatternSounds[currentSelectedTrackNum].params[MSMP_AMP_DECAY]);
+                auto asus = getValueNormalizedAsFloat(currentPatternSounds[currentSelectedTrackNum].params[MSMP_AMP_SUSTAIN]);
+                auto arel = getValueNormalizedAsFloat(currentPatternSounds[currentSelectedTrackNum].params[MSMP_AMP_RELEASE]);
 
                 mods.aValue = std::to_string((float)round(aatt * 100) / 100);
                 mods.aValue = mods.aValue.substr(0, 3);
@@ -695,15 +786,15 @@ namespace XRSound
 
             break;
 
-        case 3: // OUTPUT
+        case 4: // OUTPUT
             {
                 mods.aName = "LEVEL";
                 mods.bName = "PAN";
                 mods.cName = "--";
                 mods.dName = "--"; // fx send?
 
-                auto lvl = getValueNormalizedAsFloat(currentSoundForTrack.params[MSMP_LEVEL]);
-                auto pan = getValueNormalizedAsFloat(currentSoundForTrack.params[MSMP_PAN]);
+                auto lvl = getValueNormalizedAsFloat(currentPatternSounds[currentSelectedTrackNum].params[MSMP_LEVEL]);
+                auto pan = getValueNormalizedAsFloat(currentPatternSounds[currentSelectedTrackNum].params[MSMP_PAN]);
 
                 mods.aValue = std::to_string(round(lvl * 100));
                 mods.bValue = std::to_string((float)round(pan * 100) / 100);
@@ -894,20 +985,18 @@ namespace XRSound
         auto currentSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
 
-        auto currentSoundForTrack = currentPatternSounds[currentSelectedTrackNum];
-
         switch (currentSelectedPageNum)
         {
         case 0: // MAIN
             {
                 mods.aName = "LSTP";
                 mods.bName = "LEN";
-                mods.cName = "--";
-                mods.dName = "--";
+                mods.cName = "VELO";
+                mods.dName = "PROB";
 
-                mods.aValue = std::to_string(currentSelectedTrack.lstep); // TODO : impl
-                mods.bValue = std::to_string(currentSelectedTrack.length); // TODO: impl
-                mods.cValue = "--";
+                mods.aValue = std::to_string(currentSelectedTrack.lstep);
+                mods.bValue = std::to_string(currentSelectedTrack.length);
+                mods.cValue = std::to_string(currentSelectedTrack.velocity);
                 mods.dValue = "--";
             }
 
@@ -915,7 +1004,7 @@ namespace XRSound
 
         case 1: // FM1
             {
-                mods.aName = "--";
+                mods.aName = "ALGO";
                 mods.bName = "--";
                 mods.cName = "--";
                 mods.dName = "--";
@@ -950,8 +1039,8 @@ namespace XRSound
                 mods.cName = "--";
                 mods.dName = "--"; // fx send?
 
-                auto lvl = getValueNormalizedAsFloat(currentSoundForTrack.params[DEXE_LEVEL]);
-                auto pan = getValueNormalizedAsFloat(currentSoundForTrack.params[DEXE_PAN]);
+                auto lvl = getValueNormalizedAsFloat(currentPatternSounds[currentSelectedTrackNum].params[DEXE_LEVEL]);
+                auto pan = getValueNormalizedAsFloat(currentPatternSounds[currentSelectedTrackNum].params[DEXE_PAN]);
 
                 mods.aValue = std::to_string(round(lvl * 100));
                 mods.bValue = std::to_string((float)round(pan * 100) / 100);
@@ -1047,7 +1136,7 @@ namespace XRSound
 
                 auto chan = getValueNormalizedAsInt8(currentSoundForTrack.params[0]); // TODO make enum
 
-                mods.aValue = std::to_string(currentSelectedTrack.lstep); // TODO : impl
+                mods.aValue = std::to_string(currentSelectedTrack.lstep);
                 mods.bValue = std::to_string(currentSelectedTrack.length);    // TODO: impl
                 mods.cValue = std::to_string(chan);                           // TODO: impl
                 mods.dValue = std::to_string(currentSelectedTrack.velocity);  // TODO: impl
@@ -1665,16 +1754,12 @@ namespace XRSound
 
         uint8_t velocityToUse = trackToUse.velocity;
         if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
-            velocityToUse = max(trackToUse.velocity, XRSequencer::heapPattern.accent);
+            if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::VELOCITY]) {
+                velocityToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::VELOCITY];
+            } else {
+                velocityToUse = max(trackToUse.velocity, XRSequencer::heapPattern.accent);
+            }
         }
-        // if (patternMods.tracks[track].step_mod_flags[step].flags[XRSequencer::MOD_ATTRS::VELOCITY])
-        // {
-        //     velocityToUse = patternMods.tracks[track].steps[step].velocity;
-        // }
-        // else
-        // {
-        //     velocityToUse = stepToUse.velocity;
-        // }
 
         AudioNoInterrupts();
         comboVoices[track].fmdrum.noise(fmdNoise);
@@ -1963,6 +2048,10 @@ namespace XRSound
     void setComboVoiceMixSettingsForTrack(int8_t t)
     {
         auto newType = currentPatternSounds[t].type;
+
+        if (newType == T_EMPTY) {
+            return;
+        }
 
         AudioNoInterrupts();
 
@@ -2369,6 +2458,126 @@ namespace XRSound
         return amounts;
     }
     
+    std::string getSoundMetaStr(SOUND_TYPE type)
+    {
+        std::string outputStr;
+
+        switch (type)
+        {
+
+        case T_EMPTY:
+            outputStr = "EMPTY";
+            break;
+
+        case T_MONO_SAMPLE:
+            outputStr = "SAMPLE >";
+            break;
+
+        case T_MONO_SYNTH:
+            outputStr = "MONO >";
+            break;
+
+        case T_DEXED_SYNTH:
+            outputStr = "DEXED >";
+            break;
+
+        case T_BRAIDS_SYNTH:
+            outputStr = "BRAIDS >";
+            break;
+
+        case T_FM_DRUM:
+            outputStr = "FM-DRUM >";
+            break;
+
+        case T_MIDI:
+            outputStr = "MIDI";
+            break;
+
+        case T_CV_GATE:
+            outputStr = "CV/GATE";
+            break;
+
+        case T_CV_TRIG:
+            outputStr = "CV/TRIG";
+            break;
+
+        default:
+            break;
+        }
+
+        return outputStr;
+    }
+
+    std::string getSoundTypeNameStr(SOUND_TYPE type)
+    {
+        std::string str = "EMPTY"; // default
+
+        switch (type)
+        {
+        case T_MONO_SAMPLE:
+            str = "INIT";
+
+            break;
+
+        case T_MONO_SYNTH:
+            str = "INIT";
+
+            break;
+
+        case T_DEXED_SYNTH:
+            str = "INIT";
+
+            break;
+
+        case T_FM_DRUM:
+            str = "INIT";
+
+            break;
+
+        case T_MIDI:
+            str = "MIDI";
+
+            break;
+
+        case T_CV_GATE:
+            str = "CV/GATE";
+
+            break;
+
+        case T_CV_TRIG:
+            str = "CV/TRIG";
+
+            break;
+
+        default:
+            break;
+        }
+
+        return str;
+    }
+
+    std::string getPageNameForCurrentTrack()
+    {
+        auto currTrack = XRSequencer::getCurrentSelectedTrackNum();
+        auto currPage = XRSequencer::getCurrentSelectedPage();
+
+        std::string outputStr = soundCurrPageNameMap[currentPatternSounds[currTrack].type][currPage];
+
+        return outputStr;
+    }
+
+    uint8_t getPageCountForCurrentTrack()
+    {
+        auto currTrack = XRSequencer::getCurrentSelectedTrackNum();
+
+        return soundPageNumMap[currentPatternSounds[currTrack].type];
+    }
+
+    uint8_t getPageCountForTrack(int track)
+    {
+        return soundPageNumMap[currentPatternSounds[track].type];
+    }
+
     std::string getWaveformName(uint8_t waveform)
     {
         std::string outputStr;
@@ -2430,12 +2639,10 @@ namespace XRSound
         auto &currentSelectedTrack = XRSequencer::getHeapCurrentSelectedTrack();
         auto currentSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currentSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
-        //auto &modsForCurrentTrackStep = XRSequencer::getModsForCurrentTrackStep();
         auto currentUXMode = XRUX::getCurrentMode();
 
-        auto currentSoundForTrack = currentPatternSounds[currentSelectedTrackNum];
-        auto looptype = getValueNormalizedAsUInt8(currentSoundForTrack.params[MSMP_LOOPTYPE]);
-        auto chromatic = getValueNormalizedAsBool(currentSoundForTrack.params[MSMP_CHROMATIC]);
+        auto looptype = getValueNormalizedAsUInt8(currentPatternSounds[currentSelectedTrackNum].params[MSMP_LOOPTYPE]);
+        auto chromatic = getValueNormalizedAsBool(currentPatternSounds[currentSelectedTrackNum].params[MSMP_CHROMATIC]);
 
         uint8_t looptypeToUse = looptype;
 

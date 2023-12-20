@@ -6,168 +6,181 @@
 #include <TeensyVariablePlayback.h>
 #include <synth_dexed.h>
 #include <synth_fm_drum.h>
+// #include <synth_braids.h>
 
 // GUItool: begin automatically generated code
 extern AudioSynthNoiseWhite     vnoise1;        //xy=395.999942779541,163.99999713897705
 extern AudioSynthWaveformDc     vdc1;           //xy=397.999942779541,208.99999713897705
 extern AudioSynthWaveform voscb1;         //xy=398.999942779541,115.99999713897705
 extern AudioSynthWaveform vosca1;         //xy=399.999942779541,70.99999713897705
-extern AudioSynthNoiseWhite     vnoise2;        //xy=401.28577041625977,507.85716342926025
-extern AudioSynthWaveformDc     vdc2;           //xy=402.28577041625977,552.8571634292603
-extern AudioSynthWaveform voscb2;         //xy=403.28577041625977,459.85716342926025
-extern AudioSynthWaveform vosca2;         //xy=404.28577041625977,414.85716342926025
-extern AudioSynthNoiseWhite     vnoise3;        //xy=404.99996185302734,875.0000052452087
-extern AudioSynthWaveformDc     vdc3;           //xy=406.99996185302734,920.0000052452087
-extern AudioSynthWaveform voscb3;         //xy=407.99996185302734,827.0000052452087
-extern AudioSynthWaveform vosca3;         //xy=408.99996185302734,782.0000052452087
-extern AudioSynthNoiseWhite     vnoise4;        //xy=409.99992752075195,1244.0000553131104
-extern AudioSynthWaveformDc     vdc4;           //xy=411.99992752075195,1290.0000553131104
-extern AudioSynthWaveform voscb4;         //xy=412.99992752075195,1197.0000553131104
-extern AudioSynthWaveform vosca4;         //xy=413.99992752075195,1152.0000553131104
+extern AudioSynthNoiseWhite     vnoise2;        //xy=402.7143783569336,557.1428909301758
+extern AudioSynthWaveformDc     vdc2;           //xy=403.7143783569336,602.1428909301758
+extern AudioSynthWaveform voscb2;         //xy=404.7143783569336,509.1428909301758
+extern AudioSynthWaveform vosca2;         //xy=405.7143783569336,464.1428909301758
+extern AudioSynthNoiseWhite     vnoise3;        //xy=405.0000591278076,929.9999985694885
+extern AudioSynthWaveformDc     vdc3;           //xy=407.0000591278076,974.9999985694885
+extern AudioSynthWaveform voscb3;         //xy=408.0000591278076,881.9999985694885
+extern AudioSynthWaveform vosca3;         //xy=409.0000591278076,836.9999985694885
+extern AudioSynthNoiseWhite     vnoise4;        //xy=408.5713996887207,1303.2857675552368
+extern AudioSynthWaveformDc     vdc4;           //xy=410.5713996887207,1349.2857675552368
+extern AudioSynthWaveform voscb4;         //xy=411.5713996887207,1256.2857675552368
+extern AudioSynthWaveform vosca4;         //xy=412.5713996887207,1211.2857675552368
 extern AudioEffectEnvelope      vfilterenv1;    //xy=560.999942779541,149.99999713897705
 extern AudioMixer4              voscmix1;       //xy=561.999942779541,90.99999713897705
-extern AudioEffectEnvelope      vfilterenv2;    //xy=565.2857704162598,490.85716342926025
-extern AudioMixer4              voscmix2;       //xy=566.2857704162598,434.85716342926025
-extern AudioMixer4              voscmix3;       //xy=570.9999618530273,801.0000052452087
-extern AudioEffectEnvelope      vfilterenv3;    //xy=571.8570671081543,858.9999899864197
-extern AudioMixer4              voscmix4;       //xy=575.999927520752,1171.0000553131104
-extern AudioEffectEnvelope      vfilterenv4;    //xy=578.999927520752,1227.0000553131104
+extern AudioEffectEnvelope      vfilterenv2;    //xy=566.7143783569336,540.1428909301758
+extern AudioMixer4              voscmix2;       //xy=567.7143783569336,484.1428909301758
+extern AudioMixer4              voscmix3;       //xy=571.0000591278076,855.9999985694885
+extern AudioEffectEnvelope      vfilterenv3;    //xy=571.8571643829346,913.9999833106995
+extern AudioMixer4              voscmix4;       //xy=574.5713996887207,1230.2857675552368
+extern AudioEffectEnvelope      vfilterenv4;    //xy=577.5713996887207,1286.2857675552368
 extern AudioPlayArrayResmp  vmsample1;  //xy=727.9999732971191,51.66665744781494
 extern AudioFilterLadder        vlfilter1;      //xy=738.0000343322754,104.33335208892822
-extern AudioPlayArrayResmp  vmsample2; //xy=739.2858009338379,394.8571729660034
-extern AudioPlayArrayResmp  vmsample3; //xy=744.9999923706055,759.0000138282776
-extern AudioFilterLadder        vlfilter2; //xy=749.2856979370117,447.0238924026489
-extern AudioPlayArrayResmp  vmsample4; //xy=749.9999351501465,1130.6667203903198
-extern AudioFilterLadder        vlfilter3;      //xy=755.9999923706055,813.666684627533
-extern AudioFilterLadder        vlfilter4;      //xy=760.9999160766602,1183.6666841506958
-extern AudioPlayArrayResmp  vmsample12; //xy=783.1667289733887,3182.666790485382
-extern AudioPlayArrayResmp  vmsample5; //xy=791.1666717529297,1650.9999718666077
-extern AudioPlayArrayResmp  vmsample7; //xy=789.6666679382324,2069.333248615265
-extern AudioPlayArrayResmp  vmsample9; //xy=789.6667900085449,2616.0001645088196
-extern AudioPlayArrayResmp  vmsample6; //xy=793.0000038146973,1859.333323955536
-extern AudioPlayArrayResmp  vmsample8; //xy=791.3332939147949,2279.333134174347
-extern AudioPlayArrayResmp  vmsample11; //xy=789.8334159851074,2982.666790485382
-extern AudioPlayArrayResmp  vmsample10; //xy=793.1667900085449,2806.0001645088196
-extern AudioPlayArrayResmp  vmsample16; //xy=820.6667747497559,4132.666794300079
-extern AudioPlayArrayResmp  vmsample13; //xy=827.1668357849121,3566.000168323517
-extern AudioPlayArrayResmp  vmsample15; //xy=827.3334617614746,3932.6667943000793
-extern AudioPlayArrayResmp  vmsample14; //xy=830.6668357849121,3756.000168323517
+extern AudioPlayArrayResmp  vmsample2; //xy=740.7144088745117,444.14290046691895
+extern AudioFilterLadder        vlfilter2; //xy=750.7143058776855,496.30961990356445
+extern AudioPlayArrayResmp  vmsample4; //xy=748.5714073181152,1189.9524326324463
+extern AudioPlayArrayResmp  vmsample3; //xy=755.000078201294,820.66663646698
+extern AudioFilterLadder        vlfilter4;      //xy=759.5713882446289,1242.9523963928223
+extern AudioFilterLadder        vlfilter3;      //xy=763.7778377532959,868.6666526794434
 extern AudioMixer4              vmix1;          //xy=891.999942779541,89.99999713897705
-extern AudioMixer4              vmix2;          //xy=896.2857704162598,433.85716342926025
-extern AudioMixer4              vmix3;          //xy=900.9999618530273,801.0000052452087
-extern AudioMixer4              vmix4;          //xy=905.999927520752,1171.0000553131104
-extern AudioEffectEnvelope      venv12; //xy=938.5000534057617,3181.666862487793
-extern AudioEffectEnvelope      venv5; //xy=946.4999961853027,1650.0000438690186
-extern AudioEffectEnvelope      venv7; //xy=944.9999923706055,2068.333320617676
-extern AudioEffectEnvelope      venv9; //xy=945.000114440918,2615.0002365112305
-extern AudioEffectEnvelope      venv6; //xy=948.3333282470703,1858.3333959579468
-extern AudioEffectEnvelope      venv8; //xy=946.666618347168,2278.333206176758
-extern AudioEffectEnvelope      venv11; //xy=945.1667404174805,2981.666862487793
-extern AudioEffectEnvelope      venv10; //xy=948.500114440918,2805.0002365112305
-extern AudioEffectEnvelope      venv16; //xy=976.0000991821289,4131.66686630249
-extern AudioEffectEnvelope      venv13; //xy=982.5001602172852,3565.0002403259277
-extern AudioEffectEnvelope      venv15; //xy=982.6667861938477,3931.6668663024902
-extern AudioEffectEnvelope      venv14; //xy=986.0001602172852,3755.0002403259277
-extern AudioEffectEnvelope      venv1;          //xy=1029.999942779541,88.99999713897705
-extern AudioSynthDexed          dexed1;         //xy=1031.74995803833,199.50000286102295
-extern AudioEffectEnvelope      venv2;          //xy=1034.2857704162598,432.85716342926025
-extern AudioSynthFMDrum         fmdrum1;        //xy=1039.5,290
-extern AudioEffectEnvelope      venv3;          //xy=1037.9999618530273,800.0000052452087
-extern AudioSynthFMDrum         fmdrum2; //xy=1042.1427841186523,637.14288854599
-extern AudioSynthDexed          dexed2; //xy=1043.5358047485352,547.6071829795837
-extern AudioEffectEnvelope      venv4;          //xy=1042.999927520752,1170.0000553131104
-extern AudioSynthDexed          dexed3; //xy=1044.4999771118164,914.2500185966492
-extern AudioSynthFMDrum         fmdrum3; //xy=1047.5,1007.5
-extern AudioSynthFMDrum         fmdrum4; //xy=1051.6666259765625,1376.6666259765625
-extern AudioSynthDexed          dexed4; //xy=1052.7499618530273,1282.5000896453857
-extern AudioAmplifier           vleft12; //xy=1091.5000534057617,3163.666862487793
-extern AudioAmplifier           vleft5; //xy=1099.4999961853027,1632.0000438690186
-extern AudioAmplifier           vleft7; //xy=1097.9999923706055,2050.333320617676
-extern AudioAmplifier           vright12; //xy=1093.5000534057617,3202.666862487793
-extern AudioAmplifier           vright5; //xy=1101.4999961853027,1671.0000438690186
-extern AudioAmplifier           vright7; //xy=1099.9999923706055,2089.333320617676
-extern AudioAmplifier           vleft9; //xy=1098.000114440918,2597.0002365112305
-extern AudioAmplifier           vleft6; //xy=1101.3333282470703,1840.3333959579468
-extern AudioAmplifier           vleft8; //xy=1099.666618347168,2260.333206176758
-extern AudioAmplifier           vleft11; //xy=1098.1667404174805,2963.666862487793
-extern AudioAmplifier           vright9; //xy=1100.000114440918,2636.0002365112305
-extern AudioAmplifier           vright6; //xy=1103.3333282470703,1879.3333959579468
-extern AudioAmplifier           vright8; //xy=1101.666618347168,2299.333206176758
-extern AudioAmplifier           vright11; //xy=1100.1667404174805,3002.666862487793
-extern AudioAmplifier           vleft10; //xy=1101.500114440918,2787.0002365112305
-extern AudioAmplifier           vright10; //xy=1103.500114440918,2826.0002365112305
-extern AudioAmplifier           vleft16; //xy=1129.000099182129,4113.66686630249
-extern AudioAmplifier           vright16; //xy=1131.000099182129,4152.66686630249
-extern AudioAmplifier           vleft13; //xy=1135.5001602172852,3547.0002403259277
-extern AudioAmplifier           vleft15; //xy=1135.6667861938477,3913.6668663024902
-extern AudioAmplifier           vright13; //xy=1137.5001602172852,3586.0002403259277
-extern AudioAmplifier           vright15; //xy=1137.6667861938477,3952.6668663024902
-extern AudioAmplifier           vleft14; //xy=1139.0001602172852,3737.0002403259277
-extern AudioAmplifier           vright14; //xy=1141.0001602172852,3776.0002403259277
+extern AudioMixer4              vmix2;          //xy=897.7143478393555,478.6984519958496
+extern AudioPlayArrayResmp  vmsample5; //xy=897.8333358764648,1670.9999451637268
+extern AudioPlayArrayResmp  vmsample7; //xy=896.3333320617676,2089.333221912384
+extern AudioPlayArrayResmp  vmsample6; //xy=899.6666679382324,1879.333297252655
+extern AudioPlayArrayResmp  vmsample8; //xy=897.9999580383301,2299.333107471466
+extern AudioPlayArrayResmp  vmsample12; //xy=896.5000457763672,3179.333426952362
+extern AudioMixer4              vmix4;          //xy=904.5713996887207,1230.2857675552368
+extern AudioPlayArrayResmp  vmsample16; //xy=894.0000457763672,4132.666792392731
+extern AudioMixer4              vmix3;          //xy=907.6667346954346,852.6666526794434
+extern AudioPlayArrayResmp  vmsample9; //xy=903.0001068115234,2612.6668009757996
+extern AudioPlayArrayResmp  vmsample13; //xy=900.5001068115234,3566.000166416168
+extern AudioPlayArrayResmp  vmsample11; //xy=903.1667327880859,2979.333426952362
+extern AudioPlayArrayResmp  vmsample15; //xy=900.6667327880859,3932.6667923927307
+extern AudioPlayArrayResmp  vmsample10; //xy=906.5001068115234,2802.6668009757996
+extern AudioPlayArrayResmp  vmsample14; //xy=904.0001068115234,3756.000166416168
+extern AudioEffectEnvelope      venv1;          //xy=1036.6665802001953,88.99999713897705
+extern AudioSynthFMDrum         fmdrum1;        //xy=1041.1668548583984,264.999981880188
+extern AudioSynthDexed          dexed1;         //xy=1045.0833740234375,182.27777481079102
+extern AudioEffectEnvelope      venv4;          //xy=1041.5713996887207,1229.2857675552368
+extern AudioEffectEnvelope      venv2;          //xy=1046.8254089355469,478.8095998764038
+extern AudioSynthDexed          dexed3; //xy=1045.6111736297607,944.8055458068848
+extern AudioSynthFMDrum         fmdrum2; //xy=1046.9048233032227,647.5397396087646
+//extern AudioSynthBraids         braids1;        //xy=1050.555648803711,355.55557346343994
+extern AudioSynthDexed          dexed2; //xy=1050.520004272461,571.3373847007751
+extern AudioEffectEnvelope      venv3;          //xy=1050.2223224639893,852.7777900695801
+extern AudioSynthFMDrum         fmdrum3; //xy=1050.8335208892822,1022.5000081062317
+extern AudioSynthDexed          dexed4; //xy=1051.3212871551514,1331.785726070404
+//extern AudioSynthBraids         braids2; //xy=1055.8729858398438,735.3968105316162
+extern AudioEffectEnvelope      venv5; //xy=1053.166660308838,1670.0000171661377
+//extern AudioSynthBraids         braids3; //xy=1055.5555515289307,1109.9998607635498
+extern AudioEffectEnvelope      venv7; //xy=1051.6666564941406,2088.333293914795
+extern AudioSynthFMDrum         fmdrum4; //xy=1054.5237846374512,1420.2381176948547
+extern AudioEffectEnvelope      venv6; //xy=1054.9999923706055,1878.333369255066
+extern AudioEffectEnvelope      venv8; //xy=1053.3332824707031,2298.333179473877
+extern AudioEffectEnvelope      venv12; //xy=1051.8333702087402,3178.333498954773
+extern AudioEffectEnvelope      venv16; //xy=1049.3333702087402,4131.666864395142
+//extern AudioSynthBraids         braids4; //xy=1060,1507.142822265625
+extern AudioEffectEnvelope      venv9; //xy=1058.3334312438965,2611.6668729782104
+extern AudioEffectEnvelope      venv13; //xy=1055.8334312438965,3565.000238418579
+extern AudioEffectEnvelope      venv11; //xy=1058.500057220459,2978.333498954773
+extern AudioEffectEnvelope      venv15; //xy=1056.000057220459,3931.6668643951416
+extern AudioEffectEnvelope      venv10; //xy=1061.8334312438965,2801.6668729782104
+extern AudioEffectEnvelope      venv14; //xy=1059.3334312438965,3755.000238418579
 extern AudioAmplifier           vleft1;         //xy=1182.999942779541,70.99999713897705
-extern AudioAmplifier           vright1;        //xy=1184.999942779541,109.99999713897705
-extern AudioAmplifier           fdright1; //xy=1184.75,319.25000047683716
-extern AudioAmplifier           fdleft1; //xy=1186,278
-extern AudioAmplifier           dright1;           //xy=1186.9999618530273,214.25000286102295
-extern AudioAmplifier           dleft1;           //xy=1188.2499618530273,173.0000023841858
-extern AudioAmplifier           vleft2;         //xy=1188.2857704162598,414.85716342926025
-extern AudioAmplifier           fdright2; //xy=1187.3927841186523,666.3928890228271
-extern AudioAmplifier           dright2; //xy=1188.035789489746,560.3571739196777
-extern AudioAmplifier           vright2;        //xy=1189.2857704162598,453.85716342926025
-extern AudioAmplifier           fdleft2; //xy=1188.6427841186523,625.14288854599
-extern AudioAmplifier           dleft2; //xy=1189.285789489746,519.1071734428406
-extern AudioAmplifier           dright3; //xy=1191.2499809265137,930.0000185966492
-extern AudioAmplifier           vleft3;         //xy=1191.9999618530273,782.0000052452087
-extern AudioAmplifier           dleft3; //xy=1192.4999809265137,888.750018119812
-extern AudioAmplifier           vright3;        //xy=1192.9999618530273,821.0000052452087
-extern AudioAmplifier           fdright3; //xy=1192.75,1036.7500004768372
-extern AudioAmplifier           fdleft3; //xy=1194,995.5
-extern AudioAmplifier           vleft4;         //xy=1196.999927520752,1152.0000553131104
-extern AudioAmplifier           fdright4; //xy=1196.9166259765625,1405.9166264533997
-extern AudioAmplifier           dright4; //xy=1197.4999465942383,1297.5000729560852
-extern AudioAmplifier           vright4;        //xy=1197.999927520752,1190.0000553131104
-extern AudioAmplifier           fdleft4; //xy=1198.1666259765625,1364.6666259765625
-extern AudioAmplifier           dleft4; //xy=1198.7499465942383,1256.250072479248
-extern AudioMixer4              vsubmixl12; //xy=1302.0715217590332,3166.2382793426514
-extern AudioMixer4              vsubmixr12; //xy=1302.7381477355957,3238.2382764816284
-extern AudioMixer4              vsubmixl5; //xy=1310.0714645385742,1634.571460723877
-extern AudioMixer4              vsubmixl7; //xy=1308.571460723877,2052.904737472534
-extern AudioMixer4              vsubmixr5; //xy=1310.7380905151367,1706.571457862854
-extern AudioMixer4              vsubmixr7; //xy=1309.2380867004395,2124.9047346115112
-extern AudioMixer4              vsubmixl6; //xy=1311.9047966003418,1842.9048128128052
-extern AudioMixer4              vsubmixl8; //xy=1310.2380867004395,2262.904623031616
-extern AudioMixer4              vsubmixr9; //xy=1309.238208770752,2671.571650505066
-extern AudioMixer4              vsubmixr6; //xy=1312.5714225769043,1914.9048099517822
-extern AudioMixer4              vsubmixr8; //xy=1310.904712677002,2334.9046201705933
-extern AudioMixer4              vsubmixl11; //xy=1308.738208770752,2966.2382793426514
-extern AudioMixer4              vsubmixr11; //xy=1309.4048347473145,3038.2382764816284
-extern AudioMixer4              vsubmixl10; //xy=1312.0715827941895,2789.571653366089
-extern AudioMixer4              vsubmixl9; //xy=1312.857177734375,2596.714553833008
-extern AudioMixer4              vsubmixr10; //xy=1312.738208770752,2861.571650505066
-extern AudioMixer4              vsubmixl16; //xy=1339.5715675354004,4116.238283157349
-extern AudioMixer4              vsubmixr16; //xy=1340.238193511963,4188.238280296326
-extern AudioMixer4              vsubmixl13; //xy=1346.0716285705566,3549.571657180786
-extern AudioMixer4              vsubmixr13; //xy=1346.7382545471191,3621.571654319763
-extern AudioMixer4              vsubmixl15; //xy=1346.2382545471191,3916.2382831573486
-extern AudioMixer4              vsubmixr15; //xy=1346.9048805236816,3988.2382802963257
-extern AudioMixer4              vsubmixl14; //xy=1349.5716285705566,3739.571657180786
-extern AudioMixer4              vsubmixr14; //xy=1350.2382545471191,3811.571654319763
+extern AudioAmplifier           vright1;        //xy=1183.8889617919922,105.55554962158203
+extern AudioAmplifier           fdleft1; //xy=1187.666835784912,248.55554723739624
+extern AudioAmplifier           dright1;           //xy=1188.1111221313477,194.80556297302246
+extern AudioAmplifier           dleft1;           //xy=1188.2500343322754,160.22222805023193
+extern AudioAmplifier           bleft1; //xy=1188.8888397216797,336.66665267944336
+extern AudioAmplifier           fdright1; //xy=1189.7501831054688,283.1388530731201
+extern AudioAmplifier           bright1; //xy=1189.7777481079102,371.2221965789795
+extern AudioAmplifier           vleft2;         //xy=1189.7144088745117,460.80956840515137
+extern AudioAmplifier           vright2;        //xy=1189.603271484375,495.3651123046875
+extern AudioAmplifier           dleft2; //xy=1190.7144622802734,546.1706581115723
+extern AudioAmplifier           dright2; //xy=1191.686622619629,580.7540454864502
+extern AudioAmplifier           fdleft2; //xy=1193.4046630859375,631.095329284668
+extern AudioAmplifier           dright3; //xy=1192.3612575531006,956.1111011505127
+extern AudioAmplifier           dleft3; //xy=1192.5001583099365,921.5277671813965
+extern AudioAmplifier           vleft3;         //xy=1193.1111736297607,833.6666851043701
+extern AudioAmplifier           vright3;        //xy=1193.0000629425049,869.3332996368408
+extern AudioAmplifier           bleft2; //xy=1194.2061767578125,716.5078897476196
+extern AudioAmplifier           fdleft3; //xy=1194.0001621246338,1006.0555400848389
+extern AudioAmplifier           bright2; //xy=1195.095085144043,751.0634336471558
+extern AudioAmplifier           fdright2; //xy=1195.488021850586,665.678596496582
+extern AudioAmplifier           bright3; //xy=1194.7775592803955,1126.7776126861572
+extern AudioAmplifier           bleft3; //xy=1194.9996318817139,1091.111011505127
+extern AudioAmplifier           vleft4;         //xy=1195.5713996887207,1211.2857675552368
+extern AudioAmplifier           fdright3; //xy=1197.1944828033447,1041.7500200271606
+extern AudioAmplifier           vright4;        //xy=1196.5713729858398,1246.4286365509033
+extern AudioAmplifier           dleft4; //xy=1197.3212718963623,1305.5357089042664
+extern AudioAmplifier           dright4; //xy=1197.4999446868896,1341.0713710784912
+extern AudioAmplifier           fdleft4; //xy=1198.1666717529297,1399.6667757034302
+extern AudioAmplifier           bright4;  //xy=1199.2220077514648,1523.9205741882324
+extern AudioAmplifier           bleft4; //xy=1199.4440803527832,1488.2539730072021
+extern AudioAmplifier           fdright4; //xy=1199.7738876342773,1435.2023859024048
+extern AudioAmplifier           vleft5; //xy=1206.166660308838,1652.0000171661377
+extern AudioAmplifier           vleft7; //xy=1204.6666564941406,2070.333293914795
+extern AudioAmplifier           vright5; //xy=1208.166660308838,1691.0000171661377
+extern AudioAmplifier           vright7; //xy=1206.6666564941406,2109.333293914795
+extern AudioAmplifier           vleft6; //xy=1207.9999923706055,1860.333369255066
+extern AudioAmplifier           vleft8; //xy=1206.3332824707031,2280.333179473877
+extern AudioAmplifier           vleft12; //xy=1204.8333702087402,3160.333498954773
+extern AudioAmplifier           vright6; //xy=1209.9999923706055,1899.333369255066
+extern AudioAmplifier           vright8; //xy=1208.3332824707031,2319.333179473877
+extern AudioAmplifier           vleft16; //xy=1202.3333702087402,4113.666864395142
+extern AudioAmplifier           vright12; //xy=1206.8333702087402,3199.333498954773
+extern AudioAmplifier           vright16; //xy=1204.3333702087402,4152.666864395142
+extern AudioAmplifier           vleft9; //xy=1211.3334312438965,2593.6668729782104
+extern AudioAmplifier           vleft13; //xy=1208.8334312438965,3547.000238418579
+extern AudioAmplifier           vleft11; //xy=1211.500057220459,2960.333498954773
+extern AudioAmplifier           vright9; //xy=1213.3334312438965,2632.6668729782104
+extern AudioAmplifier           vleft15; //xy=1209.000057220459,3913.6668643951416
+extern AudioAmplifier           vright13; //xy=1210.8334312438965,3586.000238418579
+extern AudioAmplifier           vright11; //xy=1213.500057220459,2999.333498954773
+extern AudioAmplifier           vleft10; //xy=1214.8334312438965,2783.6668729782104
+extern AudioAmplifier           vright15; //xy=1211.000057220459,3952.6668643951416
+extern AudioAmplifier           vleft14; //xy=1212.3334312438965,3737.000238418579
+extern AudioAmplifier           vright10; //xy=1216.8334312438965,2822.6668729782104
+extern AudioAmplifier           vright14; //xy=1214.3334312438965,3776.000238418579
 extern AudioMixer4              vsubmixl1;      //xy=1393.5713661313057,73.57140827178955
 extern AudioMixer4              vsubmixr1;      //xy=1394.238037109375,145.5714111328125
-extern AudioMixer4              vsubmixl3;      //xy=1398.000099182129,774.3333487510681
-extern AudioMixer4              vsubmixr3;      //xy=1399.6667251586914,843.6666235923767
-extern AudioMixer4              vsubmixr4;      //xy=1399.666648864746,1202.000015258789
-extern AudioMixer4              vsubmixl4;      //xy=1401.3332786560059,1131.6667213439941
-extern AudioMixer4              vsubmixl2;      //xy=1404.5237426757812,413.14288806915283
-extern AudioMixer4              vsubmixr2;      //xy=1404.5239448547363,483.9047317504883
-extern AudioMixer4              mixerRight3; //xy=1764.1429748535156,2965.14310836792
-extern AudioMixer4              mixerLeft3; //xy=1765.0001678466797,2885.0002250671387
-extern AudioMixer4              mixerLeft2; //xy=1779.1666946411133,1930.8334007263184
-extern AudioMixer4              mixerRight2; //xy=1781.6427307128906,2007.6428527832031
-extern AudioMixer4              mixerRight4; //xy=1791.642967224121,3902.643123626709
-extern AudioMixer4              mixerLeft4; //xy=1792.5001602172852,3822.5002403259277
-extern AudioMixer4              mixerLeft1;  //xy=1895.0000534057617,614.9999885559082
-extern AudioMixer4              mixerRight1; //xy=1899.9761505126953,695.1428909301758
+extern AudioMixer4              vsubmixl2;      //xy=1405.952350616455,462.42861557006836
+extern AudioMixer4              vsubmixr2;      //xy=1405.9525527954102,533.1904592514038
+extern AudioMixer4              vsubmixl3;      //xy=1409.111234664917,849.3333511352539
+extern AudioMixer4              vsubmixr3;      //xy=1411.095293045044,915.4920082092285
+extern AudioMixer4              vsubmixl5; //xy=1416.7381286621094,1654.571434020996
+extern AudioMixer4              vsubmixl7; //xy=1415.238124847412,2072.9047107696533
+extern AudioMixer4              vsubmixr5; //xy=1417.4047546386719,1726.5714311599731
+extern AudioMixer4              vsubmixr7; //xy=1415.9047508239746,2144.9047079086304
+extern AudioMixer4              vsubmixl6; //xy=1418.571460723877,1862.9047861099243
+extern AudioMixer4              vsubmixl8; //xy=1416.9047508239746,2282.9045963287354
+extern AudioMixer4              vsubmixl4;      //xy=1421.333351135254,1222.3810138702393
+extern AudioMixer4              vsubmixr6; //xy=1419.2380867004395,1934.9047832489014
+extern AudioMixer4              vsubmixr8; //xy=1417.571376800537,2354.9045934677124
+extern AudioMixer4              vsubmixr4;      //xy=1422.5239028930664,1286.9999771118164
+extern AudioMixer4              vsubmixl12; //xy=1415.4048385620117,3162.9049158096313
+extern AudioMixer4              vsubmixr12; //xy=1416.0714645385742,3234.9049129486084
+extern AudioMixer4              vsubmixl16; //xy=1412.9048385620117,4116.23828125
+extern AudioMixer4              vsubmixr16; //xy=1413.5714645385742,4188.238278388977
+extern AudioMixer4              vsubmixr9; //xy=1422.5715255737305,2668.238286972046
+extern AudioMixer4              vsubmixl13; //xy=1419.404899597168,3549.5716552734375
+extern AudioMixer4              vsubmixl11; //xy=1422.0715255737305,2962.9049158096313
+extern AudioMixer4              vsubmixr13; //xy=1420.0715255737305,3621.5716524124146
+extern AudioMixer4              vsubmixr11; //xy=1422.738151550293,3034.9049129486084
+extern AudioMixer4              vsubmixl15; //xy=1419.5715255737305,3916.23828125
+extern AudioMixer4              vsubmixr15; //xy=1420.238151550293,3988.238278388977
+extern AudioMixer4              vsubmixl10; //xy=1425.404899597168,2786.238289833069
+extern AudioMixer4              vsubmixl9; //xy=1426.1904945373535,2593.381190299988
+extern AudioMixer4              vsubmixr10; //xy=1426.0715255737305,2858.238286972046
+extern AudioMixer4              vsubmixl14; //xy=1422.904899597168,3739.5716552734375
+extern AudioMixer4              vsubmixr14; //xy=1423.5715255737305,3811.5716524124146
+extern AudioMixer4              mixerLeft2; //xy=1884.8808822631836,1933.690444946289
+extern AudioMixer4              mixerRight2; //xy=1887.356918334961,2010.4998970031738
+extern AudioMixer4              mixerLeft1;  //xy=1895.0000495910645,654.9999694824219
+extern AudioMixer4              mixerRight1; //xy=1899.976146697998,735.1428718566895
+extern AudioMixer4              mixerRight3; //xy=1905.5715713500977,2926.5715103149414
+extern AudioMixer4              mixerLeft3; //xy=1906.4287643432617,2846.42862701416
+extern AudioMixer4              mixerRight4; //xy=1915.9286804199219,3904.0715713500977
+extern AudioMixer4              mixerLeft4; //xy=1916.785873413086,3823.9286880493164
 extern AudioMixer4              mainMixerLeft;         //xy=2267.5003089904785,2250.0002546310425
 extern AudioMixer4              mainMixerRight;         //xy=2270.8332328796387,2321.6669244766235
 extern AudioInputI2S            i2s2;           //xy=2290.0005493164062,2503.333436012268
@@ -178,7 +191,7 @@ extern AudioMixer4              inputMixerRight; //xy=2498.333480834961,2548.333
 extern AudioMixer4              OutputMixerLeft; //xy=2756.6665802001953,2421.666684150696
 extern AudioMixer4              OutputMixerRight; //xy=2761.6667404174805,2493.3334341049194
 extern AudioOutputI2S           i2s1;           //xy=2952.880859375,2464.166604042053
- 
+
 extern AudioConnection          patchCord1;
 extern AudioConnection          patchCord2;
 extern AudioConnection          patchCord3;
@@ -377,8 +390,25 @@ extern AudioConnection          patchCord195;
 extern AudioConnection          patchCord196;
 extern AudioConnection          patchCord197;
 extern AudioConnection          patchCord198;
+extern AudioConnection          patchCord199;
+extern AudioConnection          patchCord200;
+extern AudioConnection          patchCord201;
+extern AudioConnection          patchCord202;
+extern AudioConnection          patchCord203;
+extern AudioConnection          patchCord204;
+extern AudioConnection          patchCord205;
+extern AudioConnection          patchCord206;
+extern AudioConnection          patchCord207;
+extern AudioConnection          patchCord208;
+extern AudioConnection          patchCord209;
+extern AudioConnection          patchCord210;
+extern AudioConnection          patchCord211;
+extern AudioConnection          patchCord212;
+extern AudioConnection          patchCord213;
+extern AudioConnection          patchCord214;
 
 extern AudioControlSGTL5000     sgtl5000_1;     //xy=2959.095054626465,2416.0714683532715
 // GUItool: end automatically generated code
+
 
 #endif /* XRAudioConfig_h */
