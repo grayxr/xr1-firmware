@@ -525,6 +525,7 @@ namespace XRSound
     {
         currentPatternSounds[track] = nextPatternSounds[track];
 
+        // load any samples for track
         std::string newSoundSampleName(currentPatternSounds[track].sampleName);
         if (newSoundSampleName.length() > 0) {
             // load any samples into PSRAM
@@ -535,6 +536,9 @@ namespace XRSound
 
         // adjust voice settings for this track sound if using a combo voice
         if (track < 4) {
+            // load any dexed voice settings for track
+            comboVoices[track].dexed.loadVoiceParameters(currentPatternSounds[track].dexedParams);
+
             setComboVoiceMixSettingsForTrack(track);
         }
 
@@ -544,6 +548,9 @@ namespace XRSound
 
     void manageSoundDataForPatternChange(int nextBank, int nextPattern)
     {
+        // TODO: check if sounds are "dirty" and require SD card save,
+        // otherwise skip SD card writes to save time / perf hit / etc
+        
         XRSD::savePatternSounds();
         XRSD::savePatternSoundStepModsToSdCard();
 
@@ -563,11 +570,13 @@ namespace XRSound
 
             for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
             {
-                if (tracks[t].initialized) {
-                    Serial.printf("track %d initialized\n", t);
+                if (
+                    tracks[t].initialized &&
+                     currentPatternSounds[t].type != T_DEXED_SYNTH // don't load dexed changes async since it cuts out the sound
+                ) {
                     setSoundNeedsReinit(t, true); // reinit sound asynchronously since the upcoming track is active
                 } else {
-                    reinitSoundForTrack(t); // reinit (empty) sound synchronously since the upcoming track is empty
+                    reinitSoundForTrack(t); // reinit sound synchronously since the upcoming track is either empty or a dexed sound
                 }
             }
         } else {
@@ -2686,6 +2695,18 @@ namespace XRSound
         auto keyboardOctave = XRKeyMatrix::getKeyboardOctave();
 
         return (foundBaseFreq + (fine * 0.01)) * (pow(2, keyboardOctave));
+    }
+
+    void applyCurrentDexedPatchToSound()
+    {
+        auto track = XRSequencer::getCurrentSelectedTrackNum();
+
+        uint8_t dexedParamData[MAXIMUM_DEXED_SOUND_PARAMS];
+        comboVoices[track].dexed.getVoiceData(dexedParamData);
+        for (int dp=0; dp<MAXIMUM_DEXED_SOUND_PARAMS; dp++)
+        {
+            currentPatternSounds[track].dexedParams[dp] = dexedParamData[dp];
+        }
     }
 
     int8_t getValueNormalizedAsInt8(int32_t param)

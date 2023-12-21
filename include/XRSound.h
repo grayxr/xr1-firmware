@@ -268,8 +268,6 @@ namespace XRSound
     // extern globals
     extern SOUND currentPatternSounds[MAXIMUM_SEQUENCER_TRACKS];
     extern DMAMEM SOUND nextPatternSounds[MAXIMUM_SEQUENCER_TRACKS];
-    // we only keep the current pattern's sound mods in memory,
-    // when a pattern change occurs, the next pattern's sound mods are loaded from the SD card
     extern DMAMEM PATTERN_SOUND_MODS patternSoundStepMods;
     
     extern bool soundNeedsReinit[MAXIMUM_SEQUENCER_TRACKS];
@@ -359,6 +357,8 @@ namespace XRSound
     void triggerDexedSynthNoteOn(uint8_t t, uint8_t note);
     void triggerFmDrumNoteOn(uint8_t t, uint8_t note);
     void triggerCvGateNoteOn(uint8_t t, uint8_t note);
+
+    void applyCurrentDexedPatchToSound();
 
     int8_t getValueNormalizedAsInt8(int32_t param);
     uint8_t getValueNormalizedAsUInt8(int32_t param);

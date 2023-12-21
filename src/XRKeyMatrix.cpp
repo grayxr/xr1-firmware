@@ -714,6 +714,18 @@ namespace XRKeyMatrix
 
             return;
         }
+
+        else if (currentUXMode == XRUX::UX_MODE::SOUND_MENU_DEXED_SYSEX_BROWSER && key == SELECT_BTN_CHAR) {
+            auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+
+            XRSound::applyCurrentDexedPatchToSound();
+
+            XRUX::setCurrentMode(XRUX::UX_MODE::TRACK_WRITE); // TODO fix by tracking real seq UX mode separately
+
+            XRDisplay::drawSequencerScreen(false);
+
+            return;
+        }
     }
 
     void handleHoldForKey(char key)
