@@ -1014,12 +1014,11 @@ namespace XRDisplay
 
     void drawSetupMenu()
     {
-        // std::vector<std::string> menuItems;
-        // menuItems.emplace_back(XRMenu::getSetupMenuItems());
+        auto menuItems = XRMenu::getSetupMenuItems();
 
-        // drawGenericMenuList("SETUP", menuItems, SETUP_MENU_ITEM_MAX);
+        drawGenericMenuList("SETUP", menuItems, SETUP_MENU_ITEM_MAX);
 
-        // u8g2.sendBuffer();
+        u8g2.sendBuffer();
     }
 
     void drawGenericMenuList(std::string headerStr, std::string *menuItems, int menuItemMax)
