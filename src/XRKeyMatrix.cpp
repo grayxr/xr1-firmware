@@ -207,8 +207,7 @@ namespace XRKeyMatrix
 
             return;
         } 
-        if (currentUXMode == XRUX::UX_MODE::TRACK_SEL && key == SOUND_BTN_CHAR) {           
-            auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        if (currentUXMode == XRUX::UX_MODE::TRACK_SEL && key == SOUND_BTN_CHAR) {
             auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
             auto currSoundForTrack = XRSound::currentPatternSounds[currTrackNum];
             auto currType = currSoundForTrack.type;
@@ -238,7 +237,6 @@ namespace XRKeyMatrix
         ) {
             Serial.println("doing track write actions!");
 
-            auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
             auto currPageSelected = XRSequencer::getCurrentSelectedPage();
 
             if (key == MOD_D_BTN_CHAR) {            
@@ -280,7 +278,6 @@ namespace XRKeyMatrix
 
             auto &seqState = XRSequencer::getSeqState();
             auto currBank = XRSequencer::getCurrentSelectedBankNum();
-            auto currPattern = XRSequencer::getCurrentSelectedPatternNum();
 
             int nextBank = currBank; // TODO: allow for bank selection with pattern selection?
             int nextPattern = getKeyStepNum(key) - 1; // zero-based
@@ -485,10 +482,7 @@ namespace XRKeyMatrix
             }
 
             // save pasted step
-            auto &sequencer = XRSequencer::getSequencer();
             auto &heapPattern = XRSequencer::getHeapPattern();
-            auto currSelBank = XRSequencer::getCurrentSelectedBankNum();
-            auto currSelPattern = XRSequencer::getCurrentSelectedPatternNum();
             auto currSelTrack = XRSequencer::getCurrentSelectedTrackNum();
 
             heapPattern.tracks[currSelTrack].steps[stepToUse - 1] = XRSequencer::getCopyBufferForStep();
@@ -700,7 +694,6 @@ namespace XRKeyMatrix
         else if (currentUXMode == XRUX::PERFORM_MUTE && btnCharIsATrack(key))
         { 
             auto trackNum = getKeyStepNum(key) - 1;
-            auto &track = XRSequencer::getHeapTrack(trackNum);
 
             // handle mutes
             bool currMuteState = XRSequencer::trackPerformState[trackNum].muted;
@@ -713,7 +706,7 @@ namespace XRKeyMatrix
         else if (currentUXMode == XRUX::PERFORM_SOLO && btnCharIsATrack(key))
         { 
             auto trackNum = getKeyStepNum(key) - 1;
-            auto &track = XRSequencer::getHeapTrack(trackNum);
+
             // handle solos
             bool undoSoloing = XRSequencer::trackPerformState[trackNum].soloing;
 
@@ -1072,7 +1065,6 @@ namespace XRKeyMatrix
     bool handleFunctionReleaseActions(char key)
     {
         XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
-        XRUX::UX_MODE previousUXMode = XRUX::getPreviousMode();
 
         // Serial.println("enter handleFunctionReleaseActions!");
 
@@ -1300,8 +1292,6 @@ namespace XRKeyMatrix
 
     void handleSoloForTrack(uint8_t track, bool undoSoloing)
     {
-        auto &pattern = XRSequencer::getHeapCurrentSelectedPattern();
-
         for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
         {
             if (undoSoloing && _currentTracksSoloed > 0 && t == track)

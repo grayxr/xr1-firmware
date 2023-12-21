@@ -670,11 +670,7 @@ namespace XRSound
 
         auto &currentSelectedTrack = XRSequencer::getHeapCurrentSelectedTrack();
         auto currentSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currentSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        auto currentUXMode = XRUX::getCurrentMode();
-
-        auto currentSoundForTrack = currentPatternSounds[currentSelectedTrackNum];
 
             // TODO: add step mod support back in
 
@@ -822,9 +818,7 @@ namespace XRSound
 
         auto &currentSelectedTrack = XRSequencer::getHeapCurrentSelectedTrack();
         auto currentSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currentSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        auto currentUXMode = XRUX::getCurrentMode();
 
         auto currentSoundForTrack = currentPatternSounds[currentSelectedTrackNum];
 
@@ -1196,9 +1190,7 @@ namespace XRSound
         SOUND_CONTROL_MODS mods;
 
         auto &currentSelectedTrack = XRSequencer::getHeapCurrentSelectedTrack();
-        auto currentSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        auto currentSoundForTrack = currentPatternSounds[currentSelectedTrackNum];
 
         switch (currentSelectedPageNum)
         {
@@ -1228,10 +1220,7 @@ namespace XRSound
     {
         SOUND_CONTROL_MODS mods;
 
-        auto currentSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-
-        auto currentSoundForTrack = currentPatternSounds[currentSelectedTrackNum];
 
         switch (currentSelectedPageNum)
         {
@@ -1261,7 +1250,6 @@ namespace XRSound
     {
         auto &trackToUse = XRSequencer::getHeapTrack(track);
 
-        auto msmpSamplePlayRate = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSMP_SAMPLEPLAYRATE]);
         auto msmpLooptype = getValueNormalizedAsUInt8(currentPatternSounds[track].params[MSMP_LOOPTYPE]);
         auto msmpLoopstart = getValueNormalizedAsInt32(currentPatternSounds[track].params[MSMP_LOOPSTART]);
         auto msmpLoopfinish = getValueNormalizedAsInt32(currentPatternSounds[track].params[MSMP_LOOPFINISH]);
@@ -1391,7 +1379,6 @@ namespace XRSound
         auto msynFatt = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_FILTER_ATTACK]);
         auto msynFdec = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_FILTER_DECAY]);
         auto msynFsus = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_FILTER_SUSTAIN]);
-        auto msynFrel = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_FILTER_RELEASE]);
 
         auto msynAatt = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_AMP_ATTACK]);
         auto msynAdec = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_AMP_DECAY]);
@@ -1786,7 +1773,6 @@ namespace XRSound
     void handleCvGateNoteOnForTrackStep(int track, int step)
     {
         auto &trackToUse = XRSequencer::getHeapTrack(track);
-        auto &stepToUse = XRSequencer::getHeapStep(track, step);
 
         auto currentSoundForTrack = currentPatternSounds[track];
 
@@ -1846,19 +1832,22 @@ namespace XRSound
             {
                 if (track < 4) // combo voices
                 {
-                    int tOffset = track - 4;
-                    sampleVoices[tOffset].ampEnv.noteOff();
+                    comboVoices[track].ampEnv.noteOff();
                 }
                 else // sample-only voices
                 {
-                    comboVoices[track].ampEnv.noteOff();
+                    int tOffset = track - 4;
+                    sampleVoices[tOffset].ampEnv.noteOff();
                 }
             }
             break;
         case T_MONO_SYNTH:
             {
-                comboVoices[track].ampEnv.noteOff();
-                comboVoices[track].filterEnv.noteOff();
+                if (track < 4) // combo voices
+                {
+                    comboVoices[track].ampEnv.noteOff();
+                    comboVoices[track].filterEnv.noteOff();
+                }
             }
             break;
         case T_DEXED_SYNTH:
@@ -1924,19 +1913,22 @@ namespace XRSound
             {
                 if (track < 4) // combo voices
                 {
-                    int tOffset = track - 4;
-                    sampleVoices[tOffset].ampEnv.noteOff();
+                    comboVoices[track].ampEnv.noteOff();
                 }
                 else // sample-only voices
                 {
-                    comboVoices[track].ampEnv.noteOff();
+                    int tOffset = track - 4;
+                    sampleVoices[tOffset].ampEnv.noteOff();
                 }
             }
             break;
         case T_MONO_SYNTH:
             {
-                comboVoices[track].ampEnv.noteOff();
-                comboVoices[track].filterEnv.noteOff();
+                if (track < 4) // combo voices
+                {
+                    comboVoices[track].ampEnv.noteOff();
+                    comboVoices[track].filterEnv.noteOff();
+                }
             }
             break;
         case T_DEXED_SYNTH:
@@ -2113,7 +2105,6 @@ namespace XRSound
 
     void triggerTrackManually(uint8_t t, uint8_t note)
     {
-        auto &track = XRSequencer::getHeapTrack(t);
         auto currentSoundForTrack = currentPatternSounds[t];
 
         switch (currentSoundForTrack.type)
@@ -2150,7 +2141,6 @@ namespace XRSound
 
         auto currentSoundForTrack = currentPatternSounds[t];
 
-        auto msmpSamplePlayRate = getValueNormalizedAsFloat(currentSoundForTrack.params[MSMP_SAMPLEPLAYRATE]);
         auto msmpLooptype = getValueNormalizedAsUInt8(currentSoundForTrack.params[MSMP_LOOPTYPE]);
         auto msmpLoopstart = getValueNormalizedAsInt32(currentSoundForTrack.params[MSMP_LOOPSTART]);
         auto msmpLoopfinish = getValueNormalizedAsInt32(currentSoundForTrack.params[MSMP_LOOPFINISH]);
@@ -2274,8 +2264,6 @@ namespace XRSound
         auto &currTrack = XRSequencer::getHeapTrack(t);
 
         auto currentSoundForTrack = currentPatternSounds[t];
-
-        auto msynWave = getValueNormalizedAsUInt8(currentSoundForTrack.params[MSYN_WAVE]);
        
         auto msynPan = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_PAN]);
         auto msynFine = getValueNormalizedAsInt8(currentSoundForTrack.params[MSYN_FINE]);
@@ -2338,7 +2326,6 @@ namespace XRSound
 
     void triggerCvGateNoteOn(uint8_t t, uint8_t note)
     {
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedPattern().tracks[t];
         auto currentSoundForTrack = currentPatternSounds[t];
         auto cvgaPort = getValueNormalizedAsInt8(currentSoundForTrack.params[0]); // TODO: use enum
 
@@ -2376,7 +2363,6 @@ namespace XRSound
 
     void noteOffTrackManually(int noteOnKeyboard)
     {
-        auto &currSelTrack = XRSequencer::getHeapCurrentSelectedTrack();
         auto currSelTrackNum = XRSequencer::getCurrentSelectedTrackNum();
 
         auto currentSoundForTrack = currentPatternSounds[currSelTrackNum];
@@ -2637,10 +2623,7 @@ namespace XRSound
     {
         std::string outputStr;
 
-        auto &currentSelectedTrack = XRSequencer::getHeapCurrentSelectedTrack();
         auto currentSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currentSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
-        auto currentUXMode = XRUX::getCurrentMode();
 
         auto looptype = getValueNormalizedAsUInt8(currentPatternSounds[currentSelectedTrackNum].params[MSMP_LOOPTYPE]);
         auto chromatic = getValueNormalizedAsBool(currentPatternSounds[currentSelectedTrackNum].params[MSMP_CHROMATIC]);

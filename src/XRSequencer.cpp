@@ -24,6 +24,8 @@ namespace XRSequencer
     DMAMEM STEP _stepCopyBuffer;
     DMAMEM PATTERN _recordPatternBuffer;
 
+    bool _initTracks[MAXIMUM_SEQUENCER_TRACKS];
+
     int8_t _currentSelectedBank = 0;    // default to 0 (first)
     int8_t _currentSelectedPattern = 0; // default to 0 (first)
     int8_t _currentSelectedTrack = 0;   // default to 0 (first)
@@ -517,8 +519,6 @@ namespace XRSequencer
 
     void handleNoteOnForTrackStep(int track, int step)
     {
-        auto &trackToUse = getHeapTrack(track);
-
         if (trackPerformState[track].muted)
         {
             return;
@@ -1077,16 +1077,14 @@ namespace XRSequencer
 
     bool * getInitializedTracksForPattern(int bank, int pattern)
     {
-        bool initTracks[MAXIMUM_SEQUENCER_TRACKS];
-
         for (int t=0; t<MAXIMUM_SEQUENCER_TRACKS; t++) {
             if (sequencer.banks[bank].patterns[pattern].tracks[t].initialized) {
-                initTracks[t] = true;
+                _initTracks[t] = true;
             } else {
-                initTracks[t] = false;
+                _initTracks[t] = false;
             }
         }
 
-        return initTracks;
+        return _initTracks;
     }
 }

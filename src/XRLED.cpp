@@ -357,8 +357,6 @@ namespace XRLED
 
     void displayMuteLEDs(void)
     {
-        auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
-
         for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
         {
             if (!XRSequencer::trackPerformState[t].muted)
