@@ -147,16 +147,6 @@ namespace XRLED
         setPWM(20, pageFourBrightnessMax);
     }
 
-    int8_t getKeyLED(char idx)
-    {
-        if (charLEDMap.count(idx) != 0)
-        {
-            return charLEDMap[idx];
-        }
-
-        return -1;
-    }
-
     void clearAllStepLEDs()
     {
         for (int s = 0; s < 16; s++)
@@ -403,5 +393,15 @@ namespace XRLED
                 setPWM(_stepLEDPins[t], 0);
             }
         }
+    }
+
+    int8_t getKeyLED(char idx)
+    {
+        if (charLEDMap.count(idx) != 0)
+        {
+            return charLEDMap[idx];
+        }
+
+        return -1;
     }
 }

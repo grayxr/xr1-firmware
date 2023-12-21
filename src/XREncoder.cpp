@@ -1861,7 +1861,7 @@ namespace XREncoder
 
                 // real max release = 11880
                 if (!(newRel < 0 || newRel > 11880) && newRel != curRel) {
-                    XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_AMP_RELEASE] = newRel;
+                    XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_AMP_RELEASE] = getFloatValuePaddedAsInt32(newRel);
 
                     AudioNoInterrupts();
                     comboVoice.ampEnv.release(newRel);
@@ -2104,7 +2104,6 @@ namespace XREncoder
 
     void handleDexedBrowser()
     {
-        // auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         int diff = getDiff(MAIN_ENCODER_ADDRESS);
 
         if (diff != 0) {
@@ -2120,25 +2119,16 @@ namespace XREncoder
             {
                 auto nextBank = XRSD::dexedCurrentBank - 1;
                 XRSD::dexedCurrentBank = constrain(nextBank, 0, 98);
-
                 XRSD::dexedCurrentPatch = 31;
             }
             else if (XRSD::dexedCurrentPatch > 31)
             {
                 auto nextBank = XRSD::dexedCurrentBank + 1;
                 XRSD::dexedCurrentBank = constrain(nextBank, 0, 98);
-
                 XRSD::dexedCurrentPatch = 0;
             }
 
-            Serial.print("dexed_current_bank: ");
-            Serial.print(XRSD::dexedCurrentBank);
-
-            Serial.print(" dexed_current_patch: ");
-            Serial.println(XRSD::dexedCurrentPatch);
-
             XRSD::loadDexedVoiceToCurrentTrack();
-            
             XRDisplay::drawDexedSysexBrowser();
         }
     }
