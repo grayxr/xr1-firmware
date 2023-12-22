@@ -416,16 +416,14 @@ namespace XRSD
         std::string voiceBankName = "/audio enjoyer/xr-1/sysex/dexed/0/";
         voiceBankName += std::to_string(dexedCurrentBank);
 
-        Serial.print("voice bank dir name: ");
-        Serial.println(voiceBankName.c_str());
-
         AudioNoInterrupts();
+
         sysexDir = SD.open(voiceBankName.c_str());
+        
         AudioInterrupts();
 
         if (!sysexDir || !sysexDir.isDirectory())
         {
-            Serial.println("bank folder not found or invalid!");
             return;
         }
 
@@ -435,46 +433,47 @@ namespace XRSD
             entry = sysexDir.openNextFile();
         } while (entry.isDirectory());
 
-        // last entry is a folder, return error
         if (entry.isDirectory())
         {
             AudioNoInterrupts();
+
             entry.close();
             sysexDir.close();
+
             AudioInterrupts();
-            Serial.println("no voice data!");
+
             return;
         }
 
-        Serial.print("entry name: ");
-        Serial.println(entry.name());
-
         uint8_t data[128];
+
         if (get_sd_voice(entry, dexedCurrentPatch, data))
         {
-            Serial.println("got voice data!");
-
             uint8_t tmp_data[156];
-            auto &comboVoice = t > -1 ? XRSound::getComboVoiceForTrack(t) : XRSound::getComboVoiceForCurrentTrack();
-            bool ret =  comboVoice.dexed.decodeVoice(tmp_data, data);
-            Serial.print("decode result: ");
-            Serial.println(ret ? "true" : "false");
-            if (ret) {
-                comboVoice.dexed.loadVoiceParameters(tmp_data);
+
+            int8_t trackNum = 0;
+            if (t > -1) {
+                trackNum = t;
+            } else {
+                trackNum = XRSequencer::getCurrentSelectedTrackNum();
+            }
+
+            if (XRSound::dexedInstances[trackNum].dexed.decodeVoice(tmp_data, data)) {
+                XRSound::dexedInstances[trackNum].dexed.loadVoiceParameters(tmp_data);
+
                 char dexedTempNameBuf[11];
-                comboVoice.dexed.getName(dexedTempNameBuf);
+                XRSound::dexedInstances[trackNum].dexed.getName(dexedTempNameBuf);
+
                 std::string tempDexedPatchName(dexedTempNameBuf);
                 dexedPatchName = tempDexedPatchName;
             }
         }
-        else
-        {
-            Serial.println("did NOT get voice data!");
-        }
 
         AudioNoInterrupts();
+
         entry.close();
         sysexDir.close();
+
         AudioInterrupts();
     }
 

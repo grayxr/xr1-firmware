@@ -717,10 +717,7 @@ namespace XRDisplay
             (currSoundForTrack.type == XRSound::T_EMPTY) ||
             (currSoundForTrack.type == XRSound::T_CV_TRIG) ||
             (currSoundForTrack.type == XRSound::T_FM_DRUM) ||
-            (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 0) ||
-            (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 1) ||
-            (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 2) ||
-            (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 3))
+            (currSoundForTrack.type == XRSound::T_MONO_SAMPLE))
         {
             drawExtendedControlMods();
 

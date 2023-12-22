@@ -86,6 +86,16 @@ namespace XRSound
         DEXE_PAN = 16,
     };
 
+    // BRAIDS SYNTH
+    enum BRAIDS_SYNTH_PARAM {
+        BRAIDS_TIMBRE = 0,
+        BRAIDS_COLOR = 1,
+        BRAIDS_MOD = 2,
+        BRAIDS_FM = 3,
+        BRAIDS_LEVEL = 15,
+        BRAIDS_PAN = 16,
+    };
+
     // FM DRUM
     enum FM_DRUM_PARAM {
         FMD_FREQ = 0,
@@ -125,101 +135,158 @@ namespace XRSound
 
     /*** END SOUND MODS ***/
 
-    class ComboVoice
+    /*** VOICES/INSTANCES */
+
+    class MonoSampleInstance
     {
     public:
-        AudioSynthFMDrum &fmdrum;
-        AudioSynthDexed &dexed;
         AudioPlayArrayResmp &sample;
-        AudioSynthWaveform &osca;
-        AudioSynthWaveform &oscb;
+        AudioEffectEnvelope &ampEnv;
+        AudioAmplifier &ampAccent;
+        AudioAmplifier &amp;
+        AudioAmplifier &left;
+        AudioAmplifier &right;
+
+        MonoSampleInstance(
+            AudioPlayArrayResmp &sample,
+            AudioEffectEnvelope &ampEnv,
+            AudioAmplifier &ampAccent,
+            AudioAmplifier &amp,
+            AudioAmplifier &left,
+            AudioAmplifier &right
+        ) : sample{sample},
+            ampEnv{ampEnv},
+            ampAccent{ampAccent},
+            amp{amp},
+            left{left},
+            right{right}
+        {
+            //
+        }
+    };
+
+    class MonoSynthInstance
+    {
+    public:
+        AudioSynthWaveform &oscA;
+        AudioSynthWaveform &oscB;
         AudioSynthNoiseWhite &noise;
-        AudioMixer4 &oscMix;
-        AudioSynthWaveformDc &dc;
-        AudioFilterLadder &lfilter;
-        AudioEffectEnvelope &filterEnv;
         AudioMixer4 &mix;
+        AudioSynthWaveformDc &dc;
+        AudioEffectEnvelope &filterEnv;
+        AudioAmplifier &filterAccent;
+        AudioFilterLadder &filter;
         AudioEffectEnvelope &ampEnv;
-        AudioAmplifier &leftCtrl;
-        AudioAmplifier &rightCtrl;
-        AudioAmplifier &dexedLeftCtrl;
-        AudioAmplifier &dexedRightCtrl;
-        AudioAmplifier &fmDrumLeftCtrl;
-        AudioAmplifier &fmDrumRightCtrl;
-        AudioMixer4 &leftSubMix;
-        AudioMixer4 &rightSubMix;
+        AudioAmplifier &ampAccent;
+        AudioAmplifier &amp;
+        AudioAmplifier &left;
+        AudioAmplifier &right;
 
-        ComboVoice(
-            AudioSynthFMDrum &fmdrum,
-            AudioSynthDexed &dexed,
-            AudioPlayArrayResmp &sample,
-            AudioSynthWaveform &osca,
-            AudioSynthWaveform &oscb,
+        MonoSynthInstance(
+            AudioSynthWaveform &oscA,
+            AudioSynthWaveform &oscB,
             AudioSynthNoiseWhite &noise,
-            AudioMixer4 &oscMix,
-            AudioSynthWaveformDc &dc,
-            AudioFilterLadder &lfilter,
-            AudioEffectEnvelope &filterEnv,
             AudioMixer4 &mix,
+            AudioSynthWaveformDc &dc,
+            AudioEffectEnvelope &filterEnv,
+            AudioAmplifier &filterAccent,
+            AudioFilterLadder &filter,
             AudioEffectEnvelope &ampEnv,
-            AudioAmplifier &leftCtrl,
-            AudioAmplifier &rightCtrl,
-            AudioAmplifier &dexedLeftCtrl,
-            AudioAmplifier &dexedRightCtrl,
-            AudioAmplifier &fmDrumLeftCtrl,
-            AudioAmplifier &fmDrumRightCtrl,
-            AudioMixer4 &leftSubMix,
-            AudioMixer4 &rightSubMix) : fmdrum{fmdrum},
-                                        dexed{dexed},
-                                        sample{sample},
-                                        osca{osca},
-                                        oscb{oscb},
-                                        noise{noise},
-                                        oscMix{oscMix},
-                                        dc{dc},
-                                        lfilter{lfilter},
-                                        filterEnv{filterEnv},
-                                        mix{mix},
-                                        ampEnv{ampEnv},
-                                        leftCtrl{leftCtrl},
-                                        rightCtrl{rightCtrl},
-                                        dexedLeftCtrl{dexedLeftCtrl},
-                                        dexedRightCtrl{dexedRightCtrl},
-                                        fmDrumLeftCtrl{fmDrumLeftCtrl},
-                                        fmDrumRightCtrl{fmDrumRightCtrl},
-                                        leftSubMix{leftSubMix},
-                                        rightSubMix{rightSubMix}
+            AudioAmplifier &ampAccent,
+            AudioAmplifier &amp,
+            AudioAmplifier &left,
+            AudioAmplifier &right
+        ) : oscA{oscA},
+            oscB{oscB},
+            noise{noise},
+            mix{mix},
+            dc{dc},
+            filterEnv{filterEnv},
+            filterAccent{filterAccent},
+            filter{filter},
+            ampEnv{ampEnv},
+            ampAccent{ampAccent},
+            amp{amp},
+            left{left},
+            right{right}
         {
             //
         }
     };
 
-    class SampleVoice
+    class DexedInstance
     {
     public:
-        AudioPlayArrayResmp &sample;
-        AudioEffectEnvelope &ampEnv;
-        AudioAmplifier &leftCtrl;
-        AudioAmplifier &rightCtrl;
-        AudioMixer4 &leftSubMix;
-        AudioMixer4 &rightSubMix;
+        Dexed &dexed;
+        AudioAmplifier &ampAccent;
+        AudioAmplifier &amp;
+        AudioAmplifier &left;
+        AudioAmplifier &right;
 
-        SampleVoice(
-            AudioPlayArrayResmp &sample,
-            AudioEffectEnvelope &ampEnv,
-            AudioAmplifier &leftCtrl,
-            AudioAmplifier &rightCtrl,
-            AudioMixer4 &leftSubMix,
-            AudioMixer4 &rightSubMix) : sample{sample},
-                                        ampEnv{ampEnv},
-                                        leftCtrl{leftCtrl},
-                                        rightCtrl{rightCtrl},
-                                        leftSubMix{leftSubMix},
-                                        rightSubMix{rightSubMix}
+        DexedInstance(
+            Dexed &dexed,
+            AudioAmplifier &ampAccent,
+            AudioAmplifier &amp,
+            AudioAmplifier &left,
+            AudioAmplifier &right
+        ) : dexed{dexed},
+            ampAccent{ampAccent},
+            amp{amp},
+            left{left},
+            right{right}
         {
             //
         }
     };
+
+    class FmDrumInstance
+    {
+    public:
+        AudioSynthFMDrum &fmDrum;
+        AudioAmplifier &ampAccent;
+        AudioAmplifier &amp;
+        AudioAmplifier &left;
+        AudioAmplifier &right;
+
+        FmDrumInstance(
+            AudioSynthFMDrum &fmDrum,
+            AudioAmplifier &ampAccent,
+            AudioAmplifier &amp,
+            AudioAmplifier &left,
+            AudioAmplifier &right
+        ) : fmDrum{fmDrum},
+            ampAccent{ampAccent},
+            amp{amp},
+            left{left},
+            right{right}
+        {
+            //
+        }
+    };
+
+    // class BraidsInstance
+    // {
+    // public:
+    //     AudioSynthBraids &braids;
+    //     AudioAmplifier &amp;
+    //     AudioAmplifier &left;
+    //     AudioAmplifier &right;
+
+    //     BraidsInstance(
+    //         AudioSynthBraids &braids,
+    //         AudioAmplifier &amp,
+    //         AudioAmplifier &left,
+    //         AudioAmplifier &right
+    //     ) : braids{braids},
+    //         amp{amp},
+    //         left{left},
+    //         right{right}
+    //     {
+    //         //
+    //     }
+    // };
+
+    /*** END VOICES/INSTANCES */
 
     enum WAVEFORM_TYPE
     {
@@ -272,8 +339,13 @@ namespace XRSound
     
     extern bool soundNeedsReinit[MAXIMUM_SEQUENCER_TRACKS];
 
-    extern ComboVoice comboVoices[COMBO_VOICE_COUNT];
-    extern SampleVoice sampleVoices[SAMPLE_VOICE_COUNT];
+    extern MonoSampleInstance monoSampleInstances[MAXIMUM_MONO_SAMPLE_SOUNDS];
+    extern MonoSynthInstance monoSynthInstances[MAXIMUM_MONO_SYNTH_SOUNDS];
+    extern DexedInstance dexedInstances[MAXIMUM_DEXED_SYNTH_SOUNDS];
+    // extern BraidsInstance braidsInstances[MAXIMUM_BRAIDS_SYNTH_SOUNDS];
+    extern FmDrumInstance fmDrumInstances[MAXIMUM_FM_DRUM_SOUNDS];
+
+    extern std::map<SOUND_TYPE, int8_t> soundTypeInstanceLimitMap;
     
     extern std::map<int, loop_type> loopTypeSelMap;
     extern std::map<loop_type, int> loopTypeFindMap;
@@ -288,6 +360,7 @@ namespace XRSound
     SOUND_CONTROL_MODS getMonoSynthControlModData();
     SOUND_CONTROL_MODS getMonoSampleControlModData();
     SOUND_CONTROL_MODS getDexedSynthControlModData();
+    SOUND_CONTROL_MODS getBraidsControlModData();
     SOUND_CONTROL_MODS getFmDrumControlModData();
     SOUND_CONTROL_MODS getMidiControlModData();
     SOUND_CONTROL_MODS getCvGateControlModData();
@@ -295,10 +368,6 @@ namespace XRSound
     SOUND_CONTROL_MODS getEmptyControlModData();
 
     PANNED_AMOUNTS getStereoPanValues(float pan);
-
-    ComboVoice &getComboVoiceForCurrentTrack();
-    ComboVoice &getComboVoiceForTrack(int t);
-    SampleVoice &getSampleVoiceForTrack(int t);
 
     int getWaveformNumber(uint8_t waveformType);
     int getWaveformTypeSelection(uint8_t waveformNumber);
@@ -315,6 +384,8 @@ namespace XRSound
     std::string getPlaybackSpeedStr(float rate);
     std::string getLoopTypeName();
 
+    void muteAllOutput();
+
     void init();
     void initNextPatternSounds();
     void initPatternSoundStepMods();
@@ -326,16 +397,13 @@ namespace XRSound
 
     void assignSampleToTrackSound();
 
-    void initComboVoiceForTrack(int t);
-    void setComboVoiceMixSettingsForTrack(int8_t t);
-
     void changeTrackSoundType(uint8_t t, SOUND_TYPE newType);
-    void changeComboTrackSoundType(uint8_t t, SOUND_TYPE newType);
     void initTrackSound(int8_t t);
 
     void handleMonoSampleNoteOnForTrack(int track);
     void handleMonoSynthNoteOnForTrack(int track);
     void handleDexedSynthNoteOnForTrack(int track);
+    void handleBraidsNoteOnForTrack(int track);
     void handleFmDrumNoteOnForTrack(int track);
     void handleMIDINoteOnForTrack(int track);
     void handleCvGateNoteOnForTrack(int track);
@@ -347,6 +415,7 @@ namespace XRSound
     void handleMonoSampleNoteOnForTrackStep(int track, int step);
     void handleMonoSynthNoteOnForTrackStep(int track, int step);
     void handleDexedSynthNoteOnForTrackStep(int track, int step);
+    void handleBraidsNoteOnForTrackStep(int track, int step);
     void handleFmDrumNoteOnForTrackStep(int track, int step);
     void handleMIDINoteOnForTrackStep(int track, int step);
     void handleCvGateNoteOnForTrackStep(int track, int step);
@@ -355,6 +424,7 @@ namespace XRSound
     void triggerMonoSampleNoteOn(uint8_t t, uint8_t note);
     void triggerMonoSynthNoteOn(uint8_t t, uint8_t note);
     void triggerDexedSynthNoteOn(uint8_t t, uint8_t note);
+    void triggerBraidsNoteOn(uint8_t t, uint8_t note);
     void triggerFmDrumNoteOn(uint8_t t, uint8_t note);
     void triggerCvGateNoteOn(uint8_t t, uint8_t note);
 

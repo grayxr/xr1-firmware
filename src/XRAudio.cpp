@@ -32,7 +32,7 @@ namespace XRAudio
         {
             float newValue = (float)analog.getValue() / (float)1023;
 
-            if (abs(currentHeadphoneVolume - newValue) >= 0.05)
+            if (abs(currentHeadphoneVolume - newValue) >= 0.0)
             {
                 currentHeadphoneVolume = newValue;
 

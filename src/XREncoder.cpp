@@ -165,7 +165,7 @@ namespace XREncoder
             return;
         }
 
-        if (!(elapsedMs % 25) && (currentUXMode == XRUX::UX_MODE::TRACK_WRITE || currentUXMode == XRUX::UX_MODE::SUBMITTING_STEP_VALUE))
+        if (!(elapsedMs % 10) && (currentUXMode == XRUX::UX_MODE::TRACK_WRITE || currentUXMode == XRUX::UX_MODE::SUBMITTING_STEP_VALUE))
         {
             int diff = getDiff(MAIN_ENCODER_ADDRESS);
 
@@ -482,12 +482,13 @@ namespace XREncoder
 
     void handleEncoderMonoSampleModA(int diff)
     {
-        auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
 
-        auto &comboVoice = getComboVoiceForCurrentTrack();
+        auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
+        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        
+        auto &monoSampleInstance = XRSound::monoSampleInstances[currSelectedTrackNum];
 
         switch (currSelectedPageNum)
         {
@@ -557,19 +558,9 @@ namespace XREncoder
                     XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_SAMPLEPLAYRATE] = getFloatValuePaddedAsInt32(newSpeed);
                 // }
 
-                if (currSelectedTrackNum > 3)
-                {
-                    auto &sampleVoice = getSampleVoiceForTrack(currSelectedTrackNum - 4);
-                    AudioNoInterrupts();
-                    sampleVoice.sample.setPlaybackRate(newSpeed);
-                    AudioInterrupts();
-                }
-                else
-                {
-                    AudioNoInterrupts();
-                    comboVoice.sample.setPlaybackRate(newSpeed);
-                    AudioInterrupts();
-                }
+                AudioNoInterrupts();
+                monoSampleInstance.sample.setPlaybackRate(newSpeed);
+                AudioInterrupts();
 
                 XRDisplay::drawSequencerScreen(false);
             }
@@ -631,22 +622,11 @@ namespace XREncoder
             {
                 XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_AMP_ATTACK] = getFloatValuePaddedAsInt32(newAtt);
 
-                if (currSelectedTrackNum > 3)
-                {
-                    AudioNoInterrupts();
-                    auto &sampleVoice = getSampleVoiceForTrack(currSelectedTrackNum - 4);
+                AudioNoInterrupts();
 
-                    sampleVoice.ampEnv.attack(newAtt);
-                    AudioInterrupts();
-                }
-                else
-                {
-                    AudioNoInterrupts();
-                    auto &comboVoice = getComboVoiceForCurrentTrack();
-
-                    comboVoice.ampEnv.attack(newAtt);
-                    AudioInterrupts();
-                }
+                monoSampleInstance.ampEnv.attack(newAtt);
+                
+                AudioInterrupts();
 
                 XRDisplay::drawSequencerScreen(false);
             }
@@ -661,24 +641,11 @@ namespace XREncoder
             {
                 XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_LEVEL] = getFloatValuePaddedAsInt32(newLvl);
 
-                if (currSelectedTrackNum > 3)
-                {
-                    AudioNoInterrupts();
-                    auto &sampleVoice = getSampleVoiceForTrack(currSelectedTrackNum - 4);
+                AudioNoInterrupts();
 
-                    sampleVoice.leftSubMix.gain(0, newLvl);
-                    sampleVoice.rightSubMix.gain(0, newLvl);
-                    AudioInterrupts();
-                }
-                else
-                {
-                    AudioNoInterrupts();
-                    auto &comboVoice = getComboVoiceForCurrentTrack();
-
-                    comboVoice.leftSubMix.gain(0, newLvl);
-                    comboVoice.rightSubMix.gain(0, newLvl);
-                    AudioInterrupts();
-                }
+                monoSampleInstance.amp.gain(newLvl);
+                
+                AudioInterrupts();
 
                 XRDisplay::drawSequencerScreen(false);
             }
@@ -692,9 +659,10 @@ namespace XREncoder
 
     void handleEncoderMonoSampleModB(int diff)
     {
-        auto &comboVoice = getComboVoiceForCurrentTrack();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+
+        auto &monoSampleInstance = XRSound::monoSampleInstances[currSelectedTrackNum];
 
         switch (currSelectedPageNum)
         {
@@ -767,19 +735,11 @@ namespace XREncoder
             {
                 XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_AMP_DECAY] = getFloatValuePaddedAsInt32(newDecay);
 
-                if (currSelectedTrackNum > 3)
-                {
-                    auto &sampleVoice = getSampleVoiceForTrack(currSelectedTrackNum - 4);
-                    AudioNoInterrupts();
-                    sampleVoice.ampEnv.decay(newDecay);
-                    AudioInterrupts();
-                }
-                else
-                {
-                    AudioNoInterrupts();
-                    comboVoice.ampEnv.decay(newDecay);
-                    AudioInterrupts();
-                }
+                AudioNoInterrupts();
+
+                monoSampleInstance.ampEnv.decay(newDecay);
+
+                AudioInterrupts();
 
                 XRDisplay::drawSequencerScreen(false);
             }
@@ -806,26 +766,13 @@ namespace XREncoder
                 {
                     newGainR -= newPan;
                 }
+                
+                AudioNoInterrupts();
 
-                if (currSelectedTrackNum > 3)
-                {
-                    auto &sampleVoice = getSampleVoiceForTrack(currSelectedTrackNum - 4);
-                    AudioNoInterrupts();
-                    // sampleVoice.leftCtrl.gain(getStereoPanValues(newPan).left * (currTrack.velocity * 0.01));
-                    // sampleVoice.leftCtrl.gain(getStereoPanValues(newPan).right * (currTrack.velocity * 0.01));
-                    sampleVoice.leftCtrl.gain(newGainR);
-                    sampleVoice.rightCtrl.gain(newGainL);
-                    AudioInterrupts();
-                }
-                else
-                {
-                    AudioNoInterrupts();
-                    // comboVoice.leftCtrl.gain(getStereoPanValues(newPan).left * (currTrack.velocity * 0.01));
-                    // comboVoice.leftCtrl.gain(getStereoPanValues(newPan).right * (currTrack.velocity * 0.01));
-                    comboVoice.leftCtrl.gain(newGainR);
-                    comboVoice.rightCtrl.gain(newGainL);
-                    AudioInterrupts();
-                }
+                monoSampleInstance.left.gain(newGainR);
+                monoSampleInstance.right.gain(newGainL);
+
+                AudioInterrupts();
 
                 XRDisplay::drawSequencerScreen(false);
             }
@@ -840,9 +787,9 @@ namespace XREncoder
     void handleEncoderMonoSampleModC(int diff)
     {
         auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
-        auto &comboVoice = getComboVoiceForCurrentTrack();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        auto &monoSampleInstance = XRSound::monoSampleInstances[currSelectedTrackNum];
 
         switch (currSelectedPageNum)
         {
@@ -934,19 +881,11 @@ namespace XREncoder
                 {
                     XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_AMP_SUSTAIN] = getFloatValuePaddedAsInt32(newSus);
 
-                    if (currSelectedTrackNum > 3)
-                    {
-                        auto &sampleVoice = getSampleVoiceForTrack(currSelectedTrackNum - 4);
-                        AudioNoInterrupts();
-                        sampleVoice.ampEnv.sustain(newSus);
-                        AudioInterrupts();
-                    }
-                    else
-                    {
-                        AudioNoInterrupts();
-                        comboVoice.ampEnv.sustain(newSus);
-                        AudioInterrupts();
-                    }
+                    AudioNoInterrupts();
+
+                    monoSampleInstance.ampEnv.sustain(newSus);
+                    
+                    AudioInterrupts();
 
                     XRDisplay::drawSequencerScreen(false);
                 }
@@ -965,9 +904,10 @@ namespace XREncoder
 
     void handleEncoderMonoSampleModD(int diff)
     {
-        auto &comboVoice = getComboVoiceForCurrentTrack();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        
+        auto &monoSampleInstance = XRSound::monoSampleInstances[currSelectedTrackNum];
 
         switch (currSelectedPageNum)
         {
@@ -1037,19 +977,11 @@ namespace XREncoder
             {
                 XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_AMP_RELEASE] = getFloatValuePaddedAsInt32(newRel);
 
-                if (currSelectedTrackNum > 3)
-                {
-                    auto &sampleVoice = getSampleVoiceForTrack(currSelectedTrackNum - 4);
-                    AudioNoInterrupts();
-                    sampleVoice.ampEnv.release(newRel);
-                    AudioInterrupts();
-                }
-                else
-                {
-                    AudioNoInterrupts();
-                    comboVoice.ampEnv.release(newRel);
-                    AudioInterrupts();
-                }
+                AudioNoInterrupts();
+
+                monoSampleInstance.ampEnv.release(newRel);
+
+                AudioInterrupts();
 
                 XRDisplay::drawSequencerScreen(false);
             }
@@ -1072,6 +1004,8 @@ namespace XREncoder
         auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        
+        auto &dexedInstance = XRSound::dexedInstances[currSelectedTrackNum];
 
         switch (currSelectedPageNum)
         {
@@ -1127,12 +1061,9 @@ namespace XREncoder
                 XRSound::currentPatternSounds[currSelectedTrackNum].params[DEXE_LEVEL] = getFloatValuePaddedAsInt32(newLvl);
 
                 AudioNoInterrupts();
-                auto &comboVoice = getComboVoiceForCurrentTrack();
 
-                //comboVoice.leftSubMix.gain(0, newLvl);
-                comboVoice.leftSubMix.gain(1, newLvl);
-                //comboVoice.rightSubMix.gain(0, newLvl);
-                comboVoice.rightSubMix.gain(1, newLvl);
+                dexedInstance.amp.gain(newLvl);
+
                 AudioInterrupts();
 
                 XRDisplay::drawSequencerScreen(false);
@@ -1147,9 +1078,10 @@ namespace XREncoder
 
     void handleEncoderDexedSynthModB(int diff)
     {
-        auto &comboVoice = getComboVoiceForCurrentTrack();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        
+        auto &dexedInstance = XRSound::dexedInstances[currSelectedTrackNum];
 
         switch (currSelectedPageNum)
         {
@@ -1188,8 +1120,10 @@ namespace XREncoder
                 }
                 
                 AudioNoInterrupts();
-                comboVoice.dexedLeftCtrl.gain(newGainR);
-                comboVoice.dexedRightCtrl.gain(newGainL);
+
+                dexedInstance.left.gain(newGainR);
+                dexedInstance.right.gain(newGainL);
+
                 AudioInterrupts();
 
                 XRDisplay::drawSequencerScreen(false);
@@ -1206,7 +1140,10 @@ namespace XREncoder
     void handleEncoderDexedSynthModC(int diff)
     {
         auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        //auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        
+        //auto &dexedInstance = XRSound::dexedInstances[currTrackNum];
         
         switch (currSelectedPageNum)
         {
@@ -1265,8 +1202,10 @@ namespace XREncoder
     void handleEncoderFmDrumModA(int diff)
     {
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto &comboVoice = getComboVoiceForCurrentTrack();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        auto &trackToUse = XRSequencer::getHeapTrack(currTrackNum);
+        
+        auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
 
         switch (currSelectedPageNum)
         {
@@ -1278,7 +1217,7 @@ namespace XREncoder
             if (newNoise != currNoise) {
                 XRSound::currentPatternSounds[currTrackNum].params[FMD_NOISE] = getFloatValuePaddedAsInt32(newNoise);
 
-                comboVoice.fmdrum.noise(newNoise);
+                fmDrumInstance.fmDrum.noise(newNoise);
 
                 XRDisplay::drawSequencerScreen(false);
             }
@@ -1293,11 +1232,10 @@ namespace XREncoder
             {
                 XRSound::currentPatternSounds[currTrackNum].params[FMD_LEVEL] = getFloatValuePaddedAsInt32(newLvl);
 
-                auto &comboVoice = getComboVoiceForCurrentTrack();
-
                 AudioNoInterrupts();
-                comboVoice.leftSubMix.gain(2, newLvl);
-                comboVoice.rightSubMix.gain(2, newLvl);
+
+                fmDrumInstance.amp.gain(newLvl * (trackToUse.velocity * 0.01));
+
                 AudioInterrupts();
 
                 XRDisplay::drawSequencerScreen(false);
@@ -1316,9 +1254,10 @@ namespace XREncoder
             return;
         }
 
-        auto &comboVoice = getComboVoiceForCurrentTrack();
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        
+        auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
 
         switch (currSelectedPageNum)
         {
@@ -1330,7 +1269,7 @@ namespace XREncoder
                 if (newDecay != currDecay) {
                     XRSound::currentPatternSounds[currTrackNum].params[FMD_DECAY] = getFloatValuePaddedAsInt32(newDecay);
 
-                    comboVoice.fmdrum.decay(newDecay);
+                    fmDrumInstance.fmDrum.decay(newDecay);
 
                     XRDisplay::drawSequencerScreen(false);
                 }
@@ -1360,8 +1299,10 @@ namespace XREncoder
                 }
                 
                 AudioNoInterrupts();
-                comboVoice.fmDrumLeftCtrl.gain(newGainR);
-                comboVoice.fmDrumRightCtrl.gain(newGainL);
+
+                fmDrumInstance.left.gain(newGainR);
+                fmDrumInstance.right.gain(newGainL);
+
                 AudioInterrupts();
 
                 XRDisplay::drawSequencerScreen(false);
@@ -1382,8 +1323,9 @@ namespace XREncoder
         }
 
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto &comboVoice = getComboVoiceForCurrentTrack();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        
+        auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
 
         if (currSelectedPageNum == 0) 
         {
@@ -1393,7 +1335,7 @@ namespace XREncoder
             if (newFm != currFm) {
                 XRSound::currentPatternSounds[currTrackNum].params[FMD_FM] = getFloatValuePaddedAsInt32(newFm);
 
-                comboVoice.fmdrum.fm(newFm);
+                fmDrumInstance.fmDrum.fm(newFm);
 
                 XRDisplay::drawSequencerScreen(false);
             }
@@ -1407,8 +1349,9 @@ namespace XREncoder
         }
 
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto &comboVoice = getComboVoiceForCurrentTrack();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        
+        auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
 
         if (currSelectedPageNum == 0) {
             uint8_t currFreq = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currTrackNum].params[FMD_FREQ]);
@@ -1417,7 +1360,7 @@ namespace XREncoder
             if (newFreq != currFreq && newFreq >= 0) {
                 XRSound::currentPatternSounds[currTrackNum].params[FMD_FREQ] = getUInt32ValuePaddedAsInt32(newFreq);
 
-                comboVoice.fmdrum.frequency(newFreq);
+                fmDrumInstance.fmDrum.frequency(newFreq);
             }
 
             XRDisplay::drawSequencerScreen(false);
@@ -1453,9 +1396,10 @@ namespace XREncoder
 
     void handleEncoderMonoSynthModB(int diff)
     {
-        auto &comboVoice = getComboVoiceForCurrentTrack();
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPage = XRSequencer::getCurrentSelectedPage();
+        
+        auto &monoSynthInstance = XRSound::monoSynthInstances[currTrackNum];
 
         switch (currSelectedPage)
         {
@@ -1521,7 +1465,9 @@ namespace XREncoder
                     XRSound::currentPatternSounds[currTrackNum].params[MSYN_CUTOFF] = getFloatValuePaddedAsInt32(newCutoff);
 
                     AudioNoInterrupts();
-                    comboVoice.lfilter.frequency(newCutoff);
+
+                    monoSynthInstance.filter.frequency(newCutoff);
+
                     AudioInterrupts();
 
                     XRDisplay::drawSequencerScreen(false);
@@ -1547,7 +1493,9 @@ namespace XREncoder
                     XRSound::currentPatternSounds[currTrackNum].params[MSYN_FILTER_DECAY] = getFloatValuePaddedAsInt32(newDecay);
 
                     AudioNoInterrupts();
-                    comboVoice.filterEnv.decay(newDecay);
+
+                    monoSynthInstance.filterEnv.decay(newDecay);
+
                     AudioInterrupts();
 
                     XRDisplay::drawSequencerScreen(false);
@@ -1574,7 +1522,9 @@ namespace XREncoder
                     XRSound::currentPatternSounds[currTrackNum].params[MSYN_AMP_DECAY] = getFloatValuePaddedAsInt32(newDecay);
 
                     AudioNoInterrupts();
-                    comboVoice.ampEnv.decay(newDecay);
+
+                    monoSynthInstance.ampEnv.decay(newDecay);
+
                     AudioInterrupts();
 
                     XRDisplay::drawSequencerScreen(false);
@@ -1602,8 +1552,10 @@ namespace XREncoder
                     }
 
                     AudioNoInterrupts();
-                    comboVoice.leftCtrl.gain(newGainR);
-                    comboVoice.rightCtrl.gain(newGainL);
+
+                    monoSynthInstance.left.gain(newGainR);
+                    monoSynthInstance.right.gain(newGainL);
+
                     AudioInterrupts();
 
                     XRDisplay::drawSequencerScreen(false);
@@ -1620,9 +1572,10 @@ namespace XREncoder
     void handleEncoderMonoSynthModC(int diff)
     {
         auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
-        auto &comboVoice = getComboVoiceForCurrentTrack();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        
+        auto &monoSynthInstance = XRSound::monoSynthInstances[currSelectedTrackNum];
 
         switch (currSelectedPageNum)
         {
@@ -1704,7 +1657,9 @@ namespace XREncoder
                     XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_RESONANCE] = getFloatValuePaddedAsInt32(newRes);
 
                     AudioNoInterrupts();
-                    comboVoice.lfilter.resonance(newRes);
+
+                    monoSynthInstance.filter.resonance(newRes);
+
                     AudioInterrupts();
 
                     XRDisplay::drawSequencerScreen(false);
@@ -1722,7 +1677,9 @@ namespace XREncoder
                     XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_FILTER_SUSTAIN] = getFloatValuePaddedAsInt32(newSus);
 
                     AudioNoInterrupts();
-                    comboVoice.filterEnv.sustain(newSus);
+
+                    monoSynthInstance.filterEnv.sustain(newSus);
+
                     AudioInterrupts();
 
                     XRDisplay::drawSequencerScreen(false);
@@ -1740,7 +1697,9 @@ namespace XREncoder
                     XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_AMP_SUSTAIN] = getFloatValuePaddedAsInt32(newSus);
 
                     AudioNoInterrupts();
-                    comboVoice.ampEnv.sustain(newSus);
+
+                    monoSynthInstance.ampEnv.sustain(newSus);
+
                     AudioInterrupts();
 
                     XRDisplay::drawSequencerScreen(false);
@@ -1760,9 +1719,10 @@ namespace XREncoder
 
     void handleEncoderMonoSynthModD(int diff)
     {
-        auto &comboVoice = getComboVoiceForCurrentTrack();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        
+        auto &monoSynthInstance = XRSound::monoSynthInstances[currSelectedTrackNum];
 
         switch (currSelectedPageNum)
         {
@@ -1780,8 +1740,10 @@ namespace XREncoder
                     XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_WIDTH] = getFloatValuePaddedAsInt32(newWidth);
 
                     AudioNoInterrupts();
-                    comboVoice.osca.pulseWidth(newWidth);
-                    comboVoice.oscb.pulseWidth(newWidth);
+
+                    monoSynthInstance.oscA.pulseWidth(newWidth);
+                    monoSynthInstance.oscB.pulseWidth(newWidth);
+
                     AudioInterrupts();
 
                     XRDisplay::drawSequencerScreen(false);
@@ -1811,7 +1773,9 @@ namespace XREncoder
                     XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_FILTER_ENV_AMT] = getFloatValuePaddedAsInt32(newFilterAmt);
 
                     AudioNoInterrupts();
-                    comboVoice.dc.amplitude(newFilterAmt);
+
+                    monoSynthInstance.dc.amplitude(newFilterAmt);
+
                     AudioInterrupts();
 
                     XRDisplay::drawSequencerScreen(false);
@@ -1837,7 +1801,9 @@ namespace XREncoder
                     XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_FILTER_RELEASE] = getFloatValuePaddedAsInt32(newRel);
 
                     AudioNoInterrupts();
-                    comboVoice.filterEnv.release(newRel);
+
+                    monoSynthInstance.filterEnv.release(newRel);
+
                     AudioInterrupts();
 
                     XRDisplay::drawSequencerScreen(false);
@@ -1864,7 +1830,9 @@ namespace XREncoder
                     XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_AMP_RELEASE] = getFloatValuePaddedAsInt32(newRel);
 
                     AudioNoInterrupts();
-                    comboVoice.ampEnv.release(newRel);
+
+                    monoSynthInstance.ampEnv.release(newRel);
+
                     AudioInterrupts();
 
                     XRDisplay::drawSequencerScreen(false);
@@ -1887,6 +1855,8 @@ namespace XREncoder
         auto currSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedStep = XRSequencer::getCurrentSelectedStepNum();
         auto currentUXMode = XRUX::getCurrentMode();
+        
+        auto &monoSynthInstance = XRSound::monoSynthInstances[currSelectedTrack];
 
         int currWaveform = getWaveformNumber(
             getValueNormalizedAsUInt8(XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_WAVE])
@@ -1920,9 +1890,8 @@ namespace XREncoder
             XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_WAVE] = getInt32ValuePaddedAsInt32(waveformSel);
         }
 
-        auto &comboVoice = getComboVoiceForCurrentTrack();
-        comboVoice.osca.begin(waveformSel);
-        comboVoice.oscb.begin(waveformSel);
+        monoSynthInstance.oscA.begin(waveformSel);
+        monoSynthInstance.oscB.begin(waveformSel);
 
         XRDisplay::drawSequencerScreen(false);
     }
@@ -1930,6 +1899,7 @@ namespace XREncoder
     void updateMonoSynthNoiseAmt(int diff)
     {
         auto currSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
+        auto &monoSynthInstance = XRSound::monoSynthInstances[currSelectedTrack];
 
         float currNoise = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_NOISE]);
         float newNoise = currNoise + (diff * 0.05);
@@ -1938,10 +1908,11 @@ namespace XREncoder
         {
             XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_NOISE] = getFloatValuePaddedAsInt32(newNoise);
 
-        AudioNoInterrupts();
-            auto &comboVoice = getComboVoiceForCurrentTrack();
-            comboVoice.noise.amplitude(newNoise);
-        AudioInterrupts();
+            AudioNoInterrupts();
+
+            monoSynthInstance.noise.amplitude(newNoise);
+
+            AudioInterrupts();
 
             XRDisplay::drawSequencerScreen(false);
         }
@@ -1950,6 +1921,7 @@ namespace XREncoder
     void updateMonoSynthFilterEnvAttack(int diff)
     {
         auto currSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
+        auto &monoSynthInstance = XRSound::monoSynthInstances[currSelectedTrack];
 
         float currAtt = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_FILTER_ATTACK]);
 
@@ -1970,10 +1942,10 @@ namespace XREncoder
         {
             XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_FILTER_ATTACK] = getFloatValuePaddedAsInt32(newAtt);
 
-            auto &comboVoice = getComboVoiceForCurrentTrack();
-
             AudioNoInterrupts();
-            comboVoice.filterEnv.attack(newAtt);
+
+            monoSynthInstance.filterEnv.attack(newAtt);
+
             AudioInterrupts();
 
             XRDisplay::drawSequencerScreen(false);
@@ -1983,6 +1955,7 @@ namespace XREncoder
     void updateTrackAmpEnvAttack(int diff)
     {
         auto currSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
+        auto &monoSynthInstance = XRSound::monoSynthInstances[currSelectedTrack];
 
         float currAtt = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_AMP_ATTACK]);
 
@@ -2002,10 +1975,10 @@ namespace XREncoder
         {
             XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_AMP_ATTACK] = getFloatValuePaddedAsInt32(newAtt);
 
-            auto &comboVoice = getComboVoiceForCurrentTrack();
-
             AudioNoInterrupts();
-            comboVoice.ampEnv.attack(newAtt);
+
+            monoSynthInstance.ampEnv.attack(newAtt);
+
             AudioInterrupts();
 
             XRDisplay::drawSequencerScreen(false);
@@ -2015,6 +1988,8 @@ namespace XREncoder
     void updateComboTrackLevel(int diff)
     {
         auto currSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
+        
+        auto &monoSynthInstance = XRSound::monoSynthInstances[currSelectedTrack];
 
         float currLvl = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_LEVEL]);
 
@@ -2032,11 +2007,10 @@ namespace XREncoder
                 XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_LEVEL] = getFloatValuePaddedAsInt32(newLvl);
             }
 
-            auto &comboVoice = getComboVoiceForCurrentTrack();
-
             AudioNoInterrupts();
-            comboVoice.leftSubMix.gain(0, newLvl);
-            comboVoice.rightSubMix.gain(0, newLvl);
+
+            monoSynthInstance.amp.gain(newLvl);
+
             AudioInterrupts();
 
             XRDisplay::drawSequencerScreen(false);

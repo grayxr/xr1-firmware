@@ -83,9 +83,8 @@ namespace XRKeyMatrix
     bool handleRatchets(char key);
     bool handleCopySelect(char key);
     
-    // TODO: extract to XRSound namespace methods
-    XRSound::SOUND_TYPE selectNewSoundTypeForComboTrack(XRSound::SOUND_TYPE currType);
-    XRSound::SOUND_TYPE selectNewSoundTypeForSampleTrack(XRSound::SOUND_TYPE currType);
+    // TODO: extract to XRSound namespace method
+    XRSound::SOUND_TYPE selectNewSoundTypeForTrack(int currTrackNum, XRSound::SOUND_TYPE currType);
 
     bool btnCharIsATrack(char btnChar);
 
@@ -212,13 +211,7 @@ namespace XRKeyMatrix
             auto currSoundForTrack = XRSound::currentPatternSounds[currTrackNum];
             auto currType = currSoundForTrack.type;
 
-            auto newType = XRSound::SOUND_TYPE::T_EMPTY;
-
-            if (currTrackNum < 4) {
-                newType = selectNewSoundTypeForComboTrack(currType);
-            } else {
-                newType = selectNewSoundTypeForSampleTrack(currType);
-            }
+            auto newType = selectNewSoundTypeForTrack(currTrackNum, currType);
 
             // reset page to 0
             XRSequencer::setSelectedPage(0);
@@ -235,8 +228,6 @@ namespace XRKeyMatrix
             currentUXMode == XRUX::UX_MODE::TRACK_WRITE && 
             key != PATTERN_BTN_CHAR && key != '9' && key != '3' && key != 'a'// TODO use allowed button list instead
         ) {
-            Serial.println("doing track write actions!");
-
             auto currPageSelected = XRSequencer::getCurrentSelectedPage();
 
             if (key == MOD_D_BTN_CHAR) {            
@@ -257,8 +248,6 @@ namespace XRKeyMatrix
         // pattern select
         if (!(currentUXMode == XRUX::UX_MODE::COPY_SEL) && key == PATTERN_BTN_CHAR)
         {
-            Serial.println("enter pattern select mode!");
-
             XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_SEL);
 
             _patternCopyAvailable = false;
@@ -273,9 +262,8 @@ namespace XRKeyMatrix
             return;
 
         } 
-        else if (currentUXMode == XRUX::UX_MODE::PATTERN_SEL && btnCharIsATrack(key)) {
-            Serial.println("confirm pattern selection!");
-
+        else if (currentUXMode == XRUX::UX_MODE::PATTERN_SEL && btnCharIsATrack(key))
+        {
             auto &seqState = XRSequencer::getSeqState();
             auto currBank = XRSequencer::getCurrentSelectedBankNum();
 
@@ -1392,67 +1380,98 @@ namespace XRKeyMatrix
         return _keyboardOctave;
     }
 
-    XRSound::SOUND_TYPE selectNewSoundTypeForComboTrack(XRSound::SOUND_TYPE currType)
+    XRSound::SOUND_TYPE selectNewSoundTypeForTrack(int currTrackNum, XRSound::SOUND_TYPE currType)
     {
         auto newType = XRSound::T_EMPTY;
 
-        if (currType == XRSound::T_EMPTY)
-        {
-            newType = XRSound::T_MONO_SAMPLE;
-        }
-        else if (currType == XRSound::T_MONO_SAMPLE)
-        {
-            newType = XRSound::T_MONO_SYNTH;
-        }
-        else if (currType == XRSound::T_MONO_SYNTH)
-        {
-            newType = XRSound::T_DEXED_SYNTH;
-        }
-        else if (currType == XRSound::T_DEXED_SYNTH)
-        {
-            newType = XRSound::T_FM_DRUM;
-        }
-        else if (currType == XRSound::T_FM_DRUM)
-        {
-            newType = XRSound::T_MIDI;
-        }
-        else if (currType == XRSound::T_MIDI)
-        {
-            newType = XRSound::T_CV_GATE;
-        }
-        else if (currType == XRSound::T_CV_GATE)
-        {
-            newType = XRSound::T_CV_TRIG;
-        } else if (currType == XRSound::T_CV_TRIG)
-        {
-            newType = XRSound::T_MONO_SAMPLE;
-        }
-
-        return newType;
-    }
-
-    XRSound::SOUND_TYPE selectNewSoundTypeForSampleTrack(XRSound::SOUND_TYPE currType)
-    {
-        auto newType = XRSound::T_EMPTY;
-
-        if (currType == XRSound::T_EMPTY)
-        {
-            newType = XRSound::T_MONO_SAMPLE;
-        }
-        else if (currType == XRSound::T_MONO_SAMPLE)
-        {
-            newType = XRSound::T_MIDI;
-        }
-        else if (currType == XRSound::T_MIDI)
-        {
-            newType = XRSound::T_CV_GATE;
-        }
-        else if (currType == XRSound::T_CV_GATE)
-        {
-            newType = XRSound::T_CV_TRIG;
-        } else if (currType == XRSound::T_CV_TRIG)
-        {
-            newType = XRSound::T_MONO_SAMPLE;
+        if (currTrackNum < 4) {
+            if (currTrackNum < 3) {
+                if (currType == XRSound::T_EMPTY)
+                {
+                    newType = XRSound::T_MONO_SAMPLE;
+                }
+                else if (currType == XRSound::T_MONO_SAMPLE)
+                {
+                    newType = XRSound::T_MONO_SYNTH;
+                }
+                else if (currType == XRSound::T_MONO_SYNTH)
+                {
+                    newType = XRSound::T_DEXED_SYNTH;
+                }
+                else if (currType == XRSound::T_DEXED_SYNTH)
+                {
+                    newType = XRSound::T_FM_DRUM;
+                }
+                else if (currType == XRSound::T_FM_DRUM)
+                {
+                    newType = XRSound::T_MIDI;
+                } 
+                else if (currType == XRSound::T_MIDI)
+                {
+                    newType = XRSound::T_MONO_SAMPLE;
+                }
+            } else {
+                if (currType == XRSound::T_EMPTY)
+                {
+                    newType = XRSound::T_MONO_SAMPLE;
+                }
+                else if (currType == XRSound::T_MONO_SAMPLE)
+                {
+                    newType = XRSound::T_MONO_SYNTH;
+                }
+                else if (currType == XRSound::T_MONO_SYNTH)
+                {
+                    newType = XRSound::T_DEXED_SYNTH;
+                }
+                else if (currType == XRSound::T_DEXED_SYNTH)
+                {
+                    newType = XRSound::T_MIDI;
+                }
+                // else if (currType == XRSound::T_BRAIDS_SYNTH)
+                // {
+                //     newType = XRSound::T_MIDI;
+                // } 
+                else if (currType == XRSound::T_MIDI)
+                {
+                    newType = XRSound::T_MONO_SAMPLE;
+                }
+            }
+        } else {
+            if (currTrackNum < 8) {
+                if (currType == XRSound::T_EMPTY)
+                {
+                    newType = XRSound::T_MONO_SAMPLE;
+                }
+                else if (currType == XRSound::T_MONO_SAMPLE)
+                {
+                    newType = XRSound::T_CV_GATE;
+                } 
+                else if (currType == XRSound::T_CV_GATE)
+                {
+                    newType = XRSound::T_CV_TRIG;
+                } 
+                else if (currType == XRSound::T_CV_TRIG)
+                {
+                    newType = XRSound::T_MIDI;
+                } 
+                else if (currType == XRSound::T_MIDI)
+                {
+                    newType = XRSound::T_MONO_SAMPLE;
+                }
+            } else {
+                if (currType == XRSound::T_EMPTY)
+                {
+                    newType = XRSound::T_MONO_SAMPLE;
+                }
+                else if (currType == XRSound::T_MONO_SAMPLE)
+                {
+                    newType = XRSound::T_MIDI;
+                } 
+                else if (currType == XRSound::T_MIDI)
+                {
+                    newType = XRSound::T_MONO_SAMPLE;
+                }
+            }
         }
 
         return newType;

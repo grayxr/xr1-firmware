@@ -1,6 +1,7 @@
 #include <XRMain.h>
 #include <XRHelpers.h>
 #include <XRSequencer.h>
+#include <XRSound.h>
 
 namespace XRMain
 {
@@ -8,6 +9,8 @@ namespace XRMain
 
     void boot()
     {
+        XRSound::muteAllOutput();
+
         XRDisplay::init();
 
         if (!XRSD::init())
