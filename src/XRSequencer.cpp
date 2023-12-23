@@ -37,8 +37,6 @@ namespace XRSequencer
 
     int8_t _ratchetTrack = -1;
     int8_t _ratchetDivision = -1;
-    int8_t _ratchetsHeld = 0;
-    long _ratchetReleaseTime;
 
     bool _dequeuePattern = false;
     bool _queueBlinked = false;
@@ -286,7 +284,7 @@ namespace XRSequencer
 
         // every 1/4 step log memory usage
         if (!(tick % 24)) {
-            XRAudio::logMetrics();
+            //XRAudio::logMetrics();
 
             // blink queued bank / pattern
             if (_queuedPattern.bank > -1 && _queuedPattern.number > -1) {
@@ -938,7 +936,7 @@ namespace XRSequencer
 
     void handleRemoveFromRatchetStack()
     {
-        for (int i = 0; i < STEP_STACK_SIZE; i++)
+        for (size_t i = 0; i < RATCHET_STACK_SIZE; i++)
         {
             if (_ratchetStack[i].length != -1)
             {
@@ -958,7 +956,7 @@ namespace XRSequencer
 
     void handleAddToRatchetStack()
     {
-        for (uint8_t i = 0; i < STEP_STACK_SIZE; i++)
+        for (size_t i = 0; i < STEP_STACK_SIZE; i++)
         {
             if (_ratchetStack[i].length == -1)
             {

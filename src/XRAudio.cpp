@@ -43,12 +43,14 @@ namespace XRAudio
 
     void logMetrics()
     {
-        Serial.printf(
+        if (LOG_METRICS_ENABLED) {
+            Serial.printf(
             "Memory: %d/%d CPU: %f/%f\n",
             AudioMemoryUsage(),
             AudioMemoryUsageMax(),
             AudioProcessorUsage(),
             AudioProcessorUsageMax());
+        }
     }
 
     void resetMetrics()

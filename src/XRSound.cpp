@@ -1427,11 +1427,12 @@ namespace XRSound
         monoSampleInstances[track].ampEnv.sustain(msmpAsus);
         monoSampleInstances[track].ampEnv.release(msmpArel);
         
-        monoSynthInstances[track].ampAccent.gain((trackToUse.velocity * 0.01));
-        monoSynthInstances[track].amp.gain(msmpLvl);
+        monoSampleInstances[track].ampAccent.gain(trackToUse.velocity * 0.01);
 
-        monoSynthInstances[track].left.gain(getStereoPanValues(msmpPan).left);
-        monoSynthInstances[track].right.gain(getStereoPanValues(msmpPan).right);
+        monoSampleInstances[track].amp.gain(msmpLvl);
+
+        monoSampleInstances[track].left.gain(getStereoPanValues(msmpPan).left);
+        monoSampleInstances[track].right.gain(getStereoPanValues(msmpPan).right);
 
         AudioInterrupts();
 
@@ -1641,7 +1642,7 @@ namespace XRSound
         monoSampleInstances[track].ampEnv.sustain(msmpAsus);
         monoSampleInstances[track].ampEnv.release(msmpArel);
         
-        monoSampleInstances[track].ampAccent.gain((velocityToUse * 0.01));
+        monoSampleInstances[track].ampAccent.gain(velocityToUse * 0.01);
         monoSampleInstances[track].amp.gain(msmpLvl);
 
         monoSampleInstances[track].left.gain(getStereoPanValues(msmpPan).left);

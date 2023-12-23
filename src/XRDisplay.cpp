@@ -268,7 +268,7 @@ namespace XRDisplay
 
     void drawSequencerScreen(bool queueBlink)
     {
-        Serial.println("enter drawSequencerScreen!");
+        // Serial.println("enter drawSequencerScreen!");
 
         u8g2.clearBuffer();
 

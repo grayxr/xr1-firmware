@@ -153,7 +153,7 @@ namespace XRKeyMatrix
         }
 
         // start/pause or stop
-        if (key == 'q' || key == 'w') {
+        else if (key == 'q' || key == 'w') {
             XRSequencer::toggleSequencerPlayback(key);
 
             // TODO: allowedModesToDrawSequencerFrom ?
@@ -165,7 +165,7 @@ namespace XRKeyMatrix
         }
 
         // track select
-        if ((currentUXMode != XRUX::UX_MODE::COPY_SEL) && key == 'c') {
+        else if ((currentUXMode != XRUX::UX_MODE::COPY_SEL) && key == 'c') {
             Serial.println("enter track select mode!");
             XRUX::setCurrentMode(XRUX::UX_MODE::TRACK_SEL);
 
@@ -178,7 +178,7 @@ namespace XRKeyMatrix
 
             return;
         }       
-        if (currentUXMode == XRUX::UX_MODE::TRACK_SEL && btnCharIsATrack(key)) {
+        else if (currentUXMode == XRUX::UX_MODE::TRACK_SEL && btnCharIsATrack(key)) {
             uint8_t selTrack = getKeyStepNum(key)-1; // zero-based
 
             XRSequencer::setSelectedTrack(selTrack);
@@ -206,7 +206,7 @@ namespace XRKeyMatrix
 
             return;
         } 
-        if (currentUXMode == XRUX::UX_MODE::TRACK_SEL && key == SOUND_BTN_CHAR) {
+        else if (currentUXMode == XRUX::UX_MODE::TRACK_SEL && key == SOUND_BTN_CHAR) {
             auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
             auto currSoundForTrack = XRSound::currentPatternSounds[currTrackNum];
             auto currType = currSoundForTrack.type;
@@ -224,7 +224,7 @@ namespace XRKeyMatrix
         }
         
         // track write
-        if (
+        else if (
             currentUXMode == XRUX::UX_MODE::TRACK_WRITE && 
             key != PATTERN_BTN_CHAR && key != '9' && key != '3' && key != 'a'// TODO use allowed button list instead
         ) {
@@ -246,7 +246,7 @@ namespace XRKeyMatrix
         }
 
         // pattern select
-        if (!(currentUXMode == XRUX::UX_MODE::COPY_SEL) && key == PATTERN_BTN_CHAR)
+        else if (!(currentUXMode == XRUX::UX_MODE::COPY_SEL) && key == PATTERN_BTN_CHAR)
         {
             XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_SEL);
 
@@ -333,7 +333,7 @@ namespace XRKeyMatrix
         }
         
         // copy
-        if (
+        else if (
             currentUXMode == XRUX::COPY_SEL && 
             (!_stepCopyAvailable && !_stepCopyAvailable && !_patternCopyAvailable) && 
             (btnCharIsATrack(key) || key == PATTERN_BTN_CHAR || key == TRACK_BTN_CHAR)
@@ -391,7 +391,7 @@ namespace XRKeyMatrix
             return;
         }
 
-        if (currentUXMode == XRUX::COPY_PATTERN && !_patternCopyAvailable && btnCharIsATrack(key))
+        else if (currentUXMode == XRUX::COPY_PATTERN && !_patternCopyAvailable && btnCharIsATrack(key))
         {
             Serial.printf("write selected pattern %d to copy buffer\n", getKeyStepNum(key));
 

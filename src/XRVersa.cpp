@@ -27,8 +27,7 @@ namespace XRVersa
     uint16_t _mprExcLastTouched = 0;
     uint16_t _mprExcCurrTouched = 0;
 
-    int _ratchetsHeld = 0;
-
+    uint8_t _ratchetsHeld = 0;
     long _ratchetReleaseTime;
 
     bool _notesPressed[13] = {
@@ -101,13 +100,23 @@ namespace XRVersa
 
     void handleStates()
     {
-        // mprUpdate();
-        // fastBtnUpdate();
-
-        auto currentUXMode = XRUX::getCurrentMode();
         auto &queuedPattern = XRSequencer::getQueuedPattern();
+        auto currentUXMode = XRUX::getCurrentMode();
 
-        if (currentUXMode == XRUX::PROJECT_INITIALIZE)
+        // TODO: remove?
+        if (queuedPattern.bank > -1 || queuedPattern.number > -1) {
+            Serial.println("pattern queued, don't allow versa keyboard events!");
+
+            return;
+        }
+        
+        if (currentUXMode == XRUX::UX_MODE::PERFORM_RATCHET) {
+            handleKeyboardSetRatchets();
+
+            return;
+        }
+
+        if (currentUXMode == XRUX::UX_MODE::PROJECT_INITIALIZE)
         {
             mprUpdateExclusive();
 
@@ -124,31 +133,17 @@ namespace XRVersa
             return;
         }
 
-        // TODO: remove
-        if (queuedPattern.bank > -1 || queuedPattern.number > -1) {
-            Serial.println("pattern queued, don't allow versa keyboard events!");
-
-            return;
-        }
-
         bool allowedModeToPlayKeysFrom = (
             currentUXMode == XRUX::UX_MODE::PATTERN_WRITE || 
             currentUXMode == XRUX::UX_MODE::TRACK_WRITE || 
             currentUXMode == XRUX::UX_MODE::PERFORM_TAP ||
             currentUXMode == XRUX::UX_MODE::PERFORM_MUTE ||
             currentUXMode == XRUX::UX_MODE::PERFORM_SOLO ||
-            currentUXMode == XRUX::UX_MODE::PERFORM_RATCHET ||
             currentUXMode == XRUX::UX_MODE::SUBMITTING_STEP_VALUE ||
             currentUXMode == XRUX::UX_MODE::SOUND_MENU_DEXED_SYSEX_BROWSER
         );
 
         if (allowedModeToPlayKeysFrom) {
-            if (currentUXMode == XRUX::PERFORM_RATCHET) {
-                handleKeyboardSetRatchets();
-
-                return;
-            }
-
             mprUpdateForNote();
 
             if (!(elapsedMs % 10)) { // reduce touchiness of fast touch pin
@@ -365,6 +360,7 @@ namespace XRVersa
         if (_ratchetReleaseTime != 0 && ((elapsedMs - _ratchetReleaseTime) >= 25))
         {
             _ratchetReleaseTime = 0;
+
             XRSequencer::setRatchetDivision(-1);
         }
 
@@ -383,28 +379,37 @@ namespace XRVersa
 
         int8_t invertedNoteNumber = -1;
 
-        for (uint8_t i = 0; i < 12; i++)
+        for (size_t i = 0; i < 12; i++)
         {
             // if *is* touched and *wasnt* touched before, alert!
             if ((_mprCurrTouched & _BV(i)) && !(_mprLastTouched & _BV(i)))
             {
+                if (_ratchetsHeld < 3) {
+                    ++_ratchetsHeld;
+                }
+
                 invertedNoteNumber = _backwardsNoteNumbers[i];
 
                 XRSequencer::setRatchetDivision(_keyedRatchetDivisions[invertedNoteNumber]);
 
-                if (_ratchetsHeld < 3)
-                    ++_ratchetsHeld;
-
                 XRDisplay::drawSequencerScreen(false);
+
+                //break;
             }
 
             // if it *was* touched and now *isnt*, alert!
             if (!(_mprCurrTouched & _BV(i)) && (_mprLastTouched & _BV(i)))
             {
-                if (_ratchetsHeld > 0)
+                if (_ratchetsHeld > 0) {
                     --_ratchetsHeld;
-                if (_ratchetsHeld == 0)
+                }
+                
+                // check if all ratchets are finally unheld 
+                // after decrementing above
+                if (_ratchetsHeld == 0) {
                     _ratchetReleaseTime = elapsedMs;
+                    XRSequencer::setRatchetDivision(-1);
+                }
 
                 XRDisplay::drawSequencerScreen(false);
             }
@@ -419,29 +424,33 @@ namespace XRVersa
 
         if (!_fastBtnPressed && fastTouchRead(FAST_TOUCH_PIN) >= 64)
         {
-            std::string touchedStr = "Touched key: 12";
+            if (_ratchetsHeld < 3) {
+                ++_ratchetsHeld;
+            }
 
             _fastBtnPressed = true;
             invertedNoteNumber = _backwardsNoteNumbers[12];
 
             XRSequencer::setRatchetDivision(_keyedRatchetDivisions[invertedNoteNumber]);
 
-            if (_ratchetsHeld < 3)
-                ++_ratchetsHeld;
-
             XRDisplay::drawSequencerScreen(false);
         }
         else if (_fastBtnPressed && fastTouchRead(FAST_TOUCH_PIN) < 64)
         {
-            std::string releasedStr = "Released key: 12";
-
             invertedNoteNumber = _backwardsNoteNumbers[12];
 
-            _fastBtnPressed = false;
-            if (_ratchetsHeld > 0)
+            if (_ratchetsHeld > 0) {
                 --_ratchetsHeld;
-            if (_ratchetsHeld == 0)
+            }
+
+            // check if all ratchets are finally unheld 
+            // after decrementing above
+            if (_ratchetsHeld == 0) {
                 _ratchetReleaseTime = elapsedMs;
+                XRSequencer::setRatchetDivision(-1);
+            }
+
+            _fastBtnPressed = false;
 
             XRDisplay::drawSequencerScreen(false);
         }
