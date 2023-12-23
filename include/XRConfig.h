@@ -71,6 +71,10 @@
 #define SELECT_BTN_CHAR 'i' // reverse when silkscreen is corrected
 #define ESCAPE_BTN_CHAR 'j' // reverse when silkscreen is corrected
 #define START_BTN_CHAR 'q'
+#define STOP_BTN_CHAR 'w'
+#define PAGE_LEFT_BTN_CHAR '9'
+#define PAGE_RIGHT_BTN_CHAR '3'
+#define PERFORM_BTN_CHAR 'a'
 #define MOD_D_BTN_CHAR 'h'
 // Encoders
 #define MAIN_ENCODER_ADDRESS 0

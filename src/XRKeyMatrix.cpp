@@ -100,41 +100,40 @@ namespace XRKeyMatrix
         // Fills kpd.key[] array with up-to 10 active keys.
         // Returns true if there are ANY active keys.
         if (kpd.getKeys()) {
-            for (int i=0; i<LIST_MAX; i++) // Scan the whole key list.
+            for (size_t i=0; i<LIST_MAX; i++) // Scan the whole key list.
             {
-                if (discard) {
-                    return;
-                }
-
-                switch (kpd.key[i].kstate) // Report active key state : IDLE, PRESSED, HOLD, or RELEASED
+                if (kpd.key[i].stateChanged)
                 {
-                    case PRESSED: 
-                        Serial.print("button pressed: ");
-                        Serial.println(kpd.key[i].kchar);
+                    switch (kpd.key[i].kstate) // Report active key state : IDLE, PRESSED, HOLD, or RELEASED
+                    {
+                        case PRESSED: 
+                            Serial.print("button pressed: ");
+                            Serial.println(kpd.key[i].kchar);
 
-                        handlePressForKey(kpd.key[i].kchar);
+                            handlePressForKey(kpd.key[i].kchar);
 
-                        break;
-                    case HOLD:
-                        Serial.print("button held: ");
-                        Serial.println(kpd.key[i].kchar);
+                            break;
+                        case HOLD:
+                            Serial.print("button held: ");
+                            Serial.println(kpd.key[i].kchar);
 
-                        handleHoldForKey(kpd.key[i].kchar);
+                            handleHoldForKey(kpd.key[i].kchar);
 
-                        break;
-                    case RELEASED:
-                        Serial.print("button released: ");
-                        Serial.println(kpd.key[i].kchar);
+                            break;
+                        case RELEASED:
+                            Serial.print("button released: ");
+                            Serial.println(kpd.key[i].kchar);
 
-                        handleReleaseForKey(kpd.key[i].kchar);
+                            handleReleaseForKey(kpd.key[i].kchar);
 
-                        break;
-                    case IDLE:
+                            break;
+                        case IDLE:
 
-                        break;
+                            break;
 
-                    default:
-                        break;
+                        default:
+                            break;
+                    }
                 }
             }
         }
@@ -142,7 +141,7 @@ namespace XRKeyMatrix
 
     void handlePressForKey(char key)
     {
-        Serial.println("enter handlePressForKey!");
+        //Serial.println("enter handlePressForKey!");
 
         XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
 
@@ -153,7 +152,7 @@ namespace XRKeyMatrix
         }
 
         // start/pause or stop
-        else if (key == 'q' || key == 'w') {
+        else if (key == START_BTN_CHAR || key == STOP_BTN_CHAR) {
             XRSequencer::toggleSequencerPlayback(key);
 
             // TODO: allowedModesToDrawSequencerFrom ?
@@ -253,8 +252,6 @@ namespace XRKeyMatrix
             _patternCopyAvailable = false;
             _trackCopyAvailable = false;
             _stepCopyAvailable = false;
-
-            _patternSelDebounceStartMs = _elapsedMs;
 
             XRLED::clearAllStepLEDs();
             XRLED::displayCurrentlySelectedPattern();
@@ -390,7 +387,6 @@ namespace XRKeyMatrix
 
             return;
         }
-
         else if (currentUXMode == XRUX::COPY_PATTERN && !_patternCopyAvailable && btnCharIsATrack(key))
         {
             Serial.printf("write selected pattern %d to copy buffer\n", getKeyStepNum(key));
@@ -582,7 +578,7 @@ namespace XRKeyMatrix
         }
 
         // page
-        else if (key == '9' || key == '3')
+        else if (key == PAGE_LEFT_BTN_CHAR || key == PAGE_RIGHT_BTN_CHAR)
         {
             auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
             auto currStepPage = XRSequencer::getCurrentStepPage();
@@ -623,7 +619,7 @@ namespace XRKeyMatrix
         }
 
         // perform
-        else if (key == 'a')
+        else if (key == PERFORM_BTN_CHAR)
         {
             XRUX::setCurrentMode(XRUX::PERFORM_SEL);
 

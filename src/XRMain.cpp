@@ -69,7 +69,10 @@ namespace XRMain
     {
         XRAudio::handleHeadphones();
 
-        XRKeyMatrix::handleStates();
+        //if (!(elapsedMs % 50)) {
+            XRKeyMatrix::handleStates(false);
+        //}
+
         XRVersa::handleStates();
         XREncoder::handleStates();
 
