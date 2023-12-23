@@ -1,6 +1,7 @@
 #include <XRMain.h>
 #include <XRHelpers.h>
 #include <XRSequencer.h>
+#include <XRSound.h>
 
 namespace XRMain
 {
@@ -8,6 +9,8 @@ namespace XRMain
 
     void boot()
     {
+        XRSound::muteAllOutput();
+
         XRDisplay::init();
 
         if (!XRSD::init())
@@ -34,7 +37,6 @@ namespace XRMain
 
         XRMIDI::init();
         XRClock::init();
-        XRSound::init();
 
         XRDisplay::drawIntro();
 
@@ -53,17 +55,11 @@ namespace XRMain
             {
                 XRDisplay::drawError("ERROR LOADING PROJECT!");
 
-                // TODO: impl dialog to create new project
+                XRUX::setCurrentMode(XRUX::UX_MODE::PROJECT_INITIALIZE);
+                XRDisplay::drawCreateProjectDialog();
 
                 return;
             }
-
-            XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_WRITE);
-
-            XRSequencer::init();
-            
-            XRSound::initAllTrackSounds();
-            XRSound::loadVoiceSettings();
         }
 
         XRAudio::resetMetrics();
@@ -72,9 +68,14 @@ namespace XRMain
     void update()
     {
         XRAudio::handleHeadphones();
-        XRKeyMatrix::handleStates();
+
+        //if (!(elapsedMs % 50)) {
+            XRKeyMatrix::handleStates(false);
+        //}
+
         XRVersa::handleStates();
         XREncoder::handleStates();
+
         XRSequencer::handleQueueActions();
     }
 }

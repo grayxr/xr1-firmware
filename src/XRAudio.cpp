@@ -19,7 +19,7 @@ namespace XRAudio
         sgtl5000_1.inputSelect(AUDIO_INPUT_LINEIN);
         sgtl5000_1.lineInLevel(0);
         sgtl5000_1.lineOutLevel(29);
-        sgtl5000_1.volume(1.0);
+        sgtl5000_1.volume(0.88);
 
         currentHeadphoneVolume = 0.5;
     }
@@ -32,7 +32,7 @@ namespace XRAudio
         {
             float newValue = (float)analog.getValue() / (float)1023;
 
-            if (abs(currentHeadphoneVolume - newValue) >= 0.05)
+            if (abs(currentHeadphoneVolume - newValue) >= 0.025 && newValue < 0.89)
             {
                 currentHeadphoneVolume = newValue;
 
@@ -43,12 +43,14 @@ namespace XRAudio
 
     void logMetrics()
     {
-        Serial.printf(
-            "Memory: %d/%d CPU: %d/%d",
+        if (LOG_METRICS_ENABLED) {
+            Serial.printf(
+            "Memory: %d/%d CPU: %f/%f\n",
             AudioMemoryUsage(),
             AudioMemoryUsageMax(),
             AudioProcessorUsage(),
             AudioProcessorUsageMax());
+        }
     }
 
     void resetMetrics()

@@ -12,7 +12,7 @@
 #define MACHINE_STATE_FILENAME_PREFIX "machine_state"
 #define PROJECTS_FOLDER_NAME "projects"
 
-#define LOG_METRICS_ENABLED true
+#define LOG_METRICS_ENABLED false
 #define DISPLAY_MAX_WIDTH 128
 #define DISPLAY_MAX_HEIGHT 64
 #define MAX_PROJECT_RAW_SAMPLES 40
@@ -37,6 +37,7 @@
 #define FAST_TOUCH_PIN 32
 #define MAX_USABLE_SAMPLE_IDS 256
 #define MAX_USABLE_WAV_SAMPLE_IDS 512
+#define MAX_SOUND_NAME_LENGTH 32
 #define MAX_SAMPLE_NAME_LENGTH 32
 #define MAX_PATTERN_SAMPLES 16 // there are only 16 tracks per patter, so a max of 16 samples per pattern, for now
 // Sequencer data
@@ -44,6 +45,8 @@
 #define MAXIMUM_SEQUENCER_TRACKS 16
 #define MAXIMUM_SEQUENCER_PATTERNS 16
 #define MAXIMUM_SEQUENCER_BANKS 1
+#define MAXIMUM_SOUND_PARAMS 30
+#define MAXIMUM_DEXED_SOUND_PARAMS 156
 #define DEFAULT_LAST_STEP 16
 #define MAX_STEP_MOD_ATTRS 32
 #define COMBO_VOICE_COUNT 4
@@ -68,6 +71,10 @@
 #define SELECT_BTN_CHAR 'i' // reverse when silkscreen is corrected
 #define ESCAPE_BTN_CHAR 'j' // reverse when silkscreen is corrected
 #define START_BTN_CHAR 'q'
+#define STOP_BTN_CHAR 'w'
+#define PAGE_LEFT_BTN_CHAR '9'
+#define PAGE_RIGHT_BTN_CHAR '3'
+#define PERFORM_BTN_CHAR 'a'
 #define MOD_D_BTN_CHAR 'h'
 // Encoders
 #define MAIN_ENCODER_ADDRESS 0
@@ -76,11 +83,26 @@
 #define MOD3_ENCODER_ADDRESS 3
 #define MOD4_ENCODER_ADDRESS 4
 
+#define NOTE_FREQ_C4 261.63
+
 #ifndef _BV
 #define _BV(bit) (1 << (bit))
 #endif
 
+#define DEXED_SOUND_MENU_ITEM_MAX 4
 #define SOUND_MENU_ITEM_MAX 3
 #define SETUP_MENU_ITEM_MAX 3
+
+#define MAXIMUM_TRACK_MODS 10
+#define DEFAULT_GLOBAL_ACCENT 80
+
+#define MAXIMUM_MONO_SAMPLE_SOUNDS 16
+#define MAXIMUM_MONO_SYNTH_SOUNDS 4
+#define MAXIMUM_DEXED_SYNTH_SOUNDS 4
+#define MAXIMUM_BRAIDS_SYNTH_SOUNDS 1
+#define MAXIMUM_FM_DRUM_SOUNDS 3
+#define MAXIMUM_MIDI_SOUNDS 16
+#define MAXIMUM_CV_GATE_SOUNDS 4
+#define MAXIMUM_CV_TRIG_SOUNDS 16
 
 #endif /* XRConfig_h */

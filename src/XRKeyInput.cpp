@@ -4,7 +4,6 @@
 namespace XRKeyInput
 {
     const int INPUT_LENGTH_MAX = 28;
-
     const int ALPHA_KEYSET_SIZE = 26;
     const int NUMERIC_KEYSET_SIZE = 10;
     const int SYMBOL_KEYSET_SIZE = 10;

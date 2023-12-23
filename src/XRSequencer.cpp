@@ -6,87 +6,37 @@
 #include <XRLED.h>
 #include <XRSD.h>
 #include <XRClock.h>
+#include <XRAudio.h>
 #include <map>
 
 namespace XRSequencer
 {
-    DMAMEM SEQUENCER_EXTERNAL _seqExternal;
-    DMAMEM PATTERN _patternCopyBuffer;
-    DMAMEM TRACK _trackCopyBuffer;
-    DMAMEM TRACK_STEP _stepCopyBuffer;
-    DMAMEM PATTERN _recordPatternBuffer;
-    DMAMEM PATTERN_MODS _patternMods;
-
-    SEQUENCER_HEAP _seqHeap;
-    QUEUED_PATTERN _queuedPattern;
+    // private variables
+ 
     SEQUENCER_STATE _seqState;
+    QUEUED_PATTERN _queuedPattern;
 
     STACK_STEP_DATA _stepStack[STEP_STACK_SIZE];
     STACK_RATCHET_DATA _ratchetStack[RATCHET_STACK_SIZE];
+
+    DMAMEM PATTERN _patternCopyBuffer;
+    DMAMEM TRACK _trackCopyBuffer;
+    DMAMEM STEP _stepCopyBuffer;
+    DMAMEM PATTERN _recordPatternBuffer;
+
+    bool _initTracks[MAXIMUM_SEQUENCER_TRACKS];
 
     int8_t _currentSelectedBank = 0;    // default to 0 (first)
     int8_t _currentSelectedPattern = 0; // default to 0 (first)
     int8_t _currentSelectedTrack = 0;   // default to 0 (first)
     int8_t _currentSelectedStep = -1;   // default to -1 (none)
-    int8_t _currentSelectedPage = 0;
     int8_t _currentStepPage = 1;
+
+    int8_t _currentSelectedPage = 0;
+    uint8_t _currentSelectedLayer = LAYER::SOUND;
 
     int8_t _ratchetTrack = -1;
     int8_t _ratchetDivision = -1;
-    int8_t _ratchetsHeld = 0;
-    long _ratchetReleaseTime;
-
-    std::map<TRACK_TYPE, int> trackPageNumMap = {
-        {SUBTRACTIVE_SYNTH, 6},
-        {DEXED, 4},
-        {RAW_SAMPLE, 4},
-        {WAV_SAMPLE, 1},
-        {MIDI_OUT, 1},
-        {CV_GATE, 1},
-        {CV_TRIG, 1},
-    };
-
-    std::map<TRACK_TYPE, std::map<int, std::string>> trackCurrPageNameMap = {
-        {SUBTRACTIVE_SYNTH, {
-                                {0, "MAIN"},
-                                {1, "OSC"},
-                                {2, "FILTER"},
-                                {3, "FILTER ENV"},
-                                {4, "AMP ENV"},
-                                {5, "OUTPUT"},
-                            }},
-        {DEXED, {
-                         {0, "MAIN"},
-                         {1, "FM1"},
-                         {2, "FM2"},
-                         {3, "OUTPUT"},
-                     }},
-        {RAW_SAMPLE, {
-                         {0, "MAIN"},
-                         {1, "LOOP"},
-                         {2, "AMP ENV"},
-                         {3, "OUTPUT"},
-                     }},
-        {WAV_SAMPLE, {
-                         {0, "MAIN"},
-                     }},
-        {MIDI_OUT, {
-                       {0, "MAIN"},
-                   }},
-        {CV_GATE, {
-                      {0, "MAIN"},
-                  }},
-        {CV_TRIG, {
-                      {0, "MAIN"},
-                  }},
-    };
-
-    bool _trkNeedsInit[MAXIMUM_SEQUENCER_TRACKS] = {
-        false, false, false, false,
-        false, false, false, false,
-        false, false, false, false,
-        false, false, false, false
-    };
 
     bool _dequeuePattern = false;
     bool _queueBlinked = false;
@@ -96,13 +46,25 @@ namespace XRSequencer
 
     uint8_t _bpmBlinkTimer = 2;
 
+    // extern globals
+
+    PATTERN heapPattern;
+
+    TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
+
+    DMAMEM SEQUENCER sequencer;
+    DMAMEM PATTERN_TRACK_MODS patternTrackStepMods;
+
+    void initPatternTrackStepMods();
+
     bool init()
     {
         _currentSelectedBank = 0;
         _currentSelectedPattern = 0;
         _currentSelectedTrack = 0;
 
-        XRDisplay::drawSequencerScreen(false);
+        initSequencer();
+        initPatternTrackStepMods();
 
         return true;
     }
@@ -194,7 +156,7 @@ namespace XRSequencer
                 currentSelectedTrackCurrentBar,
                 (_seqState.playbackState == RUNNING),
                 currentStepPage,
-                currTrack.last_step);
+                currTrack.lstep);
         }
 
         if (isOnStraightQtrNote)
@@ -252,7 +214,7 @@ namespace XRSequencer
                 if (turnOffLastLED)
                 {
                     TRACK currTrack = getHeapCurrentSelectedTrack();
-                    int currTrackLastStep = currTrack.last_step;
+                    int currTrackLastStep = currTrack.lstep;
                     if (currTrackLastStep > 16)
                     {
                         currTrackLastStep -= 16;
@@ -306,7 +268,7 @@ namespace XRSequencer
             {
                 XRLED::setDisplayStateForAllStepLEDs();
 
-                int lastStep = (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) ? _seqHeap.pattern.last_step : _seqHeap.pattern.tracks[_currentSelectedTrack].last_step;
+                int lastStep = (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) ? heapPattern.lstep : heapPattern.tracks[_currentSelectedTrack].lstep;
 
                 if (!XRKeyMatrix::isFunctionActive())
                 {
@@ -322,7 +284,7 @@ namespace XRSequencer
 
         // every 1/4 step log memory usage
         if (!(tick % 24)) {
-            //logMetrics();
+            XRAudio::logMetrics();
 
             // blink queued bank / pattern
             if (_queuedPattern.bank > -1 && _queuedPattern.number > -1) {
@@ -332,7 +294,7 @@ namespace XRSequencer
 
         if (_recording) {
             XRLED::setPWM(23, 512);
-            //setLEDPWM(23, 1024);
+            //XRLED::setPWM(23, 1024);
         }
     }
 
@@ -359,33 +321,14 @@ namespace XRSequencer
 
     void handleNoteOffForTrackStep(int track, int step)
     {
-        // Serial.println("enter handleNoteOffForTrackStep!");
-
-        //return;
-
         XRSound::handleNoteOffForTrackStep(track, step);
     }
 
     void noteOffForAllSounds()
     {
-        for (int t = 0; t < 4; t++)
+        for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
         {
-            TRACK currTrack = getHeapTrack(t);
-
-            if (currTrack.track_type == SUBTRACTIVE_SYNTH)
-            {
-                XRSound::comboVoices[t].ampEnv.noteOff();
-                XRSound::comboVoices[t].filterEnv.noteOff();
-            }
-            else
-            {
-                XRSound::comboVoices[t].ampEnv.noteOff();
-            }
-        }
-
-        for (int s = 0; s < 12; s++)
-        {
-            XRSound::sampleVoices[s].ampEnv.noteOff();
+            XRSound::handleNoteOffForTrack(t);
         }
     }
 
@@ -414,14 +357,30 @@ namespace XRSequencer
         return _currentSelectedStep;
     }
 
+    int8_t getCurrentStepPage()
+    {
+        return _currentStepPage;
+    }
+
     int8_t getCurrentSelectedPage()
     {
         return _currentSelectedPage;
     }
 
-    int8_t getCurrentStepPage()
+    uint8_t getCurrentSelectedTrackLayer()
     {
-        return _currentStepPage;
+        return _currentSelectedLayer;
+    }
+
+    int8_t getPageCountForCurrentTrackLayer()
+    {
+        int8_t count = 0;
+
+        if (_currentSelectedLayer == LAYER::SOUND) {
+            count = XRSound::getPageCountForTrack(_currentSelectedTrack);
+        }
+
+        return count;
     }
 
     QUEUED_PATTERN &getQueuedPattern()
@@ -429,150 +388,50 @@ namespace XRSequencer
         return _queuedPattern;
     }
 
-    SEQUENCER_HEAP &getSequencerHeap()
+    PATTERN &getHeapPattern()
     {
-        return _seqHeap;
+        return heapPattern;
     }
 
-    SEQUENCER_EXTERNAL &getSequencerExternal()
+    SEQUENCER &getSequencer()
     {
-        return _seqExternal;
+        return sequencer;
     }
 
     TRACK &getHeapTrack(int track)
     {
-        return _seqHeap.pattern.tracks[track];
+        return heapPattern.tracks[track];
     }
 
-    TRACK_STEP &getHeapStep(int track, int step)
+    STEP &getHeapStep(int track, int step)
     {
-        return _seqHeap.pattern.tracks[track].steps[step];
+        return heapPattern.tracks[track].steps[step];
     }
 
     PATTERN &getHeapCurrentSelectedPattern()
     {
-        return _seqHeap.pattern;
+        return heapPattern;
     }
 
     TRACK &getHeapCurrentSelectedTrack()
     {
-        return _seqHeap.pattern.tracks[_currentSelectedTrack];
+        return heapPattern.tracks[_currentSelectedTrack];
     }
 
-    TRACK_STEP &getHeapCurrentSelectedTrackStep()
+    STEP &getHeapCurrentSelectedTrackStep()
     {
-        return _seqHeap.pattern.tracks[_currentSelectedTrack].steps[_currentSelectedStep];
+        return heapPattern.tracks[_currentSelectedTrack].steps[_currentSelectedStep];
     }
 
-    std::string getTrackMetaStr(TRACK_TYPE type)
-    {
-        std::string outputStr;
+    // PATTERN_MODS &getModsForCurrentPattern()
+    // {
+    //     return _patternMods;
+    // }
 
-        switch (type)
-        {
-        case SUBTRACTIVE_SYNTH:
-            outputStr = "MONO >";
-            break;
-
-        case RAW_SAMPLE:
-            outputStr = "MSAMPLE >";
-            break;
-
-        case WAV_SAMPLE:
-            outputStr = "SSAMPLE >";
-            break;
-
-        case DEXED:
-            outputStr = "DEXED >";
-            break;
-
-        case MIDI_OUT:
-            outputStr = "MIDI";
-            break;
-
-        case CV_GATE:
-            outputStr = "CV/GATE";
-            break;
-
-        case CV_TRIG:
-            outputStr = "CV/TRIG";
-            break;
-
-        default:
-            break;
-        }
-
-        return outputStr;
-    }
-
-    std::string getTrackTypeNameStr(TRACK_TYPE type)
-    {
-        std::string str = "MIDI"; // default
-
-        switch (type)
-        {
-        case TRACK_TYPE::CV_GATE:
-            str = "CV/GATE";
-
-            break;
-
-        case TRACK_TYPE::CV_TRIG:
-            str = "CV/TRIG";
-
-            break;
-
-        case TRACK_TYPE::RAW_SAMPLE:
-            str = "MONO SAMPLE";
-
-            break;
-
-        case TRACK_TYPE::WAV_SAMPLE:
-            str = "STEREO SAMPLE";
-
-            break;
-
-        case TRACK_TYPE::SUBTRACTIVE_SYNTH:
-            str = "INIT";
-
-            break;
-
-        case TRACK_TYPE::DEXED:
-            str = "DEXED";
-
-            break;
-
-        default:
-            break;
-        }
-
-        return str;
-    }
-
-    PATTERN_MODS &getModsForCurrentPattern()
-    {
-        return _patternMods;
-    }
-
-    TRACK_STEP_MODS &getModsForCurrentTrackStep()
-    {
-        return _patternMods.tracks[_currentSelectedTrack].steps[_currentSelectedStep];
-    }
-
-    std::string getCurrPageNameForTrack()
-    {
-        TRACK currTrack = getHeapCurrentSelectedTrack();
-
-        std::string outputStr = trackCurrPageNameMap[currTrack.track_type][_currentSelectedPage];
-
-        return outputStr;
-    }
-
-    uint8_t getCurrentTrackPageCount()
-    {
-        TRACK currTrack = getHeapCurrentSelectedTrack();
-
-        return trackPageNumMap[currTrack.track_type];
-    }
+    // TRACK_STEP_MODS &getModsForCurrentTrackStep()
+    // {
+    //     return _patternMods.tracks[_currentSelectedTrack].steps[_currentSelectedStep];
+    // }
 
     int8_t getRatchetTrack()
     {
@@ -588,7 +447,8 @@ namespace XRSequencer
     {
         auto currentPattern = getHeapCurrentSelectedPattern();
 
-        const int MAX_PATTERN_TRACK_SIZE = 17;
+        const int MAX_PATTERN_TRACK_SIZE = 17; // plus one
+
         for (int t = 1; t < MAX_PATTERN_TRACK_SIZE; t++)
         {
             auto currTrack = currentPattern.tracks[t - 1];
@@ -597,7 +457,7 @@ namespace XRSequencer
             auto currLEDChar = XRHelpers::stepCharMap[t];
             auto keyLED = XRLED::getKeyLED(currLEDChar);
 
-            if (currTrackStepForLED.state == TRACK_STEP_STATE::STATE_OFF)
+            if (currTrackStepForLED.state == STEP_STATE::STATE_OFF)
             {
                 if (keyLED < 0)
                 {
@@ -608,7 +468,7 @@ namespace XRSequencer
                     XRLED::setPWM(keyLED, 0);
                 }
             }
-            else if (currTrackStepForLED.state == TRACK_STEP_STATE::STATE_ON || currTrackStepForLED.state == TRACK_STEP_STATE::STATE_ACCENTED)
+            else if (currTrackStepForLED.state == STEP_STATE::STATE_ON || currTrackStepForLED.state == STEP_STATE::STATE_ACCENTED)
             {
                 XRLED::setPWM(keyLED, enable ? 4095 : 0);
             }
@@ -626,7 +486,7 @@ namespace XRSequencer
             auto currTrack = currentPattern.tracks[t];
             auto currTrackStepData = currTrack.steps[currTrackStep];
 
-            if (!currTrack.muted && ((currTrackStepData.state == TRACK_STEP_STATE::STATE_ON) || (currTrackStepData.state == TRACK_STEP_STATE::STATE_ACCENTED)))
+            if (!trackPerformState[t].muted && ((currTrackStepData.state == STEP_STATE::STATE_ON) || (currTrackStepData.state == STEP_STATE::STATE_ACCENTED)))
             {
                 handleAddToStepStack(tick, t, currTrackStep);
             }
@@ -637,12 +497,12 @@ namespace XRSequencer
     {
         auto trackToUse = getHeapTrack(track);
 
-        bool lenStepModEnabled = _patternMods.tracks[track].step_mod_flags[step].flags[MOD_ATTRS::LENGTH];
-        int lenStepMod = _patternMods.tracks[track].steps[step].length;
+        int lenStepMod = patternTrackStepMods.tracks[track].steps[step].mods[LENGTH];
+        bool lenStepModEnabled = patternTrackStepMods.tracks[track].steps[step].flags[LENGTH];
 
         for (uint8_t i = 0; i < STEP_STACK_SIZE; i++)
         {
-            if (!trackToUse.muted && _stepStack[i].length == -1)
+            if (!trackPerformState[track].muted && _stepStack[i].length == -1)
             {
                 _stepStack[i].trackNum = track;
                 _stepStack[i].stepNum = step;
@@ -657,55 +517,56 @@ namespace XRSequencer
 
     void handleNoteOnForTrackStep(int track, int step)
     {
-        // Serial.println("enter handleNoteOnForTrackStep!");
-
-        // return;
-
-        auto trackToUse = getHeapTrack(track);
-        if (trackToUse.muted)
+        if (trackPerformState[track].muted)
         {
             return;
         }
 
-        if (_trkNeedsInit[track])
+        if (XRSound::soundNeedsReinit[track])
         {
-            Serial.print("init sounds for track: ");
-            Serial.println(track);
+            Serial.printf("reinit sounds for track: %d\n", track);
 
-            XRSound::initSoundsForTrack(track);
+            XRSound::reinitSoundForTrack(track);
         }
 
-        if (trackToUse.track_type == RAW_SAMPLE)
+        switch (XRSound::currentPatternSounds[track].type)
         {
-            XRSound::handleRawSampleNoteOnForTrackStep(track, step);
-        }
-        else if (trackToUse.track_type == WAV_SAMPLE)
-        {
-            XRSound::handleWavSampleNoteOnForTrackStep(track, step);
-        }
-        else if (trackToUse.track_type == DEXED)
-        {
-            XRSound::handleDexedNoteOnForTrackStep(track, step);
-        }
-        else if (trackToUse.track_type == SUBTRACTIVE_SYNTH)
-        {
-            XRSound::handleSubtractiveSynthNoteOnForTrackStep(track, step);
-        }
-        else if (trackToUse.track_type == MIDI_OUT)
-        {
+        case XRSound::T_MONO_SAMPLE:
+            XRSound::handleMonoSampleNoteOnForTrackStep(track, step);
+
+            break;
+        case XRSound::T_MONO_SYNTH:
+            XRSound::handleMonoSynthNoteOnForTrackStep(track, step);
+            
+            break;
+        case XRSound::T_DEXED_SYNTH:
+            XRSound::handleDexedSynthNoteOnForTrackStep(track, step);
+            
+            break;
+        case XRSound::T_BRAIDS_SYNTH:
+            XRSound::handleBraidsNoteOnForTrackStep(track, step);
+            
+            break;
+        case XRSound::T_FM_DRUM:
+            XRSound::handleFmDrumNoteOnForTrackStep(track, step);
+            
+            break;
+        case XRSound::T_MIDI:
             XRSound::handleMIDINoteOnForTrackStep(track, step);
-        }
-        else if (trackToUse.track_type == CV_GATE)
-        {
+            
+            break;
+        case XRSound::T_CV_GATE:
             XRSound::handleCvGateNoteOnForTrackStep(track, step);
+            
+            break;
+        default:
+            break;
         }
     }
 
     void updateCurrentPatternStepState()
     {
-        auto currPattern = getHeapCurrentSelectedPattern();
-
-        int currPatternLastStep = currPattern.last_step;
+        int currPatternLastStep = heapPattern.lstep;
 
         if (_seqState.currentStep <= currPatternLastStep)
         {
@@ -736,8 +597,8 @@ namespace XRSequencer
     {
         for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
         {
-            auto track = _seqHeap.pattern.tracks[t];
-            int trackLastStep = track.last_step;
+            auto track = heapPattern.tracks[t];
+            int trackLastStep = track.lstep;
             int8_t trackCurrentStep = _seqState.currentTrackSteps[t].currentStep;
 
             if (trackCurrentStep <= trackLastStep)
@@ -760,127 +621,50 @@ namespace XRSequencer
         }
     }
 
-    void initExternalSequencer()
+    void initSequencer()
     {
+        sequencer.banks[0].patterns[0].initialized = true; // always initialize first pattern?
+
         for (int b = 0; b < MAXIMUM_SEQUENCER_BANKS; b++)
         {
             for (int p = 0; p < MAXIMUM_SEQUENCER_PATTERNS; p++)
             {
-                _seqExternal.banks[b].patterns[p].last_step = DEFAULT_LAST_STEP;
-                _seqExternal.banks[b].patterns[p].initialized = false;
-                _seqExternal.banks[b].patterns[p].groove_amount = 0;
-                _seqExternal.banks[b].patterns[p].groove_id = -1;
-
-                if (p == 0)
-                    _seqExternal.banks[b].patterns[p].initialized = true;
+                sequencer.banks[b].patterns[p].lstep = DEFAULT_LAST_STEP;
+                sequencer.banks[b].patterns[p].groove.amount = 0;
+                sequencer.banks[b].patterns[p].groove.id = -1;
+                sequencer.banks[b].patterns[p].accent = DEFAULT_GLOBAL_ACCENT;
+                sequencer.banks[b].patterns[p].initialized = false;
 
                 for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
                 {
-                    _seqExternal.banks[b].patterns[p].tracks[t].track_type = RAW_SAMPLE;
-                    //_seqExternal.banks[b].patterns[p].tracks[t].sample_name;
-                    strcpy(_seqExternal.banks[b].patterns[p].tracks[t].sample_name, "");
-                    _seqExternal.banks[b].patterns[p].tracks[t].waveform = XRSound::WAVEFORM_TYPE::SAW;
-                    _seqExternal.banks[b].patterns[p].tracks[t].last_step = DEFAULT_LAST_STEP;
-                    _seqExternal.banks[b].patterns[p].tracks[t].length = 4;
-                    _seqExternal.banks[b].patterns[p].tracks[t].note = 0;
-                    _seqExternal.banks[b].patterns[p].tracks[t].octave = 4;
-                    _seqExternal.banks[b].patterns[p].tracks[t].detune = 0;
-                    _seqExternal.banks[b].patterns[p].tracks[t].fine = 0;
-                    _seqExternal.banks[b].patterns[p].tracks[t].velocity = 50;
-                    _seqExternal.banks[b].patterns[p].tracks[t].microtiming = 0;
-                    _seqExternal.banks[b].patterns[p].tracks[t].probability = 100;
-                    _seqExternal.banks[b].patterns[p].tracks[t].bitrate = 16;
-                    _seqExternal.banks[b].patterns[p].tracks[t].channel = 1;
-                    _seqExternal.banks[b].patterns[p].tracks[t].looptype = 0;
-                    _seqExternal.banks[b].patterns[p].tracks[t].loopstart = 0;
-                    _seqExternal.banks[b].patterns[p].tracks[t].loopfinish = 5000;
-                    _seqExternal.banks[b].patterns[p].tracks[t].playstart = play_start_sample;
-                    _seqExternal.banks[b].patterns[p].tracks[t].level = 0.7;
-                    _seqExternal.banks[b].patterns[p].tracks[t].pan = 0;
-                    _seqExternal.banks[b].patterns[p].tracks[t].sample_play_rate = 1.0;
-                    _seqExternal.banks[b].patterns[p].tracks[t].width = 0.5;
-                    _seqExternal.banks[b].patterns[p].tracks[t].oscalevel = 1;
-                    _seqExternal.banks[b].patterns[p].tracks[t].oscblevel = 0.5;
-                    _seqExternal.banks[b].patterns[p].tracks[t].cutoff = 1600;
-                    _seqExternal.banks[b].patterns[p].tracks[t].res = 0;
-                    _seqExternal.banks[b].patterns[p].tracks[t].filterenvamt = 1.0;
-                    _seqExternal.banks[b].patterns[p].tracks[t].filter_attack = 0;
-                    _seqExternal.banks[b].patterns[p].tracks[t].filter_decay = 1000;
-                    _seqExternal.banks[b].patterns[p].tracks[t].filter_sustain = 1.0;
-                    _seqExternal.banks[b].patterns[p].tracks[t].filter_release = 5000;
-                    _seqExternal.banks[b].patterns[p].tracks[t].amp_attack = 0;
-                    _seqExternal.banks[b].patterns[p].tracks[t].amp_decay = 1000;
-                    _seqExternal.banks[b].patterns[p].tracks[t].amp_sustain = 1.0;
-                    _seqExternal.banks[b].patterns[p].tracks[t].amp_release = 5000;
-                    _seqExternal.banks[b].patterns[p].tracks[t].noise = 0;
-                    _seqExternal.banks[b].patterns[p].tracks[t].chromatic_enabled = false;
-                    _seqExternal.banks[b].patterns[p].tracks[t].muted = false;
-                    _seqExternal.banks[b].patterns[p].tracks[t].soloing = false;
-                    _seqExternal.banks[b].patterns[p].tracks[t].initialized = false;
-
-                    if (t == 0)
-                        _seqExternal.banks[b].patterns[p].tracks[t].initialized = true;
+                    sequencer.banks[b].patterns[p].tracks[t].length = 4;
+                    sequencer.banks[b].patterns[p].tracks[t].note = 0;
+                    sequencer.banks[b].patterns[p].tracks[t].octave = 4;
+                    sequencer.banks[b].patterns[p].tracks[t].velocity = 50;
+                    sequencer.banks[b].patterns[p].tracks[t].probability = 100;
+                    sequencer.banks[b].patterns[p].tracks[t].initialized = false;
 
                     // now fill in steps
                     for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
                     {
-                        _seqExternal.banks[b].patterns[p].tracks[t].steps[s].length = 4;
-                        _seqExternal.banks[b].patterns[p].tracks[t].steps[s].note = 0;
-                        _seqExternal.banks[b].patterns[p].tracks[t].steps[s].octave = 4;
-                        _seqExternal.banks[b].patterns[p].tracks[t].steps[s].velocity = 50;
-                        _seqExternal.banks[b].patterns[p].tracks[t].steps[s].microtiming = 0;
-                        _seqExternal.banks[b].patterns[p].tracks[t].steps[s].probability = 100;
-
-                        _seqExternal.banks[b].patterns[p].tracks[t].steps[s].state = TRACK_STEP_STATE::STATE_OFF;
+                        sequencer.banks[b].patterns[p].tracks[t].steps[s].state = STEP_STATE::STATE_OFF;
                     }
                 }
             }
         }
     }
 
-    void initExternalPatternMods()
+    void initPatternTrackStepMods()
     {
         for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
         {
-            // now fill in mod flags
             for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
             {
-                for (int f = 0; f < MAX_STEP_MOD_ATTRS; f++)
+                for (int m = 0; m < MAXIMUM_TRACK_MODS; m++)
                 {
-                    _patternMods.tracks[t].step_mod_flags[s].flags[f] = false;
+                    patternTrackStepMods.tracks[t].steps[s].mods[m] = 0;
+                    patternTrackStepMods.tracks[t].steps[s].flags[m] = false;
                 }
-            }
-
-            // now fill in mods
-            for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
-            {
-                //_patternMods.tracks[t].steps[s].sample_name;
-                strcpy(_patternMods.tracks[t].steps[s].sample_name, "");
-                _patternMods.tracks[t].steps[s].waveform = XRSound::WAVEFORM_TYPE::SAW;
-                _patternMods.tracks[t].steps[s].detune = 0;
-                _patternMods.tracks[t].steps[s].fine = 0;
-                _patternMods.tracks[t].steps[s].looptype = 0;
-                _patternMods.tracks[t].steps[s].loopstart = 0;
-                _patternMods.tracks[t].steps[s].loopfinish = 5000;
-                _patternMods.tracks[t].steps[s].playstart = play_start_sample;
-                _patternMods.tracks[t].steps[s].level = 0.7;
-                _patternMods.tracks[t].steps[s].pan = 0;
-                _patternMods.tracks[t].steps[s].sample_play_rate = 1.0;
-                _patternMods.tracks[t].steps[s].width = 0.5;
-                _patternMods.tracks[t].steps[s].oscalevel = 1.0;
-                _patternMods.tracks[t].steps[s].oscblevel = 0.5;
-                _patternMods.tracks[t].steps[s].cutoff = 1600;
-                _patternMods.tracks[t].steps[s].res = 0;
-                _patternMods.tracks[t].steps[s].filterenvamt = 1.0;
-                _patternMods.tracks[t].steps[s].filter_attack = 0;
-                _patternMods.tracks[t].steps[s].filter_decay = 1000;
-                _patternMods.tracks[t].steps[s].filter_sustain = 1.0;
-                _patternMods.tracks[t].steps[s].filter_release = 5000;
-                _patternMods.tracks[t].steps[s].amp_attack = 0;
-                _patternMods.tracks[t].steps[s].amp_decay = 1000;
-                _patternMods.tracks[t].steps[s].amp_sustain = 1.0;
-                _patternMods.tracks[t].steps[s].amp_release = 5000;
-                _patternMods.tracks[t].steps[s].noise = 0;
             }
         }
     }
@@ -909,12 +693,11 @@ namespace XRSequencer
 
             _dequeuePattern = false;
 
+            // IMPORTANT: must change sounds before changing sequencer data!
+            XRSound::manageSoundDataForPatternChange(_queuedPattern.bank, _queuedPattern.number);
             swapSequencerMemoryForPattern(_queuedPattern.bank, _queuedPattern.number);
+            
             Serial.println("finished swapping seq mem!");
-
-            // clearing samples manually not working
-            // XRSound::clearSamples();
-            // Serial.println("finished clearing samples!");
 
             // reset queue flags
             _queuedPattern.bank = -1;
@@ -933,7 +716,7 @@ namespace XRSequencer
             }
             else if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE)
             {
-                int lastStep = (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) ? _seqHeap.pattern.last_step : _seqHeap.pattern.tracks[_currentSelectedTrack].last_step;
+                int lastStep = (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) ? heapPattern.lstep : heapPattern.tracks[_currentSelectedTrack].lstep;
 
                 XRLED::displayPageLEDs(
                     1,
@@ -950,30 +733,26 @@ namespace XRSequencer
     void swapSequencerMemoryForPattern(int newBank, int newPattern)
     {
         // AudioNoInterrupts();
-        auto currPatternData = _seqHeap.pattern;
-        auto newPatternData = _seqExternal.banks[newBank].patterns[newPattern];
+        auto newPatternData = sequencer.banks[newBank].patterns[newPattern];
 
-        // save any mods for current pattern to SD
-        XRSD::savePatternModsToSdCard();
+        // save any track step mods for current pattern to SD
+        XRSD::savePatternTrackStepModsToSdCard();
 
-        // swap memory data
-        _seqExternal.banks[_currentSelectedBank].patterns[_currentSelectedPattern] = currPatternData;
-        _seqHeap.pattern = newPatternData;
+        // swap sequencer memory data
+        sequencer.banks[_currentSelectedBank].patterns[_currentSelectedPattern] = heapPattern;
+        heapPattern = newPatternData;
 
         // initialize new pattern
-        _seqHeap.pattern.initialized = true;
+        heapPattern.initialized = true;
 
         // update currently selected vars
         _currentSelectedBank = newBank;
         _currentSelectedPattern = newPattern;
         _currentSelectedTrack = 0;
 
-        // load any mods for new bank/pattern from SD
-        XRSD::loadPatternModsFromSdCard();
-
-        for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
-        {
-            _trkNeedsInit[t] = true;
+        // load any track step mods for new bank/pattern from SD
+        if (!XRSD::loadPatternTrackStepModsFromSdCard(_currentSelectedBank, _currentSelectedPattern)) {
+            initPatternTrackStepMods();
         }
     }
 
@@ -1012,31 +791,33 @@ namespace XRSequencer
         Serial.println(adjStep);
 
         TRACK currTrack = getHeapCurrentSelectedTrack();
-        TRACK_STEP_STATE currStepState = currTrack.steps[adjStep].state;
+        STEP_STATE currStepState = currTrack.steps[adjStep].state;
 
         Serial.print("currStepState: ");
-        Serial.println(currStepState == TRACK_STEP_STATE::STATE_ACCENTED ? "accented" : (currStepState == TRACK_STEP_STATE::STATE_ON ? "on" : "off"));
+        Serial.println(currStepState == STEP_STATE::STATE_ACCENTED ? "accented" : (currStepState == STEP_STATE::STATE_ON ? "on" : "off"));
 
         // TODO: implement accent state for MIDI, CV/Trig, Sample, Synth track types?
-        if (currStepState == TRACK_STEP_STATE::STATE_OFF)
+        if (currStepState == STEP_STATE::STATE_OFF)
         {
-            _seqHeap.pattern.tracks[_currentSelectedTrack].steps[adjStep].state = TRACK_STEP_STATE::STATE_ON;
+            heapPattern.tracks[_currentSelectedTrack].steps[adjStep].state = STEP_STATE::STATE_ON;
+            // TODO: REMOVE
             // copy track properties to steps
-            _seqHeap.pattern.tracks[_currentSelectedTrack].steps[adjStep].note = currTrack.note;
-            _seqHeap.pattern.tracks[_currentSelectedTrack].steps[adjStep].octave = currTrack.octave;
-            _seqHeap.pattern.tracks[_currentSelectedTrack].steps[adjStep].velocity = currTrack.velocity;
+            // heapPattern.tracks[_currentSelectedTrack].steps[adjStep].note = currTrack.note;
+            // heapPattern.tracks[_currentSelectedTrack].steps[adjStep].octave = currTrack.octave;
+            // heapPattern.tracks[_currentSelectedTrack].steps[adjStep].velocity = currTrack.velocity;
         }
-        else if (currStepState == TRACK_STEP_STATE::STATE_ON)
+        else if (currStepState == STEP_STATE::STATE_ON)
         {
-            _seqHeap.pattern.tracks[_currentSelectedTrack].steps[adjStep].state = TRACK_STEP_STATE::STATE_ACCENTED;
-            _seqHeap.pattern.tracks[_currentSelectedTrack].steps[adjStep].velocity = 100; // TODO: use a "global accent" value here
+            heapPattern.tracks[_currentSelectedTrack].steps[adjStep].state = STEP_STATE::STATE_ACCENTED;
+            // TODO: REMOVE
+            // heapPattern.tracks[_currentSelectedTrack].steps[adjStep].velocity = 100; // TODO: use a "global accent" value here
         }
-        else if (currStepState == TRACK_STEP_STATE::STATE_ACCENTED)
+        else if (currStepState == STEP_STATE::STATE_ACCENTED)
         {
-            _seqHeap.pattern.tracks[_currentSelectedTrack].steps[adjStep].state = TRACK_STEP_STATE::STATE_OFF;
+            heapPattern.tracks[_currentSelectedTrack].steps[adjStep].state = STEP_STATE::STATE_OFF;
         }
 
-        _seqExternal.banks[_currentSelectedBank].patterns[_currentSelectedPattern].tracks[_currentSelectedTrack].steps[adjStep] = _seqHeap.pattern.tracks[_currentSelectedTrack].steps[adjStep];
+        sequencer.banks[_currentSelectedBank].patterns[_currentSelectedPattern].tracks[_currentSelectedTrack].steps[adjStep] = heapPattern.tracks[_currentSelectedTrack].steps[adjStep];
     }
 
     void toggleSequencerPlayback(char btn)
@@ -1064,7 +845,7 @@ namespace XRSequencer
                     currentSelectedTrackCurrentBar,
                     (_seqState.playbackState == RUNNING),
                     _currentStepPage,
-                    currTrack.last_step
+                    currTrack.lstep
                 );
 
                 if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE) {
@@ -1155,7 +936,7 @@ namespace XRSequencer
 
     void handleRemoveFromRatchetStack()
     {
-        for (int i = 0; i < STEP_STACK_SIZE; i++)
+        for (size_t i = 0; i < RATCHET_STACK_SIZE; i++)
         {
             if (_ratchetStack[i].length != -1)
             {
@@ -1175,7 +956,7 @@ namespace XRSequencer
 
     void handleAddToRatchetStack()
     {
-        for (uint8_t i = 0; i < STEP_STACK_SIZE; i++)
+        for (size_t i = 0; i < STEP_STACK_SIZE; i++)
         {
             if (_ratchetStack[i].length == -1)
             {
@@ -1191,27 +972,32 @@ namespace XRSequencer
 
     void handleNoteOnForTrack(int track)
     {
-        auto trackToUse = getHeapTrack(track);
-
-        if (trackToUse.track_type == RAW_SAMPLE)
+        switch (XRSound::currentPatternSounds[track].type)
         {
-            XRSound::handleRawSampleNoteOnForTrack(track);
-        }
-        else if (trackToUse.track_type == WAV_SAMPLE)
-        {
-            XRSound::handleWavSampleNoteOnForTrack(track);
-        }
-        else if (trackToUse.track_type == DEXED)
-        {
-            XRSound::handleDexedNoteOnForTrack(track);
-        }
-        else if (trackToUse.track_type == SUBTRACTIVE_SYNTH)
-        {
-            XRSound::handleSubtractiveSynthNoteOnForTrack(track);
-        }
-        else if (trackToUse.track_type == CV_GATE)
-        {
+        case XRSound::T_MONO_SAMPLE:
+            XRSound::handleMonoSampleNoteOnForTrack(track);
+            break;
+        case XRSound::T_MONO_SYNTH:
+            XRSound::handleMonoSynthNoteOnForTrack(track);
+            break;
+        case XRSound::T_DEXED_SYNTH:
+            XRSound::handleDexedSynthNoteOnForTrack(track);
+            break;
+        case XRSound::T_BRAIDS_SYNTH:
+            XRSound::handleBraidsNoteOnForTrack(track);
+            break;
+        case XRSound::T_FM_DRUM:
+            XRSound::handleFmDrumNoteOnForTrack(track);
+            break;
+        case XRSound::T_MIDI:
+            XRSound::handleMIDINoteOnForTrack(track);
+            break;
+        case XRSound::T_CV_GATE:
             XRSound::handleCvGateNoteOnForTrack(track);
+            break;
+        
+        default:
+            break;
         }
     }
 
@@ -1222,23 +1008,7 @@ namespace XRSequencer
 
     void initializeCurrentSelectedTrack()
     {
-        _seqHeap.pattern.tracks[_currentSelectedTrack].initialized = true;
-    }
-
-
-    void setTrackTypeForHeapTrack(int8_t track, TRACK_TYPE type)
-    {
-        _seqHeap.pattern.tracks[track].track_type = type;
-    }
-
-    void setTrackNeedsInit(int track, bool init)
-    {
-        _trkNeedsInit[track] = init;
-    }
-    
-    void assignSampleNameToTrack(std::string sampleName)
-    {
-        strcpy(_seqHeap.pattern.tracks[_currentSelectedTrack].sample_name, sampleName.c_str());
+        heapPattern.tracks[_currentSelectedTrack].initialized = true;
     }
 
     void queuePattern(int pattern, int bank)
@@ -1255,12 +1025,12 @@ namespace XRSequencer
     void saveCurrentPatternOffHeap()
     {
         // push current heap memory to RAM2/DMAMEM
-        _seqExternal.banks[_currentSelectedBank].patterns[_currentSelectedPattern] = _seqHeap.pattern;
+        sequencer.banks[_currentSelectedBank].patterns[_currentSelectedPattern] = heapPattern;
     }
 
     void setCurrentSelectedStep(int step)
     {
-       // _seqHeap.pattern.tracks[_currentSelectedTrack].steps[step];
+       // heapPattern.tracks[_currentSelectedTrack].steps[step];
 
         _currentSelectedStep = step;
     }
@@ -1272,17 +1042,17 @@ namespace XRSequencer
 
     void setCopyBufferForStep(int step)
     {
-        _stepCopyBuffer = _seqHeap.pattern.tracks[_currentSelectedTrack].steps[step];
+        _stepCopyBuffer = heapPattern.tracks[_currentSelectedTrack].steps[step];
     }
 
     void setCopyBufferForTrack(int track)
     {
-        _trackCopyBuffer = _seqHeap.pattern.tracks[track];
+        _trackCopyBuffer = heapPattern.tracks[track];
     }
 
     void setCopyBufferForPattern(int pattern)
     {
-        _patternCopyBuffer = _seqExternal.banks[_currentSelectedBank].patterns[pattern];
+        _patternCopyBuffer = sequencer.banks[_currentSelectedBank].patterns[pattern];
     }
 
     PATTERN &getCopyBufferForPattern()
@@ -1295,7 +1065,7 @@ namespace XRSequencer
         return _trackCopyBuffer;
     }
 
-    TRACK_STEP &getCopyBufferForStep()
+    STEP &getCopyBufferForStep()
     {
         return _stepCopyBuffer;
     }
@@ -1308,5 +1078,18 @@ namespace XRSequencer
     void setRatchetDivision(int track)
     {
         _ratchetDivision = track;
+    }
+
+    bool * getInitializedTracksForPattern(int bank, int pattern)
+    {
+        for (int t=0; t<MAXIMUM_SEQUENCER_TRACKS; t++) {
+            if (sequencer.banks[bank].patterns[pattern].tracks[t].initialized) {
+                _initTracks[t] = true;
+            } else {
+                _initTracks[t] = false;
+            }
+        }
+
+        return _initTracks;
     }
 }
