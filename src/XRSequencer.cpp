@@ -284,7 +284,7 @@ namespace XRSequencer
 
         // every 1/4 step log memory usage
         if (!(tick % 24)) {
-            //XRAudio::logMetrics();
+            XRAudio::logMetrics();
 
             // blink queued bank / pattern
             if (_queuedPattern.bank > -1 && _queuedPattern.number > -1) {
