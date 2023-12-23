@@ -1201,26 +1201,31 @@ namespace XREncoder
 
     void handleEncoderFmDrumModA(int diff)
     {
+        if (diff == 0) {
+            return;
+        }
+
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
         auto &trackToUse = XRSequencer::getHeapTrack(currTrackNum);
-        
         auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
 
         switch (currSelectedPageNum)
         {
         case 0:
         {
-            float currNoise = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currTrackNum].params[FMD_NOISE]);
-            float newNoise = currNoise + (diff * 0.01);
+            uint16_t currFreq = getValueNormalizedAsUInt32(XRSound::currentPatternSounds[currTrackNum].params[FMD_FREQ]);
+            uint16_t newFreq = currFreq + diff;
 
-            if (newNoise != currNoise) {
-                XRSound::currentPatternSounds[currTrackNum].params[FMD_NOISE] = getFloatValuePaddedAsInt32(newNoise);
+            if (newFreq != currFreq) {
+                newFreq = constrain(newFreq, 0, 255);
 
-                fmDrumInstance.fmDrum.noise(newNoise);
+                XRSound::currentPatternSounds[currTrackNum].params[FMD_FREQ] = getUInt32ValuePaddedAsInt32(newFreq);
 
-                XRDisplay::drawSequencerScreen(false);
+                fmDrumInstance.fmDrum.frequency(newFreq);
             }
+
+            XRDisplay::drawSequencerScreen(false);
         }
         break;
         case 1:
@@ -1228,13 +1233,15 @@ namespace XREncoder
             float currLvl = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currTrackNum].params[FMD_LEVEL]);
             float newLvl = currLvl + (diff * 0.01);
 
-            if (!(newLvl < 0.0 || newLvl > 1.1) && newLvl != currLvl)
+            if (newLvl != currLvl)
             {
+                newLvl = constrain(newLvl, 0, 1.0);
+
                 XRSound::currentPatternSounds[currTrackNum].params[FMD_LEVEL] = getFloatValuePaddedAsInt32(newLvl);
 
                 AudioNoInterrupts();
 
-                fmDrumInstance.amp.gain(newLvl * (trackToUse.velocity * 0.01));
+                fmDrumInstance.amp.gain(newLvl);
 
                 AudioInterrupts();
 
@@ -1256,20 +1263,25 @@ namespace XREncoder
 
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        
         auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
 
         switch (currSelectedPageNum)
         {
         case 0:
             {
-                float currDecay = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currTrackNum].params[FMD_DECAY]);
-                float newDecay  = currDecay + (diff * 0.01);
+                float currFm = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currTrackNum].params[FMD_FM]);
+                float newFm = currFm + (diff * 0.01);
 
-                if (newDecay != currDecay) {
-                    XRSound::currentPatternSounds[currTrackNum].params[FMD_DECAY] = getFloatValuePaddedAsInt32(newDecay);
+                if (newFm != currFm) {
+                    newFm = constrain(newFm, 0.0, 1.0);
 
-                    fmDrumInstance.fmDrum.decay(newDecay);
+                    XRSound::currentPatternSounds[currTrackNum].params[FMD_FM] = getFloatValuePaddedAsInt32(newFm);
+
+                    AudioNoInterrupts();
+
+                    fmDrumInstance.fmDrum.fm(newFm);
+
+                    AudioInterrupts();
 
                     XRDisplay::drawSequencerScreen(false);
                 }
@@ -1323,22 +1335,23 @@ namespace XREncoder
         }
 
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        
         auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
 
-        if (currSelectedPageNum == 0) 
-        {
-            float currFm = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currTrackNum].params[FMD_FM]);
-            float newFm = currFm + (diff * 0.01);
+        float currDecay = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currTrackNum].params[FMD_DECAY]);
+        float newDecay  = currDecay + (diff * 0.01);
 
-            if (newFm != currFm) {
-                XRSound::currentPatternSounds[currTrackNum].params[FMD_FM] = getFloatValuePaddedAsInt32(newFm);
+        if (newDecay != currDecay) {
+            newDecay = constrain(newDecay, 0.0, 1.0);
 
-                fmDrumInstance.fmDrum.fm(newFm);
+            XRSound::currentPatternSounds[currTrackNum].params[FMD_DECAY] = getFloatValuePaddedAsInt32(newDecay);
 
-                XRDisplay::drawSequencerScreen(false);
-            }
+            AudioNoInterrupts();
+
+            fmDrumInstance.fmDrum.decay(newDecay);
+
+            AudioInterrupts();
+
+            XRDisplay::drawSequencerScreen(false);
         }
     }
 
@@ -1349,19 +1362,21 @@ namespace XREncoder
         }
 
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        
         auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
 
-        if (currSelectedPageNum == 0) {
-            uint8_t currFreq = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currTrackNum].params[FMD_FREQ]);
-            int8_t newFreq = currFreq + diff;
+        float currNoise = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currTrackNum].params[FMD_NOISE]);
+        float newNoise = currNoise + (diff * 0.01);
 
-            if (newFreq != currFreq && newFreq >= 0) {
-                XRSound::currentPatternSounds[currTrackNum].params[FMD_FREQ] = getUInt32ValuePaddedAsInt32(newFreq);
+        if (newNoise != currNoise) {
+            newNoise = constrain(newNoise, 0.0, 1.0);
 
-                fmDrumInstance.fmDrum.frequency(newFreq);
-            }
+            XRSound::currentPatternSounds[currTrackNum].params[FMD_NOISE] = getFloatValuePaddedAsInt32(newNoise);
+
+            AudioNoInterrupts();
+
+            fmDrumInstance.fmDrum.noise(newNoise);
+
+            AudioInterrupts();
 
             XRDisplay::drawSequencerScreen(false);
         }
@@ -1999,8 +2014,10 @@ namespace XREncoder
 
         float newLvl = currLvl + (diff * 0.01);
 
-        if (!(newLvl < 0.0 || newLvl > 1.1) && newLvl != currLvl)
+        if (newLvl != currLvl)
         {
+            newLvl = constrain(newLvl, 0, 1.0);
+            
             if (XRSound::currentPatternSounds[currSelectedTrack].type == T_MONO_SAMPLE) {
                 XRSound::currentPatternSounds[currSelectedTrack].params[MSMP_LEVEL] = getFloatValuePaddedAsInt32(newLvl);
             } else {

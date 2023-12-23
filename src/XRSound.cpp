@@ -570,68 +570,68 @@ namespace XRSound
         }
 
         // Voice/instance sub mixers
-        voiceSubMixLeft1.gain(0, 0.5);
-        voiceSubMixRight1.gain(0, 0.5);
-        voiceSubMixLeft1.gain(1, 0.5);
-        voiceSubMixRight1.gain(1, 0.5);
-        voiceSubMixLeft1.gain(2, 0.5);
-        voiceSubMixRight1.gain(2, 0.5);
-        voiceSubMixLeft1.gain(3, 0.5);
-        voiceSubMixRight1.gain(3, 0.5);
+        voiceSubMixLeft1.gain(0, 1);
+        voiceSubMixRight1.gain(0, 1);
+        voiceSubMixLeft1.gain(1, 1);
+        voiceSubMixRight1.gain(1, 1);
+        voiceSubMixLeft1.gain(2, 1);
+        voiceSubMixRight1.gain(2, 1);
+        voiceSubMixLeft1.gain(3, 1);
+        voiceSubMixRight1.gain(3, 1);
 
-        voiceSubMixLeft2.gain(0, 0.5);
-        voiceSubMixRight2.gain(0, 0.5);
-        voiceSubMixLeft2.gain(1, 0.5);
-        voiceSubMixRight2.gain(1, 0.5);
-        voiceSubMixLeft2.gain(2, 0.5);
-        voiceSubMixRight2.gain(2, 0.5);
-        voiceSubMixLeft2.gain(3, 0.5);
-        voiceSubMixRight2.gain(3, 0.5);
+        voiceSubMixLeft2.gain(0, 1);
+        voiceSubMixRight2.gain(0, 1);
+        voiceSubMixLeft2.gain(1, 1);
+        voiceSubMixRight2.gain(1, 1);
+        voiceSubMixLeft2.gain(2, 1);
+        voiceSubMixRight2.gain(2, 1);
+        voiceSubMixLeft2.gain(3, 1);
+        voiceSubMixRight2.gain(3, 1);
 
-        voiceSubMixLeft3.gain(0, 0.33);
-        voiceSubMixRight3.gain(0, 0.33);
-        voiceSubMixLeft3.gain(1, 0.33);
-        voiceSubMixRight3.gain(1, 0.33);
-        voiceSubMixLeft3.gain(2, 0.33);
-        voiceSubMixRight3.gain(2, 0.33);
+        voiceSubMixLeft3.gain(0, 1);
+        voiceSubMixRight3.gain(0, 1);
+        voiceSubMixLeft3.gain(1, 1);
+        voiceSubMixRight3.gain(1, 1);
+        voiceSubMixLeft3.gain(2, 1);
+        voiceSubMixRight3.gain(2, 1);
         voiceSubMixLeft3.gain(3, 0); // BRAIDS DOES NOT WORK
         voiceSubMixRight3.gain(3, 0); // BRAIDS DOES NOT WORK
 
-        voiceSubMixLeft4.gain(0, 0.5);
-        voiceSubMixRight4.gain(0, 0.5);
-        voiceSubMixLeft4.gain(1, 0.5);
-        voiceSubMixRight4.gain(1, 0.5);
-        voiceSubMixLeft4.gain(2, 0.5);
-        voiceSubMixRight4.gain(2, 0.5);
-        voiceSubMixLeft4.gain(3, 0.5);
-        voiceSubMixRight4.gain(3, 0.5);
+        voiceSubMixLeft4.gain(0, 1);
+        voiceSubMixRight4.gain(0, 1);
+        voiceSubMixLeft4.gain(1, 1);
+        voiceSubMixRight4.gain(1, 1);
+        voiceSubMixLeft4.gain(2, 1);
+        voiceSubMixRight4.gain(2, 1);
+        voiceSubMixLeft4.gain(3, 1);
+        voiceSubMixRight4.gain(3, 1);
 
-        voiceSubMixLeft5.gain(0, 0.5);
-        voiceSubMixRight5.gain(0, 0.5);
-        voiceSubMixLeft5.gain(1, 0.5);
-        voiceSubMixRight5.gain(1, 0.5);
-        voiceSubMixLeft5.gain(2, 0.5);
-        voiceSubMixRight5.gain(2, 0.5);
-        voiceSubMixLeft5.gain(3, 0.5);
-        voiceSubMixRight5.gain(3, 0.5);
+        voiceSubMixLeft5.gain(0, 1);
+        voiceSubMixRight5.gain(0, 1);
+        voiceSubMixLeft5.gain(1, 1);
+        voiceSubMixRight5.gain(1, 1);
+        voiceSubMixLeft5.gain(2, 1);
+        voiceSubMixRight5.gain(2, 1);
+        voiceSubMixLeft5.gain(3, 1);
+        voiceSubMixRight5.gain(3, 1);
 
-        voiceSubMixLeft6.gain(0, 0.5);
-        voiceSubMixRight6.gain(0, 0.5);
-        voiceSubMixLeft6.gain(1, 0.5);
-        voiceSubMixRight6.gain(1, 0.5);
-        voiceSubMixLeft6.gain(2, 0.5);
-        voiceSubMixRight6.gain(2, 0.5);
-        voiceSubMixLeft6.gain(3, 0.5);
-        voiceSubMixRight6.gain(3, 0.5);
+        voiceSubMixLeft6.gain(0, 1);
+        voiceSubMixRight6.gain(0, 1);
+        voiceSubMixLeft6.gain(1, 1);
+        voiceSubMixRight6.gain(1, 1);
+        voiceSubMixLeft6.gain(2, 1);
+        voiceSubMixRight6.gain(2, 1);
+        voiceSubMixLeft6.gain(3, 1);
+        voiceSubMixRight6.gain(3, 1);
 
-        voiceSubMixLeft7.gain(0, 0.5);
-        voiceSubMixRight7.gain(0, 0.5);
-        voiceSubMixLeft7.gain(1, 0.5);
-        voiceSubMixRight7.gain(1, 0.5);
-        voiceSubMixLeft7.gain(2, 0.5);
-        voiceSubMixRight7.gain(2, 0.5);
-        voiceSubMixLeft7.gain(3, 0.5);
-        voiceSubMixRight7.gain(3, 0.5);
+        voiceSubMixLeft7.gain(0, 1);
+        voiceSubMixRight7.gain(0, 1);
+        voiceSubMixLeft7.gain(1, 1);
+        voiceSubMixRight7.gain(1, 1);
+        voiceSubMixLeft7.gain(2, 1);
+        voiceSubMixRight7.gain(2, 1);
+        voiceSubMixLeft7.gain(3, 1);
+        voiceSubMixRight7.gain(3, 1);
         
         // Voice/instance mixers
         voiceMixLeft1.gain(0, 1);
@@ -655,16 +655,27 @@ namespace XRSound
         mainMixerRight.gain(0, 1);
         mainMixerLeft.gain(1, 1);
         mainMixerRight.gain(1, 1);
+        mainMixerLeft.gain(2, 0);
+        mainMixerRight.gain(2, 0);
+        mainMixerLeft.gain(3, 0);
+        mainMixerRight.gain(3, 0);
 
         // L&R input mixer
-        inputMixerLeft.gain(0, 0.25);
-        inputMixerRight.gain(0, 0.25);
+        inputMixerLeft.gain(0, 0);
+        inputMixerRight.gain(0, 0);
+
+        // inputMixerLeft.gain(0, 0.25);
+        // inputMixerRight.gain(0, 0.25);
 
         // Main L&R output mixer
         OutputMixerLeft.gain(0, 1);
         OutputMixerRight.gain(0, 1);
         OutputMixerLeft.gain(1, 1);
         OutputMixerRight.gain(1, 1);
+        OutputMixerLeft.gain(2, 0);
+        OutputMixerRight.gain(2, 0);
+        OutputMixerLeft.gain(3, 0);
+        OutputMixerRight.gain(3, 0);
     }
 
     void initTrackSound(int8_t track)
@@ -1222,21 +1233,28 @@ namespace XRSound
         auto currentSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
 
-        auto currentSoundForTrack = currentPatternSounds[currentSelectedTrackNum];
+        auto freq = getValueNormalizedAsUInt32(currentPatternSounds[currentSelectedTrackNum].params[FMD_FREQ]);
+        auto fm = getValueNormalizedAsFloat(currentPatternSounds[currentSelectedTrackNum].params[FMD_FM]);
+        auto dec = getValueNormalizedAsFloat(currentPatternSounds[currentSelectedTrackNum].params[FMD_DECAY]);
+        auto nse = getValueNormalizedAsFloat(currentPatternSounds[currentSelectedTrackNum].params[FMD_NOISE]);
 
         switch (currentSelectedPageNum)
         {
         case 0: // MAIN
             {
-                mods.aName = "--";
-                mods.bName = "--";
-                mods.cName = "--";
-                mods.dName = "--";
+                mods.aName = "TUNE";
+                mods.bName = "FM";
+                mods.cName = "DECAY";
+                mods.dName = "NOISE";
 
-                mods.aValue = "--";
-                mods.bValue = "--";
-                mods.cValue = "--";
-                mods.dValue = "--";
+                mods.aValue = std::to_string(freq);
+                mods.aValue += "hz";
+                mods.bValue = std::to_string((float)round(fm * 100) / 100);
+                mods.bValue = mods.bValue.substr(0, 4);
+                mods.cValue = std::to_string((float)round(dec * 100) / 100);
+                mods.cValue = mods.cValue.substr(0, 4);
+                mods.dValue = std::to_string((float)round(nse * 100) / 100);
+                mods.dValue = mods.dValue.substr(0, 4);
             }
 
             break;
@@ -1248,8 +1266,8 @@ namespace XRSound
                 mods.cName = "--";
                 mods.dName = "--"; // fx send?
 
-                auto lvl = getValueNormalizedAsFloat(currentSoundForTrack.params[FMD_LEVEL]);
-                auto pan = getValueNormalizedAsFloat(currentSoundForTrack.params[FMD_PAN]);
+                auto lvl = getValueNormalizedAsFloat(currentPatternSounds[currentSelectedTrackNum].params[FMD_LEVEL]);
+                auto pan = getValueNormalizedAsFloat(currentPatternSounds[currentSelectedTrackNum].params[FMD_PAN]);
 
                 mods.aValue = std::to_string(round(lvl * 100));
                 mods.bValue = std::to_string((float)round(pan * 100) / 100);
