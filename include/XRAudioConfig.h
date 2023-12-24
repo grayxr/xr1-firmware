@@ -4,8 +4,12 @@
 #include <Arduino.h>
 #include <Audio.h>
 #include <TeensyVariablePlayback.h>
+#ifndef NO_DEXED
 #include <synth_dexed.h>
+#endif
+#ifndef NO_FMDRUM
 #include <synth_fm_drum.h>
+#endif
 // #include <synth_braids.h>
 
 // GUItool: begin automatically generated code
@@ -57,13 +61,17 @@ extern AudioPlayArrayResmp  monoSample11; //xy=815.4761428833008,3791.5711240768
 extern AudioPlayArrayResmp  monoSample5; //xy=819.9999389648438,2775
 extern AudioPlayArrayResmp  monoSample10; //xy=817.1427688598633,3628.2378721237183
 extern AudioPlayArrayResmp  monoSample9; //xy=818.3334426879883,3463.333336830139
+#ifndef NO_DEXED
 extern AudioSynthDexed          dexed3; //xy=846.6665954589844,1231.666669845581
 extern AudioSynthDexed          dexed2; //xy=849.9999351501465,1111.6667022705078
 extern AudioSynthDexed          dexed1; //xy=850.9008483886719,991.0756568908691
 extern AudioSynthDexed          dexed4; //xy=849.9999351501465,1356.6667022705078
+#endif
+#ifndef NO_FMDRUM
 extern AudioSynthFMDrum         fmDrum3; //xy=865.0000228881836,1789.9999504089355
 extern AudioSynthFMDrum         fmDrum2; //xy=870.0000228881836,1659.9999504089355
 extern AudioSynthFMDrum         fmDrum1; //xy=874.8809852600098,1534.5636081695557
+#endif
 // extern AudioSynthBraids         braids1;        //xy=874.9999732971191,1918.3333282470703
 extern AudioAmplifier           monoSynthAmp2; //xy=929.4998931884766,450.8808708190918
 extern AudioAmplifier           monoSynthAmp1; //xy=931.6665420532227,255.00001525878906
@@ -77,16 +85,22 @@ extern AudioAmplifier           monoSynthAmpAccent2; //xy=951.1667022705078,412.
 extern AudioAmplifier           monoSynthAmpAccent1; //xy=953.3333511352539,216.66668033599854
 extern AudioAmplifier           monoSynthAmpAccent3; //xy=953.1667594909668,610.8808794021606
 extern AudioAmplifier           monoSynthAmpAccent4; //xy=953.1667594909668,807.5475053787231
+#ifndef NO_DEXED
 extern AudioAmplifier           dexedAmp3; //xy=989.0989875793457,1273.9244232177734
 extern AudioAmplifier           dexedAmp2; //xy=992.4323272705078,1153.9244556427002
 extern AudioAmplifier           dexedAmp1; //xy=993.3332405090332,1033.3334102630615
 extern AudioAmplifier           dexedAmp4; //xy=992.4323272705078,1398.9244556427002
 extern AudioAmplifier           dexedAmpAccent3; //xy=1010.7658271789551,1230.591007232666
+#endif
 extern AudioEffectEnvelope      monoSampleAmpEnv4; //xy=1008.0950241088867,2568.476113319397
+#ifndef NO_DEXED
 extern AudioAmplifier           dexedAmpAccent2; //xy=1014.0991668701172,1110.5910396575928
 extern AudioAmplifier           dexedAmpAccent1; //xy=1015.0000801086426,989.9999942779541
+#endif
 extern AudioEffectEnvelope      monoSampleAmpEnv3; //xy=1009.7617111206055,2408.476113319397
+#ifndef NO_DEXED
 extern AudioAmplifier           dexedAmpAccent4; //xy=1014.0991668701172,1355.5910396575928
+#endif
 extern AudioEffectEnvelope      monoSampleAmpEnv2; //xy=1011.428337097168,2245.142861366272
 extern AudioEffectEnvelope      monoSampleAmpEnv1; //xy=1012.619010925293,2080.238326072693
 extern AudioEffectEnvelope      monoSampleAmpEnv16; //xy=1008.5711059570312,4660.046931743622

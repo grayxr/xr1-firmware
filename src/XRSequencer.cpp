@@ -539,18 +539,20 @@ namespace XRSequencer
             XRSound::handleMonoSynthNoteOnForTrackStep(track, step);
             
             break;
+#ifndef NO_DEXED
         case XRSound::T_DEXED_SYNTH:
             XRSound::handleDexedSynthNoteOnForTrackStep(track, step);
-            
             break;
+#endif
         case XRSound::T_BRAIDS_SYNTH:
             XRSound::handleBraidsNoteOnForTrackStep(track, step);
             
             break;
+#ifndef NO_FMDRUM
         case XRSound::T_FM_DRUM:
             XRSound::handleFmDrumNoteOnForTrackStep(track, step);
-            
             break;
+#endif
         case XRSound::T_MIDI:
             XRSound::handleMIDINoteOnForTrackStep(track, step);
             
@@ -980,15 +982,19 @@ namespace XRSequencer
         case XRSound::T_MONO_SYNTH:
             XRSound::handleMonoSynthNoteOnForTrack(track);
             break;
+#ifndef NO_DEXED
         case XRSound::T_DEXED_SYNTH:
             XRSound::handleDexedSynthNoteOnForTrack(track);
             break;
+#endif
         case XRSound::T_BRAIDS_SYNTH:
             XRSound::handleBraidsNoteOnForTrack(track);
             break;
+#ifndef NO_FMDRUM
         case XRSound::T_FM_DRUM:
             XRSound::handleFmDrumNoteOnForTrack(track);
             break;
+#endif
         case XRSound::T_MIDI:
             XRSound::handleMIDINoteOnForTrack(track);
             break;

@@ -9,7 +9,12 @@
 #include "FastTouch.h"
 
 
-
+#ifdef BUILD_FOR_LINUX
+int fastTouchRead(int  pin)
+{
+    return 0; // un-implemented!
+}
+#else
 
 #if defined(CORE_TEENSY)
 
@@ -792,6 +797,7 @@ int fastTouchRead(int pin)
         
     }
 }
+#endif
 #endif
 #endif
 

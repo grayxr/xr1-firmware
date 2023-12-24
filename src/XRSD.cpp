@@ -409,6 +409,7 @@ namespace XRSD
         _sampleFileListPagedLoaded = false;
     }
 
+#ifndef NO_DEXED
     void loadDexedVoiceToCurrentTrack(int t)
     {
         File sysexDir;
@@ -419,7 +420,7 @@ namespace XRSD
         AudioNoInterrupts();
 
         sysexDir = SD.open(voiceBankName.c_str());
-        
+
         AudioInterrupts();
 
         if (!sysexDir || !sysexDir.isDirectory())
@@ -476,6 +477,7 @@ namespace XRSD
 
         AudioInterrupts();
     }
+#endif
 
     bool get_sd_voice(File sysex, uint8_t voice_number, uint8_t *data)
     {

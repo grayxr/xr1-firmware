@@ -156,10 +156,11 @@ namespace XRKeyMatrix
             XRSequencer::toggleSequencerPlayback(key);
 
             // TODO: allowedModesToDrawSequencerFrom ?
+#ifndef NO_DEXED
             if (currentUXMode != XRUX::UX_MODE::SOUND_MENU_DEXED_SYSEX_BROWSER) {
                 XRDisplay::drawSequencerScreen(false);
             }
-
+#endif
             return;
         }
 
@@ -698,7 +699,7 @@ namespace XRKeyMatrix
 
             return;
         }
-
+#ifndef NO_DEXED
         else if (currentUXMode == XRUX::UX_MODE::SOUND_MENU_DEXED_SYSEX_BROWSER && key == SELECT_BTN_CHAR) {
             auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
 
@@ -710,6 +711,7 @@ namespace XRKeyMatrix
 
             return;
         }
+#endif
     }
 
     void handleHoldForKey(char key)
@@ -939,7 +941,7 @@ namespace XRKeyMatrix
 
                     auto cursorPos = XRMenu::getCursorPosition();
                     auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-
+#ifndef NO_DEXED
                     if (XRSound::currentPatternSounds[currTrackNum].type == XRSound::T_DEXED_SYNTH) {
                         if (XRMenu::getDexedSoundMenuItems()[cursorPos] == "BROWSE DEXED SYSEX") {
                             Serial.println("in browse dexed sysex sub menu");
@@ -948,6 +950,7 @@ namespace XRKeyMatrix
                             XRDisplay::drawDexedSysexBrowser();
                         }
                     }
+#endif
 
                     return true;
                 }
@@ -1392,16 +1395,26 @@ namespace XRKeyMatrix
                 }
                 else if (currType == XRSound::T_MONO_SYNTH)
                 {
+#ifndef NO_DEXED
                     newType = XRSound::T_DEXED_SYNTH;
+#elif not defined(NO_FMDRUM)
+                    newType = XRSound::T_FM_DRUM;
+#else
+                    newType = XRSound::T_MIDI;
+#endif
                 }
+#ifndef NO_DEXED
                 else if (currType == XRSound::T_DEXED_SYNTH)
                 {
                     newType = XRSound::T_FM_DRUM;
                 }
+#endif
+#ifndef NO_FMDRUM
                 else if (currType == XRSound::T_FM_DRUM)
                 {
                     newType = XRSound::T_MIDI;
-                } 
+                }
+#endif
                 else if (currType == XRSound::T_MIDI)
                 {
                     newType = XRSound::T_MONO_SAMPLE;
@@ -1417,12 +1430,18 @@ namespace XRKeyMatrix
                 }
                 else if (currType == XRSound::T_MONO_SYNTH)
                 {
+#ifndef NO_DEXED
                     newType = XRSound::T_DEXED_SYNTH;
+#else
+                    newType = XRSound::T_MIDI;
+#endif
                 }
+#ifndef NO_DEXED
                 else if (currType == XRSound::T_DEXED_SYNTH)
                 {
                     newType = XRSound::T_MIDI;
                 }
+#endif
                 // else if (currType == XRSound::T_BRAIDS_SYNTH)
                 // {
                 //     newType = XRSound::T_MIDI;

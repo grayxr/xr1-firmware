@@ -9,10 +9,20 @@
 #include <XRHelpers.h>
 #include <string>
 #include <map>
-
+#ifdef BUILD_FOR_LINUX
+#include "u8g2_opengl.h"
+#include "u8g2_opengl_main.h"
+#include <Wire.h>
+#include <Keypad.h>
+#include "XRKeyMatrix.h"
+#endif
 namespace XRDisplay
 {
+#ifdef BUILD_FOR_LINUX
+    U8G2_128X64_OPENGL<TwoWire, Keypad> u8g2(U8G2_R0, /* clock=*/ 13, /* data=*/ 11, /* cs=*/ 10, /* dc=*/ 14, /* reset=*/ 15, &Wire1, &XRKeyMatrix::kpd);
+#else
     U8G2_SSD1309_128X64_NONAME0_F_4W_SW_SPI u8g2(U8G2_R0, /* clock=*/13, /* data=*/11, /* cs=*/10, /* dc=*/14, /* reset=*/15);
+#endif
 
     void init()
     {
@@ -467,14 +477,18 @@ namespace XRDisplay
             {
                 trackInfoStr += XRSound::getSoundTypeNameStr(currSoundForTrack.type);
             }
+#ifndef NO_DEXED
             else if (currSoundForTrack.type == XRSound::T_DEXED_SYNTH)
             {
                 trackInfoStr += XRSound::getSoundTypeNameStr(currSoundForTrack.type);
             }
+#endif
+#ifndef NO_FMDRUM
             else if (currSoundForTrack.type == XRSound::T_FM_DRUM)
             {
                 trackInfoStr += XRSound::getSoundTypeNameStr(currSoundForTrack.type);
             }
+#endif
             else if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE)
             {
                 std::string sampleName(currSoundForTrack.sampleName);
@@ -499,7 +513,9 @@ namespace XRDisplay
             // draw track description / main icon area
             if (
                 currSoundForTrack.type == XRSound::T_MONO_SYNTH ||
+#ifndef NO_DEXED
                 currSoundForTrack.type == XRSound::T_DEXED_SYNTH ||
+#endif
                 currSoundForTrack.type == XRSound::T_MIDI ||
                 currSoundForTrack.type == XRSound::T_CV_GATE)
             {
@@ -716,7 +732,9 @@ namespace XRDisplay
         else if (
             (currSoundForTrack.type == XRSound::T_EMPTY) ||
             (currSoundForTrack.type == XRSound::T_CV_TRIG) ||
+#ifndef NO_DEXED
             (currSoundForTrack.type == XRSound::T_FM_DRUM) ||
+#endif
             (currSoundForTrack.type == XRSound::T_MONO_SAMPLE))
         {
             drawExtendedControlMods();
@@ -999,11 +1017,12 @@ namespace XRDisplay
         auto menuItemMax = SOUND_MENU_ITEM_MAX;
 
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-
+#ifndef NO_DEXED
         if (XRSound::currentPatternSounds[currTrackNum].type == XRSound::T_DEXED_SYNTH) {
             menuItems = XRMenu::getDexedSoundMenuItems();
             menuItemMax = DEXED_SOUND_MENU_ITEM_MAX;
         }
+#endif
 
         drawGenericMenuList("SOUND", menuItems, menuItemMax);
 
