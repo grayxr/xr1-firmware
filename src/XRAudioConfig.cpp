@@ -220,8 +220,11 @@ AudioMixer4              inputMixerLeft;         //xy=2676.666534423828,2636.666
 AudioMixer4              inputMixerRight; //xy=2678.3335189819336,2711.6668577194214
 AudioMixer4              OutputMixerLeft; //xy=2936.666618347168,2585.000104904175
 AudioMixer4              OutputMixerRight; //xy=2941.666778564453,2656.6668548583984
+#ifdef BUILD_FOR_LINUX
+AudioOutputSoundIO       i2s1;            //xy=3132.88089752197
+#else
 AudioOutputI2S           i2s1;           //xy=3132.8808975219727,2627.500024795532
-
+#endif
 AudioConnection          patchCord1(monoSynthDc2, monoSynthFilterEnv2);
 AudioConnection          patchCord2(monoSynthDc1, monoSynthFilterEnv1);
 AudioConnection          patchCord3(monoSynthDc3, monoSynthFilterEnv3);

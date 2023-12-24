@@ -11,6 +11,9 @@
 #include <synth_fm_drum.h>
 #endif
 // #include <synth_braids.h>
+#ifdef BUILD_FOR_LINUX
+#include "output_soundio.h"
+#endif
 
 // GUItool: begin automatically generated code
 extern AudioSynthWaveformDc     monoSynthDc2; //xy=128.33333206176758,474.28567600250244
@@ -238,8 +241,11 @@ extern AudioMixer4              inputMixerLeft;         //xy=2676.666534423828,2
 extern AudioMixer4              inputMixerRight; //xy=2678.3335189819336,2711.6668577194214
 extern AudioMixer4              OutputMixerLeft; //xy=2936.666618347168,2585.000104904175
 extern AudioMixer4              OutputMixerRight; //xy=2941.666778564453,2656.6668548583984
+#ifdef BUILD_FOR_LINUX
+extern AudioOutputSoundIO       i2s1;
+#else
 extern AudioOutputI2S           i2s1;           //xy=3132.8808975219727,2627.500024795532
-
+#endif
 extern AudioConnection          patchCord1;
 extern AudioConnection          patchCord2;
 extern AudioConnection          patchCord3;
