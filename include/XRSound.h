@@ -12,21 +12,21 @@ namespace XRSound
 {
     /*** BEGIN SOUNDS ***/
 
-    enum SOUND_TYPE
+    enum SOUND_TYPE : uint8_t
     {
         T_EMPTY = 0,
-        T_MONO_SAMPLE,
-        T_MONO_SYNTH,
+        T_MONO_SAMPLE = 1,
+        T_MONO_SYNTH = 2,
 #ifndef NO_DEXED
-        T_DEXED_SYNTH,
+        T_DEXED_SYNTH = 3,
 #endif
-        T_BRAIDS_SYNTH,
+        T_BRAIDS_SYNTH = 4,
 #ifndef NO_FMDRUM
-        T_FM_DRUM,
+        T_FM_DRUM = 5,
 #endif
-        T_MIDI,
-        T_CV_GATE,
-        T_CV_TRIG,
+        T_MIDI = 6,
+        T_CV_GATE = 7,
+        T_CV_TRIG = 8,
     };
 
     typedef struct

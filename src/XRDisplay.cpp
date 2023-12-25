@@ -15,11 +15,12 @@
 #include <Wire.h>
 #include <Keypad.h>
 #include "XRKeyMatrix.h"
+#include "XRVersa.h"
 #endif
 namespace XRDisplay
 {
 #ifdef BUILD_FOR_LINUX
-    U8G2_128X64_OPENGL<TwoWire, Keypad> u8g2(U8G2_R0, /* clock=*/ 13, /* data=*/ 11, /* cs=*/ 10, /* dc=*/ 14, /* reset=*/ 15, &Wire1, &XRKeyMatrix::kpd);
+    U8G2_128X64_OPENGL<TwoWire, Keypad, Adafruit_MPR121> u8g2(U8G2_R0, /* clock=*/ 13, /* data=*/ 11, /* cs=*/ 10, /* dc=*/ 14, /* reset=*/ 15, &Wire1, &XRKeyMatrix::kpd, &XRVersa::mpr121_a);
 #else
     U8G2_SSD1309_128X64_NONAME0_F_4W_SW_SPI u8g2(U8G2_R0, /* clock=*/13, /* data=*/11, /* cs=*/10, /* dc=*/14, /* reset=*/15);
 #endif

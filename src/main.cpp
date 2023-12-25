@@ -21,7 +21,7 @@ void loop(void)
 
 #ifdef BUILD_FOR_LINUX
 int st7735_main(int argc, char** argv) {
-    SD.setSDCardFolderPath("/Users/nicholasnewdigate/Audio/dev-audio/audio enjoyer/xr-1");
+    SD.setSDCardFolderPath("/Users/nicholasnewdigate/Audio/dev-audio");
     return 0;
 }
 #endif
