@@ -109,6 +109,7 @@ target_link_libraries(xr1 -L/usr/local/lib/ rtmidi)
 target_link_libraries(xr1 "-L/usr/local/lib -lsoundio")
 
 target_link_libraries(xr1 ${teensy_x86_u8g2_stubs_LIBS})
+target_link_libraries(xr1 -L../lib imgui)
 
 target_link_libraries(xr1 ${LIBS})
 

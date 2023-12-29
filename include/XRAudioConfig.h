@@ -12,7 +12,8 @@
 #endif
 // #include <synth_braids.h>
 #ifdef BUILD_FOR_LINUX
-#include "output_soundio.h"
+#include <output_soundio.h>
+#include <input_soundio.h>
 #endif
 
 // GUItool: begin automatically generated code
@@ -234,7 +235,6 @@ extern AudioMixer4              voiceMixLeft2; //xy=2004.2142715454102,3393.6905
 extern AudioMixer4              voiceMixRight2; //xy=2011.6902236938477,3460.4998817443848
 extern AudioMixer4              mainMixerLeft;         //xy=2447.500347137451,2413.3336753845215
 extern AudioMixer4              mainMixerRight;         //xy=2450.8332710266113,2485.0003452301025
-extern AudioInputI2S            i2s2;           //xy=2470.000587463379,2666.666856765747
 extern AudioAnalyzePeak         peak_left;          //xy=2476.666847229004,2618.333688735962
 extern AudioAnalyzePeak         peak_right; //xy=2480.0001831054688,2718.333366394043
 extern AudioMixer4              inputMixerLeft;         //xy=2676.666534423828,2636.6666107177734
@@ -242,9 +242,11 @@ extern AudioMixer4              inputMixerRight; //xy=2678.3335189819336,2711.66
 extern AudioMixer4              OutputMixerLeft; //xy=2936.666618347168,2585.000104904175
 extern AudioMixer4              OutputMixerRight; //xy=2941.666778564453,2656.6668548583984
 #ifdef BUILD_FOR_LINUX
-extern AudioOutputSoundIO       i2s1;
+extern AudioOutputSoundIO       i2s1;            //xy=3132.88089752197
+extern AudioInputSoundIO        i2s2;           //xy=2470.000587463379,2666.666856765747
 #else
-extern AudioOutputI2S           i2s1;           //xy=3132.8808975219727,2627.500024795532
+AudioOutputI2S           i2s1;           //xy=3132.8808975219727,2627.500024795532
+AudioInputI2S            i2s2;           //xy=2470.000587463379,2666.666856765747
 #endif
 extern AudioConnection          patchCord1;
 extern AudioConnection          patchCord2;

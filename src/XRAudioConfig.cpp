@@ -1,4 +1,5 @@
 #include <XRAudioConfig.h>
+#include <input_soundio.h>
 
 // GUItool: begin automatically generated code
 AudioSynthWaveformDc     monoSynthDc2; //xy=128.33333206176758,474.28567600250244
@@ -213,7 +214,7 @@ AudioMixer4              voiceMixLeft2; //xy=2004.2142715454102,3393.69055175781
 AudioMixer4              voiceMixRight2; //xy=2011.6902236938477,3460.4998817443848
 AudioMixer4              mainMixerLeft;         //xy=2447.500347137451,2413.3336753845215
 AudioMixer4              mainMixerRight;         //xy=2450.8332710266113,2485.0003452301025
-AudioInputI2S            i2s2;           //xy=2470.000587463379,2666.666856765747
+
 AudioAnalyzePeak         peak_left;          //xy=2476.666847229004,2618.333688735962
 AudioAnalyzePeak         peak_right; //xy=2480.0001831054688,2718.333366394043
 AudioMixer4              inputMixerLeft;         //xy=2676.666534423828,2636.6666107177734
@@ -222,8 +223,10 @@ AudioMixer4              OutputMixerLeft; //xy=2936.666618347168,2585.0001049041
 AudioMixer4              OutputMixerRight; //xy=2941.666778564453,2656.6668548583984
 #ifdef BUILD_FOR_LINUX
 AudioOutputSoundIO       i2s1;            //xy=3132.88089752197
+AudioInputSoundIO        i2s2;           //xy=2470.000587463379,2666.666856765747
 #else
 AudioOutputI2S           i2s1;           //xy=3132.8808975219727,2627.500024795532
+AudioInputI2S            i2s2;           //xy=2470.000587463379,2666.666856765747
 #endif
 AudioConnection          patchCord1(monoSynthDc2, monoSynthFilterEnv2);
 AudioConnection          patchCord2(monoSynthDc1, monoSynthFilterEnv1);

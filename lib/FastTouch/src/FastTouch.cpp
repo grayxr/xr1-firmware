@@ -10,9 +10,18 @@
 
 
 #ifdef BUILD_FOR_LINUX
-int fastTouchRead(int  pin)
+#include <map>
+std::map<int, int> _fastTouchMap = {};
+void setFastTouch( int pin, int value) {
+    _fastTouchMap[pin] = value;
+}
+
+int fastTouchRead(int pin)
 {
-    return 0; // un-implemented!
+    if (_fastTouchMap.count(pin) == 1) {
+        return _fastTouchMap[pin];
+    }
+    return 0;
 }
 #else
 
