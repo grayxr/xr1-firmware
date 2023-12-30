@@ -39,7 +39,7 @@ namespace XRSound
     } SOUND;
 
     // MONO SAMPLE
-    enum MONO_SAMPLE_PARAM {
+    enum MONO_SAMPLE_PARAM : uint8_t {
         MSMP_SAMPLEPLAYRATE = 0,
         MSMP_LOOPTYPE,
         MSMP_LOOPSTART,
@@ -60,7 +60,7 @@ namespace XRSound
     };
 
     // MONO SYNTH
-    enum MONO_SYNTH_PARAM {
+    enum MONO_SYNTH_PARAM  : uint8_t {
         MSYN_WAVE = 0,
         MSYN_DETUNE = 1,
         MSYN_FINE = 2,
@@ -84,14 +84,14 @@ namespace XRSound
     };
 
     // DEXED SYNTH
-    enum DEXED_SYNTH_PARAM {
+    enum DEXED_SYNTH_PARAM  : uint8_t{
         DEXE_ALGO = 0,
         DEXE_LEVEL = 15,
         DEXE_PAN = 16,
     };
 
     // BRAIDS SYNTH
-    enum BRAIDS_SYNTH_PARAM {
+    enum BRAIDS_SYNTH_PARAM  : uint8_t {
         BRAIDS_TIMBRE = 0,
         BRAIDS_COLOR = 1,
         BRAIDS_MOD = 2,
@@ -101,7 +101,7 @@ namespace XRSound
     };
 
     // FM DRUM
-    enum FM_DRUM_PARAM {
+    enum FM_DRUM_PARAM  : uint8_t {
         FMD_FREQ = 0,
         FMD_FM = 1,
         FMD_DECAY = 2,
@@ -295,7 +295,7 @@ namespace XRSound
 
     /*** END VOICES/INSTANCES */
 
-    enum WAVEFORM_TYPE
+    enum WAVEFORM_TYPE : uint8_t
     {
         SAW = WAVEFORM_SAWTOOTH,
         RSAW = WAVEFORM_SAWTOOTH_REVERSE,
@@ -305,7 +305,7 @@ namespace XRSound
         SINE = WAVEFORM_SINE,
     };
 
-    enum SOUND_CONTROL_MOD_TYPE
+    enum SOUND_CONTROL_MOD_TYPE  : uint8_t
     {
         DEFAULT = 0,
         RANGE,

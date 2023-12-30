@@ -979,7 +979,7 @@ namespace XRDisplay
         u8g2.drawLine(0, 52, 128, 52);
         u8g2.drawStr(0, pageTabPosY, currPageNameForTrack.c_str());
 
-        if (currTrackPageCount == 1)
+        if (currTrackPageCount == 1 || currTrackPageCount == 0)
             return;
 
         if (currTrackPageCount == 5)

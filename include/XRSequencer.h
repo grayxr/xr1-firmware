@@ -10,7 +10,7 @@ namespace XRSequencer
 {
     // step
 
-    enum STEP_STATE
+    enum STEP_STATE : uint8_t
     {
         STATE_OFF = 0,
         STATE_ON = 1,
@@ -86,7 +86,7 @@ namespace XRSequencer
 
     // sequencer state
 
-    enum SEQUENCER_PLAYBACK_STATE
+    enum SEQUENCER_PLAYBACK_STATE : uint8_t
     {
         STOPPED = 0,
         RUNNING = 1,
@@ -125,7 +125,7 @@ namespace XRSequencer
 
     // mods
 
-    enum TRACK_MOD
+    enum TRACK_MOD : uint8_t
     {
         NOTE = 0,
         OCTAVE = 1,
@@ -152,7 +152,7 @@ namespace XRSequencer
     } PATTERN_TRACK_MODS;
 
     // layers
-    enum LAYER {
+    enum LAYER : uint8_t {
         SOUND = 0,
     };
 

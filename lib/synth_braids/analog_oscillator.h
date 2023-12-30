@@ -38,7 +38,7 @@
 
 namespace braids {
 
-enum AnalogOscillatorShape {
+enum AnalogOscillatorShape  : uint8_t{
   OSC_SHAPE_SAW,
   OSC_SHAPE_VARIABLE_SAW,
   OSC_SHAPE_CSAW,
@@ -50,7 +50,7 @@ enum AnalogOscillatorShape {
   OSC_SHAPE_BUZZ
 };
 
-enum SyncMode {
+enum SyncMode  : uint8_t{
   OSCILLATOR_SYNC_MODE_OFF,
   OSCILLATOR_SYNC_MODE_MASTER,
   OSCILLATOR_SYNC_MODE_SLAVE
