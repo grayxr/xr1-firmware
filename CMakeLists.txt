@@ -86,6 +86,7 @@ add_definitions(-DBUILD_FOR_LINUX)
 
 add_executable(xr1
         src/main.cpp
+        src/XRAsyncPSRAMLoader.cpp
         src/XRAudio.cpp
         src/XRAudioConfig.cpp
         src/XRClock.cpp

@@ -1,3 +1,4 @@
+#include <XRAsyncPSRAMLoader.h>
 #include <XRMain.h>
 #include <XRHelpers.h>
 #include <XRSequencer.h>
@@ -67,6 +68,7 @@ namespace XRMain
 
     void update()
     {
+        XRAsyncPSRAMLoader::handleAsyncPSRAMLoading();
         XRAudio::handleHeadphones();
 
         //if (!(elapsedMs % 50)) {
