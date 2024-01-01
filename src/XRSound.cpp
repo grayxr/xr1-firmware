@@ -15,7 +15,6 @@ namespace XRSound
     // private variables
 
     // 8MB max of samples per pattern in external PSRAM, 1 sample allowed per track for now    
-    newdigate::audiosample *_extPatternSamples[MAXIMUM_SEQUENCER_TRACKS];
     newdigate::dualheapasyncflashloader _loader;
     uint8_t _numChannels = 1;
 
@@ -1494,13 +1493,17 @@ namespace XRSound
 
         // if sample has valid name, assume it is loaded in PSRAM and can be played
         if (trackSampleName.length() > 0) {
-            monoSampleInstances[track].sample.playRaw(
-                _extPatternSamples[track]->sampledata, 
-                _extPatternSamples[track]->samplesize / 2, 
-                _numChannels
-            );
-        }
+            const auto &sampleName = std::string("/audio enjoyer/xr-1/samples/") + std::string(trackSampleName);
 
+            newdigate::audiosample *sample = XRAsyncPSRAMLoader::getReadSample(&sampleName);
+            if (sample != nullptr) {
+                monoSampleInstances[track].sample.playRaw(
+                    sample->sampledata,
+                    sample->samplesize / 2,
+                    _numChannels
+                );
+            }
+        }
         AudioNoInterrupts();
 
         // always re-initialize loop type
@@ -1709,14 +1712,18 @@ namespace XRSound
         monoSampleInstances[track].ampEnv.noteOn();
 
         // if sample has valid name, assume it is loaded in PSRAM and can be played
-        if (_extPatternSamples[track] && trackSampleName.length() > 0) {
-            monoSampleInstances[track].sample.playRaw(
-                _extPatternSamples[track]->sampledata, 
-                _extPatternSamples[track]->samplesize / 2, 
-                _numChannels
-            );
-        }
+        if (trackSampleName.length() > 0) {
+            const auto &sampleName = std::string("/audio enjoyer/xr-1/samples/") + std::string(trackSampleName);
 
+            newdigate::audiosample *sample = XRAsyncPSRAMLoader::getReadSample(&sampleName);
+            if (sample != nullptr) {
+                monoSampleInstances[track].sample.playRaw(
+                    sample->sampledata,
+                    sample->samplesize / 2,
+                    _numChannels
+                );
+            }
+        }
         AudioNoInterrupts();
 
         // always re-initialize loop type
@@ -2175,7 +2182,7 @@ namespace XRSound
         
         strcpy(currentPatternSounds[track].sampleName, selected.c_str());
         // TODO: Nic: when playing, we want to do it async - code below is fine when sequencer is not playing
-        _extPatternSamples[track] = XRAsyncPSRAMLoader::loadSampleSync(&sampleNameStr);
+        XRAsyncPSRAMLoader::loadSampleSync(&sampleNameStr);
     }
 
     void changeTrackSoundType(uint8_t t, SOUND_TYPE newType)
