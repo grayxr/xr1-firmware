@@ -72,10 +72,12 @@ include_directories(${teensy_x86_u8g2_stubs_opengl_INCLUDE_DIR})
 find_path(RTMIDI_INCLUDE_DIR RtMidi.h
   PATHS
     /usr/local/include
+    /usr/local/include/rtmidi
     /usr/include
     /usr/include/rtmidi)
 include_directories(${RTMIDI_INCLUDE_DIR})
 
+include_directories(/usr/local/include) # /usr/local/include/soundio/soundio.h
 include(opengl.cmake.in)
 
 add_subdirectory(lib/FastTouch/src)
