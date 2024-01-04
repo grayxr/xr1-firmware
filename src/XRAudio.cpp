@@ -19,7 +19,7 @@ namespace XRAudio
         sgtl5000_1.inputSelect(AUDIO_INPUT_LINEIN);
         sgtl5000_1.lineInLevel(0);
         sgtl5000_1.lineOutLevel(29);
-        sgtl5000_1.volume(0.88);
+        sgtl5000_1.volume(0.90);
 
         currentHeadphoneVolume = 0.5;
     }
@@ -32,7 +32,7 @@ namespace XRAudio
         {
             float newValue = (float)analog.getValue() / (float)1023;
 
-            if (abs(currentHeadphoneVolume - newValue) >= 0.025 && newValue < 0.89)
+            if (abs(currentHeadphoneVolume - newValue) >= 0.025 && newValue < 0.99)
             {
                 currentHeadphoneVolume = newValue;
 

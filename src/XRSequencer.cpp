@@ -692,9 +692,9 @@ namespace XRSequencer
             Serial.println("enter _dequeuePattern!");
 
             _dequeuePattern = false;
-
+            
             // IMPORTANT: must change sounds before changing sequencer data!
-            XRSound::manageSoundDataForPatternChange(_queuedPattern.bank, _queuedPattern.number);
+            XRSound::loadSoundDataForPatternChange(_queuedPattern.bank, _queuedPattern.number);
             swapSequencerMemoryForPattern(_queuedPattern.bank, _queuedPattern.number);
             
             Serial.println("finished swapping seq mem!");
@@ -732,11 +732,7 @@ namespace XRSequencer
 
     void swapSequencerMemoryForPattern(int newBank, int newPattern)
     {
-        // AudioNoInterrupts();
         auto newPatternData = sequencer.banks[newBank].patterns[newPattern];
-
-        // save any track step mods for current pattern to SD
-        XRSD::savePatternTrackStepModsToSdCard();
 
         // swap sequencer memory data
         sequencer.banks[_currentSelectedBank].patterns[_currentSelectedPattern] = heapPattern;
@@ -751,7 +747,7 @@ namespace XRSequencer
         _currentSelectedTrack = 0;
 
         // load any track step mods for new bank/pattern from SD
-        if (!XRSD::loadPatternTrackStepModsFromSdCard(_currentSelectedBank, _currentSelectedPattern)) {
+        if (!XRSD::loadPatternTrackStepModsFromSdCard(newBank, newPattern)) {
             initPatternTrackStepMods();
         }
     }

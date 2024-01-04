@@ -18,6 +18,9 @@ namespace XRSound
     newdigate::flashloader _loader;
     uint8_t _numChannels = 1;
 
+    bool patternSoundsDirty = false;
+    bool patternSoundStepModsDirty = false;
+
     float _noteToFreqArr[13] = {
         16.35, 17.32, 18.35, 19.45, 20.60, 21.83, 23.12, 24.50, 25.96, 27.50, 29.14, 30.87, 32.70
     };
@@ -65,6 +68,20 @@ namespace XRSound
         0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
         100,0,0,0,0, // level, pan, n/a, n/a, n/a
         0,0,0,0,0  // n/a, n/a, n/a, n/a, n/a
+    };
+
+    const uint8_t dexedInitVoice[MAXIMUM_DEXED_SOUND_PARAMS] = {
+      99, 99, 99, 99, 99, 99, 99, 00, 33, 00, 00, 00, 00, 00, 00, 00, 00, 00, 01, 00, 00, // OP6 eg_rate_1-4, level_1-4, kbd_lev_scl_brk_pt, kbd_lev_scl_lft_depth, kbd_lev_scl_rht_depth, kbd_lev_scl_lft_curve, kbd_lev_scl_rht_curve, kbd_rate_scaling, amp_mod_sensitivity, key_vel_sensitivity, operator_output_level, osc_mode, osc_freq_coarse, osc_freq_fine, osc_detune
+      99, 99, 99, 99, 99, 99, 99, 00, 33, 00, 00, 00, 00, 00, 00, 00, 00, 00, 01, 00, 00, // OP5
+      99, 99, 99, 99, 99, 99, 99, 00, 33, 00, 00, 00, 00, 00, 00, 00, 00, 00, 01, 00, 00, // OP4
+      99, 99, 99, 99, 99, 99, 99, 00, 33, 00, 00, 00, 00, 00, 00, 00, 00, 00, 01, 00, 00, // OP4
+      99, 99, 99, 99, 99, 99, 99, 00, 33, 00, 00, 00, 00, 00, 00, 00, 00, 00, 01, 00, 00, // OP4
+      99, 99, 99, 99, 99, 99, 99, 00, 33, 00, 00, 00, 00, 00, 00, 00, 99, 00, 01, 00, 00, // OP4
+      99, 99, 99, 99, 50, 50, 50, 50,                                                     // 4 * pitch EG rates, 4 * pitch EG level
+      01, 00, 01,                                                                         // algorithm, feedback, osc sync
+      35, 00, 00, 00, 01, 00,                                                             // lfo speed, lfo delay, lfo pitch_mod_depth, lfo_amp_mod_depth, lfo_sync, lfo_waveform
+      03, 48,                                                                             // pitch_mod_sensitivity, transpose
+      73, 78, 73, 84, 32, 86, 79, 73, 67, 69                                              // 10 * char for name ("INIT VOICE")
     };
 
     int32_t braidsSynthInitParams[MAXIMUM_SOUND_PARAMS] = {
@@ -412,7 +429,7 @@ namespace XRSound
             }
 
             for (int dp = 0; dp < MAXIMUM_DEXED_SOUND_PARAMS; dp++) {
-                nextPatternSounds[t].dexedParams[dp] = 0;
+                nextPatternSounds[t].dexedParams[dp] = dexedInitVoice[dp];
             }
 
             strcpy(nextPatternSounds[t].name, "NO SOUND");
@@ -457,7 +474,8 @@ namespace XRSound
             monoSampleInstances[i].ampEnv.release(msmpArel);
 
             monoSampleInstances[i].ampAccent.gain(1.0); // used by track velocity
-            monoSampleInstances[i].amp.gain(msmpLvl * 0.05); // used by sound volume
+
+            monoSampleInstances[i].amp.gain(msmpLvl); // used by sound volume
 
             PANNED_AMOUNTS monoSamplePannedAmounts = getStereoPanValues(msmpPan);
             monoSampleInstances[i].left.gain(monoSamplePannedAmounts.left);
@@ -515,7 +533,8 @@ namespace XRSound
 
 
             monoSynthInstances[s].ampAccent.gain(1.0); // used by track velocity
-            monoSynthInstances[s].amp.gain(msynLvl * 0.05); // used by sound volume
+
+            monoSynthInstances[s].amp.gain(msynLvl); // used by sound volume
 
             PANNED_AMOUNTS monoSynthPannedAmounts = getStereoPanValues(msynPan);
             monoSynthInstances[s].left.gain(monoSynthPannedAmounts.left);
@@ -530,7 +549,8 @@ namespace XRSound
             dexedInstances[d].dexed.loadInitVoice();
 
             dexedInstances[d].ampAccent.gain(1.0); // used by track velocity
-            dexedInstances[d].amp.gain(dexeLvl * 0.05);
+
+            dexedInstances[d].amp.gain(dexeLvl);
 
             PANNED_AMOUNTS dexedSynthPannedAmounts = getStereoPanValues(dexePan);
             dexedInstances[d].left.gain(dexedSynthPannedAmounts.left);
@@ -562,7 +582,8 @@ namespace XRSound
             fmDrumInstances[f].fmDrum.init();
 
             fmDrumInstances[f].ampAccent.gain(1.0); // used by track velocity
-            fmDrumInstances[f].amp.gain(fmDrumLvl * 0.05);
+
+            fmDrumInstances[f].amp.gain(fmDrumLvl);
 
             PANNED_AMOUNTS fmDrumPannedAmounts = getStereoPanValues(fmDrumPan);
             fmDrumInstances[f].left.gain(fmDrumPannedAmounts.left);
@@ -681,16 +702,22 @@ namespace XRSound
     void initTrackSound(int8_t track)
     {
         // init sound and sample names
-        strcpy(currentPatternSounds[track].name, "NO SOUND");
+        strcpy(currentPatternSounds[track].name, "");
         strcpy(currentPatternSounds[track].sampleName, "");
 
         // init generic sound params
         auto soundType = currentPatternSounds[track].type;
         auto initParams = soundTypeInitParams[soundType];
-        for (int p=0; p<MAXIMUM_SOUND_PARAMS; p++)
+        for (size_t p=0; p<MAXIMUM_SOUND_PARAMS; p++)
         {
             currentPatternSounds[track].params[p] = initParams[p];
         }
+
+        // // dexed "init voice" params
+        // for (size_t d=0; d<MAXIMUM_DEXED_SOUND_PARAMS; d++)
+        // {
+        //     currentPatternSounds[track].dexedParams[d] = dexedInitVoice[d];
+        // }
     }
 
     void setSoundNeedsReinit(int sound, bool reinit)
@@ -722,15 +749,20 @@ namespace XRSound
         soundNeedsReinit[track] = false;
     }
 
-    void manageSoundDataForPatternChange(int nextBank, int nextPattern)
+    void saveSoundDataForPatternChange()
     {
-        // TODO: check if sounds are "dirty" and require SD card save,
-        // otherwise skip SD card writes to save time / perf hit / etc
+        if (patternSoundsDirty) {
+            XRSD::savePatternSounds();
+        }
 
-        XRSD::savePatternSounds();
-        XRSD::savePatternSoundStepModsToSdCard();
+        if (patternSoundStepModsDirty) {
+            XRSD::savePatternSoundStepModsToSdCard();
+        }
+    }
 
-        if (!XRSD::loadPatternSounds(nextBank, nextPattern))
+    void loadSoundDataForPatternChange(int nextBank, int nextPattern)
+    {
+        if (!XRSD::loadNextPatternSounds(nextBank, nextPattern))
         {
             initNextPatternSounds();
         }
@@ -1832,31 +1864,31 @@ namespace XRSound
 
     void handleBraidsNoteOnForTrackStep(int track, int step)
     {
-        auto &trackToUse = XRSequencer::getHeapTrack(track);
-        auto &stepToUse = XRSequencer::getHeapStep(track, step);
+        // auto &trackToUse = XRSequencer::getHeapTrack(track);
+        // auto &stepToUse = XRSequencer::getHeapStep(track, step);
 
-        uint8_t noteToUse = trackToUse.note;
-        if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::NOTE])
-        {
-            noteToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::NOTE];
-        }
+        // uint8_t noteToUse = trackToUse.note;
+        // if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::NOTE])
+        // {
+        //     noteToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::NOTE];
+        // }
 
-        uint8_t octaveToUse = trackToUse.octave;
-        if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::OCTAVE])
-        {
-            octaveToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::OCTAVE];
-        }
+        // uint8_t octaveToUse = trackToUse.octave;
+        // if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::OCTAVE])
+        // {
+        //     octaveToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::OCTAVE];
+        // }
 
-        uint8_t velocityToUse = trackToUse.velocity;
-        if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
-            if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::VELOCITY]) {
-                velocityToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::VELOCITY];
-            } else {
-                velocityToUse = max(trackToUse.velocity, XRSequencer::heapPattern.accent);
-            }
-        }
+        // uint8_t velocityToUse = trackToUse.velocity;
+        // if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
+        //     if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::VELOCITY]) {
+        //         velocityToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::VELOCITY];
+        //     } else {
+        //         velocityToUse = max(trackToUse.velocity, XRSequencer::heapPattern.accent);
+        //     }
+        // }
 
-        int midiNote = (noteToUse + (12 * (octaveToUse)));
+        // int midiNote = (noteToUse + (12 * (octaveToUse)));
 
         // braidsInstances[track].braids.set_braids_pitch(midiNote << 7);
     }
@@ -2142,8 +2174,6 @@ namespace XRSound
         AudioNoInterrupts();
 
         initTrackSound(t);
-
-        // TODO: adjust mixer settings when track sounds change?
 
         AudioInterrupts();
     }
@@ -2463,11 +2493,11 @@ namespace XRSound
             break;
 
         case T_MONO_SYNTH:
-            outputStr = "MONO >";
+            outputStr = "MONO-VA >";
             break;
 
         case T_DEXED_SYNTH:
-            outputStr = "DEXED >";
+            outputStr = "6-OP-FM >";
             break;
 
         case T_BRAIDS_SYNTH:
@@ -2479,15 +2509,15 @@ namespace XRSound
             break;
 
         case T_MIDI:
-            outputStr = "MIDI";
+            outputStr = "MIDI-OUT";
             break;
 
         case T_CV_GATE:
-            outputStr = "CV/GATE";
+            outputStr = "CV-GATE";
             break;
 
         case T_CV_TRIG:
-            outputStr = "CV/TRIG";
+            outputStr = "CV-TRIG";
             break;
 
         default:
@@ -2534,12 +2564,12 @@ namespace XRSound
             break;
 
         case T_CV_GATE:
-            str = "CV/GATE";
+            str = "";
 
             break;
 
         case T_CV_TRIG:
-            str = "CV/TRIG";
+            str = "";
 
             break;
 

@@ -42,7 +42,7 @@ namespace XRSD
     void saveSequencer();
     void savePatternTrackStepModsToSdCard();
 
-    bool loadPatternSounds(int bank, int pattern);
+    bool loadNextPatternSounds(int bank, int pattern);
     bool loadPatternSoundStepModsFromSdCard(int bank, int pattern);
     void savePatternSounds();
     void savePatternSoundStepModsToSdCard();

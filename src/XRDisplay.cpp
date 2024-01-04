@@ -465,15 +465,21 @@ namespace XRDisplay
 
             if (currSoundForTrack.type == XRSound::T_MONO_SYNTH)
             {
-                trackInfoStr += XRSound::getSoundTypeNameStr(currSoundForTrack.type);
+                std::string soundName(currSoundForTrack.name);
+
+                trackInfoStr += soundName.length() > 0 ? soundName : "INIT";
             }
             else if (currSoundForTrack.type == XRSound::T_DEXED_SYNTH)
             {
-                trackInfoStr += XRSound::getSoundTypeNameStr(currSoundForTrack.type);
+                std::string soundName(currSoundForTrack.name);
+
+                trackInfoStr += soundName.length() > 0 ? soundName : "INIT";
             }
             else if (currSoundForTrack.type == XRSound::T_FM_DRUM)
             {
-                trackInfoStr += XRSound::getSoundTypeNameStr(currSoundForTrack.type);
+                std::string soundName(currSoundForTrack.name);
+
+                trackInfoStr += soundName.length() > 0 ? soundName : "INIT";
             }
             else if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE)
             {
