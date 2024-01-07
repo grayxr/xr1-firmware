@@ -788,6 +788,7 @@ namespace XRSound
                 }
             }
         } else {
+            XRAsyncPSRAMLoader::startAsyncInitOfNextPattern(nextBank, nextPattern);
             for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
             {
                 reinitSoundForTrack(t); // reinit all sounds synchronously since the sequencer isn't running

@@ -8,6 +8,7 @@
 #include <XRMenu.h>
 #include <XRClock.h>
 #include <map>
+#include <XRAsyncPSRAMLoader.h>
 
 namespace XRKeyMatrix
 {
@@ -282,8 +283,8 @@ namespace XRKeyMatrix
                 // IMPORTANT: must change sound data before sequencer data!
                 XRSound::manageSoundDataForPatternChange(nextBank, nextPattern);
                 XRSequencer::swapSequencerMemoryForPattern(nextBank, nextPattern);
-
-                Serial.printf("marking pressed pattern selection (zero-based): %d", nextPattern);
+                XRAsyncPSRAMLoader::prePatternChange();
+                Serial.printf("marking pressed pattern selection (zero-based): %d\n", nextPattern);
 
                 _ptnHeldForSelection = nextPattern; // TODO: need?
 

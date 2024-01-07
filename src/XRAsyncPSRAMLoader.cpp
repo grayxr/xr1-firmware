@@ -56,7 +56,7 @@ namespace XRAsyncPSRAMLoader
                     samples[currentWriteHeap].push_back(sample);
                 } else
                     samples[currentWriteHeap][numWriteHeapSamplesLoaded] = sample;
-                if (!samples[currentWriteHeap][numWriteHeapSamplesLoaded]) {
+                if (!sample) {
                     failed = true;
                     Serial.printf("abort!!! can not find '%s'...(heap:%d, index:%d)\n", filename.c_str(), currentWriteHeap, numWriteHeapSamplesLoaded);
                     return;
@@ -73,8 +73,8 @@ namespace XRAsyncPSRAMLoader
                     if (!hasInitialized) {
                         hasInitialized = true;
                         prePatternChange();
-                        postPatternChange();
                     }
+                    postPatternChange();
                 }
             }
         }
@@ -104,12 +104,7 @@ namespace XRAsyncPSRAMLoader
             asyncChanging = true;
         }
     }
-
-    void startAsyncInitOfNextPattern() {
-        auto queued = XRSequencer::getQueuedPattern();
-        int newBank = queued.bank;
-        int newPattern = queued.number;
-        auto &newPatternData = XRSequencer::getSequencer().banks[newBank].patterns[newPattern];
+    void startAsyncInitOfNextPattern(const XRSequencer::PATTERN &newPatternData) {
         unsigned i = 0;
         for (auto &track: newPatternData.tracks) {
             auto &sound = XRSound::nextPatternSounds[i];
@@ -124,22 +119,22 @@ namespace XRAsyncPSRAMLoader
         }
     }
 
-    void startAsyncInitOfCurrentPattern() {
-        auto &newPatternData = XRSequencer::getHeapPattern();
-        unsigned i = 0;
-        for (auto &track: newPatternData.tracks) {
-            auto &sound = XRSound::nextPatternSounds[i];
-            if (sound.type == XRSound::T_MONO_SAMPLE) {
-                if (strcmp(sound.sampleName, "") != 0) {
-                    const auto &sampleName = std::string("/audio enjoyer/xr-1/samples/") + std::string(sound.sampleName);
-                    Serial.printf("initializing this sample name: %s\n", sampleName.c_str());
-                    addSampleFileNameForNextAsyncLoadBatch(sampleName);
-                }
-            }
-            i++;
-        }
+    void startAsyncInitOfNextPattern(int newBank, int newPattern) {
+        const auto &newPatternData = XRSequencer::getSequencer().banks[newBank].patterns[newPattern];
+        startAsyncInitOfNextPattern(newPatternData);
     }
 
+    void startAsyncInitOfNextPattern() {
+        const auto &queued = XRSequencer::getQueuedPattern();
+        int newBank = queued.bank;
+        int newPattern = queued.number;
+        startAsyncInitOfNextPattern(newBank, newPattern);
+    }
+
+    void startAsyncInitOfCurrentPattern() {
+        auto &currentPatternData = XRSequencer::getHeapPattern();
+        startAsyncInitOfNextPattern(currentPatternData);
+    }
 
     newdigate::audiosample* getReadSample(const std::string *filename) {
         if (!filename) return nullptr;
