@@ -275,6 +275,11 @@ namespace XRKeyMatrix
                 Serial.printf("queueing pattern: %d\n", nextPattern);
 
                 XRSequencer::queuePattern(nextPattern, nextBank);
+                if (!XRSD::loadPatternSounds(nextBank, nextPattern))
+                {
+                    XRSound::initNextPatternSounds();
+                }
+                XRAsyncPSRAMLoader::startAsyncInitOfNextPattern(nextBank, nextPattern);
 
                 XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_WRITE);
             } else {

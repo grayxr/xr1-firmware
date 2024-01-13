@@ -40,6 +40,7 @@ namespace XRSequencer
     int8_t _ratchetDivision = -1;
 
     bool _dequeuePattern = false;
+    bool _dequeueLoadNewPatternSamples = false;
     bool _queueBlinked = false;
     bool _recording = false;
 
@@ -591,7 +592,9 @@ namespace XRSequencer
                 {
                     // nullify pattern queue
                     _dequeuePattern = true;
-                    XRAsyncPSRAMLoader::prePatternChange();
+                    if (!_dequeueLoadNewPatternSamples) {
+                        _dequeueLoadNewPatternSamples = true;
+                    }
                 }
             }
         }
@@ -696,14 +699,16 @@ namespace XRSequencer
             Serial.println("enter _dequeuePattern!");
 
             _dequeuePattern = false;
-
+            if (_dequeueLoadNewPatternSamples)
+                XRAsyncPSRAMLoader::prePatternChange();
             // IMPORTANT: must change sounds before changing sequencer data!
             XRSound::manageSoundDataForPatternChange(_queuedPattern.bank, _queuedPattern.number);
             swapSequencerMemoryForPattern(_queuedPattern.bank, _queuedPattern.number);
 
-            XRAsyncPSRAMLoader::postPatternChange();
-            XRAsyncPSRAMLoader::startAsyncInitOfNextPattern();
-
+            if (_dequeueLoadNewPatternSamples) {
+                XRAsyncPSRAMLoader::postPatternChange();
+                _dequeueLoadNewPatternSamples = false;
+            }
             Serial.println("finished swapping seq mem!");
 
             // reset queue flags

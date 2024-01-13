@@ -74,7 +74,10 @@ namespace XRAsyncPSRAMLoader
                         hasInitialized = true;
                         prePatternChange();
                     }
-                    postPatternChange();
+                    if (!hasInitialized || XRSequencer::getSeqState().playbackState == XRSequencer::SEQUENCER_PLAYBACK_STATE::STOPPED) {
+                        Serial.printf("Calling initial postpattern change (or if non initial, if stopped): \n");
+                        postPatternChange();
+                    }
                 }
             }
         }
@@ -83,16 +86,18 @@ namespace XRAsyncPSRAMLoader
 
     void postPatternChange() {
         if (asyncChanging) {
-            Serial.println("Pattern switch (all voices from previous pattern should be stopped if necessary before calling postPatternChange switch)");
+            //Serial.println("Pattern switch (all voices from previous pattern should be stopped if necessary before calling postPatternChange switch)");
             asyncChanging = false;
 
             if (numWriteHeapSamplesLoaded < numWriteHeapSamplesRequested) {
-                Serial.println("WARN: not all the samples managed to load in time!");
+                Serial.println("WARN: postPatternChange: not all the samples managed to load in time!");
             }
 
             asyncflashloader.toggle_afterNewPatternStarts();
             heap_switch();
-        }
+            Serial.printf("INFO: postPatternChange: readheap=%d writeheap=%d asyncChanging=%d\n", currentReadHeap, currentWriteHeap, asyncChanging);
+        } else
+            Serial.printf("WARN: postPatternChange was called unexpectedly, as asyncChanging==false... readheap=%d writeheap=%d \n", currentReadHeap, currentWriteHeap);
     }
 
     void prePatternChange() {
@@ -102,8 +107,12 @@ namespace XRAsyncPSRAMLoader
             // Existing samples will continue to play because the psram will still be intact
             asyncflashloader.toggle_beforeNewPatternVoicesStart();
             asyncChanging = true;
-        }
+            Serial.printf("INFO: prePatternChange: readheap=%d writeheap=%d asyncChanging=%d\n", currentReadHeap, currentWriteHeap, asyncChanging);
+
+        } else
+            Serial.printf("WARN: prePatternChange was called unexpectedly, as asyncChanging==true... readheap=%d writeheap=%d \n", currentReadHeap, currentWriteHeap);
     }
+
     void startAsyncInitOfNextPattern(const XRSequencer::PATTERN &newPatternData) {
         unsigned i = 0;
         for (auto &track: newPatternData.tracks) {
@@ -117,6 +126,8 @@ namespace XRAsyncPSRAMLoader
             }
             i++;
         }
+        asyncOpening = true;
+        writeHeapHasLoaded = false;
     }
 
     void startAsyncInitOfNextPattern(int newBank, int newPattern) {
