@@ -570,6 +570,12 @@ namespace XRSD
         auto &heapPattern = XRSequencer::getHeapPattern();
         heapPattern = seq.banks[0].patterns[0];
 
+        // if curr pattern has groove, set it
+        if (heapPattern.groove.id > -1) {
+            XRClock::setShuffle(true);
+            XRClock::setShuffleTemplateForGroove(heapPattern.groove.id, heapPattern.groove.amount);
+        }
+
         return true;
     }
 

@@ -802,7 +802,7 @@ namespace XRSound
         auto &pattern = XRSequencer::getHeapCurrentSelectedPattern();
 
         std::string grooveForPattern = pattern.groove.id > -1 ? XRClock::getGrooveString(pattern.groove.id) : "";
-        std::string grooveAmountForPattern = XRClock::getGrooveAmountString(pattern.groove.amount);
+        std::string grooveAmountForPattern = XRClock::getGrooveAmountString(pattern.groove.id, pattern.groove.amount);
 
         mods.aName = "L.STEP";
         mods.bName = "GROOVE";

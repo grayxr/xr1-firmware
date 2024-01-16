@@ -340,19 +340,20 @@ namespace XREncoder
 
         if (newGrooveId < -1)  {
             newGrooveId = -1;
-        }  else if (newGrooveId > MAXIMUM_GROOVE_CONFIGS - 1) {
+        } else if (newGrooveId > MAXIMUM_GROOVE_CONFIGS - 1) {
             newGrooveId = MAXIMUM_GROOVE_CONFIGS - 1;
         }
 
         if (newGrooveId != currGrooveId)  {
             currPattern.groove.id = newGrooveId;
+            currPattern.groove.amount = 0;
 
-            auto shuffleTemplate = XRClock::getShuffleTemplateForGroove(currPattern.groove.id, currPattern.groove.amount);
+            Serial.printf("currPattern.groove.id: %d, currPattern.groove.amount: %d\n", currPattern.groove.id, currPattern.groove.amount);
 
             if (newGrooveId == -1) {
                 XRClock::setShuffle(false);
-            } else if (!uClock.isShuffled()) {
-                XRClock::setShuffleTemplate(shuffleTemplate);
+            } else {
+                XRClock::setShuffleTemplateForGroove(currPattern.groove.id, currPattern.groove.amount);
                 XRClock::setShuffle(true);
             }
 
@@ -367,11 +368,17 @@ namespace XREncoder
         int currGrooveAmt = currPattern.groove.amount;
         int newGrooveAmt = currPattern.groove.amount + diff;
 
+        auto g = XRClock::getShuffleTemplateCountForGroove(currPattern.groove.id);
+        Serial.printf("getShuffleTemplateCountForGroove: %d\n", g);
+
         if (newGrooveAmt < 0) {
             newGrooveAmt = 0;
-        } else if (newGrooveAmt > MAXIMUM_GROOVE_OPTIONS - 1) {
-            newGrooveAmt = MAXIMUM_GROOVE_OPTIONS - 1;
+        } else if (newGrooveAmt > g - 1) {
+            newGrooveAmt = g - 1;
         }
+
+        Serial.printf("currPattern.groove.id: %d\n", currPattern.groove.id);
+        Serial.printf("newGrooveAmt: %d\n", newGrooveAmt);
 
         if (newGrooveAmt != currGrooveAmt)
         {
