@@ -301,7 +301,7 @@ namespace XRSD
 
         XRSound::init();
 
-        loadPatternSounds(
+        loadNextPatternSounds(
             XRSequencer::getCurrentSelectedBankNum(),
             XRSequencer::getCurrentSelectedPatternNum()
         );
@@ -472,6 +472,9 @@ namespace XRSD
 
                 std::string tempDexedPatchName(dexedTempNameBuf);
                 dexedPatchName = tempDexedPatchName;
+
+                std::string currTrackName(XRSound::currentPatternSounds[trackNum].name);
+                strcpy(XRSound::currentPatternSounds[trackNum].name, tempDexedPatchName.c_str());
             }
         }
 
@@ -574,6 +577,12 @@ namespace XRSD
         auto &heapPattern = XRSequencer::getHeapPattern();
         heapPattern = seq.banks[0].patterns[0];
 
+        // if curr pattern has groove, set it
+        if (heapPattern.groove.id > -1) {
+            XRClock::setShuffle(true);
+            XRClock::setShuffleTemplateForGroove(heapPattern.groove.id, heapPattern.groove.amount);
+        }
+
         return true;
     }
 
@@ -593,9 +602,9 @@ namespace XRSD
         std::string mFilePath;
         mFilePath = mProjectDataDir;
         mFilePath += "/";
-        mFilePath += std::to_string(XRSequencer::getCurrentSelectedBankNum());
+        mFilePath += std::to_string(bank);
         mFilePath += "_";
-        mFilePath += std::to_string(XRSequencer::getCurrentSelectedPatternNum());
+        mFilePath += std::to_string(pattern);
         mFilePath += "_track_step_mods.bin";
 
         File mFile = SD.open(mFilePath.c_str(), FILE_READ);
@@ -608,7 +617,7 @@ namespace XRSD
         mFile.read((byte *)&XRSequencer::patternTrackStepMods, sizeof(XRSequencer::patternTrackStepMods));
         mFile.close();
 
-        Serial.printf("sizeof(patternTrackStepMods): %d\n", sizeof(XRSequencer::patternTrackStepMods));
+        //Serial.printf("sizeof(patternTrackStepMods): %d\n", sizeof(XRSequencer::patternTrackStepMods));
         
         return true;
     }
@@ -642,7 +651,7 @@ namespace XRSD
         Serial.printf("sizeof(patternTrackStepMods): %d\n", sizeof(XRSequencer::patternTrackStepMods));
     }
 
-    bool loadPatternSounds(int bank, int pattern)
+    bool loadNextPatternSounds(int bank, int pattern)
     {
         // get project path
         char projectsPathPrefixBuf[50];
@@ -669,7 +678,7 @@ namespace XRSD
         soundsFile.read((byte *)&XRSound::nextPatternSounds, sizeof(XRSound::nextPatternSounds));
         soundsFile.close();
 
-        Serial.printf("sizeof(nextPatternSounds): %d\n", sizeof(XRSound::nextPatternSounds));
+        //Serial.printf("sizeof(nextPatternSounds): %d\n", sizeof(XRSound::nextPatternSounds));
 
         return true;
     }
@@ -696,7 +705,7 @@ namespace XRSD
         soundsFile.write((byte *)&XRSound::currentPatternSounds, sizeof(XRSound::currentPatternSounds));
         soundsFile.close();
 
-        Serial.printf("sizeof(currentPatternSounds): %d\n", sizeof(XRSound::currentPatternSounds));
+        //Serial.printf("sizeof(currentPatternSounds): %d\n", sizeof(XRSound::currentPatternSounds));
     }
 
     bool loadPatternSoundStepModsFromSdCard(int bank, int pattern)
@@ -730,7 +739,7 @@ namespace XRSD
         mFile.read((byte *)&XRSound::patternSoundStepMods, sizeof(XRSound::patternSoundStepMods));
         mFile.close();
 
-        Serial.printf("sizeof(patternSoundStepMods): %d\n", sizeof(XRSound::patternSoundStepMods));
+        //Serial.printf("sizeof(patternSoundStepMods): %d\n", sizeof(XRSound::patternSoundStepMods));
         
         return true;
     }
@@ -757,7 +766,7 @@ namespace XRSD
         sFile.write((byte *)&XRSound::patternSoundStepMods, sizeof(XRSound::patternSoundStepMods));
         sFile.close();
 
-        Serial.printf("sizeof(currentPatternSounds): %d\n", sizeof(XRSound::currentPatternSounds));
+        //Serial.printf("sizeof(currentPatternSounds): %d\n", sizeof(XRSound::currentPatternSounds));
     }
 
     std::string getCurrentDexedSysexBank()

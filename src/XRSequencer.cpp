@@ -152,7 +152,7 @@ namespace XRSequencer
 
         if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE && !functionActive && isOnStraightQtrNote)
         {
-            auto currTrack = getHeapCurrentSelectedTrack();
+            auto &currTrack = getHeapCurrentSelectedTrack();
 
             XRLED::displayPageLEDs(
                 currentSelectedTrackCurrentBar,
@@ -164,6 +164,14 @@ namespace XRSequencer
         if (isOnStraightQtrNote)
         {
             XRLED::setPWM(23, 4095); // when recording, each straight quarter note start button led ON
+        }
+
+        if (!(tick % 4))
+        {
+            if (_queuedPattern.bank > -1 && _queuedPattern.number > -1)
+            {
+                _drawQueueBlink = 0;
+            }
         }
 
         // This method handles advancing the sequencer
@@ -215,7 +223,7 @@ namespace XRSequencer
             {
                 if (turnOffLastLED)
                 {
-                    TRACK currTrack = getHeapCurrentSelectedTrack();
+                    TRACK &currTrack = getHeapCurrentSelectedTrack();
                     int currTrackLastStep = currTrack.lstep;
                     if (currTrackLastStep > 16)
                     {
@@ -233,9 +241,24 @@ namespace XRSequencer
                 XRLED::setPWM(keyLED, 4095); // turn sixteenth led ON
             }
         }
-
+        
         updateCurrentPatternStepState();
         updateAllTrackStepStates();
+
+        // every 1/4 step log memory usage
+        if (!(tick % 16)) {
+            XRAudio::logMetrics();
+
+            // blink queued bank / pattern
+            if (_queuedPattern.bank > -1 && _queuedPattern.number > -1) {
+                _drawQueueBlink = 1;
+            }
+        }
+
+        if (_recording) {
+            XRLED::setPWM(23, 512);
+            //XRLED::setPWM(23, 1024);
+        }
     }
 
     void handle96PPQN(uint32_t tick)
@@ -244,21 +267,17 @@ namespace XRSequencer
 
         if ((tick % 6) && !(tick % _bpmBlinkTimer))
         {
-            // if (_recording) {
             XRLED::setPWM(23, 0); // turn start button led OFF every 16th note
-            // }
         }
 
-        if (!(tick % 6))
-        {
-            if (_queuedPattern.bank > -1 && _queuedPattern.number > -1)
-            {
-                _drawQueueBlink = 0;
-            }
-        }
-
+        //if (!(tick % 8)) {
         triggerRatchetingTrack(tick);
-        handleRemoveFromStepStack(tick);
+        //}
+
+        // step should be removed from stack at rate of 96ppqn / 6
+        if (!(tick % 6)) { 
+            handleRemoveFromStepStack(tick);
+        }
 
         if ((tick % (6)) && !(tick % _bpmBlinkTimer))
         {
@@ -282,21 +301,6 @@ namespace XRSequencer
                     );   
                 }
             }
-        }
-
-        // every 1/4 step log memory usage
-        if (!(tick % 24)) {
-            XRAudio::logMetrics();
-
-            // blink queued bank / pattern
-            if (_queuedPattern.bank > -1 && _queuedPattern.number > -1) {
-                _drawQueueBlink = 1;
-            }
-        }
-
-        if (_recording) {
-            XRLED::setPWM(23, 512);
-            //XRLED::setPWM(23, 1024);
         }
     }
 
@@ -701,8 +705,9 @@ namespace XRSequencer
             _dequeuePattern = false;
             if (_dequeueLoadNewPatternSamples)
                 XRAsyncPSRAMLoader::prePatternChange();
+
             // IMPORTANT: must change sounds before changing sequencer data!
-            XRSound::manageSoundDataForPatternChange(_queuedPattern.bank, _queuedPattern.number);
+            XRSound::loadSoundDataForPatternChange(_queuedPattern.bank, _queuedPattern.number);
             swapSequencerMemoryForPattern(_queuedPattern.bank, _queuedPattern.number);
 
             if (_dequeueLoadNewPatternSamples) {
@@ -744,11 +749,7 @@ namespace XRSequencer
 
     void swapSequencerMemoryForPattern(int newBank, int newPattern)
     {
-        // AudioNoInterrupts();
         auto newPatternData = sequencer.banks[newBank].patterns[newPattern];
-
-        // save any track step mods for current pattern to SD
-        XRSD::savePatternTrackStepModsToSdCard();
 
         // swap sequencer memory data
         sequencer.banks[_currentSelectedBank].patterns[_currentSelectedPattern] = heapPattern;
@@ -756,6 +757,13 @@ namespace XRSequencer
 
         // initialize new pattern
         heapPattern.initialized = true;
+        // if curr pattern has groove, set it
+        if (heapPattern.groove.id > -1) {
+            XRClock::setShuffle(true);
+            XRClock::setShuffleTemplateForGroove(heapPattern.groove.id, heapPattern.groove.amount);
+        } else {
+            XRClock::setShuffle(false);
+        }
 
         // update currently selected vars
         _currentSelectedBank = newBank;
@@ -763,7 +771,7 @@ namespace XRSequencer
         _currentSelectedTrack = 0;
 
         // load any track step mods for new bank/pattern from SD
-        if (!XRSD::loadPatternTrackStepModsFromSdCard(_currentSelectedBank, _currentSelectedPattern)) {
+        if (!XRSD::loadPatternTrackStepModsFromSdCard(newBank, newPattern)) {
             initPatternTrackStepMods();
         }
     }
@@ -935,7 +943,7 @@ namespace XRSequencer
 
         handleRemoveFromRatchetStack();
 
-        if (_ratchetDivision > -1 && !(tick % _ratchetDivision))
+        if (_ratchetDivision > -1 && !(tick % (_ratchetDivision*4)))
         {
             Serial.print("in ratchet division! tick: ");
             Serial.print(tick);

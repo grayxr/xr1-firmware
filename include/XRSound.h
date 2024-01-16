@@ -368,6 +368,9 @@ namespace XRSound
     extern std::map<SOUND_TYPE, int> soundPageNumMap;
     extern std::map<SOUND_TYPE, std::map<int, std::string>> soundCurrPageNameMap;
 
+    extern bool patternSoundsDirty;
+    extern bool patternSoundStepModsDirty;
+
     SOUND_CONTROL_MODS getControlModDataForPattern();
     SOUND_CONTROL_MODS getControlModDataForTrack();
     SOUND_CONTROL_MODS getMonoSynthControlModData();
@@ -410,7 +413,8 @@ namespace XRSound
     void setSoundNeedsReinit(int sound, bool reinit);
     void reinitSoundForTrack(int track);
     
-    void manageSoundDataForPatternChange(int nextBank, int nextPattern);
+    void saveSoundDataForPatternChange();
+    void loadSoundDataForPatternChange(int nextBank, int nextPattern);
 
     void assignSampleToTrackSound();
 

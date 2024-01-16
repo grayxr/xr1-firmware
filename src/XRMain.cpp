@@ -70,11 +70,7 @@ namespace XRMain
     {
         XRAsyncPSRAMLoader::handleAsyncPSRAMLoading();
         XRAudio::handleHeadphones();
-
-        //if (!(elapsedMs % 50)) {
-            XRKeyMatrix::handleStates(false);
-        //}
-
+        XRKeyMatrix::handleStates(false);
         XRVersa::handleStates();
         XREncoder::handleStates();
 

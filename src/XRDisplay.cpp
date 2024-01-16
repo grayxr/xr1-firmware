@@ -478,18 +478,24 @@ namespace XRDisplay
 
             if (currSoundForTrack.type == XRSound::T_MONO_SYNTH)
             {
-                trackInfoStr += XRSound::getSoundTypeNameStr(currSoundForTrack.type);
+                std::string soundName(currSoundForTrack.name);
+
+                trackInfoStr += soundName.length() > 0 ? soundName : "INIT";
             }
 #ifndef NO_DEXED
             else if (currSoundForTrack.type == XRSound::T_DEXED_SYNTH)
             {
-                trackInfoStr += XRSound::getSoundTypeNameStr(currSoundForTrack.type);
+                std::string soundName(currSoundForTrack.name);
+
+                trackInfoStr += soundName.length() > 0 ? soundName : "INIT";
             }
 #endif
 #ifndef NO_FMDRUM
             else if (currSoundForTrack.type == XRSound::T_FM_DRUM)
             {
-                trackInfoStr += XRSound::getSoundTypeNameStr(currSoundForTrack.type);
+                std::string soundName(currSoundForTrack.name);
+
+                trackInfoStr += soundName.length() > 0 ? soundName : "INIT";
             }
 #endif
             else if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE)

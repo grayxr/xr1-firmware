@@ -101,6 +101,8 @@ namespace XRKeyMatrix
         // Fills kpd.key[] array with up-to 10 active keys.
         // Returns true if there are ANY active keys.
         if (kpd.getKeys()) {
+            if (discard) return;
+
             for (size_t i=0; i<LIST_MAX; i++) // Scan the whole key list.
             {
                 if (kpd.key[i].stateChanged)
@@ -281,12 +283,18 @@ namespace XRKeyMatrix
                 }
                 XRAsyncPSRAMLoader::startAsyncInitOfNextPattern(nextBank, nextPattern);
 
+                XRSound::saveSoundDataForPatternChange();
+
                 XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_WRITE);
             } else {
                 // instant pattern change
 
                 // IMPORTANT: must change sound data before sequencer data!
-                XRSound::manageSoundDataForPatternChange(nextBank, nextPattern);
+                XRSound::saveSoundDataForPatternChange();
+                XRSound::loadSoundDataForPatternChange(nextBank, nextPattern);
+
+                // save any track step mods for current pattern to SD
+                XRSD::savePatternTrackStepModsToSdCard();
                 XRSequencer::swapSequencerMemoryForPattern(nextBank, nextPattern);
                 XRAsyncPSRAMLoader::prePatternChange();
                 Serial.printf("marking pressed pattern selection (zero-based): %d\n", nextPattern);
@@ -540,6 +548,11 @@ namespace XRKeyMatrix
             {
                 // TODO: rework this to enable pasting patterns across banks too
                 XRSequencer::setSelectedPattern(targetPattern);
+
+                XRSound::saveSoundDataForPatternChange();
+                XRSound::loadSoundDataForPatternChange(currSelBank, targetPattern);
+
+                XRSD::savePatternTrackStepModsToSdCard();
                 XRSequencer::swapSequencerMemoryForPattern(currSelBank, targetPattern);
             }
 
@@ -953,6 +966,11 @@ namespace XRKeyMatrix
                             Serial.println("in browse dexed sysex sub menu");
                             
                             XRUX::setCurrentMode(XRUX::UX_MODE::SOUND_MENU_DEXED_SYSEX_BROWSER);
+
+                            XRSD::dexedCurrentBank = 0;
+                            XRSD::dexedCurrentPatch = 0;
+                            XRSD::loadDexedVoiceToCurrentTrack();
+                            
                             XRDisplay::drawDexedSysexBrowser();
                         }
                     }
