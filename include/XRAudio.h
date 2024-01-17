@@ -9,7 +9,7 @@
 
 namespace XRAudio
 {
-    FLASHMEM void init();
+    void init();
     void logMetrics();
     void resetMetrics();
     void handleHeadphones();

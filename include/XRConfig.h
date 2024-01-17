@@ -58,8 +58,8 @@
 // 1 track * 16 steps * 96ppqn max = 1536
 #define RATCHET_STACK_SIZE 1536
 // Clock
-#define MAXIMUM_GROOVE_CONFIGS 1
-#define MAXIMUM_GROOVE_OPTIONS 5
+#define MAXIMUM_GROOVE_CONFIGS 2
+#define MAXIMUM_GROOVE_OPTIONS 7
 // Buttons
 #define PERFORM_BTN_CHAR 'a'
 #define PATTERN_BTN_CHAR 'b'
