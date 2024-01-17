@@ -2183,7 +2183,11 @@ namespace XRSound
         
         strcpy(currentPatternSounds[track].sampleName, selected.c_str());
         // TODO: Nic: when playing, we want to do it async - code below is fine when sequencer is not playing
-        XRAsyncPSRAMLoader::loadSampleSync(&sampleNameStr);
+        if (XRSequencer::getSeqState().playbackState == XRSequencer::RUNNING) {
+            XRAsyncPSRAMLoader::addSampleFileNameForCurrentReadHeap(sampleNameStr);
+
+        } else
+            XRAsyncPSRAMLoader::loadSampleSync(&sampleNameStr);
     }
 
     void changeTrackSoundType(uint8_t t, SOUND_TYPE newType)
