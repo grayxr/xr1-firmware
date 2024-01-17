@@ -277,7 +277,7 @@ namespace XRKeyMatrix
                 Serial.printf("queueing pattern: %d\n", nextPattern);
 
                 XRSequencer::queuePattern(nextPattern, nextBank);
-                if (!XRSD::loadPatternSounds(nextBank, nextPattern))
+                if (!XRSD::loadNextPatternSounds(nextBank, nextPattern))
                 {
                     XRSound::initNextPatternSounds();
                 }
