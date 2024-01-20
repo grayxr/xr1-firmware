@@ -2220,6 +2220,7 @@ namespace XRSound
 
         } else
             XRAsyncPSRAMLoader::loadSampleSync(&sampleNameStr);
+        patternSoundsDirty = true;
     }
 
     void changeTrackSoundType(uint8_t t, SOUND_TYPE newType)
