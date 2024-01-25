@@ -711,7 +711,7 @@ namespace XRDisplay
         auto currPageSelected = XRSequencer::getCurrentSelectedPage();
         auto currSoundForTrack = XRSound::currentPatternSounds[currTrackNum];
 
-        if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 2)
+        if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 3)
         {
             auto msmpAatt = XRSound::getValueNormalizedAsUInt32(currSoundForTrack.params[XRSound::MSMP_AMP_ATTACK]);
             auto msmpAdec = XRSound::getValueNormalizedAsUInt32(currSoundForTrack.params[XRSound::MSMP_AMP_DECAY]);

@@ -46,7 +46,7 @@ namespace XRSound
     };
 
     int32_t monoSampleInitParams[MAXIMUM_SOUND_PARAMS] = {
-        100,0,300000,100,0,       // sampleplayrate, looptype, loopstart, loopfinish, chromatic
+        100,0,0,300000,0,       // sampleplayrate, looptype, loopstart, loopfinish, chromatic
         0,0,0,0,0,              // playstart, n/a, n/a, n/a, n/a
         0,100000,100,500000,0,  // a. attack, a. decay, a. sustain, a. release, n/a
         100,0,0,0,0,             // level, pan, n/a, n/a, n/a
@@ -219,7 +219,6 @@ namespace XRSound
     std::map<int, loop_type> loopTypeSelMap = {
         {0, looptype_none},
         {1, looptype_repeat},
-        {2, looptype_repeat}, // used for chromatic repeat
     };
 
     std::map<loop_type, int> loopTypeFindMap = {
@@ -983,7 +982,7 @@ namespace XRSound
                 mods.cValue = lfStr;
 
                 auto playstartToUse = (play_start)getValueNormalizedAsInt8(
-                    currentPatternSounds[currentSelectedTrackNum].params[MSMP_LOOPSTART]
+                    currentPatternSounds[currentSelectedTrackNum].params[MSMP_PLAYSTART]
                 );
 
                 // if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currentSelectedStepNum > -1)
@@ -1704,10 +1703,10 @@ namespace XRSound
         // }
 
         auto looptypeToUse = msmpLooptype;
-        // if (patternMods.tracks[track].step_mod_flags[step].flags[XRSequencer::MOD_ATTRS::LOOPTYPE])
-        // {
-        //     looptypeToUse = patternMods.tracks[track].steps[step].looptype;
-        // }
+        if (patternSoundStepMods.sounds[track].steps[step].flags[MSMP_LOOPTYPE])
+        {
+            looptypeToUse = getValueNormalizedAsUInt8(patternSoundStepMods.sounds[track].steps[step].mods[MSMP_LOOPTYPE]);
+        }
 
         auto loopstartToUse = msmpLoopstart;
         // if (patternMods.tracks[track].step_mod_flags[step].flags[XRSequencer::MOD_ATTRS::LOOPSTART])
