@@ -61,7 +61,7 @@ struct ProcessorVoice {
   Dx7Note *dx7_note;
 };
 
-enum DexedVoiceOPParameters {
+enum DexedVoiceOPParameters : uint8_t{
   DEXED_OP_EG_R1,           // 0
   DEXED_OP_EG_R2,           // 1
   DEXED_OP_EG_R3,           // 2
@@ -86,7 +86,7 @@ enum DexedVoiceOPParameters {
 };
 
 #define DEXED_VOICE_OFFSET 126
-enum DexedVoiceParameters {
+enum DexedVoiceParameters : uint8_t{
   DEXED_PITCH_EG_R1,        // 0
   DEXED_PITCH_EG_R2,        // 1
   DEXED_PITCH_EG_R3,        // 2
@@ -109,14 +109,14 @@ enum DexedVoiceParameters {
   DEXED_NAME                // 19
 };
 
-enum ADSR {
+enum ADSR : uint8_t{
   ATTACK,
   DECAY,
   SUSTAIN,
   RELEASE
 };
 
-enum OPERATORS {
+enum OPERATORS : uint8_t{
   OP1,
   OP2,
   OP3,
@@ -125,7 +125,7 @@ enum OPERATORS {
   OP6
 };
 
-enum CONTROLLER_ASSIGN {
+enum CONTROLLER_ASSIGN : uint8_t {
   NONE,
   PITCH,
   AMP,
@@ -136,23 +136,23 @@ enum CONTROLLER_ASSIGN {
   PITCH_AMP_EG
 };
 
-enum PORTAMENTO_MODE {
+enum PORTAMENTO_MODE : uint8_t {
   RETAIN,
   FOLLOW
 };
 
-enum ON_OFF {
+enum ON_OFF : uint8_t {
   OFF,
   ON
 };
 
-enum VELOCITY_SCALES {
+enum VELOCITY_SCALES : uint8_t {
   MIDI_VELOCITY_SCALING_OFF,
   MIDI_VELOCITY_SCALING_DX7,
   MIDI_VELOCITY_SCALING_DX7II
 };
 
-enum ENGINES {
+enum ENGINES : uint8_t{
   MSFA,
   MKI,
   OPL

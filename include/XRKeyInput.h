@@ -6,7 +6,7 @@
 
 namespace XRKeyInput
 {
-    enum TEXT_KEYSET
+    enum TEXT_KEYSET : uint8_t
     {
         UPPER_ALPHA = 0,
         LOWER_ALPHA,
@@ -14,7 +14,7 @@ namespace XRKeyInput
         SYMBOLS
     };
 
-    enum TEXT_KEYS
+    enum TEXT_KEYS : uint8_t
     {
         ELEM1 = 0,
         LEFT_ARROW = 1,

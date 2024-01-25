@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <XRSD.h>
 #include <string>
+#include <XRAsyncPSRAMLoader.h>
 #include <XRHelpers.h>
 #include <XRDisplay.h>
 #include <XRKeyInput.h>
@@ -305,6 +306,8 @@ namespace XRSD
             XRSequencer::getCurrentSelectedPatternNum()
         );
 
+        XRAsyncPSRAMLoader::startAsyncInitOfCurrentPattern();
+
         // for now just do this,
         // TODO: just make another method to populate current pattern sounds from SD card
         // so we don't need to move next* to current*
@@ -367,8 +370,10 @@ namespace XRSD
             if (sampleFile && !sampleFile.isDirectory()) {
                 _sampleFileList.list[b] = sampleFile.name();
             }
-
             _sampleFileListLoaded = true;
+            if (!sampleFile){
+                break;
+            }
         }
 
         uint8_t pageSize = 5;
@@ -409,6 +414,7 @@ namespace XRSD
         _sampleFileListPagedLoaded = false;
     }
 
+#ifndef NO_DEXED
     void loadDexedVoiceToCurrentTrack(int t)
     {
         File sysexDir;
@@ -419,7 +425,7 @@ namespace XRSD
         AudioNoInterrupts();
 
         sysexDir = SD.open(voiceBankName.c_str());
-        
+
         AudioInterrupts();
 
         if (!sysexDir || !sysexDir.isDirectory())
@@ -479,6 +485,7 @@ namespace XRSD
 
         AudioInterrupts();
     }
+#endif
 
     bool get_sd_voice(File sysex, uint8_t voice_number, uint8_t *data)
     {

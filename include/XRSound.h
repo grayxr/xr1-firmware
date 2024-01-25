@@ -12,17 +12,21 @@ namespace XRSound
 {
     /*** BEGIN SOUNDS ***/
 
-    enum SOUND_TYPE
+    enum SOUND_TYPE : uint8_t
     {
         T_EMPTY = 0,
-        T_MONO_SAMPLE,
-        T_MONO_SYNTH,
-        T_DEXED_SYNTH,
-        T_BRAIDS_SYNTH,
-        T_FM_DRUM,
-        T_MIDI,
-        T_CV_GATE,
-        T_CV_TRIG,
+        T_MONO_SAMPLE = 1,
+        T_MONO_SYNTH = 2,
+#ifndef NO_DEXED
+        T_DEXED_SYNTH = 3,
+#endif
+        T_BRAIDS_SYNTH = 4,
+#ifndef NO_FMDRUM
+        T_FM_DRUM = 5,
+#endif
+        T_MIDI = 6,
+        T_CV_GATE = 7,
+        T_CV_TRIG = 8,
     };
 
     typedef struct
@@ -35,7 +39,7 @@ namespace XRSound
     } SOUND;
 
     // MONO SAMPLE
-    enum MONO_SAMPLE_PARAM {
+    enum MONO_SAMPLE_PARAM : uint8_t {
         MSMP_SAMPLEPLAYRATE = 0,
         MSMP_LOOPTYPE,
         MSMP_LOOPSTART,
@@ -56,7 +60,7 @@ namespace XRSound
     };
 
     // MONO SYNTH
-    enum MONO_SYNTH_PARAM {
+    enum MONO_SYNTH_PARAM  : uint8_t {
         MSYN_WAVE = 0,
         MSYN_DETUNE = 1,
         MSYN_FINE = 2,
@@ -80,14 +84,14 @@ namespace XRSound
     };
 
     // DEXED SYNTH
-    enum DEXED_SYNTH_PARAM {
+    enum DEXED_SYNTH_PARAM  : uint8_t{
         DEXE_ALGO = 0,
         DEXE_LEVEL = 15,
         DEXE_PAN = 16,
     };
 
     // BRAIDS SYNTH
-    enum BRAIDS_SYNTH_PARAM {
+    enum BRAIDS_SYNTH_PARAM  : uint8_t {
         BRAIDS_TIMBRE = 0,
         BRAIDS_COLOR = 1,
         BRAIDS_MOD = 2,
@@ -97,7 +101,7 @@ namespace XRSound
     };
 
     // FM DRUM
-    enum FM_DRUM_PARAM {
+    enum FM_DRUM_PARAM  : uint8_t {
         FMD_FREQ = 0,
         FMD_FM = 1,
         FMD_DECAY = 2,
@@ -214,6 +218,7 @@ namespace XRSound
         }
     };
 
+#ifndef NO_DEXED
     class DexedInstance
     {
     public:
@@ -238,7 +243,9 @@ namespace XRSound
             //
         }
     };
+#endif
 
+#ifndef NO_FMDRUM
     class FmDrumInstance
     {
     public:
@@ -263,7 +270,7 @@ namespace XRSound
             //
         }
     };
-
+#endif
     // class BraidsInstance
     // {
     // public:
@@ -288,7 +295,7 @@ namespace XRSound
 
     /*** END VOICES/INSTANCES */
 
-    enum WAVEFORM_TYPE
+    enum WAVEFORM_TYPE : uint8_t
     {
         SAW = WAVEFORM_SAWTOOTH,
         RSAW = WAVEFORM_SAWTOOTH_REVERSE,
@@ -298,7 +305,7 @@ namespace XRSound
         SINE = WAVEFORM_SINE,
     };
 
-    enum SOUND_CONTROL_MOD_TYPE
+    enum SOUND_CONTROL_MOD_TYPE  : uint8_t
     {
         DEFAULT = 0,
         RANGE,
@@ -341,9 +348,15 @@ namespace XRSound
 
     extern MonoSampleInstance monoSampleInstances[MAXIMUM_MONO_SAMPLE_SOUNDS];
     extern MonoSynthInstance monoSynthInstances[MAXIMUM_MONO_SYNTH_SOUNDS];
+#ifndef NO_DEXED
     extern DexedInstance dexedInstances[MAXIMUM_DEXED_SYNTH_SOUNDS];
+#endif
+
     // extern BraidsInstance braidsInstances[MAXIMUM_BRAIDS_SYNTH_SOUNDS];
+#ifndef NO_FMDRUM
     extern FmDrumInstance fmDrumInstances[MAXIMUM_FM_DRUM_SOUNDS];
+#endif
+
 
     extern std::map<SOUND_TYPE, int8_t> soundTypeInstanceLimitMap;
     
@@ -362,9 +375,13 @@ namespace XRSound
     SOUND_CONTROL_MODS getControlModDataForTrack();
     SOUND_CONTROL_MODS getMonoSynthControlModData();
     SOUND_CONTROL_MODS getMonoSampleControlModData();
+#ifndef NO_DEXED
     SOUND_CONTROL_MODS getDexedSynthControlModData();
+#endif
     SOUND_CONTROL_MODS getBraidsControlModData();
+#ifndef NO_FMDRUM
     SOUND_CONTROL_MODS getFmDrumControlModData();
+#endif
     SOUND_CONTROL_MODS getMidiControlModData();
     SOUND_CONTROL_MODS getCvGateControlModData();
     SOUND_CONTROL_MODS getCvTrigControlModData();
@@ -403,6 +420,8 @@ namespace XRSound
 
     void changeTrackSoundType(uint8_t t, SOUND_TYPE newType);
     void initTrackSound(int8_t t);
+
+    void turnOffAllSounds();
 
     void handleMonoSampleNoteOnForTrack(int track);
     void handleMonoSynthNoteOnForTrack(int track);

@@ -9,10 +9,23 @@
 #include <XRHelpers.h>
 #include <string>
 #include <map>
-
+#ifdef BUILD_FOR_LINUX
+#include "u8g2_opengl.h"
+#include "u8g2_opengl_main.h"
+#include <Wire.h>
+#include <Keypad.h>
+#include "XRKeyMatrix.h"
+#include "XRVersa.h"
+#include "XRLED.h"
+#endif
 namespace XRDisplay
 {
+#ifdef BUILD_FOR_LINUX
+    XR1Model xr1(XRKeyMatrix::kpd, XRLED::tlc);
+    U8G2_128X64_OPENGL<TwoWire, Keypad, Adafruit_MPR121> u8g2(&xr1,U8G2_R0, /* clock=*/ 13, /* data=*/ 11, /* cs=*/ 10, /* dc=*/ 14, /* reset=*/ 15, &Wire1, &XRKeyMatrix::kpd, &XRVersa::mpr121_a);
+#else
     U8G2_SSD1309_128X64_NONAME0_F_4W_SW_SPI u8g2(U8G2_R0, /* clock=*/13, /* data=*/11, /* cs=*/10, /* dc=*/14, /* reset=*/15);
+#endif
 
     void init()
     {
@@ -268,7 +281,7 @@ namespace XRDisplay
 
     void drawSequencerScreen(bool queueBlink)
     {
-        // Serial.println("enter drawSequencerScreen!");
+        Serial.println("enter drawSequencerScreen!");
 
         u8g2.clearBuffer();
 
@@ -399,11 +412,11 @@ namespace XRDisplay
             ptnNumber = queuedPattern.number + 1;
             ptnBlink = (queuedPattern.number != currentSelectedPattern);
 
-            Serial.printf("ptnNumber: %d, ptnBlink: %d, queueBlink: %d\n", ptnNumber, ptnBlink, queueBlink);
+            //Serial.printf("ptnNumber: %d, ptnBlink: %d, queueBlink: %d\n", ptnNumber, ptnBlink, queueBlink);
         }
 
 
-        if (currentUXMode == XRUX::PATTERN_WRITE)
+        if (currentUXMode == XRUX::PATTERN_WRITE || currentUXMode == XRUX::PATTERN_SEL)
         {
             u8g2.setColorIndex((u_int8_t)1);
             u8g2.drawBox(26, 0, 29, 7);
@@ -425,7 +438,7 @@ namespace XRDisplay
             u8g2.setColorIndex((u_int8_t)1);
         }
 
-        if (currentUXMode == XRUX::PATTERN_WRITE)
+        if (currentUXMode == XRUX::PATTERN_WRITE || currentUXMode == XRUX::PATTERN_SEL)
         {
             // draw pattern header box
             u8g2.setColorIndex((u_int8_t)1);
@@ -469,18 +482,22 @@ namespace XRDisplay
 
                 trackInfoStr += soundName.length() > 0 ? soundName : "INIT";
             }
+#ifndef NO_DEXED
             else if (currSoundForTrack.type == XRSound::T_DEXED_SYNTH)
             {
                 std::string soundName(currSoundForTrack.name);
 
                 trackInfoStr += soundName.length() > 0 ? soundName : "INIT";
             }
+#endif
+#ifndef NO_FMDRUM
             else if (currSoundForTrack.type == XRSound::T_FM_DRUM)
             {
                 std::string soundName(currSoundForTrack.name);
 
                 trackInfoStr += soundName.length() > 0 ? soundName : "INIT";
             }
+#endif
             else if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE)
             {
                 std::string sampleName(currSoundForTrack.sampleName);
@@ -505,7 +522,9 @@ namespace XRDisplay
             // draw track description / main icon area
             if (
                 currSoundForTrack.type == XRSound::T_MONO_SYNTH ||
+#ifndef NO_DEXED
                 currSoundForTrack.type == XRSound::T_DEXED_SYNTH ||
+#endif
                 currSoundForTrack.type == XRSound::T_MIDI ||
                 currSoundForTrack.type == XRSound::T_CV_GATE)
             {
@@ -692,7 +711,7 @@ namespace XRDisplay
         auto currPageSelected = XRSequencer::getCurrentSelectedPage();
         auto currSoundForTrack = XRSound::currentPatternSounds[currTrackNum];
 
-        if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 2)
+        if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 3)
         {
             auto msmpAatt = XRSound::getValueNormalizedAsUInt32(currSoundForTrack.params[XRSound::MSMP_AMP_ATTACK]);
             auto msmpAdec = XRSound::getValueNormalizedAsUInt32(currSoundForTrack.params[XRSound::MSMP_AMP_DECAY]);
@@ -722,7 +741,9 @@ namespace XRDisplay
         else if (
             (currSoundForTrack.type == XRSound::T_EMPTY) ||
             (currSoundForTrack.type == XRSound::T_CV_TRIG) ||
+#ifndef NO_DEXED
             (currSoundForTrack.type == XRSound::T_FM_DRUM) ||
+#endif
             (currSoundForTrack.type == XRSound::T_MONO_SAMPLE))
         {
             drawExtendedControlMods();
@@ -953,7 +974,7 @@ namespace XRDisplay
 
         if (currSelectedLayer == XRSequencer::LAYER::SOUND) {
             currTrackPageCount = XRSound::getPageCountForCurrentTrack();
-            currPageNameForTrack = XRSound::currentPatternSounds[currTrackNum].type != XRSound::T_EMPTY ? "SOUND > " : "";
+            currPageNameForTrack = XRSound::currentPatternSounds[currTrackNum].type != XRSound::T_EMPTY ? "TRKSND > " : "";
             currPageNameForTrack += XRSound::getPageNameForCurrentTrack();
         }
 
@@ -964,7 +985,7 @@ namespace XRDisplay
         u8g2.drawLine(0, 52, 128, 52);
         u8g2.drawStr(0, pageTabPosY, currPageNameForTrack.c_str());
 
-        if (currTrackPageCount == 1)
+        if (currTrackPageCount == 1 || currTrackPageCount == 0)
             return;
 
         if (currTrackPageCount == 5)
@@ -1005,11 +1026,12 @@ namespace XRDisplay
         auto menuItemMax = SOUND_MENU_ITEM_MAX;
 
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-
+#ifndef NO_DEXED
         if (XRSound::currentPatternSounds[currTrackNum].type == XRSound::T_DEXED_SYNTH) {
             menuItems = XRMenu::getDexedSoundMenuItems();
             menuItemMax = DEXED_SOUND_MENU_ITEM_MAX;
         }
+#endif
 
         drawGenericMenuList("SOUND", menuItems, menuItemMax);
 

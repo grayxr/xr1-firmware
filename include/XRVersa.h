@@ -19,6 +19,7 @@ namespace XRVersa
 
     int8_t getKeyboardNotesHeld();
     int8_t getNoteOnKeyboard();
+    extern Adafruit_MPR121 mpr121_a;
 }
 
 #endif /* XRVersa_h */

@@ -11,6 +11,7 @@ namespace XRKeyMatrix
     void handleStates(bool discard = false);
     bool isFunctionActive();
     int8_t getKeyboardOctave();
+    extern Keypad kpd;
 }
 
 #endif /* XRKeyMatrix_h */

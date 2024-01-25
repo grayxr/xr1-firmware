@@ -6,16 +6,16 @@
 #include <XRCV.h>
 #include <XRSD.h>
 #include <XRKeyMatrix.h>
-#include <flashloader.h>
+#include <dualheapasyncflashloader.h>
 #include <map>
+#include <XRAsyncPSRAMLoader.h>
 
 namespace XRSound
 {
     // private variables
 
     // 8MB max of samples per pattern in external PSRAM, 1 sample allowed per track for now    
-    newdigate::audiosample *_extPatternSamples[MAXIMUM_SEQUENCER_TRACKS];
-    newdigate::flashloader _loader;
+    newdigate::dualheapasyncflashloader _loader;
     uint8_t _numChannels = 1;
 
     bool patternSoundsDirty = false;
@@ -46,7 +46,7 @@ namespace XRSound
     };
 
     int32_t monoSampleInitParams[MAXIMUM_SOUND_PARAMS] = {
-        100,0,300000,100,0,       // sampleplayrate, looptype, loopstart, loopfinish, chromatic
+        100,0,0,300000,0,       // sampleplayrate, looptype, loopstart, loopfinish, chromatic
         0,0,0,0,0,              // playstart, n/a, n/a, n/a, n/a
         0,100000,100,500000,0,  // a. attack, a. decay, a. sustain, a. release, n/a
         100,0,0,0,0,             // level, pan, n/a, n/a, n/a
@@ -129,8 +129,12 @@ namespace XRSound
         {T_MIDI, 0},
         {T_MONO_SAMPLE, 0},
         {T_MONO_SYNTH, 0},
+#ifndef NO_DEXED
         {T_DEXED_SYNTH, 0},
+#endif
+#ifndef NO_FMDRUM
         {T_FM_DRUM, 0},
+#endif
         {T_CV_GATE, 0},
         {T_CV_TRIG, 0},
         {T_BRAIDS_SYNTH, 0},
@@ -191,18 +195,22 @@ namespace XRSound
         ),
     };
 
+#ifndef NO_DEXED
     DexedInstance dexedInstances[MAXIMUM_DEXED_SYNTH_SOUNDS] = {
         DexedInstance(dexed1, dexedAmpAccent1, dexedAmp1, dexedLeft1, dexedRight1),
         DexedInstance(dexed2, dexedAmpAccent2, dexedAmp2, dexedLeft2, dexedRight2),
         DexedInstance(dexed3, dexedAmpAccent3, dexedAmp3, dexedLeft3, dexedRight3),
         DexedInstance(dexed4, dexedAmpAccent4, dexedAmp4, dexedLeft4, dexedRight4),
     };
+#endif
 
+#ifndef NO_FMDRUM
     FmDrumInstance fmDrumInstances[MAXIMUM_FM_DRUM_SOUNDS] = {
         FmDrumInstance(fmDrum1, fmDrumAmpAccent1, fmDrumAmp1, fmDrumLeft1, fmDrumRight1),
         FmDrumInstance(fmDrum2, fmDrumAmpAccent2, fmDrumAmp2, fmDrumLeft2, fmDrumRight2),
         FmDrumInstance(fmDrum3, fmDrumAmpAccent3, fmDrumAmp3, fmDrumLeft3, fmDrumRight3),
     };
+#endif
 
     // BraidsInstance braidsInstances[MAXIMUM_BRAIDS_SYNTH_SOUNDS] = {
     //     BraidsInstance(braids1, braidsAmp1, braidsLeft1, braidsRight1),
@@ -211,7 +219,6 @@ namespace XRSound
     std::map<int, loop_type> loopTypeSelMap = {
         {0, looptype_none},
         {1, looptype_repeat},
-        {2, looptype_repeat}, // used for chromatic repeat
     };
 
     std::map<loop_type, int> loopTypeFindMap = {
@@ -232,9 +239,13 @@ namespace XRSound
     std::map<SOUND_TYPE, int32_t*> soundTypeInitParams = {
         { T_MONO_SAMPLE, monoSampleInitParams },
         { T_MONO_SYNTH, monoSynthInitParams },
+#ifndef NO_DEXED
         { T_DEXED_SYNTH, dexedSynthInitParams },
+#endif
         { T_BRAIDS_SYNTH, braidsSynthInitParams },
+#ifndef NO_FMDRUM
         { T_FM_DRUM, fmDrumInitParams },
+#endif
         { T_MIDI, midiInitParams },
         { T_CV_GATE, cvGateInitParams },
         { T_CV_TRIG, cvTrigInitParams },
@@ -243,9 +254,13 @@ namespace XRSound
     std::map<SOUND_TYPE, int> soundPageNumMap = {
         {T_MONO_SAMPLE, 5},
         {T_MONO_SYNTH, 6},
+#ifndef NO_DEXED
         {T_DEXED_SYNTH, 4},
+#endif
         {T_BRAIDS_SYNTH, 2},
+#ifndef NO_FMDRUM
         {T_FM_DRUM, 2},
+#endif
         {T_MIDI, 1},
         {T_CV_GATE, 1},
         {T_CV_TRIG, 1},
@@ -268,16 +283,20 @@ namespace XRSound
                                 {4, "A.ADSR"},
                                 {5, "OUTPUT"},
                             }},
+#ifndef NO_DEXED
         {T_DEXED_SYNTH, {
                          {0, "MAIN"},
                          {1, "FM1"},
                          {2, "FM2"},
                          {3, "OUTPUT"},
                      }},
+#endif
+#ifndef NO_FMDRUM
         {T_FM_DRUM, {
                          {0, "MAIN"},
                          {1, "OUTPUT"},
                      }},
+#endif
         {T_MIDI, {
                        {0, "MAIN"},
                    }},
@@ -296,9 +315,13 @@ namespace XRSound
         {T_EMPTY, MAXIMUM_SEQUENCER_TRACKS},
         {T_MONO_SAMPLE, MAXIMUM_MONO_SAMPLE_SOUNDS},
         {T_MONO_SYNTH, MAXIMUM_MONO_SYNTH_SOUNDS},
+#ifndef NO_DEXED
         {T_DEXED_SYNTH, MAXIMUM_DEXED_SYNTH_SOUNDS},
+#endif
         {T_BRAIDS_SYNTH, MAXIMUM_BRAIDS_SYNTH_SOUNDS},
+#ifndef NO_FMDRUM
         {T_FM_DRUM, MAXIMUM_FM_DRUM_SOUNDS},
+#endif
         {T_MIDI, MAXIMUM_SEQUENCER_TRACKS},
         {T_CV_GATE, MAXIMUM_CV_GATE_SOUNDS},
         {T_CV_TRIG, MAXIMUM_CV_TRIG_SOUNDS},
@@ -543,7 +566,7 @@ namespace XRSound
 
         auto dexeLvl = getValueNormalizedAsFloat(dexedSynthInitParams[DEXE_LEVEL]);
         auto dexePan = getValueNormalizedAsFloat(dexedSynthInitParams[DEXE_PAN]);
-
+#ifndef NO_DEXED
         for (int d=0; d<MAXIMUM_DEXED_SYNTH_SOUNDS; d++)
         {
             dexedInstances[d].dexed.loadInitVoice();
@@ -556,7 +579,7 @@ namespace XRSound
             dexedInstances[d].left.gain(dexedSynthPannedAmounts.left);
             dexedInstances[d].right.gain(dexedSynthPannedAmounts.right);
         }
-
+#endif
         // auto braidsLvl = getValueNormalizedAsFloat(braidsSynthInitParams[BRAIDS_LEVEL]);
         // auto braidsPan = getValueNormalizedAsFloat(braidsSynthInitParams[BRAIDS_PAN]);
 
@@ -571,7 +594,7 @@ namespace XRSound
         //     dexedInstances[b].left.gain(braidsPannedAmounts.left);
         //     dexedInstances[b].right.gain(braidsPannedAmounts.right);
         // }
-        
+#ifndef NO_FMDRUM
         auto fmDrumLvl = getValueNormalizedAsFloat(fmDrumInitParams[FMD_LEVEL]);
         auto fmDrumPan = getValueNormalizedAsFloat(fmDrumInitParams[FMD_PAN]);
 
@@ -589,7 +612,7 @@ namespace XRSound
             fmDrumInstances[f].left.gain(fmDrumPannedAmounts.left);
             fmDrumInstances[f].right.gain(fmDrumPannedAmounts.right);
         }
-
+#endif
         // Voice/instance sub mixers
         voiceSubMixLeft1.gain(0, 1);
         voiceSubMixRight1.gain(0, 1);
@@ -730,21 +753,27 @@ namespace XRSound
         currentPatternSounds[track] = nextPatternSounds[track];
 
         if (currentPatternSounds[track].type == T_MONO_SAMPLE) {
+            // psram should already be loaded previously (hopefully)
+
             // load any samples for track
+            /*
             std::string newSoundSampleName(currentPatternSounds[track].sampleName);
             if (newSoundSampleName.length() > 0) {
                 // load any samples into PSRAM
                 std::string sampleNameStr = "/audio enjoyer/xr-1/samples/";
                 sampleNameStr += newSoundSampleName;
                 _extPatternSamples[track] = _loader.loadSample(sampleNameStr.c_str());
-            }
-        }
+                _extPatternSamples[track] = _loader.loadSample(sampleName.c_str());
 
+            }
+            */
+        }
+#ifndef NO_DEXED
         if (track < 4 && currentPatternSounds[track].type == T_DEXED_SYNTH) {
             // load any dexed voice settings for track
             dexedInstances[track].dexed.loadVoiceParameters(currentPatternSounds[track].dexedParams);
         }
-
+#endif
         // all done reinitializing sound
         soundNeedsReinit[track] = false;
     }
@@ -779,8 +808,10 @@ namespace XRSound
             for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
             {
                 if (
-                    tracks[t].initialized &&
-                     currentPatternSounds[t].type != T_DEXED_SYNTH // don't load dexed changes async since it cuts out the sound
+                    tracks[t].initialized
+#ifndef NO_DEXED
+                    && currentPatternSounds[t].type != T_DEXED_SYNTH // don't load dexed changes async since it cuts out the sound
+#endif
                 ) {
                     setSoundNeedsReinit(t, true); // reinit sound asynchronously since the upcoming track is active
                 } else {
@@ -788,6 +819,7 @@ namespace XRSound
                 }
             }
         } else {
+            XRAsyncPSRAMLoader::startAsyncInitOfNextPattern(nextBank, nextPattern);
             for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
             {
                 reinitSoundForTrack(t); // reinit all sounds synchronously since the sequencer isn't running
@@ -834,15 +866,16 @@ namespace XRSound
         case T_MONO_SYNTH:
             mods = getMonoSynthControlModData();
             break;
-
+#ifndef NO_DEXED
         case T_DEXED_SYNTH:
             mods = getDexedSynthControlModData();
             break;
-
-        case T_FM_DRUM:
+#endif
+#ifndef NO_FMDRUM
+            case T_FM_DRUM:
             mods = getFmDrumControlModData();
             break;
-
+#endif
         case T_MIDI:
             mods = getMidiControlModData();
             break;
@@ -949,7 +982,7 @@ namespace XRSound
                 mods.cValue = lfStr;
 
                 auto playstartToUse = (play_start)getValueNormalizedAsInt8(
-                    currentPatternSounds[currentSelectedTrackNum].params[MSMP_LOOPSTART]
+                    currentPatternSounds[currentSelectedTrackNum].params[MSMP_PLAYSTART]
                 );
 
                 // if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currentSelectedStepNum > -1)
@@ -1021,10 +1054,10 @@ namespace XRSound
         auto &currentSelectedTrack = XRSequencer::getHeapCurrentSelectedTrack();
         auto currentSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        auto currSelectedStep = XRSequencer::getCurrentSelectedStepNum();
+        auto currentUXMode = XRUX::getCurrentMode();
 
         auto currentSoundForTrack = currentPatternSounds[currentSelectedTrackNum];
-
-            // TODO: add step mod support back in
 
         switch (currentSelectedPageNum)
         {
@@ -1054,6 +1087,16 @@ namespace XRSound
                 auto detune = getValueNormalizedAsInt8(currentSoundForTrack.params[MSYN_DETUNE]);
                 auto fine = getValueNormalizedAsInt8(currentSoundForTrack.params[MSYN_FINE]);
                 auto width = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_WIDTH]);
+
+                if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStep > -1) {
+                    if (XRSound::patternSoundStepMods.sounds[currentSelectedTrackNum].steps[currSelectedStep].flags[XRSound::MSYN_WAVE]) {
+                        waveform = getWaveformNumber(
+                            getValueNormalizedAsUInt8(
+                                XRSound::patternSoundStepMods.sounds[currentSelectedTrackNum].steps[currSelectedStep].mods[XRSound::MSYN_WAVE]
+                            )
+                        );
+                    }
+                }
 
                 mods.aValue = getWaveformName(waveform);
                 mods.bValue = std::to_string(detune);
@@ -1492,13 +1535,17 @@ namespace XRSound
 
         // if sample has valid name, assume it is loaded in PSRAM and can be played
         if (trackSampleName.length() > 0) {
-            monoSampleInstances[track].sample.playRaw(
-                _extPatternSamples[track]->sampledata, 
-                _extPatternSamples[track]->samplesize / 2, 
-                _numChannels
-            );
-        }
+            const auto &sampleName = std::string("/audio enjoyer/xr-1/samples/") + std::string(trackSampleName);
 
+            newdigate::audiosample *sample = XRAsyncPSRAMLoader::getReadSample(&sampleName);
+            if (sample != nullptr) {
+                monoSampleInstances[track].sample.playRaw(
+                    sample->sampledata,
+                    sample->samplesize / 2,
+                    _numChannels
+                );
+            }
+        }
         AudioNoInterrupts();
 
         // always re-initialize loop type
@@ -1572,7 +1619,7 @@ namespace XRSound
         monoSynthInstances[track].ampEnv.noteOn();
         monoSynthInstances[track].filterEnv.noteOn();
     }
-
+#ifndef NO_DEXED
     void handleDexedSynthNoteOnForTrack(int track)
     {
         if (track > 3) return;
@@ -1587,6 +1634,7 @@ namespace XRSound
         dexedInstances[track].ampAccent.gain((trackToUse.velocity * 0.01));
         dexedInstances[track].dexed.keydown(midiNote, 50); // TODO: parameterize velocity
     }
+#endif
 
     void handleBraidsNoteOnForTrack(int track)
     {
@@ -1599,7 +1647,7 @@ namespace XRSound
 
         // braidsInstances[track].braids.set_braids_pitch(midiNote << 7);
     }
-    
+#ifndef NO_FMDRUM
     void handleFmDrumNoteOnForTrack(int track)
     {
         if (track > 2) return;
@@ -1609,6 +1657,7 @@ namespace XRSound
         fmDrumInstances[track].ampAccent.gain((trackToUse.velocity * 0.01));
         fmDrumInstances[track].fmDrum.noteOn();
     }
+#endif
 
     void handleMIDINoteOnForTrack(int track)
     {
@@ -1654,10 +1703,10 @@ namespace XRSound
         // }
 
         auto looptypeToUse = msmpLooptype;
-        // if (patternMods.tracks[track].step_mod_flags[step].flags[XRSequencer::MOD_ATTRS::LOOPTYPE])
-        // {
-        //     looptypeToUse = patternMods.tracks[track].steps[step].looptype;
-        // }
+        if (patternSoundStepMods.sounds[track].steps[step].flags[MSMP_LOOPTYPE])
+        {
+            looptypeToUse = getValueNormalizedAsUInt8(patternSoundStepMods.sounds[track].steps[step].mods[MSMP_LOOPTYPE]);
+        }
 
         auto loopstartToUse = msmpLoopstart;
         // if (patternMods.tracks[track].step_mod_flags[step].flags[XRSequencer::MOD_ATTRS::LOOPSTART])
@@ -1706,13 +1755,17 @@ namespace XRSound
 
         // if sample has valid name, assume it is loaded in PSRAM and can be played
         if (trackSampleName.length() > 0) {
-            monoSampleInstances[track].sample.playRaw(
-                _extPatternSamples[track]->sampledata, 
-                _extPatternSamples[track]->samplesize / 2, 
-                _numChannels
-            );
-        }
+            const auto &sampleName = std::string("/audio enjoyer/xr-1/samples/") + std::string(trackSampleName);
 
+            newdigate::audiosample *sample = XRAsyncPSRAMLoader::getReadSample(&sampleName);
+            if (sample != nullptr) {
+                monoSampleInstances[track].sample.playRaw(
+                    sample->sampledata,
+                    sample->samplesize / 2,
+                    _numChannels
+                );
+            }
+        }
         AudioNoInterrupts();
 
         // always re-initialize loop type
@@ -1819,7 +1872,7 @@ namespace XRSound
         monoSynthInstances[track].ampEnv.noteOn();
         monoSynthInstances[track].filterEnv.noteOn();
     }
-
+#ifndef NO_DEXED
     void handleDexedSynthNoteOnForTrackStep(int track, int step)
     {
         if (track > 3) return;
@@ -1861,6 +1914,7 @@ namespace XRSound
 
         dexedInstances[track].dexed.keydown(midiNote, velocityToUse);
     }
+#endif
 
     void handleBraidsNoteOnForTrackStep(int track, int step)
     {
@@ -1892,7 +1946,7 @@ namespace XRSound
 
         // braidsInstances[track].braids.set_braids_pitch(midiNote << 7);
     }
-
+#ifndef NO_FMDRUM
     void handleFmDrumNoteOnForTrackStep(int track, int step)
     {
         if (track > 2) return;
@@ -1933,6 +1987,7 @@ namespace XRSound
 
         fmDrumInstances[track].fmDrum.noteOn();
     }
+#endif
 
     void handleMIDINoteOnForTrackStep(int track, int step)
     {
@@ -1993,6 +2048,15 @@ namespace XRSound
         }
     }
 
+    void turnOffAllSounds()
+    {
+        for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++) {
+            if (t < 4) { // dexed voice instances are only available to tracks 0-3
+                dexedInstances[t].dexed.notesOff();
+            }
+        }
+    }
+
     void handleNoteOffForTrack(int track)
     {
         auto &currTrack = XRSequencer::getHeapTrack(track);
@@ -2014,6 +2078,7 @@ namespace XRSound
                 }
             }
             break;
+#ifndef NO_DEXED
         case T_DEXED_SYNTH:
             {
                 if (track < 4)
@@ -2026,9 +2091,12 @@ namespace XRSound
                 }
             }
             break;
+#endif
+#ifndef NO_FMDRUM
         case T_FM_DRUM:
             // n/a
             break;
+#endif
         case T_MIDI:
             {
                 XRMIDI::sendNoteOff(64, 100, 1);
@@ -2089,6 +2157,7 @@ namespace XRSound
                 }
             }
             break;
+#ifndef NO_DEXED
         case T_DEXED_SYNTH:
             {
                 uint8_t noteToUse = currTrack.note;
@@ -2108,9 +2177,12 @@ namespace XRSound
                 dexedInstances[track].dexed.keyup(midiNote);
             }
             break;
+#endif
+#ifndef NO_FMDRUM
         case T_FM_DRUM:
             // n/a
             break;
+#endif
         case T_MIDI:
             {
                 XRMIDI::sendNoteOff(64, 100, 1);
@@ -2160,8 +2232,12 @@ namespace XRSound
         sampleNameStr += selected;
         
         strcpy(currentPatternSounds[track].sampleName, selected.c_str());
-
-        _extPatternSamples[track] = _loader.loadSample(sampleNameStr.c_str());
+        // TODO: Nic: when playing, we want to do it async - code below is fine when sequencer is not playing
+        if (XRSequencer::getSeqState().playbackState == XRSequencer::RUNNING) {
+            XRAsyncPSRAMLoader::addSampleFileNameForCurrentReadHeap(sampleNameStr);
+        } else
+            XRAsyncPSRAMLoader::loadSampleSync(&sampleNameStr);
+        patternSoundsDirty = true;
     }
 
     void changeTrackSoundType(uint8_t t, SOUND_TYPE newType)
@@ -2192,18 +2268,22 @@ namespace XRSound
             triggerMonoSynthNoteOn(t, note);
             
             break;
+#ifndef NO_DEXED
         case T_DEXED_SYNTH:
             triggerDexedSynthNoteOn(t, note);
             
             break;
+#endif
         case T_BRAIDS_SYNTH:
             triggerBraidsNoteOn(t, note);
 
             break;
+#ifndef NO_FMDRUM
         case T_FM_DRUM:
             triggerFmDrumNoteOn(t, note);
             
             break;
+#endif
         case T_CV_GATE:
             triggerCvGateNoteOn(t, note);
             
@@ -2249,11 +2329,16 @@ namespace XRSound
         monoSampleInstances[t].ampEnv.noteOn();
 
         if (trackSampleName.length() > 0) {
-            monoSampleInstances[t].sample.playRaw(
-                _extPatternSamples[t]->sampledata,
-                _extPatternSamples[t]->samplesize / 2,
-                _numChannels
-            );
+            const auto &sampleName = std::string("/audio enjoyer/xr-1/samples/") + std::string(trackSampleName);
+
+            newdigate::audiosample *sample = XRAsyncPSRAMLoader::getReadSample(&sampleName);
+            if (sample != nullptr) {
+                monoSampleInstances[t].sample.playRaw(
+                    sample->sampledata,
+                    sample->samplesize / 2,
+                    _numChannels
+                );
+            }
         }
 
         AudioNoInterrupts();
@@ -2330,7 +2415,7 @@ namespace XRSound
         monoSynthInstances[t].ampEnv.noteOn();
         monoSynthInstances[t].filterEnv.noteOn();
     }
-
+#ifndef NO_DEXED
     void triggerDexedSynthNoteOn(uint8_t t, uint8_t note)
     {
         if (t > 3) return;
@@ -2342,14 +2427,14 @@ namespace XRSound
         dexedInstances[t].ampAccent.gain(currTrack.velocity * 0.01);
         dexedInstances[t].dexed.keydown(midiNote, 50);
     }
-
+#endif
     void triggerBraidsNoteOn(uint8_t t, uint8_t note)
     {
         int midiNote = (note + (12 * (XRKeyMatrix::getKeyboardOctave())));
 
         // braidsInstances[t].braids.set_braids_pitch(midiNote << 7);
     }
-
+#ifndef NO_FMDRUM
     void triggerFmDrumNoteOn(uint8_t t, uint8_t note)
     {
         if (t > 2) return;
@@ -2359,6 +2444,7 @@ namespace XRSound
         fmDrumInstances[t].ampAccent.gain(currTrack.velocity * 0.01);
         fmDrumInstances[t].fmDrum.noteOn();
     }
+#endif
 
     void triggerCvGateNoteOn(uint8_t t, uint8_t note)
     {
@@ -2409,6 +2495,7 @@ namespace XRSound
                 monoSynthInstances[currSelTrackNum].filterEnv.noteOff();
             }
             break;
+#ifndef NO_DEXED
         case T_DEXED_SYNTH:
             {
                 int midiNote = (noteOnKeyboard + (12 * (XRKeyMatrix::getKeyboardOctave())));
@@ -2416,6 +2503,7 @@ namespace XRSound
                 dexedInstances[currSelTrackNum].dexed.keyup(midiNote);
             }
             break;
+#endif
         case T_BRAIDS_SYNTH:
             {
                 // int midiNote = (noteOnKeyboard + (12 * (XRKeyMatrix::getKeyboardOctave())));
@@ -2493,21 +2581,21 @@ namespace XRSound
             break;
 
         case T_MONO_SYNTH:
-            outputStr = "MONO-VA >";
+            outputStr = "MONO-SYNTH >";
             break;
-
+#ifndef NO_DEXED
         case T_DEXED_SYNTH:
-            outputStr = "6-OP-FM >";
+            outputStr = "FM-DEXED >";
             break;
-
+#endif
         case T_BRAIDS_SYNTH:
             outputStr = "BRAIDS >";
             break;
-
+#ifndef NO_FMDRUM
         case T_FM_DRUM:
             outputStr = "FM-DRUM >";
             break;
-
+#endif
         case T_MIDI:
             outputStr = "MIDI-OUT";
             break;
@@ -2542,22 +2630,22 @@ namespace XRSound
             str = "INIT";
 
             break;
-
+#ifndef NO_DEXED
         case T_DEXED_SYNTH:
             str = "INIT";
 
             break;
-
+#endif
         case T_BRAIDS_SYNTH:
             str = "INIT";
 
             break;
-
+#ifndef NO_FMDRUM
         case T_FM_DRUM:
             str = "INIT";
 
             break;
-
+#endif
         case T_MIDI:
             str = "MIDI";
 
@@ -2724,7 +2812,7 @@ namespace XRSound
 
         return (foundBaseFreq + (fine * 0.01)) * (pow(2, keyboardOctave));
     }
-
+#ifndef NO_DEXED
     void applyCurrentDexedPatchToSound()
     {
         auto track = XRSequencer::getCurrentSelectedTrackNum();
@@ -2738,6 +2826,7 @@ namespace XRSound
             currentPatternSounds[track].dexedParams[dp] = dexedParamData[dp];
         }
     }
+#endif
 
     int8_t getValueNormalizedAsInt8(int32_t param)
     {

@@ -239,5 +239,9 @@ ft_xz = PORT->Group[g_APinDescription[pin].ulPort].IN.reg, \
 #else
 int fastTouchRead( int );
 extern int fastTouchMax(void);
+
+// non-Arduino api below
+void setFastTouch( int pin, int value);
+
 #endif
 #endif /* FastTouch_h */

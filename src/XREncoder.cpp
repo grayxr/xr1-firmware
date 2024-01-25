@@ -68,8 +68,9 @@ namespace XREncoder
     void updateComboTrackLevel(int diff);
 
     bool handleMenuCursor(XRUX::UX_MODE menuMode);
+#ifndef NO_DEXED
     void handleDexedBrowser();
-
+#endif
     int getDiff(int address);
 
     void init()
@@ -146,12 +147,13 @@ namespace XREncoder
             
             return;
         }
-
+#ifndef NO_DEXED
         if (!(elapsedMs % 25) && currentUXMode == XRUX::UX_MODE::SOUND_MENU_DEXED_SYSEX_BROWSER) {
             handleDexedBrowser();
 
             return;
         }
+#endif
 
         if (!(elapsedMs % 25) && currentUXMode == XRUX::UX_MODE::SET_TEMPO) {
             handleEncoderSetTempo();
@@ -165,7 +167,7 @@ namespace XREncoder
             return;
         }
 
-        if (!(elapsedMs % 10) && (currentUXMode == XRUX::UX_MODE::TRACK_WRITE || currentUXMode == XRUX::UX_MODE::SUBMITTING_STEP_VALUE))
+        if ((currentUXMode == XRUX::UX_MODE::TRACK_WRITE || currentUXMode == XRUX::UX_MODE::SUBMITTING_STEP_VALUE))
         {
             int diff = getDiff(MAIN_ENCODER_ADDRESS);
 
@@ -214,10 +216,11 @@ namespace XREncoder
                 menuItems = SOUND_MENU_ITEM_MAX;
 
                 auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-
+#ifndef NO_DEXED
                 if (currentPatternSounds[currTrackNum].type == T_DEXED_SYNTH) {
                     menuItems = DEXED_SOUND_MENU_ITEM_MAX;
                 }
+#endif
             } else if (menuMode == XRUX::UX_MODE::CHANGE_SETUP) {
                 menuItems = SETUP_MENU_ITEM_MAX;
             } else if (menuMode == XRUX::UX_MODE::ASSIGN_SAMPLE_TO_TRACK_SOUND) {
@@ -267,6 +270,8 @@ namespace XREncoder
             }
 
             XRSequencer::setSelectedPage(newPage);
+
+            Serial.println("here123");
             
             XRDisplay::drawSequencerScreen(false);
         }
@@ -448,6 +453,7 @@ namespace XREncoder
                     handleEncoderMonoSynthModD(mDiff);
                 }
             }
+#ifndef NO_DEXED
             else if (XRSound::currentPatternSounds[currTrackNum].type == T_DEXED_SYNTH)
             {
                 if (m == 1) {
@@ -460,6 +466,8 @@ namespace XREncoder
                     handleEncoderDexedSynthModD(mDiff);
                 }
             }
+#endif
+#ifndef NO_FMDRUM
             else if (XRSound::currentPatternSounds[currTrackNum].type == T_FM_DRUM)
             {
                 if (m == 1) {
@@ -472,6 +480,7 @@ namespace XREncoder
                     handleEncoderFmDrumModD(mDiff);
                 }
             }
+#endif
             else if (XRSound::currentPatternSounds[currTrackNum].type == T_CV_GATE)
             {
                 // if (m == 1) {
@@ -490,12 +499,14 @@ namespace XREncoder
     void handleEncoderMonoSampleModA(int diff)
     {
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+        auto currSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
 
         auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
         auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
         
         auto &monoSampleInstance = XRSound::monoSampleInstances[currSelectedTrackNum];
+        auto currentUXMode = XRUX::getCurrentMode();
 
         switch (currSelectedPageNum)
         {
@@ -578,12 +589,16 @@ namespace XREncoder
         {
             int currLoopType = getValueNormalizedAsUInt8(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_LOOPTYPE]);
 
-            // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1)
-            // {
-            //     currLoopType = patternMods.tracks[currSelectedTrackNum].steps[currSelectedStepNum].looptype;
-            // }
+            // when param locking, use the existing param lock value as the current value
+            if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1) {
+                if (XRSound::patternSoundStepMods.sounds[currSelectedTrackNum].steps[currSelectedStepNum].flags[XRSound::MSMP_LOOPTYPE]) {
+                    currLoopType = getValueNormalizedAsUInt8(
+                        XRSound::patternSoundStepMods.sounds[currSelectedTrackNum].steps[currSelectedStepNum].mods[XRSound::MSMP_LOOPTYPE]
+                    );
+                }
+            }
 
-            int32_t newLoopType = (currLoopType + diff);
+            int newLoopType = (currLoopType + diff);
 
             if (newLoopType < 0)
             {
@@ -594,19 +609,14 @@ namespace XREncoder
                 newLoopType = 0;
             }
 
-            // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1)
-            // {
-            //     patternMods.tracks[currSelectedTrackNum].step_mod_flags[currSelectedStepNum].flags[XRSequencer::MOD_ATTRS::LOOPTYPE] = true;
-            //     patternMods.tracks[currSelectedTrackNum].steps[currSelectedStepNum].looptype = newLoopType;
-            // }
-            // else
-            // {
-                // currTrack.looptype = newLoopType;
-                
+            if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE) {
+                XRSound::patternSoundStepMods.sounds[currSelectedTrackNum].steps[currSelectedStepNum].flags[XRSound::MSMP_LOOPTYPE] = true;
+                XRSound::patternSoundStepMods.sounds[currSelectedTrackNum].steps[currSelectedStepNum].mods[XRSound::MSMP_LOOPTYPE] = getInt32ValuePaddedAsInt32(newLoopType);
+                XRSound::patternSoundStepModsDirty = true;
+            } else {
                 XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_LOOPTYPE] = getInt32ValuePaddedAsInt32(newLoopType);
-                XRSound::patternSoundsDirty = true;
-
-            // }
+            }
+            XRSound::patternSoundsDirty = true;
 
             XRDisplay::drawSequencerScreen(false);
         }
@@ -743,7 +753,7 @@ namespace XREncoder
             float newDecay = currDecay + (diff * mult);
 
             // real max decay = 11880
-            if (!(newDecay < 0 || newDecay > 500) && newDecay != currDecay)
+            if (!(newDecay < 0 || newDecay > 11880) && newDecay != currDecay)
             {
                 XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_AMP_DECAY] = getFloatValuePaddedAsInt32(newDecay);
                 XRSound::patternSoundsDirty = true;
@@ -1015,7 +1025,7 @@ namespace XREncoder
             break;
         }
     }
-
+#ifndef NO_DEXED
     void handleEncoderDexedSynthModA(int diff)
     {
         auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
@@ -1276,7 +1286,8 @@ namespace XREncoder
             break;
         }
     }
-
+#endif
+#ifndef NO_FMDRUM
     void handleEncoderFmDrumModB(int diff)
     {
         if (diff == 0) {
@@ -1407,6 +1418,7 @@ namespace XREncoder
             XRDisplay::drawSequencerScreen(false);
         }
     }
+#endif
 
     void handleEncoderMonoSynthModA(int diff)
     {
@@ -2137,7 +2149,7 @@ namespace XREncoder
             XRDisplay::drawSequencerScreen(false);
         }
     }
-
+#ifndef NO_DEXED
     void handleDexedBrowser()
     {
         int diff = getDiff(MAIN_ENCODER_ADDRESS);
@@ -2168,4 +2180,6 @@ namespace XREncoder
             XRDisplay::drawDexedSysexBrowser();
         }
     }
+#endif
+
 }

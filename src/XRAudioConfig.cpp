@@ -1,4 +1,5 @@
 #include <XRAudioConfig.h>
+// #include <input_soundio.h>
 
 // GUItool: begin automatically generated code
 AudioSynthWaveformDc     monoSynthDc2; //xy=128.33333206176758,474.28567600250244
@@ -49,13 +50,17 @@ AudioPlayArrayResmp  monoSample11; //xy=815.4761428833008,3791.5711240768433
 AudioPlayArrayResmp  monoSample5; //xy=819.9999389648438,2775
 AudioPlayArrayResmp  monoSample10; //xy=817.1427688598633,3628.2378721237183
 AudioPlayArrayResmp  monoSample9; //xy=818.3334426879883,3463.333336830139
+#ifndef NO_DEXED
 AudioSynthDexed          dexed3(4, SAMPLE_RATE); //xy=846.6665954589844,1231.666669845581
 AudioSynthDexed          dexed2(4, SAMPLE_RATE); //xy=849.9999351501465,1111.6667022705078
 AudioSynthDexed          dexed1(4, SAMPLE_RATE); //xy=850.9008483886719,991.0756568908691
 AudioSynthDexed          dexed4(4, SAMPLE_RATE); //xy=849.9999351501465,1356.6667022705078
+#endif
+#ifndef NO_FMDRUM
 AudioSynthFMDrum         fmDrum3; //xy=865.0000228881836,1789.9999504089355
 AudioSynthFMDrum         fmDrum2; //xy=870.0000228881836,1659.9999504089355
 AudioSynthFMDrum         fmDrum1; //xy=874.8809852600098,1534.5636081695557
+#endif
 //AudioSynthBraids         braids1;        //xy=874.9999732971191,1918.3333282470703
 AudioAmplifier           monoSynthAmp2; //xy=929.4998931884766,450.8808708190918
 AudioAmplifier           monoSynthAmp1; //xy=931.6665420532227,255.00001525878906
@@ -209,15 +214,20 @@ AudioMixer4              voiceMixLeft2; //xy=2004.2142715454102,3393.69055175781
 AudioMixer4              voiceMixRight2; //xy=2011.6902236938477,3460.4998817443848
 AudioMixer4              mainMixerLeft;         //xy=2447.500347137451,2413.3336753845215
 AudioMixer4              mainMixerRight;         //xy=2450.8332710266113,2485.0003452301025
-AudioInputI2S            i2s2;           //xy=2470.000587463379,2666.666856765747
+
 AudioAnalyzePeak         peak_left;          //xy=2476.666847229004,2618.333688735962
 AudioAnalyzePeak         peak_right; //xy=2480.0001831054688,2718.333366394043
 AudioMixer4              inputMixerLeft;         //xy=2676.666534423828,2636.6666107177734
 AudioMixer4              inputMixerRight; //xy=2678.3335189819336,2711.6668577194214
 AudioMixer4              OutputMixerLeft; //xy=2936.666618347168,2585.000104904175
 AudioMixer4              OutputMixerRight; //xy=2941.666778564453,2656.6668548583984
+#ifdef BUILD_FOR_LINUX
+AudioOutputSoundIO       i2s1;            //xy=3132.88089752197
+AudioInputSoundIO        i2s2;           //xy=2470.000587463379,2666.666856765747
+#else
 AudioOutputI2S           i2s1;           //xy=3132.8808975219727,2627.500024795532
-
+AudioInputI2S            i2s2;           //xy=2470.000587463379,2666.666856765747
+#endif
 AudioConnection          patchCord1(monoSynthDc2, monoSynthFilterEnv2);
 AudioConnection          patchCord2(monoSynthDc1, monoSynthFilterEnv1);
 AudioConnection          patchCord3(monoSynthDc3, monoSynthFilterEnv3);
@@ -270,13 +280,19 @@ AudioConnection          patchCord49(monoSample11, monoSampleAmpEnv11);
 AudioConnection          patchCord50(monoSample5, monoSampleAmpEnv5);
 AudioConnection          patchCord51(monoSample10, monoSampleAmpEnv10);
 AudioConnection          patchCord52(monoSample9, monoSampleAmpEnv9);
+#ifndef NO_DEXED
 AudioConnection          patchCord53(dexed3, 0, dexedAmpAccent3, 0);
 AudioConnection          patchCord54(dexed2, 0, dexedAmpAccent2, 0);
 AudioConnection          patchCord55(dexed1, 0, dexedAmpAccent1, 0);
 AudioConnection          patchCord56(dexed4, 0, dexedAmpAccent4, 0);
+#endif
+
+#ifndef NO_FMDRUM
 AudioConnection          patchCord57(fmDrum3, fmDrumAmpAccent3);
 AudioConnection          patchCord58(fmDrum2, fmDrumAmpAccent2);
 AudioConnection          patchCord59(fmDrum1, fmDrumAmpAccent1);
+#endif
+
 //AudioConnection          patchCord60(braids1, braidsAmpAccent1);
 AudioConnection          patchCord61(monoSynthAmp2, monoSynthLeft2);
 AudioConnection          patchCord62(monoSynthAmp2, monoSynthRight2);

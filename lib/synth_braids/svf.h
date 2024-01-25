@@ -36,7 +36,7 @@
 
 namespace braids {
 
-enum SvfMode {
+enum SvfMode : uint8_t {
   SVF_MODE_LP,
   SVF_MODE_BP,
   SVF_MODE_HP

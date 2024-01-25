@@ -4,9 +4,17 @@
 #include <Arduino.h>
 #include <Audio.h>
 #include <TeensyVariablePlayback.h>
+#ifndef NO_DEXED
 #include <synth_dexed.h>
+#endif
+#ifndef NO_FMDRUM
 #include <synth_fm_drum.h>
-// #include <synth_braids.h>
+#endif
+#include <synth_braids.h>
+#ifdef BUILD_FOR_LINUX
+#include <output_soundio.h>
+#include <input_soundio.h>
+#endif
 
 // GUItool: begin automatically generated code
 extern AudioSynthWaveformDc     monoSynthDc2; //xy=128.33333206176758,474.28567600250244
@@ -57,13 +65,17 @@ extern AudioPlayArrayResmp  monoSample11; //xy=815.4761428833008,3791.5711240768
 extern AudioPlayArrayResmp  monoSample5; //xy=819.9999389648438,2775
 extern AudioPlayArrayResmp  monoSample10; //xy=817.1427688598633,3628.2378721237183
 extern AudioPlayArrayResmp  monoSample9; //xy=818.3334426879883,3463.333336830139
+#ifndef NO_DEXED
 extern AudioSynthDexed          dexed3; //xy=846.6665954589844,1231.666669845581
 extern AudioSynthDexed          dexed2; //xy=849.9999351501465,1111.6667022705078
 extern AudioSynthDexed          dexed1; //xy=850.9008483886719,991.0756568908691
 extern AudioSynthDexed          dexed4; //xy=849.9999351501465,1356.6667022705078
+#endif
+#ifndef NO_FMDRUM
 extern AudioSynthFMDrum         fmDrum3; //xy=865.0000228881836,1789.9999504089355
 extern AudioSynthFMDrum         fmDrum2; //xy=870.0000228881836,1659.9999504089355
 extern AudioSynthFMDrum         fmDrum1; //xy=874.8809852600098,1534.5636081695557
+#endif
 // extern AudioSynthBraids         braids1;        //xy=874.9999732971191,1918.3333282470703
 extern AudioAmplifier           monoSynthAmp2; //xy=929.4998931884766,450.8808708190918
 extern AudioAmplifier           monoSynthAmp1; //xy=931.6665420532227,255.00001525878906
@@ -77,16 +89,22 @@ extern AudioAmplifier           monoSynthAmpAccent2; //xy=951.1667022705078,412.
 extern AudioAmplifier           monoSynthAmpAccent1; //xy=953.3333511352539,216.66668033599854
 extern AudioAmplifier           monoSynthAmpAccent3; //xy=953.1667594909668,610.8808794021606
 extern AudioAmplifier           monoSynthAmpAccent4; //xy=953.1667594909668,807.5475053787231
+#ifndef NO_DEXED
 extern AudioAmplifier           dexedAmp3; //xy=989.0989875793457,1273.9244232177734
 extern AudioAmplifier           dexedAmp2; //xy=992.4323272705078,1153.9244556427002
 extern AudioAmplifier           dexedAmp1; //xy=993.3332405090332,1033.3334102630615
 extern AudioAmplifier           dexedAmp4; //xy=992.4323272705078,1398.9244556427002
 extern AudioAmplifier           dexedAmpAccent3; //xy=1010.7658271789551,1230.591007232666
+#endif
 extern AudioEffectEnvelope      monoSampleAmpEnv4; //xy=1008.0950241088867,2568.476113319397
+#ifndef NO_DEXED
 extern AudioAmplifier           dexedAmpAccent2; //xy=1014.0991668701172,1110.5910396575928
 extern AudioAmplifier           dexedAmpAccent1; //xy=1015.0000801086426,989.9999942779541
+#endif
 extern AudioEffectEnvelope      monoSampleAmpEnv3; //xy=1009.7617111206055,2408.476113319397
+#ifndef NO_DEXED
 extern AudioAmplifier           dexedAmpAccent4; //xy=1014.0991668701172,1355.5910396575928
+#endif
 extern AudioEffectEnvelope      monoSampleAmpEnv2; //xy=1011.428337097168,2245.142861366272
 extern AudioEffectEnvelope      monoSampleAmpEnv1; //xy=1012.619010925293,2080.238326072693
 extern AudioEffectEnvelope      monoSampleAmpEnv16; //xy=1008.5711059570312,4660.046931743622
@@ -217,15 +235,19 @@ extern AudioMixer4              voiceMixLeft2; //xy=2004.2142715454102,3393.6905
 extern AudioMixer4              voiceMixRight2; //xy=2011.6902236938477,3460.4998817443848
 extern AudioMixer4              mainMixerLeft;         //xy=2447.500347137451,2413.3336753845215
 extern AudioMixer4              mainMixerRight;         //xy=2450.8332710266113,2485.0003452301025
-extern AudioInputI2S            i2s2;           //xy=2470.000587463379,2666.666856765747
 extern AudioAnalyzePeak         peak_left;          //xy=2476.666847229004,2618.333688735962
 extern AudioAnalyzePeak         peak_right; //xy=2480.0001831054688,2718.333366394043
 extern AudioMixer4              inputMixerLeft;         //xy=2676.666534423828,2636.6666107177734
 extern AudioMixer4              inputMixerRight; //xy=2678.3335189819336,2711.6668577194214
 extern AudioMixer4              OutputMixerLeft; //xy=2936.666618347168,2585.000104904175
 extern AudioMixer4              OutputMixerRight; //xy=2941.666778564453,2656.6668548583984
+#ifdef BUILD_FOR_LINUX
+extern AudioOutputSoundIO       i2s1;            //xy=3132.88089752197
+extern AudioInputSoundIO        i2s2;           //xy=2470.000587463379,2666.666856765747
+#else
 extern AudioOutputI2S           i2s1;           //xy=3132.8808975219727,2627.500024795532
-
+extern AudioInputI2S            i2s2;           //xy=2470.000587463379,2666.666856765747
+#endif
 extern AudioConnection          patchCord1;
 extern AudioConnection          patchCord2;
 extern AudioConnection          patchCord3;

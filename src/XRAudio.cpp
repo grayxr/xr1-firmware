@@ -44,12 +44,19 @@ namespace XRAudio
     void logMetrics()
     {
         if (LOG_METRICS_ENABLED) {
+#ifdef BUILD_FOR_LINUX
+            Serial.printf(
+                    "Memory: %d/%d",
+                    AudioMemoryUsage(),
+                    AudioMemoryUsageMax());
+#else
             Serial.printf(
             "Memory: %d/%d CPU: %f/%f\n",
             AudioMemoryUsage(),
             AudioMemoryUsageMax(),
             AudioProcessorUsage(),
             AudioProcessorUsageMax());
+#endif
         }
     }
 

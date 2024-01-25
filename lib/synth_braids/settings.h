@@ -33,7 +33,7 @@
 
 namespace braids {
 
-enum MacroOscillatorShape {
+enum MacroOscillatorShape  : uint8_t{
   MACRO_OSC_SHAPE_CSAW,
   MACRO_OSC_SHAPE_MORPH,
   MACRO_OSC_SHAPE_SAW_SQUARE,
@@ -96,7 +96,7 @@ enum MacroOscillatorShape {
   MACRO_OSC_SHAPE_LAST_ACCESSIBLE_FROM_META = MACRO_OSC_SHAPE_DIGITAL_MODULATION
 };
 
-enum Resolution {
+enum Resolution : uint8_t {
   RESOLUTION_2_BIT,
   RESOLUTION_3_BIT,
   RESOLUTION_4_BIT,
@@ -107,7 +107,7 @@ enum Resolution {
   RESOLUTION_LAST
 };
 
-enum SampleRate {
+enum SampleRate : uint8_t {
   SAMPLE_RATE_4K,
   SAMPLE_RATE_8K,
   SAMPLE_RATE_16K,
@@ -119,7 +119,7 @@ enum SampleRate {
   SAMPLE_RATE_LAST
 };
 
-enum PitchRange {
+enum PitchRange : uint8_t {
   PITCH_RANGE_EXTERNAL,
   PITCH_RANGE_FREE,
   PITCH_RANGE_EXTENDED,
@@ -127,7 +127,7 @@ enum PitchRange {
   PITCH_RANGE_LFO  // This setting is hidden by default!
 };
 
-enum Setting {
+enum Setting : uint8_t {
   SETTING_OSCILLATOR_SHAPE,
   SETTING_RESOLUTION,
   SETTING_SAMPLE_RATE,

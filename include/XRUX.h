@@ -6,7 +6,7 @@
 
 namespace XRUX
 {
-    enum UX_MODE
+    enum UX_MODE : uint8_t
     {
         BANK_WRITE,
         BANK_SEL,

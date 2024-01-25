@@ -9,7 +9,21 @@
 #include "FastTouch.h"
 
 
+#ifdef BUILD_FOR_LINUX
+#include <map>
+std::map<int, int> _fastTouchMap = {};
+void setFastTouch( int pin, int value) {
+    _fastTouchMap[pin] = value;
+}
 
+int fastTouchRead(int pin)
+{
+    if (_fastTouchMap.count(pin) == 1) {
+        return _fastTouchMap[pin];
+    }
+    return 0;
+}
+#else
 
 #if defined(CORE_TEENSY)
 
@@ -792,6 +806,7 @@ int fastTouchRead(int pin)
         
     }
 }
+#endif
 #endif
 #endif
 

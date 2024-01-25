@@ -29,7 +29,7 @@ class FmOperatorInfo {
     int out;
 };
 
-enum FmOperatorFlags {
+enum FmOperatorFlags : uint8_t {
   OUT_BUS_ONE = 1 << 0,
   OUT_BUS_TWO = 1 << 1,
   OUT_BUS_ADD = 1 << 2,

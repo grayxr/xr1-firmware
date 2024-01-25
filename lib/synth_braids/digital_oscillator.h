@@ -52,7 +52,7 @@ static const size_t kNumBellPartials = 11;
 static const size_t kNumDrumPartials = 6;
 static const size_t kNumAdditiveHarmonics = 12;
 
-enum DigitalOscillatorShape {
+enum DigitalOscillatorShape : uint8_t{
   OSC_SHAPE_TRIPLE_RING_MOD,
   OSC_SHAPE_SAW_SWARM,
   OSC_SHAPE_COMB_FILTER,

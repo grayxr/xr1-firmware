@@ -8,6 +8,7 @@
 #include <XRMenu.h>
 #include <XRClock.h>
 #include <map>
+#include <XRAsyncPSRAMLoader.h>
 
 namespace XRKeyMatrix
 {
@@ -158,10 +159,11 @@ namespace XRKeyMatrix
             XRSequencer::toggleSequencerPlayback(key);
 
             // TODO: allowedModesToDrawSequencerFrom ?
+#ifndef NO_DEXED
             if (currentUXMode != XRUX::UX_MODE::SOUND_MENU_DEXED_SYSEX_BROWSER) {
                 XRDisplay::drawSequencerScreen(false);
             }
-
+#endif
             return;
         }
 
@@ -258,6 +260,8 @@ namespace XRKeyMatrix
             XRLED::clearAllStepLEDs();
             XRLED::displayCurrentlySelectedPattern();
 
+            XRDisplay::drawSequencerScreen();
+
             return;
 
         } 
@@ -271,14 +275,21 @@ namespace XRKeyMatrix
 
             if (seqState.playbackState == XRSequencer::SEQUENCER_PLAYBACK_STATE::RUNNING) {
                 // queued pattern change
-
                 Serial.printf("queueing pattern: %d\n", nextPattern);
 
                 XRSequencer::queuePattern(nextPattern, nextBank);
+                if (!XRSD::loadNextPatternSounds(nextBank, nextPattern))
+                {
+                    XRSound::initNextPatternSounds();
+                }
+                XRAsyncPSRAMLoader::startAsyncInitOfNextPattern(nextBank, nextPattern);
 
                 XRSound::saveSoundDataForPatternChange();
 
-                XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_WRITE);
+                XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_SEL);
+
+                XRLED::clearAllStepLEDs();
+                XRDisplay::drawSequencerScreen();
             } else {
                 // instant pattern change
 
@@ -289,15 +300,15 @@ namespace XRKeyMatrix
                 // save any track step mods for current pattern to SD
                 XRSD::savePatternTrackStepModsToSdCard();
                 XRSequencer::swapSequencerMemoryForPattern(nextBank, nextPattern);
-
-                Serial.printf("marking pressed pattern selection (zero-based): %d", nextPattern);
+                XRAsyncPSRAMLoader::prePatternChange();
+                // Serial.printf("marking pressed pattern selection (zero-based): %d\n", nextPattern);
 
                 _ptnHeldForSelection = nextPattern; // TODO: need?
 
-                XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_SEL);
+                XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_SEL); // GETS CHANGED TO PATTERN_WRITE IN RELEASE ACTIONS HANDLER
 
                 XRLED::clearAllStepLEDs();
-                XRLED::displayCurrentlySelectedPattern();
+                XRDisplay::drawSequencerScreen();
             }
 
             return;
@@ -711,7 +722,7 @@ namespace XRKeyMatrix
 
             return;
         }
-
+#ifndef NO_DEXED
         else if (currentUXMode == XRUX::UX_MODE::SOUND_MENU_DEXED_SYSEX_BROWSER && key == SELECT_BTN_CHAR) {
             auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
 
@@ -723,6 +734,7 @@ namespace XRKeyMatrix
 
             return;
         }
+#endif
     }
 
     void handleHoldForKey(char key)
@@ -769,7 +781,7 @@ namespace XRKeyMatrix
         XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
 
         // pattern select / write release
-        if (currentUXMode == XRUX::PATTERN_SEL && key == 'b' && _ptnHeldForSelection == -1)
+        if (currentUXMode == XRUX::PATTERN_SEL && key == PATTERN_BTN_CHAR && _ptnHeldForSelection == -1)
         {
             XRUX::setCurrentMode(XRUX::PATTERN_WRITE); // force patt write mode when leaving patt / patt select action
 
@@ -952,7 +964,7 @@ namespace XRKeyMatrix
 
                     auto cursorPos = XRMenu::getCursorPosition();
                     auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-
+#ifndef NO_DEXED
                     if (XRSound::currentPatternSounds[currTrackNum].type == XRSound::T_DEXED_SYNTH) {
                         if (XRMenu::getDexedSoundMenuItems()[cursorPos] == "BROWSE DEXED SYSEX") {
                             Serial.println("in browse dexed sysex sub menu");
@@ -966,6 +978,7 @@ namespace XRKeyMatrix
                             XRDisplay::drawDexedSysexBrowser();
                         }
                     }
+#endif
 
                     return true;
                 }
@@ -1080,7 +1093,7 @@ namespace XRKeyMatrix
     {
         XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
 
-        // Serial.println("enter handleFunctionReleaseActions!");
+        Serial.println("enter handleFunctionReleaseActions!");
 
         if (key == FUNCTION_BTN_CHAR) { 
             // leaving function
@@ -1410,16 +1423,26 @@ namespace XRKeyMatrix
                 }
                 else if (currType == XRSound::T_MONO_SYNTH)
                 {
+#ifndef NO_DEXED
                     newType = XRSound::T_DEXED_SYNTH;
+#elif not defined(NO_FMDRUM)
+                    newType = XRSound::T_FM_DRUM;
+#else
+                    newType = XRSound::T_MIDI;
+#endif
                 }
+#ifndef NO_DEXED
                 else if (currType == XRSound::T_DEXED_SYNTH)
                 {
                     newType = XRSound::T_FM_DRUM;
                 }
+#endif
+#ifndef NO_FMDRUM
                 else if (currType == XRSound::T_FM_DRUM)
                 {
                     newType = XRSound::T_MIDI;
-                } 
+                }
+#endif
                 else if (currType == XRSound::T_MIDI)
                 {
                     newType = XRSound::T_MONO_SAMPLE;
@@ -1435,12 +1458,18 @@ namespace XRKeyMatrix
                 }
                 else if (currType == XRSound::T_MONO_SYNTH)
                 {
+#ifndef NO_DEXED
                     newType = XRSound::T_DEXED_SYNTH;
+#else
+                    newType = XRSound::T_MIDI;
+#endif
                 }
+#ifndef NO_DEXED
                 else if (currType == XRSound::T_DEXED_SYNTH)
                 {
                     newType = XRSound::T_MIDI;
                 }
+#endif
                 // else if (currType == XRSound::T_BRAIDS_SYNTH)
                 // {
                 //     newType = XRSound::T_MIDI;
