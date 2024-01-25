@@ -281,7 +281,7 @@ namespace XRDisplay
 
     void drawSequencerScreen(bool queueBlink)
     {
-        // Serial.println("enter drawSequencerScreen!");
+        Serial.println("enter drawSequencerScreen!");
 
         u8g2.clearBuffer();
 
@@ -412,11 +412,11 @@ namespace XRDisplay
             ptnNumber = queuedPattern.number + 1;
             ptnBlink = (queuedPattern.number != currentSelectedPattern);
 
-            Serial.printf("ptnNumber: %d, ptnBlink: %d, queueBlink: %d\n", ptnNumber, ptnBlink, queueBlink);
+            //Serial.printf("ptnNumber: %d, ptnBlink: %d, queueBlink: %d\n", ptnNumber, ptnBlink, queueBlink);
         }
 
 
-        if (currentUXMode == XRUX::PATTERN_WRITE)
+        if (currentUXMode == XRUX::PATTERN_WRITE || currentUXMode == XRUX::PATTERN_SEL)
         {
             u8g2.setColorIndex((u_int8_t)1);
             u8g2.drawBox(26, 0, 29, 7);
@@ -438,7 +438,7 @@ namespace XRDisplay
             u8g2.setColorIndex((u_int8_t)1);
         }
 
-        if (currentUXMode == XRUX::PATTERN_WRITE)
+        if (currentUXMode == XRUX::PATTERN_WRITE || currentUXMode == XRUX::PATTERN_SEL)
         {
             // draw pattern header box
             u8g2.setColorIndex((u_int8_t)1);
@@ -974,7 +974,7 @@ namespace XRDisplay
 
         if (currSelectedLayer == XRSequencer::LAYER::SOUND) {
             currTrackPageCount = XRSound::getPageCountForCurrentTrack();
-            currPageNameForTrack = XRSound::currentPatternSounds[currTrackNum].type != XRSound::T_EMPTY ? "SOUND > " : "";
+            currPageNameForTrack = XRSound::currentPatternSounds[currTrackNum].type != XRSound::T_EMPTY ? "TRKSND > " : "";
             currPageNameForTrack += XRSound::getPageNameForCurrentTrack();
         }
 

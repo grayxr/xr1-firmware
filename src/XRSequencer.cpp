@@ -166,14 +166,6 @@ namespace XRSequencer
             XRLED::setPWM(23, 4095); // when recording, each straight quarter note start button led ON
         }
 
-        if (!(tick % 4))
-        {
-            if (_queuedPattern.bank > -1 && _queuedPattern.number > -1)
-            {
-                _drawQueueBlink = 0;
-            }
-        }
-
         // This method handles advancing the sequencer
         // and displaying the start btn and step btn BPM LEDs
         int8_t currStepChar = XRHelpers::stepCharMap[currStepPaged];
@@ -245,14 +237,18 @@ namespace XRSequencer
         updateCurrentPatternStepState();
         updateAllTrackStepStates();
 
-        // every 1/4 step log memory usage
-        if (!(tick % 16)) {
-            XRAudio::logMetrics();
-
-            // blink queued bank / pattern
+        if (!(tick % 4)) {
+            // blink queued pattern number every qtr note if pattern is queued
             if (_queuedPattern.bank > -1 && _queuedPattern.number > -1) {
                 _drawQueueBlink = 1;
             }
+        } else if ((_drawQueueBlink > -1) && !(tick % 2)) {
+            _drawQueueBlink = 0;
+        }
+
+        // every 1/4 step log memory usage
+        if (!(tick % 4)) {
+            XRAudio::logMetrics();
         }
 
         if (_recording) {
@@ -790,8 +786,6 @@ namespace XRSequencer
     {
         int stepToUse = step;
 
-        // todo: check if current track has last_step > 16
-        // if so, use proper offset to get correct step state for current page
         if (_currentStepPage == 2)
         {
             stepToUse += 16;
@@ -805,55 +799,42 @@ namespace XRSequencer
             stepToUse += 48;
         }
 
-        uint8_t adjStep = stepToUse - 1; // get zero based step num
-
-        Serial.print("adjStep: ");
-        Serial.println(adjStep);
+        uint8_t stepNum = stepToUse - 1; // get zero based step num
 
         TRACK currTrack = getHeapCurrentSelectedTrack();
-        STEP_STATE currStepState = currTrack.steps[adjStep].state;
+        STEP_STATE currStepState = currTrack.steps[stepNum].state;
 
-        Serial.print("currStepState: ");
-        Serial.println(currStepState == STEP_STATE::STATE_ACCENTED ? "accented" : (currStepState == STEP_STATE::STATE_ON ? "on" : "off"));
-
-        // TODO: implement accent state for MIDI, CV/Trig, Sample, Synth track types?
         if (currStepState == STEP_STATE::STATE_OFF)
         {
-            heapPattern.tracks[_currentSelectedTrack].steps[adjStep].state = STEP_STATE::STATE_ON;
-            // TODO: REMOVE
-            // copy track properties to steps
-            // heapPattern.tracks[_currentSelectedTrack].steps[adjStep].note = currTrack.note;
-            // heapPattern.tracks[_currentSelectedTrack].steps[adjStep].octave = currTrack.octave;
-            // heapPattern.tracks[_currentSelectedTrack].steps[adjStep].velocity = currTrack.velocity;
+            heapPattern.tracks[_currentSelectedTrack].steps[stepNum].state = STEP_STATE::STATE_ON;
         }
         else if (currStepState == STEP_STATE::STATE_ON)
         {
-            heapPattern.tracks[_currentSelectedTrack].steps[adjStep].state = STEP_STATE::STATE_ACCENTED;
-            // TODO: REMOVE
-            // heapPattern.tracks[_currentSelectedTrack].steps[adjStep].velocity = 100; // TODO: use a "global accent" value here
+            heapPattern.tracks[_currentSelectedTrack].steps[stepNum].state = STEP_STATE::STATE_ACCENTED;
         }
         else if (currStepState == STEP_STATE::STATE_ACCENTED)
         {
-            heapPattern.tracks[_currentSelectedTrack].steps[adjStep].state = STEP_STATE::STATE_OFF;
+            heapPattern.tracks[_currentSelectedTrack].steps[stepNum].state = STEP_STATE::STATE_OFF;
         }
 
-        sequencer.banks[_currentSelectedBank].patterns[_currentSelectedPattern].tracks[_currentSelectedTrack].steps[adjStep] = heapPattern.tracks[_currentSelectedTrack].steps[adjStep];
+        // record latest step state in RAM2 as well
+        sequencer.banks[_currentSelectedBank].patterns[_currentSelectedPattern].tracks[_currentSelectedTrack].steps[stepNum] = heapPattern.tracks[_currentSelectedTrack].steps[stepNum];
     }
 
     void toggleSequencerPlayback(char btn)
     {
-        Serial.println("enter toggleSequencerPlayback!");
+        //Serial.println("enter toggleSequencerPlayback!");
 
         auto currentUXMode = XRUX::getCurrentMode();
 
         int8_t currStepChar = XRHelpers::stepCharMap[_seqState.currentStep - 1]; // TODO change type to char?
         uint8_t keyLED = XRLED::getKeyLED(currStepChar);
 
-        if (_seqState.playbackState > STOPPED) {
+        if (_seqState.playbackState > STOPPED) { // either RUNNING or PAUSED
             if (_seqState.playbackState == RUNNING && btn == START_BTN_CHAR) {
                 _seqState.playbackState = PAUSED;
 
-                XRClock::pause();
+                XRClock::pause(); // toggle pause ON
 
                 XRLED::setPWMDouble(23, 0, keyLED, 0);
 
@@ -877,23 +858,23 @@ namespace XRSequencer
                 // Unpaused, so advance sequencer from last known step
                 _seqState.playbackState = RUNNING;
 
-                XRClock::pause();
-            } else if (btn == 'w') {
+                XRClock::pause(); // toggle pause OFF
+            } else if (btn == STOP_BTN_CHAR) {
+                _seqState.playbackState = STOPPED;
+
+                XRClock::stop();
+
                 // Stopped, so reset sequencer to FIRST step in pattern
                 _seqState.currentStep = 1;
                 _seqState.currentBar = 1;
 
                 rewindAllCurrentStepsForAllTracks();
 
-                _seqState.playbackState = STOPPED;
-
-                XRClock::stop();
-
                 XRLED::setPWM(keyLED, 0); // turn off current step LED
                 XRLED::setPWM(23, 0);     // turn start button led OFF
 
                 if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE) {
-                    XRLED::setDisplayStateForAllStepLEDs(); // TODO: wrap with "if in track view display step LED state" conditional, etc
+                    XRLED::setDisplayStateForAllStepLEDs();
                 } else if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) {
                     XRLED::clearAllStepLEDs();
                 }
@@ -905,24 +886,9 @@ namespace XRSequencer
 
             XRClock::start();
             // uClock.start();
-        } else if (btn == 'w') {
-            // Stopped, so reset sequencer to FIRST step in pattern
-            _seqState.currentStep = 1;
-            _seqState.currentBar = 1;
-
-            rewindAllCurrentStepsForAllTracks();
-
-            _seqState.playbackState = STOPPED;
-
-            XRClock::stop();
-
-            XRLED::setPWM(23, 0); // turn start button led OFF
-
-            if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE) {
-                XRLED::setDisplayStateForAllStepLEDs(); // TODO: wrap with "if in track view display step LED state" conditional, etc
-            } else if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) {
-                XRLED::clearAllStepLEDs();
-            }
+        } else if (btn == STOP_BTN_CHAR) {
+           // Already stopped, so disable all sound output when stop btn is pressed again
+           XRSound::turnOffAllSounds();
         }
     }
 

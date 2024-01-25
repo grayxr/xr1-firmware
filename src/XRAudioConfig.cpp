@@ -1,5 +1,5 @@
 #include <XRAudioConfig.h>
-#include <input_soundio.h>
+// #include <input_soundio.h>
 
 // GUItool: begin automatically generated code
 AudioSynthWaveformDc     monoSynthDc2; //xy=128.33333206176758,474.28567600250244

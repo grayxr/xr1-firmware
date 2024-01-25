@@ -10,7 +10,7 @@
 #ifndef NO_FMDRUM
 #include <synth_fm_drum.h>
 #endif
-// #include <synth_braids.h>
+#include <synth_braids.h>
 #ifdef BUILD_FOR_LINUX
 #include <output_soundio.h>
 #include <input_soundio.h>
@@ -245,8 +245,8 @@ extern AudioMixer4              OutputMixerRight; //xy=2941.666778564453,2656.66
 extern AudioOutputSoundIO       i2s1;            //xy=3132.88089752197
 extern AudioInputSoundIO        i2s2;           //xy=2470.000587463379,2666.666856765747
 #else
-AudioOutputI2S           i2s1;           //xy=3132.8808975219727,2627.500024795532
-AudioInputI2S            i2s2;           //xy=2470.000587463379,2666.666856765747
+extern AudioOutputI2S           i2s1;           //xy=3132.8808975219727,2627.500024795532
+extern AudioInputI2S            i2s2;           //xy=2470.000587463379,2666.666856765747
 #endif
 extern AudioConnection          patchCord1;
 extern AudioConnection          patchCord2;

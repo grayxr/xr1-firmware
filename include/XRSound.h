@@ -421,6 +421,8 @@ namespace XRSound
     void changeTrackSoundType(uint8_t t, SOUND_TYPE newType);
     void initTrackSound(int8_t t);
 
+    void turnOffAllSounds();
+
     void handleMonoSampleNoteOnForTrack(int track);
     void handleMonoSynthNoteOnForTrack(int track);
     void handleDexedSynthNoteOnForTrack(int track);

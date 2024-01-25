@@ -12,6 +12,7 @@ namespace XRAsyncPSRAMLoader
     void postPatternChange();
     void prePatternChange();
     void addSampleFileNameForNextAsyncLoadBatch(const std::string &filename);
+    void addSampleFileNameForCurrentReadHeap(const std::string &filename);
     void startAsyncInitOfCurrentPattern();
     void startAsyncInitOfNextPattern(int newBank, int newPattern);
     void startAsyncInitOfNextPattern();

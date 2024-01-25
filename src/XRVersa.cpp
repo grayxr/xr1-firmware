@@ -105,7 +105,7 @@ namespace XRVersa
 
         // TODO: remove?
         if (queuedPattern.bank > -1 || queuedPattern.number > -1) {
-            Serial.println("pattern queued, don't allow versa keyboard events!");
+            //Serial.println("pattern queued, don't allow versa keyboard events!");
 
             return;
         }

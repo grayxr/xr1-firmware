@@ -260,6 +260,8 @@ namespace XRKeyMatrix
             XRLED::clearAllStepLEDs();
             XRLED::displayCurrentlySelectedPattern();
 
+            XRDisplay::drawSequencerScreen();
+
             return;
 
         } 
@@ -273,11 +275,10 @@ namespace XRKeyMatrix
 
             if (seqState.playbackState == XRSequencer::SEQUENCER_PLAYBACK_STATE::RUNNING) {
                 // queued pattern change
-
                 Serial.printf("queueing pattern: %d\n", nextPattern);
 
                 XRSequencer::queuePattern(nextPattern, nextBank);
-                if (!XRSD::loadPatternSounds(nextBank, nextPattern))
+                if (!XRSD::loadNextPatternSounds(nextBank, nextPattern))
                 {
                     XRSound::initNextPatternSounds();
                 }
@@ -285,7 +286,10 @@ namespace XRKeyMatrix
 
                 XRSound::saveSoundDataForPatternChange();
 
-                XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_WRITE);
+                XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_SEL);
+
+                XRLED::clearAllStepLEDs();
+                XRDisplay::drawSequencerScreen();
             } else {
                 // instant pattern change
 
@@ -297,14 +301,14 @@ namespace XRKeyMatrix
                 XRSD::savePatternTrackStepModsToSdCard();
                 XRSequencer::swapSequencerMemoryForPattern(nextBank, nextPattern);
                 XRAsyncPSRAMLoader::prePatternChange();
-                Serial.printf("marking pressed pattern selection (zero-based): %d\n", nextPattern);
+                // Serial.printf("marking pressed pattern selection (zero-based): %d\n", nextPattern);
 
                 _ptnHeldForSelection = nextPattern; // TODO: need?
 
-                XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_SEL);
+                XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_SEL); // GETS CHANGED TO PATTERN_WRITE IN RELEASE ACTIONS HANDLER
 
                 XRLED::clearAllStepLEDs();
-                XRLED::displayCurrentlySelectedPattern();
+                XRDisplay::drawSequencerScreen();
             }
 
             return;
@@ -777,7 +781,7 @@ namespace XRKeyMatrix
         XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
 
         // pattern select / write release
-        if (currentUXMode == XRUX::PATTERN_SEL && key == 'b' && _ptnHeldForSelection == -1)
+        if (currentUXMode == XRUX::PATTERN_SEL && key == PATTERN_BTN_CHAR && _ptnHeldForSelection == -1)
         {
             XRUX::setCurrentMode(XRUX::PATTERN_WRITE); // force patt write mode when leaving patt / patt select action
 
@@ -1089,7 +1093,7 @@ namespace XRKeyMatrix
     {
         XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
 
-        // Serial.println("enter handleFunctionReleaseActions!");
+        Serial.println("enter handleFunctionReleaseActions!");
 
         if (key == FUNCTION_BTN_CHAR) { 
             // leaving function

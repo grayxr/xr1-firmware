@@ -1055,10 +1055,10 @@ namespace XRSound
         auto &currentSelectedTrack = XRSequencer::getHeapCurrentSelectedTrack();
         auto currentSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        auto currSelectedStep = XRSequencer::getCurrentSelectedStepNum();
+        auto currentUXMode = XRUX::getCurrentMode();
 
         auto currentSoundForTrack = currentPatternSounds[currentSelectedTrackNum];
-
-            // TODO: add step mod support back in
 
         switch (currentSelectedPageNum)
         {
@@ -1088,6 +1088,16 @@ namespace XRSound
                 auto detune = getValueNormalizedAsInt8(currentSoundForTrack.params[MSYN_DETUNE]);
                 auto fine = getValueNormalizedAsInt8(currentSoundForTrack.params[MSYN_FINE]);
                 auto width = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_WIDTH]);
+
+                if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStep > -1) {
+                    if (XRSound::patternSoundStepMods.sounds[currentSelectedTrackNum].steps[currSelectedStep].flags[XRSound::MSYN_WAVE]) {
+                        waveform = getWaveformNumber(
+                            getValueNormalizedAsUInt8(
+                                XRSound::patternSoundStepMods.sounds[currentSelectedTrackNum].steps[currSelectedStep].mods[XRSound::MSYN_WAVE]
+                            )
+                        );
+                    }
+                }
 
                 mods.aValue = getWaveformName(waveform);
                 mods.bValue = std::to_string(detune);
@@ -2039,6 +2049,15 @@ namespace XRSound
         }
     }
 
+    void turnOffAllSounds()
+    {
+        for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++) {
+            if (t < 4) { // dexed voice instances are only available to tracks 0-3
+                dexedInstances[t].dexed.notesOff();
+            }
+        }
+    }
+
     void handleNoteOffForTrack(int track)
     {
         auto &currTrack = XRSequencer::getHeapTrack(track);
@@ -2215,7 +2234,11 @@ namespace XRSound
         
         strcpy(currentPatternSounds[track].sampleName, selected.c_str());
         // TODO: Nic: when playing, we want to do it async - code below is fine when sequencer is not playing
-        XRAsyncPSRAMLoader::loadSampleSync(&sampleNameStr);
+        if (XRSequencer::getSeqState().playbackState == XRSequencer::RUNNING) {
+            XRAsyncPSRAMLoader::addSampleFileNameForCurrentReadHeap(sampleNameStr);
+        } else
+            XRAsyncPSRAMLoader::loadSampleSync(&sampleNameStr);
+        patternSoundsDirty = true;
     }
 
     void changeTrackSoundType(uint8_t t, SOUND_TYPE newType)
@@ -2559,11 +2582,11 @@ namespace XRSound
             break;
 
         case T_MONO_SYNTH:
-            outputStr = "MONO-VA >";
+            outputStr = "MONO-SYNTH >";
             break;
 #ifndef NO_DEXED
         case T_DEXED_SYNTH:
-            outputStr = "6-OP-FM >";
+            outputStr = "FM-DEXED >";
             break;
 #endif
         case T_BRAIDS_SYNTH:

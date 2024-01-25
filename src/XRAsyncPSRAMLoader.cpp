@@ -11,17 +11,29 @@ namespace XRAsyncPSRAMLoader
     newdigate::dualheapasyncflashloader asyncflashloader;
     File asyncLoadFile;
     bool writeHeapHasLoaded = false, readHeapHasLoaded = false, asyncOpening = true, asyncChanging = false;
-    uint32_t currentWriteHeap = 0, currentReadHeap = 1, numWriteHeapSamplesRequested = 0, numWriteHeapSamplesLoaded = 0;
+    uint32_t currentWriteHeap = 0, currentReadHeap = 1, numWriteHeapSamplesRequested = 0, numWriteHeapSamplesLoaded = 0, numReadHeapSamplesRequested = 0, numReadHeapSamplesLoaded = 0;
 
     bool failed = false;
     bool hasInitialized = false;
 
+    // queuing a sample to be transfered from uSD to the current write heap
+    // typically when a user has queued a pattern change and the samples for the next pattern should now be queued
     void addSampleFileNameForNextAsyncLoadBatch(const std::string &filename){
         if (numWriteHeapSamplesRequested >= fileNames[currentWriteHeap].size() ) {
             fileNames[currentWriteHeap].push_back(filename);
         } else
             fileNames[currentWriteHeap][numWriteHeapSamplesRequested] = filename;
         numWriteHeapSamplesRequested++;
+    }
+
+    // queuing a sample to be transfered from uSD to the current read heap
+    // typically when a user has changed a sample mid-playback
+    void addSampleFileNameForCurrentReadHeap(const std::string &filename){
+        auto it = std::find( fileNames[currentReadHeap].begin(), fileNames[currentReadHeap].end(), filename );
+        if (it != std::end(fileNames[currentReadHeap])) return; // already loaded a file with this filename
+        fileNames[currentReadHeap].push_back(filename);
+        numReadHeapSamplesRequested++;
+        asyncOpening = true;
     }
 
     inline void heap_switch() {
@@ -31,6 +43,8 @@ namespace XRAsyncPSRAMLoader
         currentReadHeap = 1 - currentWriteHeap;
         numWriteHeapSamplesLoaded = 0;
         numWriteHeapSamplesRequested = 0;
+        numReadHeapSamplesLoaded = 0;
+        numReadHeapSamplesRequested = 0;
         readHeapHasLoaded = writeHeapHasLoaded;
         writeHeapHasLoaded = false;
 
@@ -44,23 +58,26 @@ namespace XRAsyncPSRAMLoader
     }
 
     void handleAsyncPSRAMLoading() {
-        if (failed || writeHeapHasLoaded) return;
+        if (failed) return;
 
-        if (numWriteHeapSamplesLoaded < numWriteHeapSamplesRequested) {
+        if (!writeHeapHasLoaded && (numWriteHeapSamplesLoaded < numWriteHeapSamplesRequested)) {
             if (asyncOpening) {
                 const auto &filename = fileNames[currentWriteHeap][numWriteHeapSamplesLoaded];
 
                 asyncLoadFile = SD.open(filename.c_str());
                 auto *sample = asyncflashloader.beginAsyncLoad(asyncLoadFile);
-                if (numWriteHeapSamplesLoaded >= samples[currentWriteHeap].size() ) {
-                    samples[currentWriteHeap].push_back(sample);
-                } else
-                    samples[currentWriteHeap][numWriteHeapSamplesLoaded] = sample;
+
                 if (!sample) {
                     failed = true;
                     Serial.printf("abort!!! can not find '%s'...(heap:%d, index:%d)\n", filename.c_str(), currentWriteHeap, numWriteHeapSamplesLoaded);
                     return;
                 }
+
+                if (numWriteHeapSamplesLoaded >= samples[currentWriteHeap].size() ) {
+                    samples[currentWriteHeap].push_back(sample);
+                } else
+                    samples[currentWriteHeap][numWriteHeapSamplesLoaded] = sample;
+
                 asyncOpening = false;
                 Serial.printf("loading '%s'...      (heap:%d, index:%d)\t\t", filename.c_str(), currentWriteHeap, numWriteHeapSamplesLoaded);
             } else if (asyncflashloader.continueAsyncLoadPartial()) {
@@ -78,6 +95,39 @@ namespace XRAsyncPSRAMLoader
                         Serial.printf("Calling initial postpattern change (or if non initial, if stopped): \n");
                         postPatternChange();
                     }
+                }
+            }
+        }
+
+        if (numReadHeapSamplesLoaded < numReadHeapSamplesRequested) {
+            if (asyncOpening) {
+                auto index = fileNames[currentReadHeap].size() - numReadHeapSamplesRequested + numReadHeapSamplesLoaded;
+                const auto &filename = fileNames[currentReadHeap][index];
+
+                asyncLoadFile = SD.open(filename.c_str());
+                auto *sample = asyncflashloader.beginAsyncLoadToReadHeap(asyncLoadFile);
+                if (!sample) {
+                    failed = true;
+                    Serial.printf("abort!!! can not find '%s'...(heap:%d, index:%d)\n", filename.c_str(), currentReadHeap, numReadHeapSamplesLoaded);
+                    return;
+                }
+                if (index >= samples[currentReadHeap].size() ) {
+                    samples[currentReadHeap].push_back(sample);
+                } else
+                    samples[currentReadHeap][numReadHeapSamplesLoaded] = sample;
+                asyncOpening = false;
+                Serial.printf("loading to read heap! '%s'...      (heap:%d, index:%d)\t\t", filename.c_str(), currentReadHeap, numReadHeapSamplesLoaded);
+            } else if (asyncflashloader.continueAsyncLoadPartial()) {
+                const auto &filename = fileNames[currentReadHeap][numReadHeapSamplesLoaded];
+                numReadHeapSamplesLoaded++;
+                asyncLoadFile.close();
+
+                asyncOpening = true;
+                if (numReadHeapSamplesLoaded == numReadHeapSamplesRequested) {
+                    Serial.printf("Read heap has completed loading (again - there was a new-comer)...      (heap:%d, loaded:%d)\n",  currentReadHeap, numReadHeapSamplesLoaded);
+                    asyncOpening = false;
+                    numReadHeapSamplesLoaded = 0;
+                    numReadHeapSamplesRequested = 0;
                 }
             }
         }

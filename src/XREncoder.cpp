@@ -167,7 +167,7 @@ namespace XREncoder
             return;
         }
 
-        if (!(elapsedMs % 10) && (currentUXMode == XRUX::UX_MODE::TRACK_WRITE || currentUXMode == XRUX::UX_MODE::SUBMITTING_STEP_VALUE))
+        if ((currentUXMode == XRUX::UX_MODE::TRACK_WRITE || currentUXMode == XRUX::UX_MODE::SUBMITTING_STEP_VALUE))
         {
             int diff = getDiff(MAIN_ENCODER_ADDRESS);
 
@@ -270,6 +270,8 @@ namespace XREncoder
             }
 
             XRSequencer::setSelectedPage(newPage);
+
+            Serial.println("here123");
             
             XRDisplay::drawSequencerScreen(false);
         }
