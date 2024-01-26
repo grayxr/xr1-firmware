@@ -8,8 +8,6 @@
 
 namespace XRSequencer
 {
-    // step
-
     enum STEP_STATE : uint8_t
     {
         STATE_OFF = 0,
@@ -21,8 +19,6 @@ namespace XRSequencer
     {
         STEP_STATE state = STEP_STATE::STATE_OFF;
     } STEP;
-
-    // track
 
     typedef struct
     {
@@ -44,7 +40,10 @@ namespace XRSequencer
         bool initialized = false;
     } TRACK;
 
-    // bank & pattern
+    typedef struct
+    {
+        TRACK tracks[MAXIMUM_SEQUENCER_TRACKS];
+    } TRACK_LAYER;
 
     typedef struct
     {
@@ -66,24 +65,15 @@ namespace XRSequencer
 
     typedef struct
     {
-        PATTERN patterns[MAXIMUM_SEQUENCER_PATTERNS];
-
-        bool initialized = false;
-    } BANK;
-
-    typedef struct
-    {
         int8_t bank = -1;
         int8_t number = -1;
     } QUEUED_PATTERN;
 
-    // sequencer
-
     typedef struct
     {
-        BANK banks[MAXIMUM_SEQUENCER_BANKS];
+        PATTERN patterns[MAXIMUM_SEQUENCER_PATTERNS];
     } SEQUENCER;
-
+    
     // sequencer state
 
     enum SEQUENCER_PLAYBACK_STATE : uint8_t
@@ -148,26 +138,30 @@ namespace XRSequencer
 
     typedef struct
     {
-        TRACK_MODS tracks[MAXIMUM_SEQUENCER_STEPS];
-    } PATTERN_TRACK_MODS;
+        TRACK_MODS tracks[MAXIMUM_SEQUENCER_TRACKS];
+    } TRACK_MOD_LAYER;
 
-    // layers
-    enum LAYER : uint8_t {
-        SOUND = 0,
-    };
+    typedef struct
+    {
+        TRACK_MOD_LAYER layers[MAXIMUM_SEQUENCER_TRACK_LAYERS];
+    } TRACK_MOD_LAYER_COLLECTION;
 
     // extern globals
     extern PATTERN heapPattern;
     extern TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
     extern DMAMEM SEQUENCER sequencer;
-    // we only keep the current pattern's sound mods in memory,
-    // when a pattern change occurs, the next pattern's sound mods are loaded from the SD card
-    extern DMAMEM PATTERN_TRACK_MODS patternTrackStepMods;
+
+    extern DMAMEM TRACK_LAYER trackLayers[MAXIMUM_SEQUENCER_TRACK_LAYERS];
+
+    // we only keep the current pattern's track mods in memory,
+    // when a pattern change occurs, the next pattern's track mods are loaded from the SD card
+    extern DMAMEM TRACK_MOD_LAYER_COLLECTION layeredTrackStepMods;
 
     bool init();
 
     void initSequencer();
-    void initPatternTrackStepMods();
+    void initTrackLayers();
+    void initTrackStepMods();
     
     void swapSequencerMemoryForPattern(int newBank, int newPattern);
     void saveCurrentPatternOffHeap();
@@ -245,7 +239,6 @@ namespace XRSequencer
     // the current page for the current track layer (default layer is "sound")
     int8_t getCurrentSelectedPage();
     uint8_t getCurrentSelectedTrackLayer();
-    int8_t getPageCountForCurrentTrackLayer();
 
     int8_t getRatchetTrack();
     int8_t getRatchetDivision();

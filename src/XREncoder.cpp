@@ -257,7 +257,7 @@ namespace XREncoder
         int newPage = tPage + diff;
 
         if (newPage != tPage) {
-            int maxPagesForCurrTrack = XRSequencer::getPageCountForCurrentTrackLayer();
+            int maxPagesForCurrTrack = XRSound::getPageCountForCurrentTrack();
 
             if (maxPagesForCurrTrack == 1) {
                 return;
@@ -270,8 +270,6 @@ namespace XREncoder
             }
 
             XRSequencer::setSelectedPage(newPage);
-
-            Serial.println("here123");
             
             XRDisplay::drawSequencerScreen(false);
         }

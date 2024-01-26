@@ -298,7 +298,7 @@ namespace XRKeyMatrix
                 XRSound::loadSoundDataForPatternChange(nextBank, nextPattern);
 
                 // save any track step mods for current pattern to SD
-                XRSD::savePatternTrackStepModsToSdCard();
+                XRSD::saveTrackStepModsToSdCard();
                 XRSequencer::swapSequencerMemoryForPattern(nextBank, nextPattern);
                 XRAsyncPSRAMLoader::prePatternChange();
                 // Serial.printf("marking pressed pattern selection (zero-based): %d\n", nextPattern);
@@ -420,7 +420,7 @@ namespace XRKeyMatrix
             // make sure if copying current pattern that the latest state exists in RAM2
             if (currSelPattern == getKeyStepNum(key) - 1)
             {
-                sequencer.banks[curSelBank].patterns[currSelPattern] = heapPattern;
+                sequencer.patterns[currSelPattern] = heapPattern;
             }
 
             Serial.println("finished that");
@@ -528,12 +528,12 @@ namespace XRKeyMatrix
             auto &patternCopyBuf = XRSequencer::getCopyBufferForPattern();
 
             // save pasted pattern to RAM2 / DMAMEM
-            sequencer.banks[currSelBank].patterns[targetPattern] = patternCopyBuf;
+            sequencer.patterns[targetPattern] = patternCopyBuf;
 
             // and reload the current pattern into heap if target pattern is current selected pattern
             if (currSelPattern == targetPattern)
             {
-                heapPattern = sequencer.banks[currSelBank].patterns[currSelPattern];
+                heapPattern = sequencer.patterns[currSelPattern];
             }
 
             _patternCopyAvailable = false;
@@ -556,7 +556,7 @@ namespace XRKeyMatrix
                 XRSound::saveSoundDataForPatternChange();
                 XRSound::loadSoundDataForPatternChange(currSelBank, targetPattern);
 
-                XRSD::savePatternTrackStepModsToSdCard();
+                XRSD::saveTrackStepModsToSdCard();
                 XRSequencer::swapSequencerMemoryForPattern(currSelBank, targetPattern);
             }
 

@@ -803,7 +803,7 @@ namespace XRSound
         auto &seqState = XRSequencer::getSeqState();
 
         if (seqState.playbackState == XRSequencer::SEQUENCER_PLAYBACK_STATE::RUNNING) {
-            auto &tracks = XRSequencer::sequencer.banks[nextBank].patterns[nextPattern].tracks;
+            auto &tracks = XRSequencer::sequencer.patterns[nextPattern].tracks;
 
             for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
             {
@@ -1807,22 +1807,24 @@ namespace XRSound
         auto msynPan = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_PAN]);
         auto msynLvl = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_LEVEL]);
 
+        auto currLayer = XRSequencer::getCurrentSelectedTrackLayer();
+
         uint8_t noteToUse = trackToUse.note;
-        if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::NOTE])
+        if (XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].flags[XRSequencer::NOTE])
         {
-            noteToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::NOTE];
+            noteToUse = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].mods[XRSequencer::NOTE];
         }
 
         uint8_t octaveToUse = trackToUse.octave;
-        if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::OCTAVE])
+        if (XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].flags[XRSequencer::OCTAVE])
         {
-            octaveToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::OCTAVE];
+            octaveToUse = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].mods[XRSequencer::OCTAVE];
         }
 
         uint8_t velocityToUse = trackToUse.velocity;
         if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
-            if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::VELOCITY]) {
-                velocityToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::VELOCITY];
+            if (XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].flags[XRSequencer::VELOCITY]) {
+                velocityToUse = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].mods[XRSequencer::VELOCITY];
             } else {
                 velocityToUse = max(trackToUse.velocity, XRSequencer::heapPattern.accent);
             }
@@ -1880,22 +1882,24 @@ namespace XRSound
         auto &trackToUse = XRSequencer::getHeapTrack(track);
         auto &stepToUse = XRSequencer::getHeapStep(track, step);
 
+        auto currLayer = XRSequencer::getCurrentSelectedTrackLayer();
+
         uint8_t noteToUse = trackToUse.note;
-        if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::NOTE])
+        if (XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].flags[XRSequencer::NOTE])
         {
-            noteToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::NOTE];
+            noteToUse = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].mods[XRSequencer::NOTE];
         }
 
         uint8_t octaveToUse = trackToUse.octave;
-        if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::OCTAVE])
+        if (XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].flags[XRSequencer::OCTAVE])
         {
-            octaveToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::OCTAVE];
+            octaveToUse = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].mods[XRSequencer::OCTAVE];
         }
 
         uint8_t velocityToUse = trackToUse.velocity;
         if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
-            if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::VELOCITY]) {
-                velocityToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::VELOCITY];
+            if (XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].flags[XRSequencer::VELOCITY]) {
+                velocityToUse = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].mods[XRSequencer::VELOCITY];
             } else {
                 velocityToUse = max(trackToUse.velocity, XRSequencer::heapPattern.accent);
             }
@@ -1961,10 +1965,12 @@ namespace XRSound
         auto fmdPan = getValueNormalizedAsFloat(currentPatternSounds[track].params[FMD_PAN]);
         auto fmdLvl = getValueNormalizedAsFloat(currentPatternSounds[track].params[FMD_LEVEL]);
 
+        auto currLayer = XRSequencer::getCurrentSelectedTrackLayer();
+
         uint8_t velocityToUse = trackToUse.velocity;
         if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
-            if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::VELOCITY]) {
-                velocityToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::VELOCITY];
+            if (XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].flags[XRSequencer::VELOCITY]) {
+                velocityToUse = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].mods[XRSequencer::VELOCITY];
             } else {
                 velocityToUse = max(trackToUse.velocity, XRSequencer::heapPattern.accent);
             }
@@ -2141,6 +2147,8 @@ namespace XRSound
 
         // TODO: get track step mods for note, octave, etc
 
+        auto currLayer = XRSequencer::getCurrentSelectedTrackLayer();
+
         switch (currentSoundForTrack.type)
         {
         case T_MONO_SAMPLE:
@@ -2161,15 +2169,15 @@ namespace XRSound
         case T_DEXED_SYNTH:
             {
                 uint8_t noteToUse = currTrack.note;
-                if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::NOTE])
+                if (XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].flags[XRSequencer::NOTE])
                 {
-                    noteToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::NOTE];
+                    noteToUse = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].mods[XRSequencer::NOTE];
                 }
 
                 uint8_t octaveToUse = currTrack.octave;
-                if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::OCTAVE])
+                if (XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].flags[XRSequencer::OCTAVE])
                 {
-                    octaveToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::OCTAVE];
+                    octaveToUse = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].mods[XRSequencer::OCTAVE];
                 }
                 
                 int midiNote = (noteToUse + (12 * (octaveToUse)));

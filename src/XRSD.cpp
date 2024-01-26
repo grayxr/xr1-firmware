@@ -239,7 +239,7 @@ namespace XRSD
         seqFileW.write((byte *)&XRSequencer::sequencer, sizeof(XRSequencer::sequencer));
         seqFileW.close();
 
-        savePatternTrackStepModsToSdCard();
+        saveTrackStepModsToSdCard();
 
         savePatternSounds();
         savePatternSoundStepModsToSdCard();
@@ -283,7 +283,6 @@ namespace XRSD
         lastKnownProjectFile.read((byte *)&_current_project, sizeof(_current_project));
         lastKnownProjectFile.close();
 
-        // set tempo
         XRClock::setTempo(_current_project.tempo);
 
         XRSequencer::init();
@@ -294,7 +293,7 @@ namespace XRSD
             return false;
         }
 
-        loadPatternTrackStepModsFromSdCard(
+        loadTrackStepModsFromSdCard(
             XRSequencer::getCurrentSelectedBankNum(),
             XRSequencer::getCurrentSelectedPatternNum()
         );
@@ -575,7 +574,9 @@ namespace XRSD
 
         // setup current pattern in heap from first pattern from first bank in RAM2/DMAMEM
         auto &heapPattern = XRSequencer::getHeapPattern();
-        heapPattern = seq.banks[0].patterns[0];
+        heapPattern = seq.patterns[0];
+
+        Serial.printf("sizeof(seq): %d\n sizeof(heapPattern): %d\n", sizeof(seq), sizeof(heapPattern));
 
         // if curr pattern has groove, set it
         if (heapPattern.groove.id > -1) {
@@ -586,7 +587,7 @@ namespace XRSD
         return true;
     }
 
-    bool loadPatternTrackStepModsFromSdCard(int bank, int pattern)
+    bool loadTrackStepModsFromSdCard(int bank, int pattern)
     {
         // get project path
         char mProjectsPathPrefixBuf[50];
@@ -598,7 +599,7 @@ namespace XRSD
         mProjectDataDir += _current_project.name;
         mProjectDataDir += "/.data";
 
-        // pattern mod file names are /{bank}_{pattern}.bin
+        // track step mod file names are /{bank}_{pattern}_track_step_mods.bin
         std::string mFilePath;
         mFilePath = mProjectDataDir;
         mFilePath += "/";
@@ -609,20 +610,20 @@ namespace XRSD
 
         File mFile = SD.open(mFilePath.c_str(), FILE_READ);
         if (!mFile.available()) {
-            Serial.println("no patternTrackStepMods available to load!");
+            Serial.println("no track step mods available to load!");
 
             return false;
         }
 
-        mFile.read((byte *)&XRSequencer::patternTrackStepMods, sizeof(XRSequencer::patternTrackStepMods));
+        mFile.read((byte *)&XRSequencer::layeredTrackStepMods, sizeof(XRSequencer::layeredTrackStepMods));
         mFile.close();
 
-        //Serial.printf("sizeof(patternTrackStepMods): %d\n", sizeof(XRSequencer::patternTrackStepMods));
+        Serial.printf("sizeof(layeredTrackStepMods): %d\n", sizeof(XRSequencer::layeredTrackStepMods));
         
         return true;
     }
 
-    void savePatternTrackStepModsToSdCard()
+    void saveTrackStepModsToSdCard()
     {
         // get project path
         char mProjectsPathPrefixBuf[50];
@@ -634,7 +635,7 @@ namespace XRSD
         mProjectDataDir += _current_project.name;
         mProjectDataDir += "/.data";
 
-        // pattern mod file names are {bank}_{pattern}.bin
+        // track step mod file names are {bank}_{pattern}_track_step_mods.bin
         std::string mFilePath;
         mFilePath = mProjectDataDir;
         mFilePath += "/";
@@ -645,10 +646,10 @@ namespace XRSD
 
         File mFile = SD.open(mFilePath.c_str(), FILE_WRITE);
         mFile.truncate();
-        mFile.write((byte *)&XRSequencer::patternTrackStepMods, sizeof(XRSequencer::patternTrackStepMods));
+        mFile.write((byte *)&XRSequencer::layeredTrackStepMods, sizeof(XRSequencer::layeredTrackStepMods));
         mFile.close();
 
-        Serial.printf("sizeof(patternTrackStepMods): %d\n", sizeof(XRSequencer::patternTrackStepMods));
+        Serial.printf("sizeof(layeredTrackStepMods): %d\n", sizeof(XRSequencer::layeredTrackStepMods));
     }
 
     bool loadNextPatternSounds(int bank, int pattern)
@@ -678,7 +679,7 @@ namespace XRSD
         soundsFile.read((byte *)&XRSound::nextPatternSounds, sizeof(XRSound::nextPatternSounds));
         soundsFile.close();
 
-        //Serial.printf("sizeof(nextPatternSounds): %d\n", sizeof(XRSound::nextPatternSounds));
+        Serial.printf("sizeof(nextPatternSounds): %d\n", sizeof(XRSound::nextPatternSounds));
 
         return true;
     }
@@ -705,7 +706,7 @@ namespace XRSD
         soundsFile.write((byte *)&XRSound::currentPatternSounds, sizeof(XRSound::currentPatternSounds));
         soundsFile.close();
 
-        //Serial.printf("sizeof(currentPatternSounds): %d\n", sizeof(XRSound::currentPatternSounds));
+        Serial.printf("sizeof(currentPatternSounds): %d\n", sizeof(XRSound::currentPatternSounds));
     }
 
     bool loadPatternSoundStepModsFromSdCard(int bank, int pattern)

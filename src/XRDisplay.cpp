@@ -941,13 +941,14 @@ namespace XRDisplay
 
         auto currentSelectedStep = XRSequencer::getCurrentSelectedStepNum();
         auto currentTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+        auto currLayer = XRSequencer::getCurrentSelectedTrackLayer();
 
         if (
             XRUX::getCurrentMode() == XRUX::SUBMITTING_STEP_VALUE && currentSelectedStep > -1 &&
-            XRSequencer::patternTrackStepMods.tracks[currentTrackNum].steps[currentSelectedStep].flags[XRSequencer::NOTE]
+            XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[currentTrackNum].steps[currentSelectedStep].flags[XRSequencer::NOTE]
         ) {
-            auto noteMod = XRSequencer::patternTrackStepMods.tracks[currentTrackNum].steps[currentSelectedStep].mods[XRSequencer::NOTE];
-            auto octaveMod = XRSequencer::patternTrackStepMods.tracks[currentTrackNum].steps[currentSelectedStep].mods[XRSequencer::OCTAVE];
+            auto noteMod = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[currentTrackNum].steps[currentSelectedStep].mods[XRSequencer::NOTE];
+            auto octaveMod = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[currentTrackNum].steps[currentSelectedStep].mods[XRSequencer::OCTAVE];
 
             outputStr += XRHelpers::getNoteStringForBaseNoteNum(noteMod);
             outputStr += std::to_string(octaveMod);
@@ -965,18 +966,14 @@ namespace XRDisplay
 
     void drawPageNumIndicators()
     {
-        auto currSelectedLayer = XRSequencer::getCurrentSelectedTrackLayer();
         auto currSelectedPage = XRSequencer::getCurrentSelectedPage();
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
 
         uint8_t currTrackPageCount = 0;
         std::string currPageNameForTrack = "";
 
-        if (currSelectedLayer == XRSequencer::LAYER::SOUND) {
-            currTrackPageCount = XRSound::getPageCountForCurrentTrack();
-            currPageNameForTrack = XRSound::currentPatternSounds[currTrackNum].type != XRSound::T_EMPTY ? "TRKSND > " : "";
-            currPageNameForTrack += XRSound::getPageNameForCurrentTrack();
-        }
+        currTrackPageCount = XRSound::getPageCountForCurrentTrack();
+        currPageNameForTrack += XRSound::getPageNameForCurrentTrack();
 
         int pageNumBasedStartX = 81 - (3 * currTrackPageCount);
         int pageTabPosY = 56;

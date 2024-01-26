@@ -34,7 +34,7 @@ namespace XRSequencer
     int8_t _currentStepPage = 1;
 
     int8_t _currentSelectedPage = 0;
-    uint8_t _currentSelectedLayer = LAYER::SOUND;
+    uint8_t _currentSelectedLayer = 0;
 
     int8_t _ratchetTrack = -1;
     int8_t _ratchetDivision = -1;
@@ -50,14 +50,15 @@ namespace XRSequencer
 
     // extern globals
 
-    PATTERN heapPattern;
-
     TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
 
-    DMAMEM SEQUENCER sequencer;
-    DMAMEM PATTERN_TRACK_MODS patternTrackStepMods;
+    DMAMEM PATTERN heapPattern;
 
-    void initPatternTrackStepMods();
+    DMAMEM SEQUENCER sequencer;
+
+    DMAMEM TRACK_LAYER trackLayers[MAXIMUM_SEQUENCER_TRACK_LAYERS];
+
+    DMAMEM TRACK_MOD_LAYER_COLLECTION layeredTrackStepMods;
 
     bool init()
     {
@@ -66,7 +67,8 @@ namespace XRSequencer
         _currentSelectedTrack = 0;
 
         initSequencer();
-        initPatternTrackStepMods();
+        initTrackLayers();
+        initTrackStepMods();
 
         return true;
     }
@@ -374,17 +376,6 @@ namespace XRSequencer
         return _currentSelectedLayer;
     }
 
-    int8_t getPageCountForCurrentTrackLayer()
-    {
-        int8_t count = 0;
-
-        if (_currentSelectedLayer == LAYER::SOUND) {
-            count = XRSound::getPageCountForTrack(_currentSelectedTrack);
-        }
-
-        return count;
-    }
-
     QUEUED_PATTERN &getQueuedPattern()
     {
         return _queuedPattern;
@@ -499,8 +490,8 @@ namespace XRSequencer
     {
         auto trackToUse = getHeapTrack(track);
 
-        int lenStepMod = patternTrackStepMods.tracks[track].steps[step].mods[LENGTH];
-        bool lenStepModEnabled = patternTrackStepMods.tracks[track].steps[step].flags[LENGTH];
+        int lenStepMod = layeredTrackStepMods.layers[_currentSelectedLayer].tracks[track].steps[step].mods[LENGTH];
+        bool lenStepModEnabled = layeredTrackStepMods.layers[_currentSelectedLayer].tracks[track].steps[step].flags[LENGTH];
 
         for (uint8_t i = 0; i < STEP_STACK_SIZE; i++)
         {
@@ -630,47 +621,72 @@ namespace XRSequencer
 
     void initSequencer()
     {
-        sequencer.banks[0].patterns[0].initialized = true; // always initialize first pattern?
+        sequencer.patterns[0].initialized = true; // always initialize first pattern?
 
         for (int b = 0; b < MAXIMUM_SEQUENCER_BANKS; b++)
         {
             for (int p = 0; p < MAXIMUM_SEQUENCER_PATTERNS; p++)
             {
-                sequencer.banks[b].patterns[p].lstep = DEFAULT_LAST_STEP;
-                sequencer.banks[b].patterns[p].groove.amount = 0;
-                sequencer.banks[b].patterns[p].groove.id = -1;
-                sequencer.banks[b].patterns[p].accent = DEFAULT_GLOBAL_ACCENT;
-                sequencer.banks[b].patterns[p].initialized = false;
+                sequencer.patterns[p].lstep = DEFAULT_LAST_STEP;
+                sequencer.patterns[p].groove.amount = 0;
+                sequencer.patterns[p].groove.id = -1;
+                sequencer.patterns[p].accent = DEFAULT_GLOBAL_ACCENT;
+                sequencer.patterns[p].initialized = false;
 
                 for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
                 {
-                    sequencer.banks[b].patterns[p].tracks[t].length = 4;
-                    sequencer.banks[b].patterns[p].tracks[t].note = 0;
-                    sequencer.banks[b].patterns[p].tracks[t].octave = 4;
-                    sequencer.banks[b].patterns[p].tracks[t].velocity = 50;
-                    sequencer.banks[b].patterns[p].tracks[t].probability = 100;
-                    sequencer.banks[b].patterns[p].tracks[t].initialized = false;
+                    sequencer.patterns[p].tracks[t].length = 4;
+                    sequencer.patterns[p].tracks[t].note = 0;
+                    sequencer.patterns[p].tracks[t].octave = 4;
+                    sequencer.patterns[p].tracks[t].velocity = 50;
+                    sequencer.patterns[p].tracks[t].probability = 100;
+                    sequencer.patterns[p].tracks[t].initialized = false;
 
                     // now fill in steps
                     for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
                     {
-                        sequencer.banks[b].patterns[p].tracks[t].steps[s].state = STEP_STATE::STATE_OFF;
+                        sequencer.patterns[p].tracks[t].steps[s].state = STEP_STATE::STATE_OFF;
                     }
                 }
             }
         }
     }
 
-    void initPatternTrackStepMods()
+    void initTrackStepMods()
     {
-        for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+        for (int l = 0; l < MAXIMUM_SEQUENCER_TRACK_LAYERS; l++)    
         {
-            for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
+            for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
             {
-                for (int m = 0; m < MAXIMUM_TRACK_MODS; m++)
+                for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
                 {
-                    patternTrackStepMods.tracks[t].steps[s].mods[m] = 0;
-                    patternTrackStepMods.tracks[t].steps[s].flags[m] = false;
+                    for (int m = 0; m < MAXIMUM_TRACK_MODS; m++)
+                    {
+                        layeredTrackStepMods.layers[l].tracks[t].steps[s].mods[m] = 0;
+                        layeredTrackStepMods.layers[l].tracks[t].steps[s].flags[m] = false;
+                    }
+                }
+            }
+        }
+    }
+
+    void initTrackLayers()
+    {
+        for (int l = 0; l < MAXIMUM_SEQUENCER_TRACK_LAYERS; l++)
+        {
+            for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+            {
+                trackLayers[l].tracks[t].length = 4;
+                trackLayers[l].tracks[t].note = 0;
+                trackLayers[l].tracks[t].octave = 4;
+                trackLayers[l].tracks[t].velocity = 50;
+                trackLayers[l].tracks[t].probability = 100;
+                trackLayers[l].tracks[t].initialized = false;
+
+                // now fill in steps
+                for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
+                {
+                    trackLayers[l].tracks[t].steps[s].state = STEP_STATE::STATE_OFF;
                 }
             }
         }
@@ -745,10 +761,10 @@ namespace XRSequencer
 
     void swapSequencerMemoryForPattern(int newBank, int newPattern)
     {
-        auto newPatternData = sequencer.banks[newBank].patterns[newPattern];
+        auto newPatternData = sequencer.patterns[newPattern];
 
         // swap sequencer memory data
-        sequencer.banks[_currentSelectedBank].patterns[_currentSelectedPattern] = heapPattern;
+        sequencer.patterns[_currentSelectedPattern] = heapPattern;
         heapPattern = newPatternData;
 
         // initialize new pattern
@@ -767,8 +783,8 @@ namespace XRSequencer
         _currentSelectedTrack = 0;
 
         // load any track step mods for new bank/pattern from SD
-        if (!XRSD::loadPatternTrackStepModsFromSdCard(newBank, newPattern)) {
-            initPatternTrackStepMods();
+        if (!XRSD::loadTrackStepModsFromSdCard(newBank, newPattern)) {
+            initTrackStepMods();
         }
     }
 
@@ -818,7 +834,7 @@ namespace XRSequencer
         }
 
         // record latest step state in RAM2 as well
-        sequencer.banks[_currentSelectedBank].patterns[_currentSelectedPattern].tracks[_currentSelectedTrack].steps[stepNum] = heapPattern.tracks[_currentSelectedTrack].steps[stepNum];
+        sequencer.patterns[_currentSelectedPattern].tracks[_currentSelectedTrack].steps[stepNum] = heapPattern.tracks[_currentSelectedTrack].steps[stepNum];
     }
 
     void toggleSequencerPlayback(char btn)
@@ -1015,7 +1031,7 @@ namespace XRSequencer
     void saveCurrentPatternOffHeap()
     {
         // push current heap memory to RAM2/DMAMEM
-        sequencer.banks[_currentSelectedBank].patterns[_currentSelectedPattern] = heapPattern;
+        sequencer.patterns[_currentSelectedPattern] = heapPattern;
     }
 
     void setCurrentSelectedStep(int step)
@@ -1042,7 +1058,7 @@ namespace XRSequencer
 
     void setCopyBufferForPattern(int pattern)
     {
-        _patternCopyBuffer = sequencer.banks[_currentSelectedBank].patterns[pattern];
+        _patternCopyBuffer = sequencer.patterns[pattern];
     }
 
     PATTERN &getCopyBufferForPattern()
@@ -1073,7 +1089,7 @@ namespace XRSequencer
     bool * getInitializedTracksForPattern(int bank, int pattern)
     {
         for (int t=0; t<MAXIMUM_SEQUENCER_TRACKS; t++) {
-            if (sequencer.banks[bank].patterns[pattern].tracks[t].initialized) {
+            if (sequencer.patterns[pattern].tracks[t].initialized) {
                 _initTracks[t] = true;
             } else {
                 _initTracks[t] = false;

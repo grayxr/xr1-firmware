@@ -311,6 +311,7 @@ namespace XRVersa
         auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack(); 
         auto currSelTrackNum = XRSequencer::getCurrentSelectedTrackNum(); 
         auto currSelStepNum = XRSequencer::getCurrentSelectedStepNum(); 
+        auto currLayer = XRSequencer::getCurrentSelectedTrackLayer();
         auto currentUXMode = XRUX::getCurrentMode();
 
         int8_t invertedNoteNumber = -1;
@@ -328,10 +329,10 @@ namespace XRVersa
                 XRSound::noteOffTrackManually(invertedNoteNumber);
             } 
             else if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelStepNum > -1) {
-                XRSequencer::patternTrackStepMods.tracks[currSelTrackNum].steps[currSelStepNum].mods[XRSequencer::NOTE] = invertedNoteNumber;
-                XRSequencer::patternTrackStepMods.tracks[currSelTrackNum].steps[currSelStepNum].flags[XRSequencer::NOTE] = true;
-                XRSequencer::patternTrackStepMods.tracks[currSelTrackNum].steps[currSelStepNum].mods[XRSequencer::OCTAVE] = XRKeyMatrix::getKeyboardOctave();
-                XRSequencer::patternTrackStepMods.tracks[currSelTrackNum].steps[currSelStepNum].flags[XRSequencer::OCTAVE] = true;
+                XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[currSelTrackNum].steps[currSelStepNum].mods[XRSequencer::NOTE] = invertedNoteNumber;
+                XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[currSelTrackNum].steps[currSelStepNum].flags[XRSequencer::NOTE] = true;
+                XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[currSelTrackNum].steps[currSelStepNum].mods[XRSequencer::OCTAVE] = XRKeyMatrix::getKeyboardOctave();
+                XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[currSelTrackNum].steps[currSelStepNum].flags[XRSequencer::OCTAVE] = true;
 
                 XRDisplay::drawSequencerScreen(false);
             } 
