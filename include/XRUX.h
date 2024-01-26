@@ -37,6 +37,7 @@ namespace XRUX
         SOUND_MENU_MAIN,
         SOUND_MENU_DEXED_SYSEX_BROWSER,
         ASSIGN_SAMPLE_TO_TRACK_SOUND,
+        TRACK_LAYER_SEL,
     };
 
     void setCurrentMode(UX_MODE mode);

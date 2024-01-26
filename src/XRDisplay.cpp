@@ -308,7 +308,41 @@ namespace XRDisplay
         }
 
         auto currentUXMode = XRUX::getCurrentMode();
-        if (currentUXMode == XRUX::PERFORM_MUTE)
+        if (currentUXMode == XRUX::PERFORM_TAP)
+        {
+            u8g2.drawStr(0, 0, "TAP MODE");
+            u8g2.drawLine(0, 10, DISPLAY_MAX_WIDTH, 10);
+
+            u8g2.drawStr(27, 15, "TAP IN TRACK LAYER");
+
+            // left trk icon
+            u8g2.drawLine(20, 27, 39, 27);
+            u8g2.drawLine(39, 27, 39, 55);
+            u8g2.drawLine(39, 55, 20, 55);
+            u8g2.drawLine(20, 31, 34, 31);
+            u8g2.drawLine(34, 31, 34, 50);
+            u8g2.drawLine(34, 50, 20, 50);
+            u8g2.drawBox(20, 34, 8, 3);
+
+            // middle trk icon
+            u8g2.drawFrame(49, 27, 30, 28);
+            u8g2.drawFrame(54, 31, 20, 19);
+            u8g2.drawBox(60, 34, 8, 3);
+
+            // right trk icon
+            u8g2.drawLine(107, 27, 88, 27);
+            u8g2.drawLine(88, 27, 88, 55);
+            u8g2.drawLine(88, 55, 107, 55);
+            u8g2.drawLine(107, 31, 93, 31);
+            u8g2.drawLine(93, 31, 93, 50);
+            u8g2.drawLine(93, 50, 107, 50);
+            u8g2.drawBox(100, 34, 8, 3);
+
+            u8g2.sendBuffer();
+
+            return;
+        }
+        else if (currentUXMode == XRUX::PERFORM_MUTE)
         {
             u8g2.drawStr(0, 0, "MUTE MODE");
             u8g2.drawLine(0, 10, DISPLAY_MAX_WIDTH, 10);
@@ -391,7 +425,7 @@ namespace XRDisplay
         auto currentSelectedBank = XRSequencer::getCurrentSelectedBankNum();
         auto currentSelectedPattern = XRSequencer::getCurrentSelectedPatternNum();
         auto currentSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
-        auto &queuedPattern = XRSequencer::getQueuedPattern();
+        auto &queuedPattern = XRSequencer::getQueuedPatternState();
 
         bool bnkBlink = false;
         int bnkNumber = currentSelectedBank + 1;
@@ -941,24 +975,24 @@ namespace XRDisplay
 
         auto currentSelectedStep = XRSequencer::getCurrentSelectedStepNum();
         auto currentTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currLayer = XRSequencer::getCurrentSelectedTrackLayer();
+        auto currLayer = XRSequencer::getCurrentSelectedTrackLayerNum();
 
         if (
             XRUX::getCurrentMode() == XRUX::SUBMITTING_STEP_VALUE && currentSelectedStep > -1 &&
-            XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[currentTrackNum].steps[currentSelectedStep].flags[XRSequencer::NOTE]
+            XRSequencer::trackStepMods.tracks[currentTrackNum].layers[currLayer].steps[currentSelectedStep].flags[XRSequencer::NOTE]
         ) {
-            auto noteMod = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[currentTrackNum].steps[currentSelectedStep].mods[XRSequencer::NOTE];
-            auto octaveMod = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[currentTrackNum].steps[currentSelectedStep].mods[XRSequencer::OCTAVE];
+            auto noteMod = XRSequencer::trackStepMods.tracks[currentTrackNum].layers[currLayer].steps[currentSelectedStep].mods[XRSequencer::NOTE];
+            auto octaveMod = XRSequencer::trackStepMods.tracks[currentTrackNum].layers[currLayer].steps[currentSelectedStep].mods[XRSequencer::OCTAVE];
 
             outputStr += XRHelpers::getNoteStringForBaseNoteNum(noteMod);
             outputStr += std::to_string(octaveMod);
         }
         else
         {
-            auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+            auto &currTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
 
-            outputStr += XRHelpers::getNoteStringForBaseNoteNum(currTrack.note);
-            outputStr += std::to_string(currTrack.octave);
+            outputStr += XRHelpers::getNoteStringForBaseNoteNum(currTrackLayer.note);
+            outputStr += std::to_string(currTrackLayer.octave);
         }
 
         return outputStr;
@@ -967,10 +1001,13 @@ namespace XRDisplay
     void drawPageNumIndicators()
     {
         auto currSelectedPage = XRSequencer::getCurrentSelectedPage();
-        auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+        auto currTrackLayerNum = XRSequencer::getCurrentSelectedTrackLayerNum();
 
         uint8_t currTrackPageCount = 0;
         std::string currPageNameForTrack = "";
+
+        std::string currTrackLayerStr = "L";
+        currTrackLayerStr += std::to_string(currTrackLayerNum+1);
 
         currTrackPageCount = XRSound::getPageCountForCurrentTrack();
         currPageNameForTrack += XRSound::getPageNameForCurrentTrack();
@@ -980,7 +1017,9 @@ namespace XRDisplay
         int pageTabFooterNameStartX = 17;
 
         u8g2.drawLine(0, 52, 128, 52);
-        u8g2.drawStr(0, pageTabPosY, currPageNameForTrack.c_str());
+        u8g2.drawStr(0, pageTabPosY, currTrackLayerStr.c_str());
+        u8g2.drawLine(11, 52, 11, 64);
+        u8g2.drawStr(16, pageTabPosY, currPageNameForTrack.c_str());
 
         if (currTrackPageCount == 1 || currTrackPageCount == 0)
             return;
@@ -1186,6 +1225,29 @@ namespace XRDisplay
         // u8g2.drawStr(110, 5, "SEL");
         // u8g2.drawFrame(91, 4, 15, 9);
         // u8g2.drawFrame(108, 4, 15, 9);
+
+        u8g2.sendBuffer();
+    }
+
+    void drawGeneralConfirmOverlay(std::string message)
+    {
+        int centerX = (128 / 2);
+        int centerY = (64 / 2);
+
+        int boxWidth = 100;
+        int boxHeight = 30;
+
+        int boxStartX = centerX - (boxWidth / 2);
+        int boxStartY = centerY - (boxHeight / 2) - 3;
+
+        int msgStartX = (centerX - (boxWidth / 2)) + 14;
+        int msgStartY = (centerY - (boxHeight / 2)) + 8;
+
+        u8g2.setColorIndex((u_int8_t)0);
+        u8g2.drawBox(boxStartX, boxStartY, boxWidth, boxHeight);
+        u8g2.setColorIndex((u_int8_t)1);
+        u8g2.drawFrame(boxStartX, boxStartY, boxWidth, boxHeight);
+        u8g2.drawStr(msgStartX, msgStartY, message.c_str());
 
         u8g2.sendBuffer();
     }

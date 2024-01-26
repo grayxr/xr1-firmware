@@ -24,6 +24,7 @@ namespace XRLED
     void displayMuteLEDs();
     void displayInitializedPatternLEDs();
     void displayInitializedTrackLEDs();
+    void displayTrackLayers();
 
     int8_t getKeyLED(char idx);
     extern Adafruit_TLC5947 tlc;

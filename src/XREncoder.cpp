@@ -306,7 +306,8 @@ namespace XREncoder
 
     void handleEncoderPatternModA(int diff)
     {
-        auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
+        auto &currPattern = XRSequencer::getCurrentSelectedPattern();
+        auto currTrackLayerNum = XRSequencer::getCurrentSelectedTrackLayerNum();
 
         int currLastStep = currPattern.lstep;
         int newLastStep = currPattern.lstep + diff;
@@ -324,9 +325,9 @@ namespace XREncoder
             for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
             {
                 // set track's last_step to match pattern if track last_step is greater than pattern's
-                if (currPattern.tracks[t].lstep > newLastStep)
+                if (currPattern.tracks[t].layers[currTrackLayerNum].lstep > newLastStep)
                 {
-                    currPattern.tracks[t].lstep = newLastStep;
+                    currPattern.tracks[t].layers[currTrackLayerNum].lstep = newLastStep;
                 }
             }
 
@@ -336,7 +337,7 @@ namespace XREncoder
 
     void handleEncoderPatternModB(int diff)
     {
-        auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
+        auto &currPattern = XRSequencer::getCurrentSelectedPattern();
 
         int currGrooveId = currPattern.groove.id;
         int newGrooveId = currPattern.groove.id + diff;
@@ -366,7 +367,7 @@ namespace XREncoder
 
     void handleEncoderPatternModC(int diff)
     {
-        auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
+        auto &currPattern = XRSequencer::getCurrentSelectedPattern();
 
         int currGrooveAmt = currPattern.groove.amount;
         int newGrooveAmt = currPattern.groove.amount + diff;
@@ -395,7 +396,7 @@ namespace XREncoder
 
     void handleEncoderPatternModD(int diff)
     {
-        auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
+        auto &currPattern = XRSequencer::getCurrentSelectedPattern();
 
         int currAccent = currPattern.accent;
         int newAccent = currPattern.accent + diff;
@@ -500,8 +501,8 @@ namespace XREncoder
         auto currSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
 
-        auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &currPattern = XRSequencer::getCurrentSelectedPattern();
+        auto &currTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
         
         auto &monoSampleInstance = XRSound::monoSampleInstances[currSelectedTrackNum];
         auto currentUXMode = XRUX::getCurrentMode();
@@ -510,8 +511,8 @@ namespace XREncoder
         {
         case 0:
         {
-            int currLastStep = currTrack.lstep;
-            int newLastStep = currTrack.lstep + diff;
+            int currLastStep = currTrackLayer.lstep;
+            int newLastStep = currTrackLayer.lstep + diff;
 
             // make sure track last step doesn't exceed pattern's
 
@@ -527,7 +528,7 @@ namespace XREncoder
 
             if (newLastStep != currLastStep)
             {
-                currTrack.lstep = newLastStep;
+                currTrackLayer.lstep = newLastStep;
 
                 XRLED::displayPageLEDs(
                     -1,
@@ -808,7 +809,7 @@ namespace XREncoder
 
     void handleEncoderMonoSampleModC(int diff)
     {
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &currTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
         auto &monoSampleInstance = XRSound::monoSampleInstances[currSelectedTrackNum];
@@ -817,7 +818,7 @@ namespace XREncoder
         {
         case 0:
             {
-                float currVel = currTrack.velocity;
+                float currVel = currTrackLayer.velocity;
                 float newVel = currVel + diff;
 
                 // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1) {
@@ -831,7 +832,7 @@ namespace XREncoder
                     //     patternMods.tracks[currSelectedTrackNum].step_mod_flags[currSelectedStepNum].flags[XRSequencer::MOD_ATTRS::VELOCITY] = true;
                     //     patternMods.tracks[currSelectedTrackNum].steps[currSelectedStepNum].velocity = newVel;
                     // } else {
-                        currTrack.velocity = newVel;
+                        currTrackLayer.velocity = newVel;
                     // }
 
                     // AudioNoInterrupts();
@@ -1026,8 +1027,8 @@ namespace XREncoder
 #ifndef NO_DEXED
     void handleEncoderDexedSynthModA(int diff)
     {
-        auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &currPattern = XRSequencer::getCurrentSelectedPattern();
+        auto &currTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
         
@@ -1037,8 +1038,8 @@ namespace XREncoder
         {
         case 0:
         {
-            int currLastStep = currTrack.lstep;
-            int newLastStep = currTrack.lstep + diff;
+            int currLastStep = currTrackLayer.lstep;
+            int newLastStep = currTrackLayer.lstep + diff;
 
             // make sure track last step doesn't exceed pattern's
 
@@ -1054,7 +1055,7 @@ namespace XREncoder
 
             if (newLastStep != currLastStep)
             {
-                currTrack.lstep = newLastStep;
+                currTrackLayer.lstep = newLastStep;
 
                 XRLED::displayPageLEDs(
                     -1,
@@ -1167,7 +1168,7 @@ namespace XREncoder
 
     void handleEncoderDexedSynthModC(int diff)
     {
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &currTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
         //auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
         
@@ -1177,7 +1178,7 @@ namespace XREncoder
         {
         case 0:
         {
-            float currVel = currTrack.velocity;
+            float currVel = currTrackLayer.velocity;
             float newVel = currVel + diff;
 
             // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1) {
@@ -1191,7 +1192,7 @@ namespace XREncoder
                 //     patternMods.tracks[currSelectedTrackNum].step_mod_flags[currSelectedStepNum].flags[XRSequencer::MOD_ATTRS::VELOCITY] = true;
                 //     patternMods.tracks[currSelectedTrackNum].steps[currSelectedStepNum].velocity = newVel;
                 // } else {
-                    currTrack.velocity = newVel;
+                    currTrackLayer.velocity = newVel;
                 // }
 
                 // AudioNoInterrupts();
@@ -1235,7 +1236,7 @@ namespace XREncoder
 
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        auto &trackToUse = XRSequencer::getHeapTrack(currTrackNum);
+        auto &trackToUse = XRSequencer::getTrack(currTrackNum);
         auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
 
         switch (currSelectedPageNum)
@@ -1627,7 +1628,7 @@ namespace XREncoder
 
     void handleEncoderMonoSynthModC(int diff)
     {
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &currTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
         
@@ -1637,7 +1638,7 @@ namespace XREncoder
         {
         case 0:
             {
-                float currVel = currTrack.velocity;
+                float currVel = currTrackLayer.velocity;
                 float newVel = currVel + diff;
 
                 // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1) {
@@ -1651,7 +1652,7 @@ namespace XREncoder
                     //     patternMods.tracks[currSelectedTrackNum].step_mod_flags[currSelectedStepNum].flags[XRSequencer::MOD_ATTRS::VELOCITY] = true;
                     //     patternMods.tracks[currSelectedTrackNum].steps[currSelectedStepNum].velocity = newVel;
                     // } else {
-                        currTrack.velocity = newVel;
+                        currTrackLayer.velocity = newVel;
                     // }
 
                     // AudioNoInterrupts();
@@ -2091,10 +2092,10 @@ namespace XREncoder
 
     void updateTrackLength(int diff)
     {
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &currTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
 
         // length adj
-        int currLen = currTrack.length;
+        int currLen = currTrackLayer.length;
         int newLen = currLen + diff;
 
         // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currStepNum > -1) {
@@ -2107,7 +2108,7 @@ namespace XREncoder
             //     patternMods.tracks[currTrackNum].step_mod_flags[currStepNum].flags[XRSequencer::MOD_ATTRS::LENGTH] = true;
             //     patternMods.tracks[currTrackNum].steps[currStepNum].length = newLen;
             // } else {
-                currTrack.length = newLen;
+                currTrackLayer.length = newLen;
             // }
 
             XRDisplay::drawSequencerScreen(false);
@@ -2116,13 +2117,13 @@ namespace XREncoder
 
     void updateTrackLastStep(int diff)
     {
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &currTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
 
-        int currLastStep = currTrack.lstep;
-        int newLastStep = currTrack.lstep + diff;
+        int currLastStep = currTrackLayer.lstep;
+        int newLastStep = currTrackLayer.lstep + diff;
 
         // make sure track last step doesn't exceed pattern's
-        auto &currPattern = XRSequencer::getHeapCurrentSelectedPattern();
+        auto &currPattern = XRSequencer::getCurrentSelectedPattern();
 
         // TODO: try to re-align current playing track step with pattern step if able
 
@@ -2133,7 +2134,7 @@ namespace XREncoder
         }
 
         if (newLastStep != currLastStep) {
-            currTrack.lstep = newLastStep;
+            currTrackLayer.lstep = newLastStep;
 
             XRLED::displayPageLEDs(
                 -1,

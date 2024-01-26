@@ -36,14 +36,14 @@ namespace XRSequencer
         uint8_t length = 4; // 1 = 1/64 step len
         uint8_t velocity = 50; // 50 = 50%
         uint8_t probability = 100;
-
-        bool initialized = false;
-    } TRACK;
+    } TRACK_LAYER;
 
     typedef struct
     {
-        TRACK tracks[MAXIMUM_SEQUENCER_TRACKS];
-    } TRACK_LAYER;
+        TRACK_LAYER layers[MAXIMUM_SEQUENCER_TRACK_LAYERS];
+
+        bool initialized = false;
+    } TRACK;
 
     typedef struct
     {
@@ -65,16 +65,16 @@ namespace XRSequencer
 
     typedef struct
     {
-        int8_t bank = -1;
-        int8_t number = -1;
-    } QUEUED_PATTERN;
+        PATTERN patterns[MAXIMUM_SEQUENCER_PATTERNS];
+    } PATTERN_BANK;
+    
+    // sequencer state
 
     typedef struct
     {
-        PATTERN patterns[MAXIMUM_SEQUENCER_PATTERNS];
-    } SEQUENCER;
-    
-    // sequencer state
+        int8_t bank = -1;
+        int8_t number = -1;
+    } QUEUED_PATTERN_STATE;
 
     enum SEQUENCER_PLAYBACK_STATE : uint8_t
     {
@@ -115,7 +115,7 @@ namespace XRSequencer
 
     // mods
 
-    enum TRACK_MOD : uint8_t
+    enum TRACK_MOD_NUM : uint8_t
     {
         NOTE = 0,
         OCTAVE = 1,
@@ -127,40 +127,34 @@ namespace XRSequencer
 
     typedef struct
     {
-        int8_t mods[MAXIMUM_TRACK_MODS]; // divide by 100 to get real param mod values
+        int8_t mods[MAXIMUM_TRACK_MODS];
         bool flags[MAXIMUM_TRACK_MODS]; // whether the param mod should apply or not
-    } TRACK_STEP_MODS; // ~11b
+    } TRACK_STEP_MOD;
 
     typedef struct
     {
-        TRACK_STEP_MODS steps[MAXIMUM_SEQUENCER_STEPS];
-    } TRACK_MODS;
-
-    typedef struct
-    {
-        TRACK_MODS tracks[MAXIMUM_SEQUENCER_TRACKS];
+        TRACK_STEP_MOD steps[MAXIMUM_SEQUENCER_STEPS];
     } TRACK_MOD_LAYER;
 
     typedef struct
     {
         TRACK_MOD_LAYER layers[MAXIMUM_SEQUENCER_TRACK_LAYERS];
-    } TRACK_MOD_LAYER_COLLECTION;
+    } TRACK_MOD;
+
+    typedef struct
+    {
+        TRACK_MOD tracks[MAXIMUM_SEQUENCER_TRACKS];
+    } TRACK_STEP_MODS;
 
     // extern globals
-    extern PATTERN heapPattern;
     extern TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
-    extern DMAMEM SEQUENCER sequencer;
-
-    extern DMAMEM TRACK_LAYER trackLayers[MAXIMUM_SEQUENCER_TRACK_LAYERS];
-
-    // we only keep the current pattern's track mods in memory,
-    // when a pattern change occurs, the next pattern's track mods are loaded from the SD card
-    extern DMAMEM TRACK_MOD_LAYER_COLLECTION layeredTrackStepMods;
+    extern PATTERN activePattern;
+    extern DMAMEM PATTERN_BANK activePatternBank;
+    extern DMAMEM TRACK_STEP_MODS trackStepMods;
 
     bool init();
 
-    void initSequencer();
-    void initTrackLayers();
+    void initPatternBank();
     void initTrackStepMods();
     
     void swapSequencerMemoryForPattern(int newBank, int newPattern);
@@ -192,11 +186,13 @@ namespace XRSequencer
     void updateCurrentPatternStepState();
     void setDisplayStateForPatternActiveTracksLEDs(bool enable);
     void noteOffForAllSounds();
-    void handleQueueActions();
+    void handlePatternQueueActions();
+    void handleTrackLayerQueueActions();
     void queuePattern(int pattern, int bank);
 
     void setSelectedPattern(int8_t pattern);
     void setSelectedTrack(int8_t track);
+    void setSelectedTrackLayer(int8_t layer);
     void setSelectedPage(int8_t page);
     void initializeCurrentSelectedTrack();
     void setCurrentSelectedStep(int step);
@@ -208,38 +204,34 @@ namespace XRSequencer
     void setCopyBufferForTrack(int track);
     void setCopyBufferForStep(int step);
 
+    void toggleSequencerPlayback(char btn);
+    void rewindAllCurrentStepsForAllTracks();
+
     PATTERN &getCopyBufferForPattern();
     TRACK &getCopyBufferForTrack();
     STEP &getCopyBufferForStep();
 
-    void toggleSequencerPlayback(char btn);
-    void rewindAllCurrentStepsForAllTracks();
-
     SEQUENCER_STATE &getSeqState();
+    QUEUED_PATTERN_STATE &getQueuedPatternState();
 
-    SEQUENCER &getSequencer();
-    QUEUED_PATTERN &getQueuedPattern();
-    PATTERN &getHeapPattern();
+    PATTERN_BANK &getActivePatternBank();
+    PATTERN &getActivePattern();
+    TRACK &getTrack(int track);
+    TRACK_LAYER &getTrackLayer(int track, int layer);
+    STEP &getStep(int track, int layer, int step);
 
-    TRACK &getHeapTrack(int track);
-    STEP &getHeapStep(int track, int step);
-    PATTERN &getHeapCurrentSelectedPattern();
-    TRACK &getHeapCurrentSelectedTrack();
-    STEP &getHeapCurrentSelectedTrackStep();
-
-    // PATTERN_MODS &getModsForCurrentPattern();
-    TRACK_STEP_MODS &getModsForCurrentTrackStep();
+    PATTERN &getCurrentSelectedPattern();
+    TRACK &getCurrentSelectedTrack();
+    TRACK_LAYER &getCurrentSelectedTrackLayer();
+    STEP &getCurrentSelectedTrackStep();
 
     int8_t getCurrentSelectedBankNum();
     int8_t getCurrentSelectedPatternNum();
     int8_t getCurrentSelectedTrackNum();
+    int8_t getCurrentSelectedTrackLayerNum();
     int8_t getCurrentSelectedStepNum();
-    int8_t getCurrentStepPage();
-
-    // the current page for the current track layer (default layer is "sound")
     int8_t getCurrentSelectedPage();
-    uint8_t getCurrentSelectedTrackLayer();
-
+    int8_t getCurrentStepPage();
     int8_t getRatchetTrack();
     int8_t getRatchetDivision();
 

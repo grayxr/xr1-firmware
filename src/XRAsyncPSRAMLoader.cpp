@@ -181,19 +181,19 @@ namespace XRAsyncPSRAMLoader
     }
 
     void startAsyncInitOfNextPattern(int newBank, int newPattern) {
-        const auto &newPatternData = XRSequencer::getSequencer().patterns[newPattern];
+        const auto &newPatternData = XRSequencer::getActivePatternBank().patterns[newPattern];
         startAsyncInitOfNextPattern(newPatternData);
     }
 
     void startAsyncInitOfNextPattern() {
-        const auto &queued = XRSequencer::getQueuedPattern();
+        const auto &queued = XRSequencer::getQueuedPatternState();
         int newBank = queued.bank;
         int newPattern = queued.number;
         startAsyncInitOfNextPattern(newBank, newPattern);
     }
 
     void startAsyncInitOfCurrentPattern() {
-        auto &currentPatternData = XRSequencer::getHeapPattern();
+        auto &currentPatternData = XRSequencer::getActivePattern();
         startAsyncInitOfNextPattern(currentPatternData);
     }
 

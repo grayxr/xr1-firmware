@@ -37,9 +37,8 @@ namespace XRSD
     bool loadLastProject();
     void saveProject();
 
-    bool loadSequencer();
+    bool loadPatternBank();
     bool loadTrackStepModsFromSdCard(int bank, int pattern);
-    void saveSequencer();
     void saveTrackStepModsToSdCard();
 
     bool loadNextPatternSounds(int bank, int pattern);

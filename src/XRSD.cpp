@@ -225,19 +225,22 @@ namespace XRSD
         currProjectFile.close();
 
         // make sure current pattern state is saved to RAM2 
-        // before storing the entire sequencer state in SD
+        // before storing the entire bank state in SD
         XRSequencer::saveCurrentPatternOffHeap();
 
-        std::string currProjectSequencerFilePath;
-        currProjectSequencerFilePath = projectDataDir;
-        currProjectSequencerFilePath += "/sequencer.bin";
+        // TODO: save ALL bank data on save, not just the active one
+        std::string currProjectPatternBankFilePath;
+        currProjectPatternBankFilePath = projectDataDir;
+        currProjectPatternBankFilePath += "/bank_";
+        currProjectPatternBankFilePath += std::to_string(XRSequencer::getCurrentSelectedBankNum());
+        currProjectPatternBankFilePath += ".bin";
 
-        Serial.println("Write current project sequencer data binary file to SD card!");
+        Serial.println("Write current project's pattern bank data binary file to SD card!");
 
-        File seqFileW = SD.open(currProjectSequencerFilePath.c_str(), FILE_WRITE);
-        seqFileW.truncate();
-        seqFileW.write((byte *)&XRSequencer::sequencer, sizeof(XRSequencer::sequencer));
-        seqFileW.close();
+        File bankFileW = SD.open(currProjectPatternBankFilePath.c_str(), FILE_WRITE);
+        bankFileW.truncate();
+        bankFileW.write((byte *)&XRSequencer::activePatternBank, sizeof(XRSequencer::activePatternBank));
+        bankFileW.close();
 
         saveTrackStepModsToSdCard();
 
@@ -287,8 +290,8 @@ namespace XRSD
 
         XRSequencer::init();
 
-        if (!loadSequencer()) {
-            XRDisplay::drawError("FAILED TO LOAD SEQUENCER DATA!");
+        if (!loadPatternBank()) {
+            XRDisplay::drawError("FAILED TO LOAD PATTERN BANK DATA!");
             delay(1000);
             return false;
         }
@@ -544,7 +547,7 @@ namespace XRSD
         return _currSampleFileHighlighted;
     }
 
-    bool loadSequencer()
+    bool loadPatternBank()
     {
         // get project path
         char sProjectsPathPrefixBuf[50];
@@ -556,32 +559,32 @@ namespace XRSD
         sProjectDataDir += _current_project.name;
         sProjectDataDir += "/.data";
 
-        std::string currProjectSequencerFilePath;
-        currProjectSequencerFilePath = sProjectDataDir;
-        currProjectSequencerFilePath += "/sequencer.bin";
+        std::string currProjectPatterBankFilePath;
+        currProjectPatterBankFilePath = sProjectDataDir;
+        currProjectPatterBankFilePath += "/bank_0.bin";
 
-        // verify project file path exists first
-        if (!SD.exists(currProjectSequencerFilePath.c_str()))
+        // verify pattern bank file path exists first
+        if (!SD.exists(currProjectPatterBankFilePath.c_str()))
         {
             return false;
         }
 
-        auto &seq = XRSequencer::getSequencer();
+        auto &activePatternBank = XRSequencer::getActivePatternBank();
 
-        File seqFileR = SD.open(currProjectSequencerFilePath.c_str(), FILE_READ);
-        seqFileR.read((byte *)&seq, sizeof(seq));
-        seqFileR.close();
+        File bankFileR = SD.open(currProjectPatterBankFilePath.c_str(), FILE_READ);
+        bankFileR.read((byte *)&activePatternBank, sizeof(activePatternBank));
+        bankFileR.close();
 
         // setup current pattern in heap from first pattern from first bank in RAM2/DMAMEM
-        auto &heapPattern = XRSequencer::getHeapPattern();
-        heapPattern = seq.patterns[0];
+        auto &activePattern = XRSequencer::getActivePattern();
+        activePattern = activePatternBank.patterns[0];
 
-        Serial.printf("sizeof(seq): %d\n sizeof(heapPattern): %d\n", sizeof(seq), sizeof(heapPattern));
+        Serial.printf("sizeof(activePatternBank): %d\n sizeof(activePattern): %d\n", sizeof(activePatternBank), sizeof(activePattern));
 
         // if curr pattern has groove, set it
-        if (heapPattern.groove.id > -1) {
+        if (activePattern.groove.id > -1) {
             XRClock::setShuffle(true);
-            XRClock::setShuffleTemplateForGroove(heapPattern.groove.id, heapPattern.groove.amount);
+            XRClock::setShuffleTemplateForGroove(activePattern.groove.id, activePattern.groove.amount);
         }
 
         return true;
@@ -615,10 +618,10 @@ namespace XRSD
             return false;
         }
 
-        mFile.read((byte *)&XRSequencer::layeredTrackStepMods, sizeof(XRSequencer::layeredTrackStepMods));
+        mFile.read((byte *)&XRSequencer::trackStepMods, sizeof(XRSequencer::trackStepMods));
         mFile.close();
 
-        Serial.printf("sizeof(layeredTrackStepMods): %d\n", sizeof(XRSequencer::layeredTrackStepMods));
+        Serial.printf("sizeof(trackStepMods): %d\n", sizeof(XRSequencer::trackStepMods));
         
         return true;
     }
@@ -646,10 +649,10 @@ namespace XRSD
 
         File mFile = SD.open(mFilePath.c_str(), FILE_WRITE);
         mFile.truncate();
-        mFile.write((byte *)&XRSequencer::layeredTrackStepMods, sizeof(XRSequencer::layeredTrackStepMods));
+        mFile.write((byte *)&XRSequencer::trackStepMods, sizeof(XRSequencer::trackStepMods));
         mFile.close();
 
-        Serial.printf("sizeof(layeredTrackStepMods): %d\n", sizeof(XRSequencer::layeredTrackStepMods));
+        Serial.printf("sizeof(trackStepMods): %d\n", sizeof(XRSequencer::trackStepMods));
     }
 
     bool loadNextPatternSounds(int bank, int pattern)
@@ -740,7 +743,7 @@ namespace XRSD
         mFile.read((byte *)&XRSound::patternSoundStepMods, sizeof(XRSound::patternSoundStepMods));
         mFile.close();
 
-        //Serial.printf("sizeof(patternSoundStepMods): %d\n", sizeof(XRSound::patternSoundStepMods));
+        Serial.printf("sizeof(patternSoundStepMods): %d\n", sizeof(XRSound::patternSoundStepMods));
         
         return true;
     }

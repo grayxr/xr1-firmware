@@ -33,6 +33,7 @@ namespace XRDisplay
     void drawSetupMenu();
     void drawSampleBrowser();
     void drawDexedSysexBrowser();
+    void drawGeneralConfirmOverlay(std::string message);
     void drawCopyConfirmOverlay(std::string type, uint8_t num);
     void drawCopySelOverlay(std::string type);
     void drawPasteConfirmOverlay(std::string type, uint8_t num);

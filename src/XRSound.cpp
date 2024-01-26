@@ -803,7 +803,7 @@ namespace XRSound
         auto &seqState = XRSequencer::getSeqState();
 
         if (seqState.playbackState == XRSequencer::SEQUENCER_PLAYBACK_STATE::RUNNING) {
-            auto &tracks = XRSequencer::sequencer.patterns[nextPattern].tracks;
+            auto &tracks = XRSequencer::activePatternBank.patterns[nextPattern].tracks;
 
             for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
             {
@@ -831,7 +831,7 @@ namespace XRSound
     {
         SOUND_CONTROL_MODS mods;
 
-        auto &pattern = XRSequencer::getHeapCurrentSelectedPattern();
+        auto &pattern = XRSequencer::getCurrentSelectedPattern();
 
         std::string grooveForPattern = pattern.groove.id > -1 ? XRClock::getGrooveString(pattern.groove.id) : "";
         std::string grooveAmountForPattern = XRClock::getGrooveAmountString(pattern.groove.id, pattern.groove.amount);
@@ -903,7 +903,7 @@ namespace XRSound
     {
         SOUND_CONTROL_MODS mods;
 
-        auto &currentSelectedTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &currentSelectedTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
         auto currentSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
 
@@ -918,8 +918,8 @@ namespace XRSound
                 mods.cName = "PROB";
                 mods.dName = "FILE";
 
-                mods.aValue = std::to_string(currentSelectedTrack.lstep);
-                mods.bValue = std::to_string(currentSelectedTrack.velocity);
+                mods.aValue = std::to_string(currentSelectedTrackLayer.lstep);
+                mods.bValue = std::to_string(currentSelectedTrackLayer.velocity);
                 mods.cValue = "--";
                 mods.dValue = "--";
             }
@@ -1051,7 +1051,7 @@ namespace XRSound
     {
         SOUND_CONTROL_MODS mods;
 
-        auto &currentSelectedTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &currentSelectedTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
         auto currentSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
         auto currSelectedStep = XRSequencer::getCurrentSelectedStepNum();
@@ -1068,9 +1068,9 @@ namespace XRSound
                 mods.cName = "VELO";
                 mods.dName = "PROB";
 
-                mods.aValue = std::to_string(currentSelectedTrack.lstep);
-                mods.bValue = std::to_string(currentSelectedTrack.length);
-                mods.cValue = std::to_string(currentSelectedTrack.velocity);
+                mods.aValue = std::to_string(currentSelectedTrackLayer.lstep);
+                mods.bValue = std::to_string(currentSelectedTrackLayer.length);
+                mods.cValue = std::to_string(currentSelectedTrackLayer.velocity);
                 mods.dValue = "100%"; // TODO: impl
             }
 
@@ -1221,7 +1221,7 @@ namespace XRSound
     {
         SOUND_CONTROL_MODS mods;
 
-        auto &currentSelectedTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &currentSelectedTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
         auto currentSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
 
@@ -1234,9 +1234,9 @@ namespace XRSound
                 mods.cName = "VELO";
                 mods.dName = "PROB";
 
-                mods.aValue = std::to_string(currentSelectedTrack.lstep);
-                mods.bValue = std::to_string(currentSelectedTrack.length);
-                mods.cValue = std::to_string(currentSelectedTrack.velocity);
+                mods.aValue = std::to_string(currentSelectedTrackLayer.lstep);
+                mods.bValue = std::to_string(currentSelectedTrackLayer.length);
+                mods.cValue = std::to_string(currentSelectedTrackLayer.velocity);
                 mods.dValue = "--";
             }
 
@@ -1367,7 +1367,7 @@ namespace XRSound
     {
         SOUND_CONTROL_MODS mods;
 
-        auto &currentSelectedTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &currentSelectedTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
         auto currentSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
         auto currentSoundForTrack = currentPatternSounds[currentSelectedTrackNum];
@@ -1383,10 +1383,10 @@ namespace XRSound
 
                 auto chan = getValueNormalizedAsInt8(currentSoundForTrack.params[0]); // TODO make enum
 
-                mods.aValue = std::to_string(currentSelectedTrack.lstep);
-                mods.bValue = std::to_string(currentSelectedTrack.length);    // TODO: impl
+                mods.aValue = std::to_string(currentSelectedTrackLayer.lstep);
+                mods.bValue = std::to_string(currentSelectedTrackLayer.length);    // TODO: impl
                 mods.cValue = std::to_string(chan);                           // TODO: impl
-                mods.dValue = std::to_string(currentSelectedTrack.velocity);  // TODO: impl
+                mods.dValue = std::to_string(currentSelectedTrackLayer.velocity);  // TODO: impl
             }
             
             break;
@@ -1402,7 +1402,7 @@ namespace XRSound
     {
         SOUND_CONTROL_MODS mods;
 
-        auto &currentSelectedTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &currentSelectedTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
         auto currentSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
 
@@ -1417,8 +1417,8 @@ namespace XRSound
             mods.cName = "OUT";
             mods.dName = "PROB";
 
-            mods.aValue = std::to_string(currentSelectedTrack.lstep);
-            mods.bValue = std::to_string(currentSelectedTrack.length);
+            mods.aValue = std::to_string(currentSelectedTrackLayer.lstep);
+            mods.bValue = std::to_string(currentSelectedTrackLayer.length);
 
             auto port = getValueNormalizedAsInt8(currentSoundForTrack.params[0]); // TODO make enum
 
@@ -1441,7 +1441,7 @@ namespace XRSound
     {
         SOUND_CONTROL_MODS mods;
 
-        auto &currentSelectedTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &currentSelectedTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
 
         switch (currentSelectedPageNum)
@@ -1453,7 +1453,7 @@ namespace XRSound
                 mods.cName = "PROB";
                 mods.dName = "--";
 
-                mods.aValue = std::to_string(currentSelectedTrack.lstep);
+                mods.aValue = std::to_string(currentSelectedTrackLayer.lstep);
                 mods.bValue = "1AB";  // TODO: impl
                 mods.cValue = "100%"; // TODO: impl
                 mods.dValue = "--";   // TODO: impl
@@ -1500,7 +1500,7 @@ namespace XRSound
 
     void handleMonoSampleNoteOnForTrack(int track)
     {
-        auto &trackToUse = XRSequencer::getHeapTrack(track);
+        auto &trackLayerToUse = XRSequencer::getTrackLayer(track, XRSequencer::getCurrentSelectedTrackLayerNum());
 
         auto msmpLooptype = getValueNormalizedAsUInt8(currentPatternSounds[track].params[MSMP_LOOPTYPE]);
         auto msmpLoopstart = getValueNormalizedAsInt32(currentPatternSounds[track].params[MSMP_LOOPSTART]);
@@ -1520,7 +1520,7 @@ namespace XRSound
         monoSampleInstances[track].ampEnv.sustain(msmpAsus);
         monoSampleInstances[track].ampEnv.release(msmpArel);
         
-        monoSampleInstances[track].ampAccent.gain(trackToUse.velocity * 0.01);
+        monoSampleInstances[track].ampAccent.gain(trackLayerToUse.velocity * 0.01);
 
         monoSampleInstances[track].amp.gain(msmpLvl);
 
@@ -1570,7 +1570,7 @@ namespace XRSound
     {
         if (track > 3) return;
 
-        auto &trackToUse = XRSequencer::getHeapTrack(track);
+        auto &trackLayerToUse = XRSequencer::getTrackLayer(track, XRSequencer::getCurrentSelectedTrackLayerNum());
        
         auto msynWave = getValueNormalizedAsInt8(currentPatternSounds[track].params[MSYN_WAVE]);
         auto msynFine = getValueNormalizedAsInt8(currentPatternSounds[track].params[MSYN_FINE]);
@@ -1585,9 +1585,9 @@ namespace XRSound
         auto msynPan = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_PAN]);
         auto msynLvl = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_LEVEL]);
 
-        float foundBaseFreq = _noteToFreqArr[trackToUse.note];
-        float octaveFreqA = (foundBaseFreq + (msynFine * 0.01)) * (pow(2, trackToUse.octave));
-        float octaveFreqB = (foundBaseFreq * pow(2.0, (float)msynDetune / 12.0)) * (pow(2, trackToUse.octave));
+        float foundBaseFreq = _noteToFreqArr[trackLayerToUse.note];
+        float octaveFreqA = (foundBaseFreq + (msynFine * 0.01)) * (pow(2, trackLayerToUse.octave));
+        float octaveFreqB = (foundBaseFreq * pow(2.0, (float)msynDetune / 12.0)) * (pow(2, trackLayerToUse.octave));
         
         AudioNoInterrupts();
 
@@ -1605,10 +1605,10 @@ namespace XRSound
         monoSynthInstances[track].ampEnv.sustain(msynAsus);
         monoSynthInstances[track].ampEnv.release(msynArel);
 
-        monoSynthInstances[track].filterAccent.gain((trackToUse.velocity * 0.01));
-        monoSynthInstances[track].ampAccent.gain((trackToUse.velocity * 0.01));
+        monoSynthInstances[track].filterAccent.gain((trackLayerToUse.velocity * 0.01));
+        monoSynthInstances[track].ampAccent.gain((trackLayerToUse.velocity * 0.01));
 
-        monoSynthInstances[track].amp.gain(msynLvl * (trackToUse.velocity * 0.01));
+        monoSynthInstances[track].amp.gain(msynLvl * (trackLayerToUse.velocity * 0.01));
 
         monoSynthInstances[track].left.gain(getStereoPanValues(msynPan).left);
         monoSynthInstances[track].right.gain(getStereoPanValues(msynPan).right);
@@ -1624,21 +1624,21 @@ namespace XRSound
     {
         if (track > 3) return;
 
-        auto &trackToUse = XRSequencer::getHeapTrack(track);
+        auto &trackLayerToUse = XRSequencer::getTrackLayer(track, XRSequencer::getCurrentSelectedTrackLayerNum());
 
-        uint8_t noteToUse = trackToUse.note;
-        uint8_t octaveToUse = trackToUse.octave;
+        uint8_t noteToUse = trackLayerToUse.note;
+        uint8_t octaveToUse = trackLayerToUse.octave;
 
         int midiNote = (noteToUse + (12 * (octaveToUse)));
 
-        dexedInstances[track].ampAccent.gain((trackToUse.velocity * 0.01));
+        dexedInstances[track].ampAccent.gain((trackLayerToUse.velocity * 0.01));
         dexedInstances[track].dexed.keydown(midiNote, 50); // TODO: parameterize velocity
     }
 #endif
 
     void handleBraidsNoteOnForTrack(int track)
     {
-        // auto &trackToUse = XRSequencer::getHeapTrack(track);
+        // auto &trackToUse = XRSequencer::getTrack(track);
 
         // uint8_t noteToUse = trackToUse.note;
         // uint8_t octaveToUse = trackToUse.octave;
@@ -1652,9 +1652,9 @@ namespace XRSound
     {
         if (track > 2) return;
 
-        auto &trackToUse = XRSequencer::getHeapTrack(track);
+        auto &trackLayerToUse = XRSequencer::getTrackLayer(track, XRSequencer::getCurrentSelectedTrackLayerNum());
 
-        fmDrumInstances[track].ampAccent.gain((trackToUse.velocity * 0.01));
+        fmDrumInstances[track].ampAccent.gain((trackLayerToUse.velocity * 0.01));
         fmDrumInstances[track].fmDrum.noteOn();
     }
 #endif
@@ -1671,8 +1671,9 @@ namespace XRSound
 
     void handleMonoSampleNoteOnForTrackStep(int track, int step)
     {
-        auto &trackToUse = XRSequencer::getHeapTrack(track);
-        auto &stepToUse = XRSequencer::getHeapStep(track, step);
+        auto &trackToUse = XRSequencer::getTrack(track);
+        auto &trackLayerToUse = XRSequencer::getTrackLayer(track, XRSequencer::getCurrentSelectedTrackLayerNum());
+        auto &stepToUse = XRSequencer::getStep(track, XRSequencer::getCurrentSelectedTrackLayerNum(), step);
 
         auto msmpSamplePlayRate = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSMP_SAMPLEPLAYRATE]);
         auto msmpLooptype = getValueNormalizedAsUInt8(currentPatternSounds[track].params[MSMP_LOOPTYPE]);
@@ -1688,9 +1689,9 @@ namespace XRSound
 
         // TODO: allow sample chromatic note playback
 
-        auto velocityToUse = trackToUse.velocity;
+        auto velocityToUse = trackLayerToUse.velocity;
         if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
-            velocityToUse = max(trackToUse.velocity, XRSequencer::heapPattern.accent);
+            velocityToUse = max(trackLayerToUse.velocity, XRSequencer::activePattern.accent);
         }
 
         // if (patternMods.tracks[track].step_mod_flags[step].flags[XRSequencer::MOD_ATTRS::VELOCITY])
@@ -1790,8 +1791,9 @@ namespace XRSound
     {
         if (track > 3) return;
 
-        auto &trackToUse = XRSequencer::getHeapTrack(track);
-        auto &stepToUse = XRSequencer::getHeapStep(track, step);
+        auto &trackToUse = XRSequencer::getTrack(track);
+        auto &trackLayerToUse = XRSequencer::getTrackLayer(track, XRSequencer::getCurrentSelectedTrackLayerNum());
+        auto &stepToUse = XRSequencer::getStep(track, XRSequencer::getCurrentSelectedTrackLayerNum(), step);
 
         auto msynWave = getValueNormalizedAsUInt8(currentPatternSounds[track].params[MSYN_WAVE]);
         auto msynFine = getValueNormalizedAsInt8(currentPatternSounds[track].params[MSYN_FINE]);
@@ -1807,26 +1809,26 @@ namespace XRSound
         auto msynPan = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_PAN]);
         auto msynLvl = getValueNormalizedAsFloat(currentPatternSounds[track].params[MSYN_LEVEL]);
 
-        auto currLayer = XRSequencer::getCurrentSelectedTrackLayer();
+        auto currLayer = XRSequencer::getCurrentSelectedTrackLayerNum();
 
-        uint8_t noteToUse = trackToUse.note;
-        if (XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].flags[XRSequencer::NOTE])
+        uint8_t noteToUse = trackLayerToUse.note;
+        if (XRSequencer::trackStepMods.tracks[track].layers[currLayer].steps[step].flags[XRSequencer::NOTE])
         {
-            noteToUse = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].mods[XRSequencer::NOTE];
+            noteToUse = XRSequencer::trackStepMods.tracks[track].layers[currLayer].steps[step].mods[XRSequencer::NOTE];
         }
 
-        uint8_t octaveToUse = trackToUse.octave;
-        if (XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].flags[XRSequencer::OCTAVE])
+        uint8_t octaveToUse = trackLayerToUse.octave;
+        if (XRSequencer::trackStepMods.tracks[track].layers[currLayer].steps[step].flags[XRSequencer::OCTAVE])
         {
-            octaveToUse = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].mods[XRSequencer::OCTAVE];
+            octaveToUse = XRSequencer::trackStepMods.tracks[track].layers[currLayer].steps[step].mods[XRSequencer::OCTAVE];
         }
 
-        uint8_t velocityToUse = trackToUse.velocity;
+        uint8_t velocityToUse = trackLayerToUse.velocity;
         if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
-            if (XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].flags[XRSequencer::VELOCITY]) {
-                velocityToUse = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].mods[XRSequencer::VELOCITY];
+            if (XRSequencer::trackStepMods.tracks[track].layers[currLayer].steps[step].flags[XRSequencer::VELOCITY]) {
+                velocityToUse = XRSequencer::trackStepMods.tracks[track].layers[currLayer].steps[step].mods[XRSequencer::VELOCITY];
             } else {
-                velocityToUse = max(trackToUse.velocity, XRSequencer::heapPattern.accent);
+                velocityToUse = max(trackLayerToUse.velocity, XRSequencer::activePattern.accent);
             }
         }
 
@@ -1879,29 +1881,30 @@ namespace XRSound
     {
         if (track > 3) return;
 
-        auto &trackToUse = XRSequencer::getHeapTrack(track);
-        auto &stepToUse = XRSequencer::getHeapStep(track, step);
+        auto &trackToUse = XRSequencer::getTrack(track);
+        auto &trackLayerToUse = XRSequencer::getTrackLayer(track, XRSequencer::getCurrentSelectedTrackLayerNum());
+        auto &stepToUse = XRSequencer::getStep(track, XRSequencer::getCurrentSelectedTrackLayerNum(), step);
 
-        auto currLayer = XRSequencer::getCurrentSelectedTrackLayer();
+        auto currLayer = XRSequencer::getCurrentSelectedTrackLayerNum();
 
-        uint8_t noteToUse = trackToUse.note;
-        if (XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].flags[XRSequencer::NOTE])
+        uint8_t noteToUse = trackLayerToUse.note;
+        if (XRSequencer::trackStepMods.tracks[track].layers[currLayer].steps[step].flags[XRSequencer::NOTE])
         {
-            noteToUse = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].mods[XRSequencer::NOTE];
+            noteToUse = XRSequencer::trackStepMods.tracks[track].layers[currLayer].steps[step].mods[XRSequencer::NOTE];
         }
 
-        uint8_t octaveToUse = trackToUse.octave;
-        if (XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].flags[XRSequencer::OCTAVE])
+        uint8_t octaveToUse = trackLayerToUse.octave;
+        if (XRSequencer::trackStepMods.tracks[track].layers[currLayer].steps[step].flags[XRSequencer::OCTAVE])
         {
-            octaveToUse = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].mods[XRSequencer::OCTAVE];
+            octaveToUse = XRSequencer::trackStepMods.tracks[track].layers[currLayer].steps[step].mods[XRSequencer::OCTAVE];
         }
 
-        uint8_t velocityToUse = trackToUse.velocity;
+        uint8_t velocityToUse = trackLayerToUse.velocity;
         if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
-            if (XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].flags[XRSequencer::VELOCITY]) {
-                velocityToUse = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].mods[XRSequencer::VELOCITY];
+            if (XRSequencer::trackStepMods.tracks[track].layers[currLayer].steps[step].flags[XRSequencer::VELOCITY]) {
+                velocityToUse = XRSequencer::trackStepMods.tracks[track].layers[currLayer].steps[step].mods[XRSequencer::VELOCITY];
             } else {
-                velocityToUse = max(trackToUse.velocity, XRSequencer::heapPattern.accent);
+                velocityToUse = max(trackLayerToUse.velocity, XRSequencer::activePattern.accent);
             }
         }
 
@@ -1922,8 +1925,8 @@ namespace XRSound
 
     void handleBraidsNoteOnForTrackStep(int track, int step)
     {
-        // auto &trackToUse = XRSequencer::getHeapTrack(track);
-        // auto &stepToUse = XRSequencer::getHeapStep(track, step);
+        // auto &trackToUse = XRSequencer::getTrack(track);
+        // auto &stepToUse = XRSequencer::getStep(track, step);
 
         // uint8_t noteToUse = trackToUse.note;
         // if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::NOTE])
@@ -1942,7 +1945,7 @@ namespace XRSound
         //     if (XRSequencer::patternTrackStepMods.tracks[track].steps[step].flags[XRSequencer::VELOCITY]) {
         //         velocityToUse = XRSequencer::patternTrackStepMods.tracks[track].steps[step].mods[XRSequencer::VELOCITY];
         //     } else {
-        //         velocityToUse = max(trackToUse.velocity, XRSequencer::heapPattern.accent);
+        //         velocityToUse = max(trackToUse.velocity, XRSequencer::activePattern.accent);
         //     }
         // }
 
@@ -1955,8 +1958,9 @@ namespace XRSound
     {
         if (track > 2) return;
 
-        auto &trackToUse = XRSequencer::getHeapTrack(track);
-        auto &stepToUse = XRSequencer::getHeapStep(track, step);
+        auto &trackToUse = XRSequencer::getTrack(track);
+        auto &trackLayerToUse = XRSequencer::getTrackLayer(track, XRSequencer::getCurrentSelectedTrackLayerNum());
+        auto &stepToUse = XRSequencer::getStep(track, XRSequencer::getCurrentSelectedTrackLayerNum(), step);
 
         auto fmdNoise = getValueNormalizedAsFloat(currentPatternSounds[track].params[FMD_NOISE]);
         auto fmdDecay = getValueNormalizedAsFloat(currentPatternSounds[track].params[FMD_DECAY]);
@@ -1965,14 +1969,14 @@ namespace XRSound
         auto fmdPan = getValueNormalizedAsFloat(currentPatternSounds[track].params[FMD_PAN]);
         auto fmdLvl = getValueNormalizedAsFloat(currentPatternSounds[track].params[FMD_LEVEL]);
 
-        auto currLayer = XRSequencer::getCurrentSelectedTrackLayer();
+        auto currLayer = XRSequencer::getCurrentSelectedTrackLayerNum();
 
-        uint8_t velocityToUse = trackToUse.velocity;
+        uint8_t velocityToUse = trackLayerToUse.velocity;
         if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
-            if (XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].flags[XRSequencer::VELOCITY]) {
-                velocityToUse = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].mods[XRSequencer::VELOCITY];
+            if (XRSequencer::trackStepMods.tracks[track].layers[currLayer].steps[step].flags[XRSequencer::VELOCITY]) {
+                velocityToUse = XRSequencer::trackStepMods.tracks[track].layers[currLayer].steps[step].mods[XRSequencer::VELOCITY];
             } else {
-                velocityToUse = max(trackToUse.velocity, XRSequencer::heapPattern.accent);
+                velocityToUse = max(trackLayerToUse.velocity, XRSequencer::activePattern.accent);
             }
         }
 
@@ -1997,28 +2001,29 @@ namespace XRSound
 
     void handleMIDINoteOnForTrackStep(int track, int step)
     {
-        //auto &trackToUse = XRSequencer::getHeapTrack(track);
-        //auto &stepToUse = XRSequencer::getHeapStep(track, step);
+        //auto &trackToUse = XRSequencer::getTrack(track);
+        //auto &stepToUse = XRSequencer::getStep(track, step);
 
         XRMIDI::sendNoteOn(64, 100, 1);
     }
 
     void handleCvGateNoteOnForTrackStep(int track, int step)
     {
-        auto &trackToUse = XRSequencer::getHeapTrack(track);
+        auto &trackToUse = XRSequencer::getTrack(track);
+        auto &trackLayerToUse = XRSequencer::getTrackLayer(track, XRSequencer::getCurrentSelectedTrackLayerNum());
 
         auto currentSoundForTrack = currentPatternSounds[track];
 
         auto cvgaPort = getValueNormalizedAsInt8(currentSoundForTrack.params[0]); // TODO: use enum
 
-        uint8_t noteToUse = trackToUse.note;
+        uint8_t noteToUse = trackLayerToUse.note;
         // if (patternMods.tracks[track].step_mod_flags[step].flags[XRSequencer::MOD_ATTRS::NOTE])
         // {
         //     noteToUse = patternMods.tracks[track].steps[step].note;
         //     // Serial.println(noteToUse);
         // }
 
-        uint8_t octaveToUse = trackToUse.octave;
+        uint8_t octaveToUse = trackLayerToUse.octave;
         // if (patternMods.tracks[track].step_mod_flags[step].flags[XRSequencer::MOD_ATTRS::OCTAVE])
         // {
         //     octaveToUse = patternMods.tracks[track].steps[step].octave;
@@ -2065,7 +2070,7 @@ namespace XRSound
 
     void handleNoteOffForTrack(int track)
     {
-        auto &currTrack = XRSequencer::getHeapTrack(track);
+        auto &trackLayer = XRSequencer::getTrackLayer(track, XRSequencer::getCurrentSelectedTrackLayerNum());
         auto currentSoundForTrack = currentPatternSounds[track];
 
         switch (currentSoundForTrack.type)
@@ -2089,8 +2094,8 @@ namespace XRSound
             {
                 if (track < 4)
                 {
-                    uint8_t noteToUse = currTrack.note;
-                    uint8_t octaveToUse = currTrack.octave;
+                    uint8_t noteToUse = trackLayer.note;
+                    uint8_t octaveToUse = trackLayer.octave;
                     int midiNote = (noteToUse + (12 * (octaveToUse)));
 
                     dexedInstances[track].dexed.keyup(midiNote);
@@ -2142,12 +2147,12 @@ namespace XRSound
 
     void handleNoteOffForTrackStep(int track, int step)
     {
-        auto &currTrack = XRSequencer::getHeapTrack(track);
+        auto &trackLayer = XRSequencer::getTrackLayer(track, XRSequencer::getCurrentSelectedTrackLayerNum());
         auto currentSoundForTrack = currentPatternSounds[track];
 
         // TODO: get track step mods for note, octave, etc
 
-        auto currLayer = XRSequencer::getCurrentSelectedTrackLayer();
+        auto currLayer = XRSequencer::getCurrentSelectedTrackLayerNum();
 
         switch (currentSoundForTrack.type)
         {
@@ -2168,16 +2173,16 @@ namespace XRSound
 #ifndef NO_DEXED
         case T_DEXED_SYNTH:
             {
-                uint8_t noteToUse = currTrack.note;
-                if (XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].flags[XRSequencer::NOTE])
+                uint8_t noteToUse = trackLayer.note;
+                if (XRSequencer::trackStepMods.tracks[track].layers[currLayer].steps[step].flags[XRSequencer::NOTE])
                 {
-                    noteToUse = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].mods[XRSequencer::NOTE];
+                    noteToUse = XRSequencer::trackStepMods.tracks[track].layers[currLayer].steps[step].mods[XRSequencer::NOTE];
                 }
 
-                uint8_t octaveToUse = currTrack.octave;
-                if (XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].flags[XRSequencer::OCTAVE])
+                uint8_t octaveToUse = trackLayer.octave;
+                if (XRSequencer::trackStepMods.tracks[track].layers[currLayer].steps[step].flags[XRSequencer::OCTAVE])
                 {
-                    octaveToUse = XRSequencer::layeredTrackStepMods.layers[currLayer].tracks[track].steps[step].mods[XRSequencer::OCTAVE];
+                    octaveToUse = XRSequencer::trackStepMods.tracks[track].layers[currLayer].steps[step].mods[XRSequencer::OCTAVE];
                 }
                 
                 int midiNote = (noteToUse + (12 * (octaveToUse)));
@@ -2304,7 +2309,7 @@ namespace XRSound
 
     void triggerMonoSampleNoteOn(uint8_t t, uint8_t note)
     {
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedPattern().tracks[t];
+        auto &trackLayerToUse = XRSequencer::getTrackLayer(t, XRSequencer::getCurrentSelectedTrackLayerNum());
 
         auto msmpLooptype = getValueNormalizedAsUInt8(currentPatternSounds[t].params[MSMP_LOOPTYPE]);
         auto msmpLoopstart = getValueNormalizedAsInt32(currentPatternSounds[t].params[MSMP_LOOPSTART]);
@@ -2326,7 +2331,7 @@ namespace XRSound
         monoSampleInstances[t].ampEnv.sustain(msmpAsus);
         monoSampleInstances[t].ampEnv.release(msmpArel);
 
-        monoSampleInstances[t].ampAccent.gain(currTrack.velocity * 0.01);
+        monoSampleInstances[t].ampAccent.gain(trackLayerToUse.velocity * 0.01);
         monoSampleInstances[t].amp.gain(msmpLvl);
 
         monoSampleInstances[t].left.gain(getStereoPanValues(msmpPan).left);
@@ -2373,7 +2378,7 @@ namespace XRSound
     {
         if (t > 3) return;
 
-        auto &currTrack = XRSequencer::getHeapTrack(t);
+        auto &trackLayer = XRSequencer::getTrackLayer(t, XRSequencer::getCurrentSelectedTrackLayerNum());
        
         auto msynFine = getValueNormalizedAsInt8(currentPatternSounds[t].params[MSYN_FINE]);
         auto msynDetune = getValueNormalizedAsInt8(currentPatternSounds[t].params[MSYN_DETUNE]);
@@ -2405,13 +2410,13 @@ namespace XRSound
         monoSynthInstances[t].ampEnv.sustain(msynAsus);
         monoSynthInstances[t].ampEnv.release(msynArel);
 
-        monoSynthInstances[t].filterAccent.gain(currTrack.velocity * 0.01);
-        monoSynthInstances[t].ampAccent.gain(currTrack.velocity * 0.01);
+        monoSynthInstances[t].filterAccent.gain(trackLayer.velocity * 0.01);
+        monoSynthInstances[t].ampAccent.gain(trackLayer.velocity * 0.01);
         monoSynthInstances[t].amp.gain(msynLvl);
 
         Serial.printf("msynLvl: %f msynRel: %f\n", 
-            msynLvl * (currTrack.velocity * 0.01), 
-            msynArel * (currTrack.velocity * 0.01)
+            msynLvl * (trackLayer.velocity * 0.01), 
+            msynArel * (trackLayer.velocity * 0.01)
         );
 
         monoSynthInstances[t].left.gain(getStereoPanValues(msynPan).left);
@@ -2428,11 +2433,11 @@ namespace XRSound
     {
         if (t > 3) return;
 
-        auto &currTrack = XRSequencer::getHeapTrack(t);
+        auto &trackLayer = XRSequencer::getTrackLayer(t, XRSequencer::getCurrentSelectedTrackLayerNum());
 
         int midiNote = (note + (12 * (XRKeyMatrix::getKeyboardOctave())));
 
-        dexedInstances[t].ampAccent.gain(currTrack.velocity * 0.01);
+        dexedInstances[t].ampAccent.gain(trackLayer.velocity * 0.01);
         dexedInstances[t].dexed.keydown(midiNote, 50);
     }
 #endif
@@ -2447,9 +2452,9 @@ namespace XRSound
     {
         if (t > 2) return;
 
-        auto &currTrack = XRSequencer::getHeapTrack(t);
+        auto &trackLayer = XRSequencer::getTrackLayer(t, XRSequencer::getCurrentSelectedTrackLayerNum());
 
-        fmDrumInstances[t].ampAccent.gain(currTrack.velocity * 0.01);
+        fmDrumInstances[t].ampAccent.gain(trackLayer.velocity * 0.01);
         fmDrumInstances[t].fmDrum.noteOn();
     }
 #endif

@@ -125,7 +125,7 @@ namespace XRLED
         //bool blinkCurrentPage = _seq_state.playback_state == RUNNING && currentBar != -1;
         bool blinkCurrentPage = sequencerRunning && currentBar != -1;
 
-        // TRACK currTrack = getHeapCurrentSelectedTrack();
+        // TRACK currTrack = getCurrentSelectedTrack();
         // uint16_t pageOneBrightnessMin = (current_step_page == 1) ? 50 : 5;
         // uint16_t pageTwoBrightnessMin = (current_step_page == 2) ? 50 : (currTrack.last_step > 16 ? 5 : 0);
         // uint16_t pageThreeBrightnessMin = (current_step_page == 3) ? 50 : (currTrack.last_step > 32 ? 5 : 0);
@@ -157,7 +157,7 @@ namespace XRLED
 
     void displayCurrentlySelectedPattern()
     {
-        //auto &sequencer = XRSequencer::getSequencer();
+        //auto &bank = XRSequencer::getActivePatternBank();
         //auto currentSelectedBank = XRSequencer::getCurrentSelectedBankNum();
         auto currentSelectedPattern = XRSequencer::getCurrentSelectedPatternNum();
 
@@ -165,7 +165,7 @@ namespace XRLED
         {
             // TODO: impl pattern, track, bank initialize properly
 
-            //if (sequencer.banks[currentSelectedBank].patterns[p].initialized)
+            //if (bank.banks[currentSelectedBank].patterns[p].initialized)
             //{
                 if (p == currentSelectedPattern)
                 {
@@ -188,7 +188,7 @@ namespace XRLED
         //Serial.println("fix displayCurrentlySelectedTrack");
         //return;
 
-        //auto &seqHeap = XRSequencer::getHeapPattern();
+        //auto &seqHeap = XRSequencer::getActivePattern();
         auto currentSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
 
         for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
@@ -213,9 +213,26 @@ namespace XRLED
         }
     }
 
+    void displayTrackLayers()
+    {
+        auto currentSelectedTrackLayer = XRSequencer::getCurrentSelectedTrackLayerNum();
+
+        for (int l = 0; l < MAXIMUM_SEQUENCER_TRACK_LAYERS; l++)
+        {
+            if (l == currentSelectedTrackLayer)
+            {
+                setPWM(_stepLEDPins[l], 4095);
+            }
+            else
+            {
+                setPWM(_stepLEDPins[l], 512);
+            }
+        }
+    }
+
     void setDisplayStateForAllStepLEDs()
     {
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack();
+        auto &currTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
         auto currStepPage = XRSequencer::getCurrentStepPage();
 
         const int MAX_TRACK_LEDS_SIZE = 17;
@@ -239,11 +256,11 @@ namespace XRLED
                 stepToUse += 48;
             }
 
-            auto currTrackStepForLED = currTrack.steps[stepToUse - 1];
+            auto currTrackStepForLED = currTrackLayer.steps[stepToUse - 1];
             int8_t curr_led_char = XRHelpers::stepCharMap[l];
             int8_t keyLED = getKeyLED(curr_led_char);
 
-            if (stepToUse > currTrack.lstep)
+            if (stepToUse > currTrackLayer.lstep)
             {
                 setPWM(keyLED, 0);
                 continue;
@@ -362,12 +379,11 @@ namespace XRLED
 
     void displayInitializedPatternLEDs()
     {
-        auto &sequencer = XRSequencer::getSequencer();
-        auto currSelBank = XRSequencer::getCurrentSelectedBankNum();
+        auto &activePatternBank = XRSequencer::getActivePatternBank();
 
         for (int p = 0; p < MAXIMUM_SEQUENCER_PATTERNS; p++)
         {
-            if (sequencer.banks[currSelBank].patterns[p].initialized)
+            if (activePatternBank.patterns[p].initialized)
             {
                 setPWM(_stepLEDPins[p], 4095);
             }
@@ -380,7 +396,7 @@ namespace XRLED
 
     void displayInitializedTrackLEDs()
     {
-        auto &pattern = XRSequencer::getHeapCurrentSelectedPattern();
+        auto &pattern = XRSequencer::getCurrentSelectedPattern();
 
         for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
         {
