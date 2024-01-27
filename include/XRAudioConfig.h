@@ -10,7 +10,6 @@
 #ifndef NO_FMDRUM
 #include <synth_fm_drum.h>
 #endif
-#include <synth_braids.h>
 #ifdef BUILD_FOR_LINUX
 #include <output_soundio.h>
 #include <input_soundio.h>

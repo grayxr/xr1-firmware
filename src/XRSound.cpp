@@ -2050,11 +2050,13 @@ namespace XRSound
 
     void turnOffAllSounds()
     {
+#ifndef NO_DEXED
         for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++) {
             if (t < 4) { // dexed voice instances are only available to tracks 0-3
                 dexedInstances[t].dexed.notesOff();
             }
         }
+#endif
     }
 
     void handleNoteOffForTrack(int track)
