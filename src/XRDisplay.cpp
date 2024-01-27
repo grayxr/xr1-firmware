@@ -494,7 +494,7 @@ namespace XRDisplay
             currentUXMode == XRUX::SUBMITTING_STEP_VALUE)
         {
             auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-            auto currSoundForTrack = XRSound::currentPatternSounds[currTrackNum];
+            auto currSoundForTrack = XRSound::activePatternSounds[currTrackNum];
 
             // draw track meta type box
             int trackMetaStrX = 2;
@@ -743,7 +743,7 @@ namespace XRDisplay
     {
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currPageSelected = XRSequencer::getCurrentSelectedPage();
-        auto currSoundForTrack = XRSound::currentPatternSounds[currTrackNum];
+        auto currSoundForTrack = XRSound::activePatternSounds[currTrackNum];
 
         if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 3)
         {
@@ -975,24 +975,23 @@ namespace XRDisplay
 
         auto currentSelectedStep = XRSequencer::getCurrentSelectedStepNum();
         auto currentTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currLayer = XRSequencer::getCurrentSelectedTrackLayerNum();
 
         if (
             XRUX::getCurrentMode() == XRUX::SUBMITTING_STEP_VALUE && currentSelectedStep > -1 &&
-            XRSequencer::trackStepMods.tracks[currentTrackNum].layers[currLayer].steps[currentSelectedStep].flags[XRSequencer::NOTE]
+            XRSequencer::activeTrackStepModLayer.tracks[currentTrackNum].steps[currentSelectedStep].flags[XRSequencer::NOTE]
         ) {
-            auto noteMod = XRSequencer::trackStepMods.tracks[currentTrackNum].layers[currLayer].steps[currentSelectedStep].mods[XRSequencer::NOTE];
-            auto octaveMod = XRSequencer::trackStepMods.tracks[currentTrackNum].layers[currLayer].steps[currentSelectedStep].mods[XRSequencer::OCTAVE];
+            auto noteMod = XRSequencer::activeTrackStepModLayer.tracks[currentTrackNum].steps[currentSelectedStep].mods[XRSequencer::NOTE];
+            auto octaveMod = XRSequencer::activeTrackStepModLayer.tracks[currentTrackNum].steps[currentSelectedStep].mods[XRSequencer::OCTAVE];
 
             outputStr += XRHelpers::getNoteStringForBaseNoteNum(noteMod);
             outputStr += std::to_string(octaveMod);
         }
         else
         {
-            auto &currTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
+            auto &currTrack = XRSequencer::getCurrentSelectedTrack();
 
-            outputStr += XRHelpers::getNoteStringForBaseNoteNum(currTrackLayer.note);
-            outputStr += std::to_string(currTrackLayer.octave);
+            outputStr += XRHelpers::getNoteStringForBaseNoteNum(currTrack.note);
+            outputStr += std::to_string(currTrack.octave);
         }
 
         return outputStr;
@@ -1007,7 +1006,7 @@ namespace XRDisplay
         std::string currPageNameForTrack = "";
 
         std::string currTrackLayerStr = "L";
-        currTrackLayerStr += std::to_string(currTrackLayerNum+1);
+        currTrackLayerStr += XRHelpers::strldz(std::to_string(currTrackLayerNum+1), 2);
 
         currTrackPageCount = XRSound::getPageCountForCurrentTrack();
         currPageNameForTrack += XRSound::getPageNameForCurrentTrack();
@@ -1018,8 +1017,8 @@ namespace XRDisplay
 
         u8g2.drawLine(0, 52, 128, 52);
         u8g2.drawStr(0, pageTabPosY, currTrackLayerStr.c_str());
-        u8g2.drawLine(11, 52, 11, 64);
-        u8g2.drawStr(16, pageTabPosY, currPageNameForTrack.c_str());
+        u8g2.drawLine(15, 52, 15, 64);
+        u8g2.drawStr(20, pageTabPosY, currPageNameForTrack.c_str());
 
         if (currTrackPageCount == 1 || currTrackPageCount == 0)
             return;
@@ -1063,7 +1062,7 @@ namespace XRDisplay
 
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
 #ifndef NO_DEXED
-        if (XRSound::currentPatternSounds[currTrackNum].type == XRSound::T_DEXED_SYNTH) {
+        if (XRSound::activePatternSounds[currTrackNum].type == XRSound::T_DEXED_SYNTH) {
             menuItems = XRMenu::getDexedSoundMenuItems();
             menuItemMax = DEXED_SOUND_MENU_ITEM_MAX;
         }

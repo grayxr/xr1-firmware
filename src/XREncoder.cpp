@@ -217,7 +217,7 @@ namespace XREncoder
 
                 auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
 #ifndef NO_DEXED
-                if (currentPatternSounds[currTrackNum].type == T_DEXED_SYNTH) {
+                if (activePatternSounds[currTrackNum].type == T_DEXED_SYNTH) {
                     menuItems = DEXED_SOUND_MENU_ITEM_MAX;
                 }
 #endif
@@ -307,7 +307,7 @@ namespace XREncoder
     void handleEncoderPatternModA(int diff)
     {
         auto &currPattern = XRSequencer::getCurrentSelectedPattern();
-        auto currTrackLayerNum = XRSequencer::getCurrentSelectedTrackLayerNum();
+        auto &currTrack = XRSequencer::getCurrentSelectedTrack();
 
         int currLastStep = currPattern.lstep;
         int newLastStep = currPattern.lstep + diff;
@@ -325,9 +325,9 @@ namespace XREncoder
             for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
             {
                 // set track's last_step to match pattern if track last_step is greater than pattern's
-                if (currPattern.tracks[t].layers[currTrackLayerNum].lstep > newLastStep)
+                if (currTrack.lstep > newLastStep)
                 {
-                    currPattern.tracks[t].layers[currTrackLayerNum].lstep = newLastStep;
+                    currTrack.lstep = newLastStep;
                 }
             }
 
@@ -428,7 +428,7 @@ namespace XREncoder
 
             // Serial.printf("m: %d, mDiff: %d\n", m, mDiff);
 
-            if (XRSound::currentPatternSounds[currTrackNum].type == T_MONO_SAMPLE)
+            if (XRSound::activePatternSounds[currTrackNum].type == T_MONO_SAMPLE)
             {
                 if (m == 1) {
                     handleEncoderMonoSampleModA(mDiff);
@@ -440,7 +440,7 @@ namespace XREncoder
                     handleEncoderMonoSampleModD(mDiff);
                 }
             }
-            else if (XRSound::currentPatternSounds[currTrackNum].type == T_MONO_SYNTH)
+            else if (XRSound::activePatternSounds[currTrackNum].type == T_MONO_SYNTH)
             {
                 if (m == 1) {
                     handleEncoderMonoSynthModA(mDiff);
@@ -453,7 +453,7 @@ namespace XREncoder
                 }
             }
 #ifndef NO_DEXED
-            else if (XRSound::currentPatternSounds[currTrackNum].type == T_DEXED_SYNTH)
+            else if (XRSound::activePatternSounds[currTrackNum].type == T_DEXED_SYNTH)
             {
                 if (m == 1) {
                     handleEncoderDexedSynthModA(mDiff);
@@ -467,7 +467,7 @@ namespace XREncoder
             }
 #endif
 #ifndef NO_FMDRUM
-            else if (XRSound::currentPatternSounds[currTrackNum].type == T_FM_DRUM)
+            else if (XRSound::activePatternSounds[currTrackNum].type == T_FM_DRUM)
             {
                 if (m == 1) {
                     handleEncoderFmDrumModA(mDiff);
@@ -480,7 +480,7 @@ namespace XREncoder
                 }
             }
 #endif
-            else if (XRSound::currentPatternSounds[currTrackNum].type == T_CV_GATE)
+            else if (XRSound::activePatternSounds[currTrackNum].type == T_CV_GATE)
             {
                 // if (m == 1) {
                 //     handleEncoderCvGateModA(mDiff);
@@ -502,7 +502,7 @@ namespace XREncoder
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
 
         auto &currPattern = XRSequencer::getCurrentSelectedPattern();
-        auto &currTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
+        auto &currTrack = XRSequencer::getCurrentSelectedTrack();
         
         auto &monoSampleInstance = XRSound::monoSampleInstances[currSelectedTrackNum];
         auto currentUXMode = XRUX::getCurrentMode();
@@ -511,8 +511,8 @@ namespace XREncoder
         {
         case 0:
         {
-            int currLastStep = currTrackLayer.lstep;
-            int newLastStep = currTrackLayer.lstep + diff;
+            int currLastStep = currTrack.lstep;
+            int newLastStep = currTrack.lstep + diff;
 
             // make sure track last step doesn't exceed pattern's
 
@@ -528,7 +528,7 @@ namespace XREncoder
 
             if (newLastStep != currLastStep)
             {
-                currTrackLayer.lstep = newLastStep;
+                currTrack.lstep = newLastStep;
 
                 XRLED::displayPageLEDs(
                     -1,
@@ -543,7 +543,7 @@ namespace XREncoder
         break;
         case 1:
         {
-            float currSpeed = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_SAMPLEPLAYRATE]);
+            float currSpeed = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_SAMPLEPLAYRATE]);
 
             // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1)
             // {
@@ -572,7 +572,7 @@ namespace XREncoder
                 // }
                 // else
                 // {
-                    XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_SAMPLEPLAYRATE] = getFloatValuePaddedAsInt32(newSpeed);
+                    XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_SAMPLEPLAYRATE] = getFloatValuePaddedAsInt32(newSpeed);
                     XRSound::patternSoundsDirty = true;
                 // }
 
@@ -586,13 +586,13 @@ namespace XREncoder
         break;
         case 2:
         {
-            int currLoopType = getValueNormalizedAsUInt8(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_LOOPTYPE]);
+            int currLoopType = getValueNormalizedAsUInt8(XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_LOOPTYPE]);
 
             // when param locking, use the existing param lock value as the current value
             if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1) {
-                if (XRSound::patternSoundStepMods.sounds[currSelectedTrackNum].steps[currSelectedStepNum].flags[XRSound::MSMP_LOOPTYPE]) {
+                if (XRSound::activePatternSoundStepModLayer.sounds[currSelectedTrackNum].steps[currSelectedStepNum].flags[XRSound::MSMP_LOOPTYPE]) {
                     currLoopType = getValueNormalizedAsUInt8(
-                        XRSound::patternSoundStepMods.sounds[currSelectedTrackNum].steps[currSelectedStepNum].mods[XRSound::MSMP_LOOPTYPE]
+                        XRSound::activePatternSoundStepModLayer.sounds[currSelectedTrackNum].steps[currSelectedStepNum].mods[XRSound::MSMP_LOOPTYPE]
                     );
                 }
             }
@@ -609,11 +609,11 @@ namespace XREncoder
             }
 
             if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE) {
-                XRSound::patternSoundStepMods.sounds[currSelectedTrackNum].steps[currSelectedStepNum].flags[XRSound::MSMP_LOOPTYPE] = true;
-                XRSound::patternSoundStepMods.sounds[currSelectedTrackNum].steps[currSelectedStepNum].mods[XRSound::MSMP_LOOPTYPE] = getInt32ValuePaddedAsInt32(newLoopType);
+                XRSound::activePatternSoundStepModLayer.sounds[currSelectedTrackNum].steps[currSelectedStepNum].flags[XRSound::MSMP_LOOPTYPE] = true;
+                XRSound::activePatternSoundStepModLayer.sounds[currSelectedTrackNum].steps[currSelectedStepNum].mods[XRSound::MSMP_LOOPTYPE] = getInt32ValuePaddedAsInt32(newLoopType);
                 XRSound::patternSoundStepModsDirty = true;
             } else {
-                XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_LOOPTYPE] = getInt32ValuePaddedAsInt32(newLoopType);
+                XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_LOOPTYPE] = getInt32ValuePaddedAsInt32(newLoopType);
             }
             XRSound::patternSoundsDirty = true;
 
@@ -621,7 +621,7 @@ namespace XREncoder
         }
         case 3:
         {
-            float currAtt = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_AMP_ATTACK]);
+            float currAtt = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_AMP_ATTACK]);
 
             int mult = 1;
             if (abs(diff) > 5)
@@ -638,7 +638,7 @@ namespace XREncoder
             // real max attack = 11880
             if (!(newAtt < 1 || newAtt > 1000) && newAtt != currAtt)
             {
-                XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_AMP_ATTACK] = getFloatValuePaddedAsInt32(newAtt);
+                XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_AMP_ATTACK] = getFloatValuePaddedAsInt32(newAtt);
                 XRSound::patternSoundsDirty = true;
 
                 AudioNoInterrupts();
@@ -653,12 +653,12 @@ namespace XREncoder
         break;
         case 4:
         {
-            float currLvl = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_LEVEL]);
+            float currLvl = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_LEVEL]);
             float newLvl = currLvl + (diff * 0.01);
 
             if (!(newLvl < 0.0 || newLvl > 1.1) && newLvl != currLvl)
             {
-                XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_LEVEL] = getFloatValuePaddedAsInt32(newLvl);
+                XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_LEVEL] = getFloatValuePaddedAsInt32(newLvl);
                 XRSound::patternSoundsDirty = true;
 
                 AudioNoInterrupts();
@@ -697,7 +697,7 @@ namespace XREncoder
 
         case 2:
         {
-            uint32_t currLoopStart = getValueNormalizedAsUInt32(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_LOOPSTART]);
+            uint32_t currLoopStart = getValueNormalizedAsUInt32(XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_LOOPSTART]);
 
             // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1)
             // {
@@ -726,7 +726,7 @@ namespace XREncoder
                 // }
                 // else
                 // {
-                    XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_LOOPSTART] = getUInt32ValuePaddedAsInt32(newLoopStart);
+                    XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_LOOPSTART] = getUInt32ValuePaddedAsInt32(newLoopStart);
                     XRSound::patternSoundsDirty = true;
                 // }
 
@@ -737,7 +737,7 @@ namespace XREncoder
 
         case 3:
         {
-            float currDecay = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_AMP_DECAY]);
+            float currDecay = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_AMP_DECAY]);
 
             int mult = 1;
             if (abs(diff) > 5)
@@ -754,7 +754,7 @@ namespace XREncoder
             // real max decay = 11880
             if (!(newDecay < 0 || newDecay > 11880) && newDecay != currDecay)
             {
-                XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_AMP_DECAY] = getFloatValuePaddedAsInt32(newDecay);
+                XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_AMP_DECAY] = getFloatValuePaddedAsInt32(newDecay);
                 XRSound::patternSoundsDirty = true;
 
                 AudioNoInterrupts();
@@ -770,12 +770,12 @@ namespace XREncoder
 
         case 4:
         {
-            float currPan = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_PAN]);
+            float currPan = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_PAN]);
             float newPan = currPan + (diff * 0.1);
 
             if (!(newPan < -1.0 || newPan > 1.0) && newPan != currPan)
             {
-                XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_PAN] = getFloatValuePaddedAsInt32(newPan);
+                XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_PAN] = getFloatValuePaddedAsInt32(newPan);
                 XRSound::patternSoundsDirty = true;
 
                 float newGainL = 1.0;
@@ -809,7 +809,7 @@ namespace XREncoder
 
     void handleEncoderMonoSampleModC(int diff)
     {
-        auto &currTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
+        auto &currTrack = XRSequencer::getCurrentSelectedTrack();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
         auto &monoSampleInstance = XRSound::monoSampleInstances[currSelectedTrackNum];
@@ -818,7 +818,7 @@ namespace XREncoder
         {
         case 0:
             {
-                float currVel = currTrackLayer.velocity;
+                float currVel = currTrack.velocity;
                 float newVel = currVel + diff;
 
                 // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1) {
@@ -832,7 +832,7 @@ namespace XREncoder
                     //     patternMods.tracks[currSelectedTrackNum].step_mod_flags[currSelectedStepNum].flags[XRSequencer::MOD_ATTRS::VELOCITY] = true;
                     //     patternMods.tracks[currSelectedTrackNum].steps[currSelectedStepNum].velocity = newVel;
                     // } else {
-                        currTrackLayer.velocity = newVel;
+                        currTrack.velocity = newVel;
                     // }
 
                     // AudioNoInterrupts();
@@ -852,7 +852,7 @@ namespace XREncoder
         
         case 2:
             {
-                uint32_t currLoopFinish = getValueNormalizedAsUInt32(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_LOOPFINISH]);
+                uint32_t currLoopFinish = getValueNormalizedAsUInt32(XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_LOOPFINISH]);
 
                 // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1)
                 // {
@@ -887,7 +887,7 @@ namespace XREncoder
                     // }
                     // else
                     // {
-                        XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_LOOPFINISH] = getUInt32ValuePaddedAsInt32(newLoopFinish);
+                        XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_LOOPFINISH] = getUInt32ValuePaddedAsInt32(newLoopFinish);
                         XRSound::patternSoundsDirty = true;
                     // }
 
@@ -898,12 +898,12 @@ namespace XREncoder
 
         case 3:
             {
-                float curSus = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_AMP_SUSTAIN]);
+                float curSus = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_AMP_SUSTAIN]);
                 float newSus = curSus + (diff * 0.01);
 
                 if (!(newSus < 0 || newSus > 1.0) && newSus != curSus)
                 {
-                    XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_AMP_SUSTAIN] = getFloatValuePaddedAsInt32(newSus);
+                    XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_AMP_SUSTAIN] = getFloatValuePaddedAsInt32(newSus);
                     XRSound::patternSoundsDirty = true;
 
                     AudioNoInterrupts();
@@ -948,7 +948,7 @@ namespace XREncoder
         break;
         case 2:
         {
-            play_start currPlaystart = (play_start)getValueNormalizedAsUInt8(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_PLAYSTART]);
+            play_start currPlaystart = (play_start)getValueNormalizedAsUInt8(XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_PLAYSTART]);
 
             // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1)
             // {
@@ -975,7 +975,7 @@ namespace XREncoder
             // }
             // else
             // {
-                XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_PLAYSTART] = getInt32ValuePaddedAsInt32(newPlayStart);
+                XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_PLAYSTART] = getInt32ValuePaddedAsInt32(newPlayStart);
                 XRSound::patternSoundsDirty = true;
             // }
 
@@ -984,7 +984,7 @@ namespace XREncoder
         break;
         case 3:
         {
-            float curRel = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_AMP_RELEASE]);
+            float curRel = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_AMP_RELEASE]);
 
             int mult = 1;
             if (abs(diff) > 5)
@@ -1001,7 +1001,7 @@ namespace XREncoder
             // real max release = 11880
             if (!(newRel < 0 || newRel > 11880) && newRel != curRel)
             {
-                XRSound::currentPatternSounds[currSelectedTrackNum].params[MSMP_AMP_RELEASE] = getFloatValuePaddedAsInt32(newRel);
+                XRSound::activePatternSounds[currSelectedTrackNum].params[MSMP_AMP_RELEASE] = getFloatValuePaddedAsInt32(newRel);
                 XRSound::patternSoundsDirty = true;
 
                 AudioNoInterrupts();
@@ -1028,7 +1028,7 @@ namespace XREncoder
     void handleEncoderDexedSynthModA(int diff)
     {
         auto &currPattern = XRSequencer::getCurrentSelectedPattern();
-        auto &currTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
+        auto &currTrack= XRSequencer::getCurrentSelectedTrack();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
         
@@ -1038,8 +1038,8 @@ namespace XREncoder
         {
         case 0:
         {
-            int currLastStep = currTrackLayer.lstep;
-            int newLastStep = currTrackLayer.lstep + diff;
+            int currLastStep = currTrack.lstep;
+            int newLastStep = currTrack.lstep + diff;
 
             // make sure track last step doesn't exceed pattern's
 
@@ -1055,7 +1055,7 @@ namespace XREncoder
 
             if (newLastStep != currLastStep)
             {
-                currTrackLayer.lstep = newLastStep;
+                currTrack.lstep = newLastStep;
 
                 XRLED::displayPageLEDs(
                     -1,
@@ -1080,12 +1080,12 @@ namespace XREncoder
         break;
         case 3:
         {
-            float currLvl = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[DEXE_LEVEL]);
+            float currLvl = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrackNum].params[DEXE_LEVEL]);
             float newLvl = currLvl + (diff * 0.01);
 
             if (!(newLvl < 0.0 || newLvl > 1.1) && newLvl != currLvl)
             {
-                XRSound::currentPatternSounds[currSelectedTrackNum].params[DEXE_LEVEL] = getFloatValuePaddedAsInt32(newLvl);
+                XRSound::activePatternSounds[currSelectedTrackNum].params[DEXE_LEVEL] = getFloatValuePaddedAsInt32(newLvl);
                 XRSound::patternSoundsDirty = true;
 
                 AudioNoInterrupts();
@@ -1128,12 +1128,12 @@ namespace XREncoder
 
         case 3:
         {
-            float currPan = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[DEXE_PAN]);
+            float currPan = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrackNum].params[DEXE_PAN]);
             float newPan = currPan + (diff * 0.1);
 
             if (!(newPan < -1.0 || newPan > 1.0) && newPan != currPan)
             {
-                XRSound::currentPatternSounds[currSelectedTrackNum].params[DEXE_PAN] = getFloatValuePaddedAsInt32(newPan);
+                XRSound::activePatternSounds[currSelectedTrackNum].params[DEXE_PAN] = getFloatValuePaddedAsInt32(newPan);
                 XRSound::patternSoundsDirty = true;
 
                 float newGainL = 1.0;
@@ -1168,8 +1168,7 @@ namespace XREncoder
 
     void handleEncoderDexedSynthModC(int diff)
     {
-        auto &currTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
-        //auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+        auto &currTrack = XRSequencer::getCurrentSelectedTrack();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
         
         //auto &dexedInstance = XRSound::dexedInstances[currTrackNum];
@@ -1178,7 +1177,7 @@ namespace XREncoder
         {
         case 0:
         {
-            float currVel = currTrackLayer.velocity;
+            float currVel = currTrack.velocity;
             float newVel = currVel + diff;
 
             // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1) {
@@ -1192,7 +1191,7 @@ namespace XREncoder
                 //     patternMods.tracks[currSelectedTrackNum].step_mod_flags[currSelectedStepNum].flags[XRSequencer::MOD_ATTRS::VELOCITY] = true;
                 //     patternMods.tracks[currSelectedTrackNum].steps[currSelectedStepNum].velocity = newVel;
                 // } else {
-                    currTrackLayer.velocity = newVel;
+                    currTrack.velocity = newVel;
                 // }
 
                 // AudioNoInterrupts();
@@ -1243,13 +1242,13 @@ namespace XREncoder
         {
         case 0:
         {
-            uint16_t currFreq = getValueNormalizedAsUInt32(XRSound::currentPatternSounds[currTrackNum].params[FMD_FREQ]);
+            uint16_t currFreq = getValueNormalizedAsUInt32(XRSound::activePatternSounds[currTrackNum].params[FMD_FREQ]);
             uint16_t newFreq = currFreq + diff;
 
             if (newFreq != currFreq) {
                 newFreq = constrain(newFreq, 0, 255);
 
-                XRSound::currentPatternSounds[currTrackNum].params[FMD_FREQ] = getUInt32ValuePaddedAsInt32(newFreq);
+                XRSound::activePatternSounds[currTrackNum].params[FMD_FREQ] = getUInt32ValuePaddedAsInt32(newFreq);
                 XRSound::patternSoundsDirty = true;
 
                 fmDrumInstance.fmDrum.frequency(newFreq);
@@ -1260,14 +1259,14 @@ namespace XREncoder
         break;
         case 1:
         {
-            float currLvl = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currTrackNum].params[FMD_LEVEL]);
+            float currLvl = getValueNormalizedAsFloat(XRSound::activePatternSounds[currTrackNum].params[FMD_LEVEL]);
             float newLvl = currLvl + (diff * 0.01);
 
             if (newLvl != currLvl)
             {
                 newLvl = constrain(newLvl, 0, 1.0);
 
-                XRSound::currentPatternSounds[currTrackNum].params[FMD_LEVEL] = getFloatValuePaddedAsInt32(newLvl);
+                XRSound::activePatternSounds[currTrackNum].params[FMD_LEVEL] = getFloatValuePaddedAsInt32(newLvl);
                 XRSound::patternSoundsDirty = true;
 
                 AudioNoInterrupts();
@@ -1301,13 +1300,13 @@ namespace XREncoder
         {
         case 0:
             {
-                float currFm = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currTrackNum].params[FMD_FM]);
+                float currFm = getValueNormalizedAsFloat(XRSound::activePatternSounds[currTrackNum].params[FMD_FM]);
                 float newFm = currFm + (diff * 0.01);
 
                 if (newFm != currFm) {
                     newFm = constrain(newFm, 0.0, 1.0);
 
-                    XRSound::currentPatternSounds[currTrackNum].params[FMD_FM] = getFloatValuePaddedAsInt32(newFm);
+                    XRSound::activePatternSounds[currTrackNum].params[FMD_FM] = getFloatValuePaddedAsInt32(newFm);
                     XRSound::patternSoundsDirty = true;
 
                     AudioNoInterrupts();
@@ -1324,12 +1323,12 @@ namespace XREncoder
 
         case 1:
         {
-            float currPan = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currTrackNum].params[FMD_PAN]);
+            float currPan = getValueNormalizedAsFloat(XRSound::activePatternSounds[currTrackNum].params[FMD_PAN]);
             float newPan = currPan + (diff * 0.1);
 
             if (!(newPan < -1.0 || newPan > 1.0) && newPan != currPan)
             {
-                XRSound::currentPatternSounds[currTrackNum].params[FMD_PAN] = getFloatValuePaddedAsInt32(newPan);
+                XRSound::activePatternSounds[currTrackNum].params[FMD_PAN] = getFloatValuePaddedAsInt32(newPan);
                 XRSound::patternSoundsDirty = true;
 
                 float newGainL = 1.0;
@@ -1371,13 +1370,13 @@ namespace XREncoder
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
 
-        float currDecay = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currTrackNum].params[FMD_DECAY]);
+        float currDecay = getValueNormalizedAsFloat(XRSound::activePatternSounds[currTrackNum].params[FMD_DECAY]);
         float newDecay  = currDecay + (diff * 0.01);
 
         if (newDecay != currDecay) {
             newDecay = constrain(newDecay, 0.0, 1.0);
 
-            XRSound::currentPatternSounds[currTrackNum].params[FMD_DECAY] = getFloatValuePaddedAsInt32(newDecay);
+            XRSound::activePatternSounds[currTrackNum].params[FMD_DECAY] = getFloatValuePaddedAsInt32(newDecay);
             XRSound::patternSoundsDirty = true;
 
             AudioNoInterrupts();
@@ -1399,13 +1398,13 @@ namespace XREncoder
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
 
-        float currNoise = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currTrackNum].params[FMD_NOISE]);
+        float currNoise = getValueNormalizedAsFloat(XRSound::activePatternSounds[currTrackNum].params[FMD_NOISE]);
         float newNoise = currNoise + (diff * 0.01);
 
         if (newNoise != currNoise) {
             newNoise = constrain(newNoise, 0.0, 1.0);
 
-            XRSound::currentPatternSounds[currTrackNum].params[FMD_NOISE] = getFloatValuePaddedAsInt32(newNoise);
+            XRSound::activePatternSounds[currTrackNum].params[FMD_NOISE] = getFloatValuePaddedAsInt32(newNoise);
             XRSound::patternSoundsDirty = true;
 
             AudioNoInterrupts();
@@ -1461,12 +1460,12 @@ namespace XREncoder
             break;
         case 1:
             {
-                float currDetune = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currTrackNum].params[MSYN_DETUNE]);
+                float currDetune = getValueNormalizedAsFloat(XRSound::activePatternSounds[currTrackNum].params[MSYN_DETUNE]);
                 float newDetune = currDetune + diff;
 
                 Serial.printf(
                     "raw detune: %d, normal detune: %f, new detune: %f\n",
-                    XRSound::currentPatternSounds[currTrackNum].params[MSYN_DETUNE],
+                    XRSound::activePatternSounds[currTrackNum].params[MSYN_DETUNE],
                     currDetune,
                     newDetune
                 );
@@ -1478,12 +1477,12 @@ namespace XREncoder
                     //     noteToUse = noteOnKeyboard;
                     // }
 
-                    XRSound::currentPatternSounds[currTrackNum].params[MSYN_DETUNE] = getFloatValuePaddedAsInt32(newDetune);
+                    XRSound::activePatternSounds[currTrackNum].params[MSYN_DETUNE] = getFloatValuePaddedAsInt32(newDetune);
                     XRSound::patternSoundsDirty = true;
 
                     Serial.printf(
                         "new raw detune: %d\n",
-                        XRSound::currentPatternSounds[currTrackNum].params[MSYN_DETUNE]
+                        XRSound::activePatternSounds[currTrackNum].params[MSYN_DETUNE]
                     );
 
                     // auto oscFreqB = getDetunedOscFreqB(noteToUse, newDetune);
@@ -1503,7 +1502,7 @@ namespace XREncoder
             break;
         case 2:
             {
-                float currCutoff = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currTrackNum].params[MSYN_CUTOFF]);
+                float currCutoff = getValueNormalizedAsFloat(XRSound::activePatternSounds[currTrackNum].params[MSYN_CUTOFF]);
 
                 int mult = 1;
                 if (abs(diff) > 5) {
@@ -1515,7 +1514,7 @@ namespace XREncoder
                 float newCutoff = currCutoff + (diff * mult);
 
                 if (!(newCutoff < 1 || newCutoff > 3000) && newCutoff != currCutoff) {
-                    XRSound::currentPatternSounds[currTrackNum].params[MSYN_CUTOFF] = getFloatValuePaddedAsInt32(newCutoff);
+                    XRSound::activePatternSounds[currTrackNum].params[MSYN_CUTOFF] = getFloatValuePaddedAsInt32(newCutoff);
                     XRSound::patternSoundsDirty = true;
 
                     AudioNoInterrupts();
@@ -1531,7 +1530,7 @@ namespace XREncoder
             break;
         case 3:
             {
-                float currDecay = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currTrackNum].params[MSYN_FILTER_DECAY]);
+                float currDecay = getValueNormalizedAsFloat(XRSound::activePatternSounds[currTrackNum].params[MSYN_FILTER_DECAY]);
 
                 int mult = 1;
                 if (abs(diff) > 5) {
@@ -1544,7 +1543,7 @@ namespace XREncoder
 
                 if (!(newDecay < 0 || newDecay > 11880) && newDecay != currDecay)
                 {
-                    XRSound::currentPatternSounds[currTrackNum].params[MSYN_FILTER_DECAY] = getFloatValuePaddedAsInt32(newDecay);
+                    XRSound::activePatternSounds[currTrackNum].params[MSYN_FILTER_DECAY] = getFloatValuePaddedAsInt32(newDecay);
                     XRSound::patternSoundsDirty = true;
 
                     AudioNoInterrupts();
@@ -1561,7 +1560,7 @@ namespace XREncoder
 
         case 4:
             {
-                float currDecay = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currTrackNum].params[MSYN_AMP_DECAY]);
+                float currDecay = getValueNormalizedAsFloat(XRSound::activePatternSounds[currTrackNum].params[MSYN_AMP_DECAY]);
 
                 int mult = 1;
                 if (abs(diff) > 5) {
@@ -1574,7 +1573,7 @@ namespace XREncoder
 
                 // real max decay = 11880
                 if (!(newDecay < 0 || newDecay > 500) && newDecay != currDecay) {
-                    XRSound::currentPatternSounds[currTrackNum].params[MSYN_AMP_DECAY] = getFloatValuePaddedAsInt32(newDecay);
+                    XRSound::activePatternSounds[currTrackNum].params[MSYN_AMP_DECAY] = getFloatValuePaddedAsInt32(newDecay);
                     XRSound::patternSoundsDirty = true;
 
                     AudioNoInterrupts();
@@ -1591,11 +1590,11 @@ namespace XREncoder
         
         case 5:
             {
-                float currPan = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currTrackNum].params[MSYN_PAN]);
+                float currPan = getValueNormalizedAsFloat(XRSound::activePatternSounds[currTrackNum].params[MSYN_PAN]);
                 float newPan = currPan + (diff * 0.1);
 
                 if (!(newPan < -1.0 || newPan > 1.0) && newPan != currPan) {
-                    XRSound::currentPatternSounds[currTrackNum].params[MSYN_PAN] = getFloatValuePaddedAsInt32(newPan);
+                    XRSound::activePatternSounds[currTrackNum].params[MSYN_PAN] = getFloatValuePaddedAsInt32(newPan);
                     XRSound::patternSoundsDirty = true;
 
                     float newGainL = 1.0;
@@ -1628,7 +1627,7 @@ namespace XREncoder
 
     void handleEncoderMonoSynthModC(int diff)
     {
-        auto &currTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
+        auto &currTrack = XRSequencer::getCurrentSelectedTrack();
         auto currSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
         
@@ -1638,7 +1637,7 @@ namespace XREncoder
         {
         case 0:
             {
-                float currVel = currTrackLayer.velocity;
+                float currVel = currTrack.velocity;
                 float newVel = currVel + diff;
 
                 // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1) {
@@ -1652,7 +1651,7 @@ namespace XREncoder
                     //     patternMods.tracks[currSelectedTrackNum].step_mod_flags[currSelectedStepNum].flags[XRSequencer::MOD_ATTRS::VELOCITY] = true;
                     //     patternMods.tracks[currSelectedTrackNum].steps[currSelectedStepNum].velocity = newVel;
                     // } else {
-                        currTrackLayer.velocity = newVel;
+                        currTrack.velocity = newVel;
                     // }
 
                     // AudioNoInterrupts();
@@ -1667,12 +1666,12 @@ namespace XREncoder
             break;
         case 1:
             {
-                float currFine = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_FINE]);
+                float currFine = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrackNum].params[MSYN_FINE]);
                 float newFine = currFine + diff;
 
                 if (!(newFine < -50.0 || newFine > 50.0) && newFine != currFine)
                 {
-                    XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_FINE] = getFloatValuePaddedAsInt32(newFine);
+                    XRSound::activePatternSounds[currSelectedTrackNum].params[MSYN_FINE] = getFloatValuePaddedAsInt32(newFine);
                     XRSound::patternSoundsDirty = true;
 
                     // TODO: also use step note
@@ -1700,7 +1699,7 @@ namespace XREncoder
             break;
         case 2:
             {
-                float currRes = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_RESONANCE]);
+                float currRes = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrackNum].params[MSYN_RESONANCE]);
 
                 int mult = 1;
                 if (abs(diff) > 5) {
@@ -1712,7 +1711,7 @@ namespace XREncoder
                 float newRes = currRes + (diff * mult * 0.01);
 
                 if (!(newRes < -0.01 || newRes > 1.9) && newRes != currRes) {
-                    XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_RESONANCE] = getFloatValuePaddedAsInt32(newRes);
+                    XRSound::activePatternSounds[currSelectedTrackNum].params[MSYN_RESONANCE] = getFloatValuePaddedAsInt32(newRes);
                     XRSound::patternSoundsDirty = true;
 
                     AudioNoInterrupts();
@@ -1728,12 +1727,12 @@ namespace XREncoder
             break;
         case 3:
             {
-                float curSus = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_FILTER_SUSTAIN]);
+                float curSus = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrackNum].params[MSYN_FILTER_SUSTAIN]);
                 float newSus = curSus + (diff * 0.01);
 
                 if (!(newSus < 0 || newSus > 1.0) && newSus != curSus)
                 {
-                    XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_FILTER_SUSTAIN] = getFloatValuePaddedAsInt32(newSus);
+                    XRSound::activePatternSounds[currSelectedTrackNum].params[MSYN_FILTER_SUSTAIN] = getFloatValuePaddedAsInt32(newSus);
                     XRSound::patternSoundsDirty = true;
 
                     AudioNoInterrupts();
@@ -1749,12 +1748,12 @@ namespace XREncoder
             break;
         case 4:
             {
-                float curSus = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_AMP_SUSTAIN]);
+                float curSus = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrackNum].params[MSYN_AMP_SUSTAIN]);
                 float newSus = curSus + (diff * 0.01);
 
                 if (!(newSus < 0 || newSus > 1.0) && newSus != curSus)
                 {
-                    XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_AMP_SUSTAIN] = getFloatValuePaddedAsInt32(newSus);
+                    XRSound::activePatternSounds[currSelectedTrackNum].params[MSYN_AMP_SUSTAIN] = getFloatValuePaddedAsInt32(newSus);
                     XRSound::patternSoundsDirty = true;
 
                     AudioNoInterrupts();
@@ -1793,12 +1792,12 @@ namespace XREncoder
 
         case 1: 
             {
-                float currWidth = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_WIDTH]);
+                float currWidth = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrackNum].params[MSYN_WIDTH]);
                 float newWidth = currWidth + (diff * 0.01);
 
                 if (!(newWidth < 0.01 || newWidth > 1.0) && newWidth != currWidth)
                 {
-                    XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_WIDTH] = getFloatValuePaddedAsInt32(newWidth);
+                    XRSound::activePatternSounds[currSelectedTrackNum].params[MSYN_WIDTH] = getFloatValuePaddedAsInt32(newWidth);
                     XRSound::patternSoundsDirty = true;
 
                     AudioNoInterrupts();
@@ -1816,7 +1815,7 @@ namespace XREncoder
 
         case 2:
             {
-                float currFilterAmt = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_FILTER_ENV_AMT]);
+                float currFilterAmt = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrackNum].params[MSYN_FILTER_ENV_AMT]);
 
                 int mult = 1;
                 if (abs(diff) > 5)
@@ -1832,7 +1831,7 @@ namespace XREncoder
 
                 if (!(newFilterAmt < -1.0 || newFilterAmt > 1.0) && newFilterAmt != currFilterAmt)
                 {
-                    XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_FILTER_ENV_AMT] = getFloatValuePaddedAsInt32(newFilterAmt);
+                    XRSound::activePatternSounds[currSelectedTrackNum].params[MSYN_FILTER_ENV_AMT] = getFloatValuePaddedAsInt32(newFilterAmt);
                     XRSound::patternSoundsDirty = true;
 
                     AudioNoInterrupts();
@@ -1849,7 +1848,7 @@ namespace XREncoder
 
         case 3:
             {
-                float curRel = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_FILTER_RELEASE]);
+                float curRel = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrackNum].params[MSYN_FILTER_RELEASE]);
 
                 int mult = 1;
                 if (abs(diff) > 5) {
@@ -1861,7 +1860,7 @@ namespace XREncoder
                 float newRel = curRel + (diff * mult);
 
                 if (!(newRel < 0 || newRel > 11880) && newRel != curRel) {
-                    XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_FILTER_RELEASE] = getFloatValuePaddedAsInt32(newRel);
+                    XRSound::activePatternSounds[currSelectedTrackNum].params[MSYN_FILTER_RELEASE] = getFloatValuePaddedAsInt32(newRel);
                     XRSound::patternSoundsDirty = true;
 
                     AudioNoInterrupts();
@@ -1878,7 +1877,7 @@ namespace XREncoder
 
         case 4:
             {
-                float curRel = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_AMP_RELEASE]);
+                float curRel = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrackNum].params[MSYN_AMP_RELEASE]);
 
                 int mult = 1;
                 if (abs(diff) > 5) {
@@ -1891,7 +1890,7 @@ namespace XREncoder
 
                 // real max release = 11880
                 if (!(newRel < 0 || newRel > 11880) && newRel != curRel) {
-                    XRSound::currentPatternSounds[currSelectedTrackNum].params[MSYN_AMP_RELEASE] = getFloatValuePaddedAsInt32(newRel);
+                    XRSound::activePatternSounds[currSelectedTrackNum].params[MSYN_AMP_RELEASE] = getFloatValuePaddedAsInt32(newRel);
                     XRSound::patternSoundsDirty = true;
 
                     AudioNoInterrupts();
@@ -1924,15 +1923,15 @@ namespace XREncoder
         auto &monoSynthInstance = XRSound::monoSynthInstances[currSelectedTrack];
 
         int currWaveform = getWaveformNumber(
-            getValueNormalizedAsUInt8(XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_WAVE])
+            getValueNormalizedAsUInt8(XRSound::activePatternSounds[currSelectedTrack].params[MSYN_WAVE])
         );
 
         // when param locking, use the existing param lock value as the current value
         if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStep > -1) {
-            if (XRSound::patternSoundStepMods.sounds[currSelectedTrack].steps[currSelectedStep].flags[XRSound::MSYN_WAVE]) {
+            if (XRSound::activePatternSoundStepModLayer.sounds[currSelectedTrack].steps[currSelectedStep].flags[XRSound::MSYN_WAVE]) {
                 currWaveform = getWaveformNumber(
                     getValueNormalizedAsUInt8(
-                        XRSound::patternSoundStepMods.sounds[currSelectedTrack].steps[currSelectedStep].mods[XRSound::MSYN_WAVE]
+                        XRSound::activePatternSoundStepModLayer.sounds[currSelectedTrack].steps[currSelectedStep].mods[XRSound::MSYN_WAVE]
                     )
                 );
             }
@@ -1949,11 +1948,11 @@ namespace XREncoder
         int waveformSel = getWaveformTypeSelection(newWaveform);
 
         if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE) {
-            XRSound::patternSoundStepMods.sounds[currSelectedTrack].steps[currSelectedStep].flags[XRSound::MSYN_WAVE] = true;
-            XRSound::patternSoundStepMods.sounds[currSelectedTrack].steps[currSelectedStep].mods[XRSound::MSYN_WAVE] = getInt32ValuePaddedAsInt32(waveformSel);
+            XRSound::activePatternSoundStepModLayer.sounds[currSelectedTrack].steps[currSelectedStep].flags[XRSound::MSYN_WAVE] = true;
+            XRSound::activePatternSoundStepModLayer.sounds[currSelectedTrack].steps[currSelectedStep].mods[XRSound::MSYN_WAVE] = getInt32ValuePaddedAsInt32(waveformSel);
             XRSound::patternSoundStepModsDirty = true;
         } else {
-            XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_WAVE] = getInt32ValuePaddedAsInt32(waveformSel);
+            XRSound::activePatternSounds[currSelectedTrack].params[MSYN_WAVE] = getInt32ValuePaddedAsInt32(waveformSel);
         }
         XRSound::patternSoundsDirty = true;
 
@@ -1968,12 +1967,12 @@ namespace XREncoder
         auto currSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
         auto &monoSynthInstance = XRSound::monoSynthInstances[currSelectedTrack];
 
-        float currNoise = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_NOISE]);
+        float currNoise = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrack].params[MSYN_NOISE]);
         float newNoise = currNoise + (diff * 0.05);
 
         if (!(newNoise < 0.01 || newNoise > 1.0) && newNoise != currNoise)
         {
-            XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_NOISE] = getFloatValuePaddedAsInt32(newNoise);
+            XRSound::activePatternSounds[currSelectedTrack].params[MSYN_NOISE] = getFloatValuePaddedAsInt32(newNoise);
             XRSound::patternSoundsDirty = true;
 
             AudioNoInterrupts();
@@ -1991,7 +1990,7 @@ namespace XREncoder
         auto currSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
         auto &monoSynthInstance = XRSound::monoSynthInstances[currSelectedTrack];
 
-        float currAtt = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_FILTER_ATTACK]);
+        float currAtt = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrack].params[MSYN_FILTER_ATTACK]);
 
         int mult = 1;
         if (abs(diff) > 5)
@@ -2008,7 +2007,7 @@ namespace XREncoder
         // real max attack = 11880
         if (!(newAtt < 0 || newAtt > 1000) && newAtt != currAtt)
         {
-            XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_FILTER_ATTACK] = getFloatValuePaddedAsInt32(newAtt);
+            XRSound::activePatternSounds[currSelectedTrack].params[MSYN_FILTER_ATTACK] = getFloatValuePaddedAsInt32(newAtt);
             XRSound::patternSoundsDirty = true;
 
             AudioNoInterrupts();
@@ -2026,7 +2025,7 @@ namespace XREncoder
         auto currSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
         auto &monoSynthInstance = XRSound::monoSynthInstances[currSelectedTrack];
 
-        float currAtt = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_AMP_ATTACK]);
+        float currAtt = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrack].params[MSYN_AMP_ATTACK]);
 
         int mult = 1;
         if (abs(diff) > 5)
@@ -2042,7 +2041,7 @@ namespace XREncoder
 
         if (!(newAtt < 1 || newAtt > 500) && newAtt != currAtt)
         {
-            XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_AMP_ATTACK] = getFloatValuePaddedAsInt32(newAtt);
+            XRSound::activePatternSounds[currSelectedTrack].params[MSYN_AMP_ATTACK] = getFloatValuePaddedAsInt32(newAtt);
             XRSound::patternSoundsDirty = true;
 
             AudioNoInterrupts();
@@ -2061,10 +2060,10 @@ namespace XREncoder
         
         auto &monoSynthInstance = XRSound::monoSynthInstances[currSelectedTrack];
 
-        float currLvl = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_LEVEL]);
+        float currLvl = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrack].params[MSYN_LEVEL]);
 
-        if (XRSound::currentPatternSounds[currSelectedTrack].type == T_MONO_SAMPLE) {
-            currLvl = getValueNormalizedAsFloat(XRSound::currentPatternSounds[currSelectedTrack].params[MSMP_LEVEL]);
+        if (XRSound::activePatternSounds[currSelectedTrack].type == T_MONO_SAMPLE) {
+            currLvl = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrack].params[MSMP_LEVEL]);
         }
 
         float newLvl = currLvl + (diff * 0.01);
@@ -2073,10 +2072,10 @@ namespace XREncoder
         {
             newLvl = constrain(newLvl, 0, 1.0);
             
-            if (XRSound::currentPatternSounds[currSelectedTrack].type == T_MONO_SAMPLE) {
-                XRSound::currentPatternSounds[currSelectedTrack].params[MSMP_LEVEL] = getFloatValuePaddedAsInt32(newLvl);
+            if (XRSound::activePatternSounds[currSelectedTrack].type == T_MONO_SAMPLE) {
+                XRSound::activePatternSounds[currSelectedTrack].params[MSMP_LEVEL] = getFloatValuePaddedAsInt32(newLvl);
             } else {
-                XRSound::currentPatternSounds[currSelectedTrack].params[MSYN_LEVEL] = getFloatValuePaddedAsInt32(newLvl);
+                XRSound::activePatternSounds[currSelectedTrack].params[MSYN_LEVEL] = getFloatValuePaddedAsInt32(newLvl);
             }
             XRSound::patternSoundsDirty = true;
 
@@ -2092,10 +2091,10 @@ namespace XREncoder
 
     void updateTrackLength(int diff)
     {
-        auto &currTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
+        auto &currTrack = XRSequencer::getCurrentSelectedTrack();
 
         // length adj
-        int currLen = currTrackLayer.length;
+        int currLen = currTrack.length;
         int newLen = currLen + diff;
 
         // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currStepNum > -1) {
@@ -2108,7 +2107,7 @@ namespace XREncoder
             //     patternMods.tracks[currTrackNum].step_mod_flags[currStepNum].flags[XRSequencer::MOD_ATTRS::LENGTH] = true;
             //     patternMods.tracks[currTrackNum].steps[currStepNum].length = newLen;
             // } else {
-                currTrackLayer.length = newLen;
+                currTrack.length = newLen;
             // }
 
             XRDisplay::drawSequencerScreen(false);
@@ -2117,10 +2116,10 @@ namespace XREncoder
 
     void updateTrackLastStep(int diff)
     {
-        auto &currTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
+        auto &currTrack = XRSequencer::getCurrentSelectedTrack();
 
-        int currLastStep = currTrackLayer.lstep;
-        int newLastStep = currTrackLayer.lstep + diff;
+        int currLastStep = currTrack.lstep;
+        int newLastStep = currTrack.lstep + diff;
 
         // make sure track last step doesn't exceed pattern's
         auto &currPattern = XRSequencer::getCurrentSelectedPattern();
@@ -2134,7 +2133,7 @@ namespace XREncoder
         }
 
         if (newLastStep != currLastStep) {
-            currTrackLayer.lstep = newLastStep;
+            currTrack.lstep = newLastStep;
 
             XRLED::displayPageLEDs(
                 -1,

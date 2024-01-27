@@ -2,6 +2,7 @@
 #include <TeensyAudioFlashLoader.h>
 #include <string>
 #include <XRSequencer.h>
+#include <XRSD.h>
 #include <algorithm>
 
 namespace XRAsyncPSRAMLoader
@@ -163,9 +164,9 @@ namespace XRAsyncPSRAMLoader
             Serial.printf("WARN: prePatternChange was called unexpectedly, as asyncChanging==true... readheap=%d writeheap=%d \n", currentReadHeap, currentWriteHeap);
     }
 
-    void startAsyncInitOfNextPattern(const XRSequencer::PATTERN &newPatternData) {
+    void startAsyncInitOfNextSamples() {        
         unsigned i = 0;
-        for (auto &track: newPatternData.tracks) {
+        for (auto &track: XRSequencer::nextTrackLayer.tracks) {
             auto &sound = XRSound::nextPatternSounds[i];
             if (sound.type == XRSound::T_MONO_SAMPLE) {
                 if (strcmp(sound.sampleName, "") != 0) {
@@ -180,21 +181,21 @@ namespace XRAsyncPSRAMLoader
         writeHeapHasLoaded = false;
     }
 
-    void startAsyncInitOfNextPattern(int newBank, int newPattern) {
-        const auto &newPatternData = XRSequencer::getActivePatternBank().patterns[newPattern];
-        startAsyncInitOfNextPattern(newPatternData);
-    }
-
-    void startAsyncInitOfNextPattern() {
-        const auto &queued = XRSequencer::getQueuedPatternState();
-        int newBank = queued.bank;
-        int newPattern = queued.number;
-        startAsyncInitOfNextPattern(newBank, newPattern);
-    }
-
-    void startAsyncInitOfCurrentPattern() {
-        auto &currentPatternData = XRSequencer::getActivePattern();
-        startAsyncInitOfNextPattern(currentPatternData);
+    void startAsyncInitOfCurrentSamples() {        
+        unsigned i = 0;
+        for (auto &track: XRSequencer::activeTrackLayer.tracks) {
+            auto &sound = XRSound::activePatternSounds[i];
+            if (sound.type == XRSound::T_MONO_SAMPLE) {
+                if (strcmp(sound.sampleName, "") != 0) {
+                    auto sampleName = std::string("/audio enjoyer/xr-1/samples/") + std::string(sound.sampleName);
+                    Serial.printf("initializing this sample name: %s\n", sampleName.c_str());
+                    addSampleFileNameForNextAsyncLoadBatch(sampleName);
+                }
+            }
+            i++;
+        }
+        asyncOpening = true;
+        writeHeapHasLoaded = false;
     }
 
     newdigate::audiosample* getReadSample(const std::string *filename) {

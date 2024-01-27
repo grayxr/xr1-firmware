@@ -37,14 +37,26 @@ namespace XRSD
     bool loadLastProject();
     void saveProject();
 
-    bool loadPatternBank();
-    bool loadTrackStepModsFromSdCard(int bank, int pattern);
-    void saveTrackStepModsToSdCard();
+    void saveCurrentSequencerData();
+    
+    bool loadActivePattern();
+    void saveActivePatternToSdCard();
+
+    bool loadActiveTrackLayer();
+    void saveActiveTrackLayerToSdCard();
+
+    bool loadNextPattern(int bank, int pattern);
+    bool loadNextTrackLayer(int bank, int pattern, int layer);
+
+    bool loadActiveTrackStepModLayerFromSdCard(int bank, int pattern, int layer);
+    void saveActiveTrackStepModLayerToSdCard();
+
+    bool loadActivePatternSounds();
+    void saveActivePatternSounds();
 
     bool loadNextPatternSounds(int bank, int pattern);
-    bool loadPatternSoundStepModsFromSdCard(int bank, int pattern);
-    void savePatternSounds();
-    void savePatternSoundStepModsToSdCard();
+    bool loadPatternSoundStepModLayerFromSdCard(int bank, int pattern, int layer);
+    void saveActiveSoundStepModLayerToSdCard();
 
     void loadDexedVoiceToCurrentTrack(int t = -1);
     

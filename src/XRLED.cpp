@@ -232,7 +232,7 @@ namespace XRLED
 
     void setDisplayStateForAllStepLEDs()
     {
-        auto &currTrackLayer = XRSequencer::getCurrentSelectedTrackLayer();
+        auto &currTrack = XRSequencer::getCurrentSelectedTrack();
         auto currStepPage = XRSequencer::getCurrentStepPage();
 
         const int MAX_TRACK_LEDS_SIZE = 17;
@@ -256,11 +256,11 @@ namespace XRLED
                 stepToUse += 48;
             }
 
-            auto currTrackStepForLED = currTrackLayer.steps[stepToUse - 1];
+            auto currTrackStepForLED = currTrack.steps[stepToUse - 1];
             int8_t curr_led_char = XRHelpers::stepCharMap[l];
             int8_t keyLED = getKeyLED(curr_led_char);
 
-            if (stepToUse > currTrackLayer.lstep)
+            if (stepToUse > currTrack.lstep)
             {
                 setPWM(keyLED, 0);
                 continue;
@@ -379,28 +379,26 @@ namespace XRLED
 
     void displayInitializedPatternLEDs()
     {
-        auto &activePatternBank = XRSequencer::getActivePatternBank();
+        // auto &activePatternBank = XRSequencer::getActivePatternBank();
 
-        for (int p = 0; p < MAXIMUM_SEQUENCER_PATTERNS; p++)
-        {
-            if (activePatternBank.patterns[p].initialized)
-            {
-                setPWM(_stepLEDPins[p], 4095);
-            }
-            else
-            {
-                setPWM(_stepLEDPins[p], 0);
-            }
-        }
+        // for (int p = 0; p < MAXIMUM_SEQUENCER_PATTERNS; p++)
+        // {
+        //     if (activePatternBank.patterns[p].initialized)
+        //     {
+        //         setPWM(_stepLEDPins[p], 4095);
+        //     }
+        //     else
+        //     {
+        //         setPWM(_stepLEDPins[p], 0);
+        //     }
+        // }
     }
 
     void displayInitializedTrackLEDs()
     {
-        auto &pattern = XRSequencer::getCurrentSelectedPattern();
-
         for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
         {
-            if (pattern.tracks[t].initialized)
+            if (XRSequencer::activeTrackLayer.tracks[t].initialized)
             {
                 setPWM(_stepLEDPins[t], 4095);
             }

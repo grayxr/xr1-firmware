@@ -22,12 +22,6 @@ namespace XRSequencer
 
     typedef struct
     {
-        bool muted = false;
-        bool soloing = false;
-    } TRACK_PERFORM_STATE;
-
-    typedef struct
-    {
         STEP steps[MAXIMUM_SEQUENCER_STEPS];
 
         uint8_t lstep = DEFAULT_LAST_STEP;
@@ -36,14 +30,20 @@ namespace XRSequencer
         uint8_t length = 4; // 1 = 1/64 step len
         uint8_t velocity = 50; // 50 = 50%
         uint8_t probability = 100;
+
+        bool initialized = true;
+    } TRACK;
+
+    typedef struct
+    {
+        TRACK tracks[MAXIMUM_SEQUENCER_TRACKS];
     } TRACK_LAYER;
 
     typedef struct
     {
-        TRACK_LAYER layers[MAXIMUM_SEQUENCER_TRACK_LAYERS];
-
-        bool initialized = false;
-    } TRACK;
+        bool muted = false;
+        bool soloing = false;
+    } TRACK_PERFORM_STATE;
 
     typedef struct
     {
@@ -53,8 +53,6 @@ namespace XRSequencer
 
     typedef struct
     {
-        TRACK tracks[MAXIMUM_SEQUENCER_TRACKS];
-
         PATTERN_GROOVE groove;
         uint8_t lstep = DEFAULT_LAST_STEP;
         uint8_t accent = DEFAULT_GLOBAL_ACCENT;
@@ -62,11 +60,6 @@ namespace XRSequencer
 
         bool initialized = false;
     } PATTERN;
-
-    typedef struct
-    {
-        PATTERN patterns[MAXIMUM_SEQUENCER_PATTERNS];
-    } PATTERN_BANK;
     
     // sequencer state
 
@@ -134,30 +127,35 @@ namespace XRSequencer
     typedef struct
     {
         TRACK_STEP_MOD steps[MAXIMUM_SEQUENCER_STEPS];
-    } TRACK_MOD_LAYER;
-
-    typedef struct
-    {
-        TRACK_MOD_LAYER layers[MAXIMUM_SEQUENCER_TRACK_LAYERS];
     } TRACK_MOD;
 
     typedef struct
     {
         TRACK_MOD tracks[MAXIMUM_SEQUENCER_TRACKS];
-    } TRACK_STEP_MODS;
+    } TRACK_STEP_MOD_LAYER;
 
     // extern globals
+
+    extern DMAMEM PATTERN activePattern;
+    extern DMAMEM PATTERN nextPattern;
+    extern DMAMEM TRACK_LAYER activeTrackLayer;
+    extern DMAMEM TRACK_LAYER nextTrackLayer;
+    extern DMAMEM TRACK_STEP_MOD_LAYER activeTrackStepModLayer;
+
     extern TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
-    extern PATTERN activePattern;
-    extern DMAMEM PATTERN_BANK activePatternBank;
-    extern DMAMEM TRACK_STEP_MODS trackStepMods;
 
     bool init();
 
-    void initPatternBank();
-    void initTrackStepMods();
+    void initActivePattern();
+    void initActiveTrackLayer();
+    void initActiveTrackStepModLayer();
+
+    void initNextPattern();
+    void initNextTrackLayer();
     
     void swapSequencerMemoryForPattern(int newBank, int newPattern);
+    void swapSequencerMemoryForTrackLayerChange();
+
     void saveCurrentPatternOffHeap();
 
     void toggleSelectedStep(uint8_t step);
@@ -214,11 +212,10 @@ namespace XRSequencer
     SEQUENCER_STATE &getSeqState();
     QUEUED_PATTERN_STATE &getQueuedPatternState();
 
-    PATTERN_BANK &getActivePatternBank();
     PATTERN &getActivePattern();
+    PATTERN &getNextPattern();
     TRACK &getTrack(int track);
-    TRACK_LAYER &getTrackLayer(int track, int layer);
-    STEP &getStep(int track, int layer, int step);
+    STEP &getStep(int track, int step);
 
     PATTERN &getCurrentSelectedPattern();
     TRACK &getCurrentSelectedTrack();
@@ -234,8 +231,6 @@ namespace XRSequencer
     int8_t getCurrentStepPage();
     int8_t getRatchetTrack();
     int8_t getRatchetDivision();
-
-    bool * getInitializedTracksForPattern(int bank, int pattern);
 }
 
 #endif /* XRSequencer_h */
