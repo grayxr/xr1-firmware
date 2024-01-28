@@ -767,7 +767,6 @@ namespace XRSound
     void initActivePatternSounds()
     {
         for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++) {
-
 #ifndef NO_DEXED
             if (t < 4 && activePatternSounds[t].type == T_DEXED_SYNTH) {
                 // load any dexed voice settings for track

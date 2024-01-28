@@ -745,10 +745,6 @@ namespace XRKeyMatrix
                 XRSequencer::initNextTrackLayer();
             }
 
-            XRSequencer::swapSequencerMemoryForTrackLayerChange();
-
-            XRSequencer::setSelectedTrackLayer(selTrackLayer);
-
             XRSD::saveActiveTrackStepModLayerToSdCard();
             if (!XRSD::loadActiveTrackStepModLayerFromSdCard(XRSequencer::getCurrentSelectedBankNum(), XRSequencer::getCurrentSelectedPatternNum(), selTrackLayer)) {
                 XRSequencer::initActiveTrackStepModLayer();
@@ -758,6 +754,9 @@ namespace XRKeyMatrix
             if (!XRSD::loadPatternSoundStepModLayerFromSdCard(XRSequencer::getCurrentSelectedBankNum(), XRSequencer::getCurrentSelectedPatternNum(), selTrackLayer)) {
                 XRSound::initPatternSoundStepMods();
             }
+
+            XRSequencer::swapSequencerMemoryForTrackLayerChange();
+            XRSequencer::setSelectedTrackLayer(selTrackLayer);
 
             // 
             //
@@ -912,15 +911,10 @@ namespace XRKeyMatrix
             //
             //
 
-
             XRSD::saveActiveTrackLayerToSdCard();
             if (!XRSD::loadNextTrackLayer(XRSequencer::getCurrentSelectedBankNum(), XRSequencer::getCurrentSelectedPatternNum(), selTrackLayer)) {
                 XRSequencer::initNextTrackLayer();
             }
-
-            XRSequencer::swapSequencerMemoryForTrackLayerChange();
-
-            XRSequencer::setSelectedTrackLayer(selTrackLayer);
 
             XRSD::saveActiveTrackStepModLayerToSdCard();
             if (!XRSD::loadActiveTrackStepModLayerFromSdCard(XRSequencer::getCurrentSelectedBankNum(), XRSequencer::getCurrentSelectedPatternNum(), selTrackLayer)) {
@@ -931,6 +925,10 @@ namespace XRKeyMatrix
             if (!XRSD::loadPatternSoundStepModLayerFromSdCard(XRSequencer::getCurrentSelectedBankNum(), XRSequencer::getCurrentSelectedPatternNum(), selTrackLayer)) {
                 XRSound::initPatternSoundStepMods();
             }
+
+            XRSequencer::swapSequencerMemoryForTrackLayerChange();
+            XRSequencer::setSelectedTrackLayer(selTrackLayer);
+
             // 
             //
             // ELSE USE QUEUEING

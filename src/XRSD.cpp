@@ -202,6 +202,8 @@ namespace XRSD
         // verify project path exists first
         if (!SD.exists(projectsPath.c_str()))
         {
+            Serial.println("Projects directory is missing!");
+
             XRDisplay::drawError("FAILED TO SAVE PROJECT!");
             return;
         }
@@ -211,9 +213,11 @@ namespace XRSD
         projectDataDir += _current_project.name;
         projectDataDir += "/.data";
 
-        // verify project file path exists first
+        // verify project data dir exists first
         if (!SD.exists(projectDataDir.c_str()))
         {
+            Serial.println("Project data directory is missing!");
+            
             XRDisplay::drawError("FAILED TO SAVE PROJECT!");
             return;
         }
@@ -224,8 +228,7 @@ namespace XRSD
         currProjectFilePath = projectDataDir;
         currProjectFilePath += "/settings.bin";
 
-        Serial.printf("Saving current project settings file to SD card at path: %s\n", currProjectFilePath.c_str());
-        Serial.printf("with tempo: %f\n", _current_project.tempo);
+        Serial.printf("Saving current project settings file to SD card at path: %s with tempo: %f\n", currProjectFilePath.c_str(),  _current_project.tempo);
 
         File currProjectFile = SD.open(currProjectFilePath.c_str(), FILE_WRITE);
         currProjectFile.truncate();
@@ -233,7 +236,6 @@ namespace XRSD
         currProjectFile.close();
 
         saveCurrentSequencerData();
-
         saveActivePatternSounds();
         saveActiveSoundStepModLayerToSdCard();
 
@@ -273,6 +275,17 @@ namespace XRSD
                 return;
             }
         }
+
+        std::string patternFilePath = activePatternDir;
+        patternFilePath += "/pattern.bin";
+
+        Serial.println("Write active pattern file binary file to SD card at path: ");
+        Serial.println(patternFilePath.c_str());
+
+        File patternFileW = SD.open(patternFilePath.c_str(), FILE_WRITE);
+        patternFileW.truncate();
+        patternFileW.write((byte *)&XRSequencer::activePattern, sizeof(XRSequencer::activePattern));
+        patternFileW.close();
 
         std::string trackLayerFilePath = activePatternDir;
         trackLayerFilePath += "/layers/";
@@ -335,17 +348,15 @@ namespace XRSD
         XRSequencer::init();
 
         if (!loadActivePattern()) {
-            XRSequencer::initActivePattern();
-            // XRDisplay::drawError("FAILED TO LOAD PATTERN DATA!");
-            // delay(1000);
-            // return false;
+            XRDisplay::drawError("FAILED TO LOAD PATTERN DATA!");
+            delay(1000);
+            return false;
         }
 
         if (!loadActiveTrackLayer()) {
-            XRSequencer::initActiveTrackLayer();
-            // XRDisplay::drawError("FAILED TO LOAD TRACK LAYER DATA!");
-            // delay(1000);
-            // return false;
+            XRDisplay::drawError("FAILED TO LOAD TRACK LAYER DATA!");
+            delay(1000);
+            return false;
         }
 
         loadActiveTrackStepModLayerFromSdCard(
@@ -354,9 +365,10 @@ namespace XRSD
             XRSequencer::getCurrentSelectedTrackLayerNum()
         );
 
-        loadActivePatternSounds();
-
         XRSound::init();
+
+        loadActivePatternSounds();
+        XRSound::initActivePatternSounds();
 
         XRAsyncPSRAMLoader::startAsyncInitOfCurrentSamples();
 
@@ -379,218 +391,6 @@ namespace XRSD
         return true;
     }
 
-    std::string *getSampleList(int16_t cursor)
-    {
-        if (_sampleFileListLoaded) {
-            _currSampleFileHighlighted = _sampleFileList.list[cursor];
-
-            uint8_t pageSize = 5;
-
-            for (uint8_t p = 0; p < pageSize; p++) {
-                if ((p+cursor) <= 255) {
-                    _sampleFileListPaged.list[p] = _sampleFileList.list[p+cursor];
-                }
-            }
-
-            return _sampleFileListPaged.list;
-        }
-
-        std::string samplePath = "/audio enjoyer/xr-1/samples";
-
-        bool samplePathExsts = SD.exists(samplePath.c_str());
-        if (!samplePathExsts) {
-            SD.mkdir("/audio enjoyer/xr-1/samples");
-
-            return _sampleFileListPaged.list;
-        }
-
-        auto sampleDir = SD.open(samplePath.c_str(), FILE_READ);
-        if (!sampleDir.isDirectory()) {
-            return _sampleFileListPaged.list;
-        }
-
-        uint8_t batchSize = 255;
-        for (uint8_t b = 0; b < batchSize; b++) {
-            auto sampleFile = sampleDir.openNextFile();
-
-            if (sampleFile && !sampleFile.isDirectory()) {
-                _sampleFileList.list[b] = sampleFile.name();
-            }
-            _sampleFileListLoaded = true;
-            if (!sampleFile){
-                break;
-            }
-        }
-
-        uint8_t pageSize = 5;
-        for (uint8_t p = 0; p < pageSize; p++) {
-            _sampleFileListPaged.list[p] = _sampleFileList.list[p];
-        }
-        
-        _sampleFileListPagedLoaded = true;
-        
-        _currSampleFileHighlighted = _sampleFileList.list[cursor];
-
-        return  _sampleFileListPaged.list;
-    }
-
-    void rewindSampleDir()
-    { 
-        std::string samplePath = "/audio enjoyer/xr-1/samples";
-
-        bool samplePathExsts = SD.exists(samplePath.c_str());
-        if (!samplePathExsts) {
-            Serial.println("ERROR! unable to reset sample dir!");
-
-            return;
-        }
-
-        auto sampleDir = SD.open(samplePath.c_str(), FILE_READ);
-        if (!sampleDir.isDirectory()) {
-            Serial.println("ERROR! unable to reset sample dir!");
-
-            return;
-        }
-
-        sampleDir.rewindDirectory();
-    }
-
-    void unloadSampleFileListPaged()
-    {
-        _sampleFileListPagedLoaded = false;
-    }
-
-#ifndef NO_DEXED
-    void loadDexedVoiceToCurrentTrack(int t)
-    {
-        File sysexDir;
-
-        std::string voiceBankName = "/audio enjoyer/xr-1/sysex/dexed/0/";
-        voiceBankName += std::to_string(dexedCurrentBank);
-
-        AudioNoInterrupts();
-
-        sysexDir = SD.open(voiceBankName.c_str());
-
-        AudioInterrupts();
-
-        if (!sysexDir || !sysexDir.isDirectory())
-        {
-            return;
-        }
-
-        File entry;
-        do
-        {
-            entry = sysexDir.openNextFile();
-        } while (entry.isDirectory());
-
-        if (entry.isDirectory())
-        {
-            AudioNoInterrupts();
-
-            entry.close();
-            sysexDir.close();
-
-            AudioInterrupts();
-
-            return;
-        }
-
-        uint8_t data[128];
-
-        if (get_sd_voice(entry, dexedCurrentPatch, data))
-        {
-            uint8_t tmp_data[156];
-
-            int8_t trackNum = 0;
-            if (t > -1) {
-                trackNum = t;
-            } else {
-                trackNum = XRSequencer::getCurrentSelectedTrackNum();
-            }
-
-            if (XRSound::dexedInstances[trackNum].dexed.decodeVoice(tmp_data, data)) {
-                XRSound::dexedInstances[trackNum].dexed.loadVoiceParameters(tmp_data);
-
-                char dexedTempNameBuf[11];
-                XRSound::dexedInstances[trackNum].dexed.getName(dexedTempNameBuf);
-
-                std::string tempDexedPatchName(dexedTempNameBuf);
-                dexedPatchName = tempDexedPatchName;
-
-                std::string currTrackName(XRSound::activePatternSounds[trackNum].name);
-                strcpy(XRSound::activePatternSounds[trackNum].name, tempDexedPatchName.c_str());
-            }
-        }
-
-        AudioNoInterrupts();
-
-        entry.close();
-        sysexDir.close();
-
-        AudioInterrupts();
-    }
-#endif
-
-    bool get_sd_voice(File sysex, uint8_t voice_number, uint8_t *data)
-    {
-        uint16_t n;
-        int32_t bulk_checksum_calc = 0;
-        int8_t bulk_checksum;
-
-        AudioNoInterrupts();
-        if (sysex.size() != 4104) // check sysex size
-        {
-            return (false);
-        }
-
-        sysex.seek(0);
-        if (sysex.read() != 0xf0) // check sysex start-byte
-        {
-            return (false);
-        }
-        if (sysex.read() != 0x43) // check sysex vendor is Yamaha
-        {
-            return (false);
-        }
-        sysex.seek(4103);
-        if (sysex.read() != 0xf7) // check sysex end-byte
-        {
-            return (false);
-        }
-        sysex.seek(3);
-        if (sysex.read() != 0x09) // check for sysex type (0x09=32 voices)
-        {
-            return (false);
-        }
-        sysex.seek(4102); // Bulk checksum
-        bulk_checksum = sysex.read();
-
-        sysex.seek(6); // start of bulk data
-        for (n = 0; n < 4096; n++)
-        {
-            uint8_t d = sysex.read();
-            if (n >= voice_number * 128 && n < (voice_number + 1) * 128)
-                data[n - (voice_number * 128)] = d;
-            bulk_checksum_calc -= d;
-        }
-        bulk_checksum_calc &= 0x7f;
-        AudioInterrupts();
-
-        if (bulk_checksum_calc != bulk_checksum)
-        {
-            return (false);
-        }
-
-        return (true);
-    }
-
-    std::string getCurrSampleFileHighlighted()
-    {
-        return _currSampleFileHighlighted;
-    }
-
     bool loadActivePattern()
     {
         // get project path
@@ -604,24 +404,27 @@ namespace XRSD
         baseDir += _current_project.name;
         baseDir += "/.data/sequencer/banks/0/patterns/0/pattern.bin";
 
+        Serial.print("attempt to read active pattern file from path: ");
+        Serial.println(baseDir.c_str());
+
         // verify active pattern file path exists first
         if (!SD.exists(baseDir.c_str()))
         {
+            Serial.println("could not find pattern file!");
+
             return false;
         }
 
-        auto &activePattern = XRSequencer::getActivePattern();
-
         File ptnFileR = SD.open(baseDir.c_str(), FILE_READ);
-        ptnFileR.read((byte *)&activePattern, sizeof(activePattern));
+        ptnFileR.read((byte *)&XRSequencer::activePattern, sizeof(XRSequencer::activePattern));
         ptnFileR.close();
 
-        Serial.printf("sizeof(activePattern): %d\n", sizeof(activePattern));
+        Serial.printf("sizeof(:activePattern): %d\n", sizeof(XRSequencer::activePattern));
 
         // if loaded active pattern has a groove, set it on the clock
-        if (activePattern.groove.id > -1) {
+        if (XRSequencer::activePattern.groove.id > -1) {
             XRClock::setShuffle(true);
-            XRClock::setShuffleTemplateForGroove(activePattern.groove.id, activePattern.groove.amount);
+            XRClock::setShuffleTemplateForGroove(XRSequencer::activePattern.groove.id, XRSequencer::activePattern.groove.amount);
         }
 
         return true;
@@ -655,7 +458,7 @@ namespace XRSD
         trackLayerFileR.read((byte *)&XRSequencer::activeTrackLayer, sizeof(XRSequencer::activeTrackLayer));
         trackLayerFileR.close();
 
-        Serial.printf("sizeof(XRSequencer::activeTrackLayer): %d\n", sizeof(XRSequencer::activeTrackLayer));
+        Serial.printf("sizeof(activeTrackLayer): %d\n", sizeof(XRSequencer::activeTrackLayer));
 
         return true;
     }
@@ -908,7 +711,7 @@ namespace XRSD
 
         File soundsFile = SD.open(baseDir.c_str(), FILE_READ);
         if (!soundsFile.available()) {
-            Serial.println("Next pattern sounds not available!");
+            Serial.println("Active pattern sounds not available!");
 
             return false;
         }
@@ -916,7 +719,7 @@ namespace XRSD
         soundsFile.read((byte *)&XRSound::activePatternSounds, sizeof(XRSound::activePatternSounds));
         soundsFile.close();
 
-        Serial.printf("sizeof(nextPatternSounds): %d\n", sizeof(XRSound::nextPatternSounds));
+        Serial.printf("sizeof(activePatternSounds): %d\n", sizeof(XRSound::activePatternSounds));
 
         return true;
     }
@@ -1139,6 +942,218 @@ namespace XRSD
         sFile.close();
 
         Serial.printf("sizeof(activePatternSoundStepModLayer): %d\n", sizeof(XRSound::activePatternSoundStepModLayer));
+    }
+
+    std::string *getSampleList(int16_t cursor)
+    {
+        if (_sampleFileListLoaded) {
+            _currSampleFileHighlighted = _sampleFileList.list[cursor];
+
+            uint8_t pageSize = 5;
+
+            for (uint8_t p = 0; p < pageSize; p++) {
+                if ((p+cursor) <= 255) {
+                    _sampleFileListPaged.list[p] = _sampleFileList.list[p+cursor];
+                }
+            }
+
+            return _sampleFileListPaged.list;
+        }
+
+        std::string samplePath = "/audio enjoyer/xr-1/samples";
+
+        bool samplePathExsts = SD.exists(samplePath.c_str());
+        if (!samplePathExsts) {
+            SD.mkdir("/audio enjoyer/xr-1/samples");
+
+            return _sampleFileListPaged.list;
+        }
+
+        auto sampleDir = SD.open(samplePath.c_str(), FILE_READ);
+        if (!sampleDir.isDirectory()) {
+            return _sampleFileListPaged.list;
+        }
+
+        uint8_t batchSize = 255;
+        for (uint8_t b = 0; b < batchSize; b++) {
+            auto sampleFile = sampleDir.openNextFile();
+
+            if (sampleFile && !sampleFile.isDirectory()) {
+                _sampleFileList.list[b] = sampleFile.name();
+            }
+            _sampleFileListLoaded = true;
+            if (!sampleFile){
+                break;
+            }
+        }
+
+        uint8_t pageSize = 5;
+        for (uint8_t p = 0; p < pageSize; p++) {
+            _sampleFileListPaged.list[p] = _sampleFileList.list[p];
+        }
+        
+        _sampleFileListPagedLoaded = true;
+        
+        _currSampleFileHighlighted = _sampleFileList.list[cursor];
+
+        return  _sampleFileListPaged.list;
+    }
+
+    void rewindSampleDir()
+    { 
+        std::string samplePath = "/audio enjoyer/xr-1/samples";
+
+        bool samplePathExsts = SD.exists(samplePath.c_str());
+        if (!samplePathExsts) {
+            Serial.println("ERROR! unable to reset sample dir!");
+
+            return;
+        }
+
+        auto sampleDir = SD.open(samplePath.c_str(), FILE_READ);
+        if (!sampleDir.isDirectory()) {
+            Serial.println("ERROR! unable to reset sample dir!");
+
+            return;
+        }
+
+        sampleDir.rewindDirectory();
+    }
+
+    void unloadSampleFileListPaged()
+    {
+        _sampleFileListPagedLoaded = false;
+    }
+
+#ifndef NO_DEXED
+    void loadDexedVoiceToCurrentTrack(int t)
+    {
+        File sysexDir;
+
+        std::string voiceBankName = "/audio enjoyer/xr-1/sysex/dexed/0/";
+        voiceBankName += std::to_string(dexedCurrentBank);
+
+        AudioNoInterrupts();
+
+        sysexDir = SD.open(voiceBankName.c_str());
+
+        AudioInterrupts();
+
+        if (!sysexDir || !sysexDir.isDirectory())
+        {
+            return;
+        }
+
+        File entry;
+        do
+        {
+            entry = sysexDir.openNextFile();
+        } while (entry.isDirectory());
+
+        if (entry.isDirectory())
+        {
+            AudioNoInterrupts();
+
+            entry.close();
+            sysexDir.close();
+
+            AudioInterrupts();
+
+            return;
+        }
+
+        uint8_t data[128];
+
+        if (get_sd_voice(entry, dexedCurrentPatch, data))
+        {
+            uint8_t tmp_data[156];
+
+            int8_t trackNum = 0;
+            if (t > -1) {
+                trackNum = t;
+            } else {
+                trackNum = XRSequencer::getCurrentSelectedTrackNum();
+            }
+
+            if (XRSound::dexedInstances[trackNum].dexed.decodeVoice(tmp_data, data)) {
+                XRSound::dexedInstances[trackNum].dexed.loadVoiceParameters(tmp_data);
+
+                char dexedTempNameBuf[11];
+                XRSound::dexedInstances[trackNum].dexed.getName(dexedTempNameBuf);
+
+                std::string tempDexedPatchName(dexedTempNameBuf);
+                dexedPatchName = tempDexedPatchName;
+
+                std::string currTrackName(XRSound::activePatternSounds[trackNum].name);
+                strcpy(XRSound::activePatternSounds[trackNum].name, tempDexedPatchName.c_str());
+            }
+        }
+
+        AudioNoInterrupts();
+
+        entry.close();
+        sysexDir.close();
+
+        AudioInterrupts();
+    }
+#endif
+
+    bool get_sd_voice(File sysex, uint8_t voice_number, uint8_t *data)
+    {
+        uint16_t n;
+        int32_t bulk_checksum_calc = 0;
+        int8_t bulk_checksum;
+
+        AudioNoInterrupts();
+        if (sysex.size() != 4104) // check sysex size
+        {
+            return (false);
+        }
+
+        sysex.seek(0);
+        if (sysex.read() != 0xf0) // check sysex start-byte
+        {
+            return (false);
+        }
+        if (sysex.read() != 0x43) // check sysex vendor is Yamaha
+        {
+            return (false);
+        }
+        sysex.seek(4103);
+        if (sysex.read() != 0xf7) // check sysex end-byte
+        {
+            return (false);
+        }
+        sysex.seek(3);
+        if (sysex.read() != 0x09) // check for sysex type (0x09=32 voices)
+        {
+            return (false);
+        }
+        sysex.seek(4102); // Bulk checksum
+        bulk_checksum = sysex.read();
+
+        sysex.seek(6); // start of bulk data
+        for (n = 0; n < 4096; n++)
+        {
+            uint8_t d = sysex.read();
+            if (n >= voice_number * 128 && n < (voice_number + 1) * 128)
+                data[n - (voice_number * 128)] = d;
+            bulk_checksum_calc -= d;
+        }
+        bulk_checksum_calc &= 0x7f;
+        AudioInterrupts();
+
+        if (bulk_checksum_calc != bulk_checksum)
+        {
+            return (false);
+        }
+
+        return (true);
+    }
+
+    std::string getCurrSampleFileHighlighted()
+    {
+        return _currSampleFileHighlighted;
     }
 
     std::string getCurrentDexedSysexBank()
