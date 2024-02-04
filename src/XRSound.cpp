@@ -26,6 +26,9 @@ namespace XRSound
     };
 
     int _cvLevels[128];
+    
+    float delayTimeMs = 500;
+    float delayFeedback = 0;
 
     std::map<int, int> _waveformFindMap = {
         {WAVEFORM_SAWTOOTH, 0},
@@ -49,7 +52,7 @@ namespace XRSound
         100,0,0,300000,0,       // sampleplayrate, looptype, loopstart, loopfinish, chromatic
         0,0,0,0,0,              // playstart, n/a, n/a, n/a, n/a
         0,100000,100,500000,0,  // a. attack, a. decay, a. sustain, a. release, n/a
-        100,0,0,0,0,             // level, pan, n/a, n/a, n/a
+        100,0,0,0,0,            // level, pan, n/a, n/a, n/a
         0,0,0,0,0               // n/a, n/a, n/a, n/a, n/a
     };
 
@@ -58,16 +61,16 @@ namespace XRSound
         50,0,160000,0,0,            // width, noise, cutoff, resonance, n/a
         0,100000,100,500000,100,    // f. attack, f. decay, f. sustain, f. release, f. env amount
         0,100000,100,500000,0,      // a. attack, a. decay, a. sustain, a. release, n/a
-        100,0,0,0,0,                 // level, pan, n/a, n/a, n/a
+        100,0,0,0,0,                // level, pan, delay dry/wet, n/a, n/a
         0,0,0,0,0                   // n/a, n/a, n/a, n/a, n/a
     };
 
     int32_t dexedSynthInitParams[MAXIMUM_SOUND_PARAMS] = {
-        1,0,0,0,0, // algorithm, n/a, n/a, n/a, n/a
-        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
-        100,0,0,0,0, // level, pan, n/a, n/a, n/a
-        0,0,0,0,0  // n/a, n/a, n/a, n/a, n/a
+        100,0,0,0,0,    // algorithm, n/a, n/a, n/a, n/a
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        100,0,0,0,0,    // level, pan, n/a, n/a, n/a
+        0,0,0,0,0       // poly note b, poly note c, poly note d, note mode, n/a
     };
 
     const uint8_t dexedInitVoice[MAXIMUM_DEXED_SOUND_PARAMS] = {
@@ -85,19 +88,19 @@ namespace XRSound
     };
 
     int32_t braidsSynthInitParams[MAXIMUM_SOUND_PARAMS] = {
-        0,0,0,0,0, // timbre, color, modulation, fm, n/a
-        0,0,0,0,0, // coarse, fine, n/a, n/a, n/a
-        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
-        100,0,0,0,0, // level, pan, n/a, n/a, n/a
-        0,0,0,0,0  // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0,      // timbre, color, modulation, fm, n/a
+        0,0,0,0,0,      // coarse, fine, n/a, n/a, n/a
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        100,0,0,0,0,    // level, pan, n/a, n/a, n/a
+        0,0,0,0,0       // n/a, n/a, n/a, n/a, n/a
     };
 
     int32_t fmDrumInitParams[MAXIMUM_SOUND_PARAMS] = {
-        5000,0,75,0,0, // frequency, fm, decay, noise, overdrive
-        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
-        100,0,0,0,0, // level, pan, n/a, n/a, n/a
-        0,0,0,0,0  // n/a, n/a, n/a, n/a, n/a
+        5000,0,75,0,0,  // frequency, fm, decay, noise, overdrive
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        100,0,0,0,0,    // level, pan, n/a, n/a, n/a
+        0,0,0,0,0       // n/a, n/a, n/a, n/a, n/a
     };
 
     int32_t midiInitParams[MAXIMUM_SOUND_PARAMS] = {
@@ -109,19 +112,19 @@ namespace XRSound
     };
 
     int32_t cvGateInitParams[MAXIMUM_SOUND_PARAMS] = {
-        100,0,0,0,0, // port, n/a, n/a, n/a, n/a
-        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0  // n/a, n/a, n/a, n/a, n/a
+        100,0,0,0,0,    // port, n/a, n/a, n/a, n/a
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0       // n/a, n/a, n/a, n/a, n/a
     };
 
     int32_t cvTrigInitParams[MAXIMUM_SOUND_PARAMS] = {
-        100,0,0,0,0, // port, n/a, n/a, n/a, n/a
-        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0  // n/a, n/a, n/a, n/a, n/a
+        100,0,0,0,0,    // port, n/a, n/a, n/a, n/a
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0       // n/a, n/a, n/a, n/a, n/a
     };
 
     std::map<SOUND_TYPE, int8_t> currentPatternSoundInstanceMap = {
@@ -216,6 +219,14 @@ namespace XRSound
     //     BraidsInstance(braids1, braidsAmp1, braidsLeft1, braidsRight1),
     // };
 
+    StereoDelayInstance delayInstances[1] = {
+        StereoDelayInstance(
+            delayLeft1, delayRight1,
+            delayLeftMixer1, delayRightMixer1,
+            delayFeedbackLeftMixer1, delayFeedbackRightMixer1
+        )
+    };
+
     std::map<int, loop_type> loopTypeSelMap = {
         {0, looptype_none},
         {1, looptype_repeat},
@@ -255,7 +266,7 @@ namespace XRSound
         {T_MONO_SAMPLE, 5},
         {T_MONO_SYNTH, 6},
 #ifndef NO_DEXED
-        {T_DEXED_SYNTH, 4},
+        {T_DEXED_SYNTH, 5},
 #endif
         {T_BRAIDS_SYNTH, 2},
 #ifndef NO_FMDRUM
@@ -289,6 +300,7 @@ namespace XRSound
                          {1, "FM1"},
                          {2, "FM2"},
                          {3, "OUTPUT"},
+                         {4, "POLY"},
                      }},
 #endif
 #ifndef NO_FMDRUM
@@ -309,6 +321,11 @@ namespace XRSound
         {T_EMPTY, {
                       {0, ""},
                   }},
+    };
+
+    std::string patternPageNames[2] = {
+        "MAIN",
+        "SEND EFFECTS"
     };
 
     std::map<SOUND_TYPE, int8_t> soundTypeInstanceLimitMap = {
@@ -499,7 +516,6 @@ namespace XRSound
             monoSampleInstances[i].ampEnv.release(msmpArel);
 
             monoSampleInstances[i].ampAccent.gain(1.0); // used by track velocity
-
             monoSampleInstances[i].amp.gain(msmpLvl); // used by sound volume
 
             PANNED_AMOUNTS monoSamplePannedAmounts = getStereoPanValues(msmpPan);
@@ -556,9 +572,7 @@ namespace XRSound
             monoSynthInstances[s].ampEnv.sustain(msynAsus);
             monoSynthInstances[s].ampEnv.release(msynArel);
 
-
             monoSynthInstances[s].ampAccent.gain(1.0); // used by track velocity
-
             monoSynthInstances[s].amp.gain(msynLvl); // used by sound volume
 
             PANNED_AMOUNTS monoSynthPannedAmounts = getStereoPanValues(msynPan);
@@ -574,7 +588,6 @@ namespace XRSound
             dexedInstances[d].dexed.loadInitVoice();
 
             dexedInstances[d].ampAccent.gain(1.0); // used by track velocity
-
             dexedInstances[d].amp.gain(dexeLvl);
 
             PANNED_AMOUNTS dexedSynthPannedAmounts = getStereoPanValues(dexePan);
@@ -607,7 +620,6 @@ namespace XRSound
             fmDrumInstances[f].fmDrum.init();
 
             fmDrumInstances[f].ampAccent.gain(1.0); // used by track velocity
-
             fmDrumInstances[f].amp.gain(fmDrumLvl);
 
             PANNED_AMOUNTS fmDrumPannedAmounts = getStereoPanValues(fmDrumPan);
@@ -615,6 +627,35 @@ namespace XRSound
             fmDrumInstances[f].right.gain(fmDrumPannedAmounts.right);
         }
 #endif
+
+        // Stereo FX instance
+        delayInstances[0].left.delay(0, delayTimeMs); // TODO: init from pattern
+        delayInstances[0].left.disable(1);
+        delayInstances[0].left.disable(2);
+        delayInstances[0].left.disable(3);
+        delayInstances[0].left.disable(4);
+        delayInstances[0].left.disable(5);
+        delayInstances[0].left.disable(6);
+        delayInstances[0].right.delay(0, delayTimeMs); // TODO: init from pattern
+        delayInstances[0].right.disable(1);
+        delayInstances[0].right.disable(2);
+        delayInstances[0].right.disable(3);
+        delayInstances[0].right.disable(4);
+        delayInstances[0].right.disable(5);
+        delayInstances[0].right.disable(6);
+        delayInstances[0].leftMix.gain(0, 0);
+        delayInstances[0].leftMix.gain(1, 0);
+        delayInstances[0].leftMix.gain(2, 0);
+        delayInstances[0].leftMix.gain(3, 0);
+        delayInstances[0].rightMix.gain(0, 0);
+        delayInstances[0].rightMix.gain(1, 0);
+        delayInstances[0].rightMix.gain(2, 0);
+        delayInstances[0].rightMix.gain(3, 0);
+        delayInstances[0].feedbackLeftMix.gain(0, 0); // feedback line
+        delayInstances[0].feedbackLeftMix.gain(1, 1); // signal line
+        delayInstances[0].feedbackRightMix.gain(0, 0); // feedback line
+        delayInstances[0].feedbackRightMix.gain(1, 1); // signal line
+
         // Voice/instance sub mixers
         voiceSubMixLeft1.gain(0, 1);
         voiceSubMixRight1.gain(0, 1);
@@ -697,12 +738,12 @@ namespace XRSound
         voiceMixRight2.gain(3, 1);
 
         // Main L&R output mixer
-        mainMixerLeft.gain(0, 1);
-        mainMixerRight.gain(0, 1);
-        mainMixerLeft.gain(1, 1);
-        mainMixerRight.gain(1, 1);
-        mainMixerLeft.gain(2, 0);
-        mainMixerRight.gain(2, 0);
+        mainMixerLeft.gain(0, 1); // voice mix 1 L 
+        mainMixerRight.gain(0, 1); // voice mix 1 R 
+        mainMixerLeft.gain(1, 1); // voice mix 2 L 
+        mainMixerRight.gain(1, 1); // voice mix 2 R 
+        mainMixerLeft.gain(2, 1); // delay L
+        mainMixerRight.gain(2, 1); // delay R
         mainMixerLeft.gain(3, 0);
         mainMixerRight.gain(3, 0);
 
@@ -758,6 +799,7 @@ namespace XRSound
         if (track < 4 && activePatternSounds[track].type == T_DEXED_SYNTH) {
             // load any dexed voice settings for track
             dexedInstances[track].dexed.loadVoiceParameters(activePatternSounds[track].dexedParams);
+            dexedInstances[track].dexed.setMonoMode(!activePatternSounds[track].params[DEXE_NOTE_MODE]);
         }
 #endif
         // all done reinitializing sound
@@ -771,6 +813,7 @@ namespace XRSound
             if (t < 4 && activePatternSounds[t].type == T_DEXED_SYNTH) {
                 // load any dexed voice settings for track
                 dexedInstances[t].dexed.loadVoiceParameters(activePatternSounds[t].dexedParams);
+                dexedInstances[t].dexed.setMonoMode(!activePatternSounds[t].params[DEXE_NOTE_MODE]);
             }
 #endif
         }
@@ -830,19 +873,44 @@ namespace XRSound
         SOUND_CONTROL_MODS mods;
 
         auto &pattern = XRSequencer::getCurrentSelectedPattern();
+        auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
 
-        std::string grooveForPattern = pattern.groove.id > -1 ? XRClock::getGrooveString(pattern.groove.id) : "";
-        std::string grooveAmountForPattern = XRClock::getGrooveAmountString(pattern.groove.id, pattern.groove.amount);
+        switch (currSelectedPageNum)
+        {
+        case 0: // MAIN
+            {
+               std::string grooveForPattern = pattern.groove.id > -1 ? XRClock::getGrooveString(pattern.groove.id) : "";
+                std::string grooveAmountForPattern = XRClock::getGrooveAmountString(pattern.groove.id, pattern.groove.amount);
 
-        mods.aName = "L.STEP";
-        mods.bName = "GROOVE";
-        mods.cName = "GR.AMT";
-        mods.dName = "ACCENT";
+                mods.aName = "L.STEP";
+                mods.bName = "GROOVE";
+                mods.cName = "GR.AMT";
+                mods.dName = "ACCENT";
 
-        mods.aValue = std::to_string(pattern.lstep);
-        mods.bValue = pattern.groove.id > -1 ? grooveForPattern : "OFF";
-        mods.cValue = pattern.groove.id > -1 ? grooveAmountForPattern : "--";
-        mods.dValue = std::to_string(pattern.accent);
+                mods.aValue = std::to_string(pattern.lstep);
+                mods.bValue = pattern.groove.id > -1 ? grooveForPattern : "OFF";
+                mods.cValue = pattern.groove.id > -1 ? grooveAmountForPattern : "--";
+                mods.dValue = std::to_string(pattern.accent);
+            }
+            break;
+
+        case 1: // SEND EFFECTS
+            {
+                mods.aName = "D.TIME"; // delay time
+                mods.bName = "D.FDBK"; // delay feedback
+                mods.cName = "--";
+                mods.dName = "--";
+
+                mods.aValue = std::to_string(round(delayTimeMs * 100) / 100);
+                mods.bValue = std::to_string(round(delayFeedback * 100));
+                mods.cValue = "--";
+                mods.dValue = "--";
+            }
+
+            break;
+        default:
+            break;
+        }
 
         return mods;
     }
@@ -955,11 +1023,6 @@ namespace XRSound
                     activePatternSounds[currentSelectedTrackNum].params[MSMP_LOOPSTART]
                 );
 
-                // if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currentSelectedStepNum > -1)
-                // {
-                //     loopstartToUse = modsForCurrentTrackStep.loopstart;
-                // }
-
                 std::string lsStr = std::to_string(loopstartToUse);
                 lsStr += "ms";
 
@@ -1066,8 +1129,16 @@ namespace XRSound
                 mods.cName = "VELO";
                 mods.dName = "PROB";
 
+                auto len = currentSelectedTrack.length;
+
+                if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStep > -1) {
+                    if (XRSequencer::activeTrackStepModLayer.tracks[currentSelectedTrackNum].steps[currSelectedStep].flags[XRSequencer::LENGTH]) {
+                        len = XRSequencer::activeTrackStepModLayer.tracks[currentSelectedTrackNum].steps[currSelectedStep].mods[XRSequencer::LENGTH];
+                    }
+                }
+
                 mods.aValue = std::to_string(currentSelectedTrack.lstep);
-                mods.bValue = std::to_string(currentSelectedTrack.length);
+                mods.bValue = std::to_string(len);
                 mods.cValue = std::to_string(currentSelectedTrack.velocity);
                 mods.dValue = "100%"; // TODO: impl
             }
@@ -1190,16 +1261,17 @@ namespace XRSound
             {
                 mods.aName = "LVL";
                 mods.bName = "PAN";
-                mods.cName = "--";
+                mods.cName = "DLY";
                 mods.dName = "--"; // fx send?
 
                 auto lvl = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_LEVEL]);
                 auto pan = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_PAN]);
+                auto dly = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_DELAY]);
 
                 mods.aValue = std::to_string(round(lvl * 100));
                 mods.bValue = std::to_string((float)round(pan * 100) / 100);
                 mods.bValue = mods.bValue.substr(0, 3);
-                mods.cValue = "--";
+                mods.cValue = std::to_string(round(dly * 100));
                 mods.dValue = "--";
 
                 mods.bFloatValue = pan;
@@ -1222,6 +1294,8 @@ namespace XRSound
         auto &currentSelectedTrack = XRSequencer::getCurrentSelectedTrack();
         auto currentSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        auto currSelectedStep = XRSequencer::getCurrentSelectedStepNum();
+        auto currentUXMode = XRUX::getCurrentMode();
 
         switch (currentSelectedPageNum)
         {
@@ -1232,8 +1306,16 @@ namespace XRSound
                 mods.cName = "VELO";
                 mods.dName = "PROB";
 
+                auto len = currentSelectedTrack.length;
+
+                if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStep > -1) {
+                    if (XRSequencer::activeTrackStepModLayer.tracks[currentSelectedTrackNum].steps[currSelectedStep].flags[XRSequencer::LENGTH]) {
+                        len = XRSequencer::activeTrackStepModLayer.tracks[currentSelectedTrackNum].steps[currSelectedStep].mods[XRSequencer::LENGTH];
+                    }
+                }
+
                 mods.aValue = std::to_string(currentSelectedTrack.lstep);
-                mods.bValue = std::to_string(currentSelectedTrack.length);
+                mods.bValue = std::to_string(len);
                 mods.cValue = std::to_string(currentSelectedTrack.velocity);
                 mods.dValue = "--";
             }
@@ -1288,6 +1370,45 @@ namespace XRSound
 
                 mods.cValue = "--";
                 mods.dValue = "--";
+            }
+
+            break;
+
+        case 4: // POLY
+            {
+                mods.aName = "MODE";
+                mods.bName = "NOTE2";
+                mods.cName = "NOTE3";
+                mods.dName = "NOTE4";
+
+                auto noteMode = getValueNormalizedAsInt8(activePatternSounds[currentSelectedTrackNum].params[DEXE_NOTE_MODE]);
+
+                auto noteB = getValueNormalizedAsInt8(activePatternSounds[currentSelectedTrackNum].params[DEXE_NOTE_B]);
+                auto noteC = getValueNormalizedAsInt8(activePatternSounds[currentSelectedTrackNum].params[DEXE_NOTE_C]);
+                auto noteD = getValueNormalizedAsInt8(activePatternSounds[currentSelectedTrackNum].params[DEXE_NOTE_D]);
+
+                if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStep > -1) {
+                    if (XRSound::activePatternSoundStepModLayer.sounds[currentSelectedTrackNum].steps[currSelectedStep].flags[XRSound::DEXE_NOTE_B]) {
+                        noteB = getValueNormalizedAsInt8(
+                            XRSound::activePatternSoundStepModLayer.sounds[currentSelectedTrackNum].steps[currSelectedStep].mods[XRSound::DEXE_NOTE_B]
+                        );
+                    }
+                    if (XRSound::activePatternSoundStepModLayer.sounds[currentSelectedTrackNum].steps[currSelectedStep].flags[XRSound::DEXE_NOTE_C]) {
+                        noteC = getValueNormalizedAsInt8(
+                            XRSound::activePatternSoundStepModLayer.sounds[currentSelectedTrackNum].steps[currSelectedStep].mods[XRSound::DEXE_NOTE_C]
+                        );
+                    }
+                    if (XRSound::activePatternSoundStepModLayer.sounds[currentSelectedTrackNum].steps[currSelectedStep].flags[XRSound::DEXE_NOTE_D]) {
+                        noteD = getValueNormalizedAsInt8(
+                            XRSound::activePatternSoundStepModLayer.sounds[currentSelectedTrackNum].steps[currSelectedStep].mods[XRSound::DEXE_NOTE_D]
+                        );
+                    }
+                }
+
+                mods.aValue = (noteMode > 0) ? "POLY" : "MONO";
+                mods.bValue = (noteB != 0) ? std::to_string(noteB) : "--";
+                mods.cValue = (noteC != 0) ? std::to_string(noteC) : "--";
+                mods.dValue = (noteD != 0) ? std::to_string(noteD) : "--";
             }
 
             break;
@@ -1879,7 +2000,6 @@ namespace XRSound
 
         auto &trackToUse = XRSequencer::getTrack(track);
         auto &stepToUse = XRSequencer::getStep(track, step);
-
         auto currLayer = XRSequencer::getCurrentSelectedTrackLayerNum();
 
         uint8_t noteToUse = trackToUse.note;
@@ -1903,8 +2023,6 @@ namespace XRSound
             }
         }
 
-        int midiNote = (noteToUse + (12 * (octaveToUse)));
-
         auto dexePan = getValueNormalizedAsFloat(activePatternSounds[track].params[DEXE_PAN]);
         auto dexeLvl = getValueNormalizedAsFloat(activePatternSounds[track].params[DEXE_LEVEL]);
         
@@ -1914,7 +2032,41 @@ namespace XRSound
         dexedInstances[track].left.gain(getStereoPanValues(dexePan).left);
         dexedInstances[track].right.gain(getStereoPanValues(dexePan).right);
 
-        dexedInstances[track].dexed.keydown(midiNote, velocityToUse);
+        // handle poly note assignments
+        // TODO: do check for mono mode so we're not redundantly keydowning all notes when in mono mode?
+        int noteMode = getValueNormalizedAsInt8(activePatternSounds[track].params[DEXE_NOTE_MODE]);
+
+        int noteB = getValueNormalizedAsInt8(activePatternSounds[track].params[DEXE_NOTE_B]);
+        int noteC = getValueNormalizedAsInt8(activePatternSounds[track].params[DEXE_NOTE_C]);
+        int noteD = getValueNormalizedAsInt8(activePatternSounds[track].params[DEXE_NOTE_D]);
+
+        if (XRSound::activePatternSoundStepModLayer.sounds[track].steps[step].flags[XRSound::DEXE_NOTE_B]) {
+            noteB = getValueNormalizedAsInt8(
+                XRSound::activePatternSoundStepModLayer.sounds[track].steps[step].mods[XRSound::DEXE_NOTE_B]
+            );
+        }
+        if (XRSound::activePatternSoundStepModLayer.sounds[track].steps[step].flags[XRSound::DEXE_NOTE_C]) {
+            noteC = getValueNormalizedAsInt8(
+                XRSound::activePatternSoundStepModLayer.sounds[track].steps[step].mods[XRSound::DEXE_NOTE_C]
+            );
+        }
+        if (XRSound::activePatternSoundStepModLayer.sounds[track].steps[step].flags[XRSound::DEXE_NOTE_D]) {
+            noteD = getValueNormalizedAsInt8(
+                XRSound::activePatternSoundStepModLayer.sounds[track].steps[step].mods[XRSound::DEXE_NOTE_D]
+            );
+        }
+
+        int midiNoteA = (noteToUse + (12 * (octaveToUse)));
+        int midiNoteB = (noteToUse + noteB + (12 * (octaveToUse)));
+        int midiNoteC = (noteToUse + noteC + (12 * (octaveToUse)));
+        int midiNoteD = (noteToUse + noteD + (12 * (octaveToUse)));
+
+        dexedInstances[track].dexed.keydown(midiNoteA, velocityToUse);
+        if (noteMode == 1) { // 0 = mono, 1 = poly
+            if (noteB != 0) dexedInstances[track].dexed.keydown(midiNoteB, velocityToUse);
+            if (noteC != 0) dexedInstances[track].dexed.keydown(midiNoteC, velocityToUse);
+            if (noteD != 0) dexedInstances[track].dexed.keydown(midiNoteD, velocityToUse);
+        }
     }
 #endif
 
@@ -2175,10 +2327,39 @@ namespace XRSound
                 {
                     octaveToUse = XRSequencer::activeTrackStepModLayer.tracks[track].steps[step].mods[XRSequencer::OCTAVE];
                 }
-                
-                int midiNote = (noteToUse + (12 * (octaveToUse)));
 
-                dexedInstances[track].dexed.keyup(midiNote);
+                // handle poly note assignments
+                // TODO: do check for mono mode so we're not redundantly keydowning all notes when in mono mode?
+
+                int noteB = getValueNormalizedAsInt8(activePatternSounds[track].params[DEXE_NOTE_B]);
+                int noteC = getValueNormalizedAsInt8(activePatternSounds[track].params[DEXE_NOTE_C]);
+                int noteD = getValueNormalizedAsInt8(activePatternSounds[track].params[DEXE_NOTE_D]);
+
+                if (XRSound::activePatternSoundStepModLayer.sounds[track].steps[step].flags[XRSound::DEXE_NOTE_B]) {
+                    noteB = getValueNormalizedAsInt8(
+                        XRSound::activePatternSoundStepModLayer.sounds[track].steps[step].mods[XRSound::DEXE_NOTE_B]
+                    );
+                }
+                if (XRSound::activePatternSoundStepModLayer.sounds[track].steps[step].flags[XRSound::DEXE_NOTE_C]) {
+                    noteC = getValueNormalizedAsInt8(
+                        XRSound::activePatternSoundStepModLayer.sounds[track].steps[step].mods[XRSound::DEXE_NOTE_C]
+                    );
+                }
+                if (XRSound::activePatternSoundStepModLayer.sounds[track].steps[step].flags[XRSound::DEXE_NOTE_D]) {
+                    noteD = getValueNormalizedAsInt8(
+                        XRSound::activePatternSoundStepModLayer.sounds[track].steps[step].mods[XRSound::DEXE_NOTE_D]
+                    );
+                }
+
+                int midiNoteA = (noteToUse + (12 * (octaveToUse)));
+                int midiNoteB = (noteToUse + noteB + (12 * (octaveToUse)));
+                int midiNoteC = (noteToUse + noteC + (12 * (octaveToUse)));
+                int midiNoteD = (noteToUse + noteD + (12 * (octaveToUse)));
+
+                dexedInstances[track].dexed.keyup(midiNoteA);
+                if (noteB != 0) dexedInstances[track].dexed.keyup(midiNoteB);
+                if (noteC != 0) dexedInstances[track].dexed.keyup(midiNoteC);
+                if (noteD != 0) dexedInstances[track].dexed.keyup(midiNoteD);
             }
             break;
 #endif
@@ -2753,16 +2934,23 @@ namespace XRSound
         std::string outputStr;
 
         auto currentSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+        auto currentSelectedStepNum = XRSequencer::getCurrentSelectedStepNum();
+        auto currentUXMode = XRUX::getCurrentMode();
 
         auto looptype = getValueNormalizedAsUInt8(activePatternSounds[currentSelectedTrackNum].params[MSMP_LOOPTYPE]);
         auto chromatic = getValueNormalizedAsBool(activePatternSounds[currentSelectedTrackNum].params[MSMP_CHROMATIC]);
 
         uint8_t looptypeToUse = looptype;
 
-        // if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currentSelectedStepNum > -1)
-        // {
-        //     looptypeToUse = modsForCurrentTrackStep.looptype;
-        // }
+        if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currentSelectedStepNum > -1)
+        {
+            if (activePatternSoundStepModLayer.sounds[currentSelectedTrackNum].steps[currentSelectedStepNum].flags[MSMP_LOOPTYPE])
+            {
+                looptypeToUse = getValueNormalizedAsUInt8(
+                    activePatternSoundStepModLayer.sounds[currentSelectedTrackNum].steps[currentSelectedStepNum].mods[MSMP_LOOPTYPE]
+                );
+            }
+        }
 
         if (loopTypeSelMap[looptypeToUse] == loop_type::looptype_none)
         {

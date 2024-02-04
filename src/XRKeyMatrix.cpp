@@ -797,6 +797,7 @@ namespace XRKeyMatrix
 
             XRSound::applyCurrentDexedPatchToSound();
 
+            XRSequencer::setSelectedPage(0);
             XRUX::setCurrentMode(XRUX::UX_MODE::TRACK_WRITE); // TODO fix by tracking real seq UX mode separately
 
             XRDisplay::drawSequencerScreen(false);
@@ -854,6 +855,7 @@ namespace XRKeyMatrix
         // pattern select / write release
         if (currentUXMode == XRUX::PATTERN_SEL && key == PATTERN_BTN_CHAR && _ptnHeldForSelection == -1)
         {
+            XRSequencer::setSelectedPage(0);
             XRUX::setCurrentMode(XRUX::PATTERN_WRITE); // force patt write mode when leaving patt / patt select action
 
             XRLED::clearPageLEDs();
@@ -874,6 +876,7 @@ namespace XRKeyMatrix
 
             XRLED::clearAllStepLEDs();
 
+            XRSequencer::setSelectedPage(0);
             XRUX::setCurrentMode(XRUX::PATTERN_WRITE); // force patt write mode when leaving patt / patt select action
 
             XRDisplay::drawSequencerScreen(false);
@@ -935,6 +938,7 @@ namespace XRKeyMatrix
             //
             //
 
+            XRSequencer::setSelectedPage(0);
             XRUX::setCurrentMode(XRUX::TRACK_WRITE);
 
             XRLED::displayPageLEDs(
@@ -965,6 +969,7 @@ namespace XRKeyMatrix
         {
             XRSD::unloadSampleFileListPaged();
             
+            XRSequencer::setSelectedPage(0);
             XRUX::setCurrentMode(XRUX::TRACK_WRITE);
             XRUX::setPreviousMode(XRUX::TRACK_WRITE); // force track write mode when leaving track / track select action
 
@@ -990,7 +995,6 @@ namespace XRKeyMatrix
             _trackHeldForSelection = -1;
 
             XRSequencer::setSelectedPage(0);
-
             XRUX::setCurrentMode(XRUX::TRACK_WRITE);
             XRUX::setPreviousMode(XRUX::TRACK_WRITE); // force track write mode when leaving track / track select action
 
@@ -1070,6 +1074,7 @@ namespace XRKeyMatrix
 
                     // force pattern write mode
                     if (prevMode != XRUX::TRACK_WRITE && prevMode != XRUX::PATTERN_WRITE) {
+                        XRSequencer::setSelectedPage(0);
                         XRUX::setCurrentMode(XRUX::PATTERN_WRITE);
                     }
 
@@ -1088,6 +1093,7 @@ namespace XRKeyMatrix
                 if (currentUXMode == XRUX::UX_MODE::CHANGE_SETUP) {
                     // force pattern write mode
                     if (prevMode != XRUX::TRACK_WRITE && prevMode != XRUX::PATTERN_WRITE) {
+                        XRSequencer::setSelectedPage(0);
                         XRUX::setCurrentMode(XRUX::PATTERN_WRITE);
                     }
                 }
@@ -1117,10 +1123,11 @@ namespace XRKeyMatrix
                             XRSD::loadDexedVoiceToCurrentTrack();
                             
                             XRDisplay::drawDexedSysexBrowser();
+
+                            return true;
                         }
                     }
 #endif
-
                     return true;
                 }
 
@@ -1134,6 +1141,7 @@ namespace XRKeyMatrix
                         XRDisplay::drawSaveProject();
                         XRSD::saveProject();
                         XRMenu::resetCursor();
+                        XRSequencer::setSelectedPage(0);
                         XRUX::setCurrentMode(XRUX::PATTERN_WRITE); 
 
                         // TODO: impl UX mode "categories", so instead of forcing pattern write mode here,

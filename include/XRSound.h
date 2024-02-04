@@ -81,6 +81,7 @@ namespace XRSound
         MSYN_AMP_RELEASE = 18,
         MSYN_LEVEL = 20,
         MSYN_PAN = 21,
+        MSYN_DELAY = 22,
     };
 
     // DEXED SYNTH
@@ -88,6 +89,10 @@ namespace XRSound
         DEXE_ALGO = 0,
         DEXE_LEVEL = 15,
         DEXE_PAN = 16,
+        DEXE_NOTE_B = 20,
+        DEXE_NOTE_C = 21,
+        DEXE_NOTE_D = 22,
+        DEXE_NOTE_MODE = 23,
     };
 
     // BRAIDS SYNTH
@@ -292,6 +297,34 @@ namespace XRSound
     //     }
     // };
 
+    class StereoDelayInstance
+    {
+    public:
+        AudioEffectDelay &left;
+        AudioEffectDelay &right;
+        AudioMixer4 &leftMix;
+        AudioMixer4 &rightMix;
+        AudioMixer4 &feedbackLeftMix;
+        AudioMixer4 &feedbackRightMix;
+
+        StereoDelayInstance(
+            AudioEffectDelay &left,
+            AudioEffectDelay &right,
+            AudioMixer4 &leftMix,
+            AudioMixer4 &rightMix,
+            AudioMixer4 &feedbackLeftMix,
+            AudioMixer4 &feedbackRightMix
+        ) : left{left},
+            right{right},
+            leftMix{leftMix},
+            rightMix{rightMix},
+            feedbackLeftMix{feedbackLeftMix},
+            feedbackRightMix{feedbackRightMix}
+        {
+            //
+        }
+    };
+
     /*** END VOICES/INSTANCES */
 
     enum WAVEFORM_TYPE : uint8_t
@@ -356,6 +389,11 @@ namespace XRSound
     extern FmDrumInstance fmDrumInstances[MAXIMUM_FM_DRUM_SOUNDS];
 #endif
 
+    extern StereoDelayInstance delayInstances[1];
+    extern float delayTimeMs; // temp var TODO : put in pattern
+    extern float delayFeedback; // temp var TODO : put in pattern
+
+    extern std::string patternPageNames[2];
 
     extern std::map<SOUND_TYPE, int8_t> soundTypeInstanceLimitMap;
     

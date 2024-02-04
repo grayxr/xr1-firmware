@@ -337,9 +337,35 @@ namespace XRSequencer
 
     void noteOffForAllSounds()
     {
+        // clear track based notes
         for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+        {  
+            handleNoteOffForTrack(t);
+        }
+
+        // clear step based notes
+        for (int i = 0; i < STEP_STACK_SIZE; i++)
         {
-            XRSound::handleNoteOffForTrack(t);
+            if (_stepStack[i].length > 0)
+            {
+                handleNoteOffForTrackStep(_stepStack[i].trackNum, _stepStack[i].stepNum);
+
+                // re-initialize stack entry
+                _stepStack[i].trackNum = -1;
+                _stepStack[i].stepNum = -1;
+                _stepStack[i].length = -1;
+            }
+        }
+
+        // clear ratchet stack
+        for (int r = 0; r < RATCHET_STACK_SIZE; r++)
+        {
+            if (_ratchetStack[r].length > 0)
+            {
+                // re-initialize stack entry
+                _ratchetStack[r].trackNum = -1;
+                _ratchetStack[r].length = -1;
+            }
         }
     }
 

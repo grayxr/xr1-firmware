@@ -484,9 +484,7 @@ namespace XRDisplay
 
             // draw control mod area
             drawPatternControlMods();
-
-            u8g2.drawLine(0, 52, 128, 52);
-            u8g2.drawStr(0, 56, "MAIN");
+            drawPatternPageNumIndicators();
         }
         else if (
             currentUXMode == XRUX::TRACK_WRITE ||
@@ -1041,6 +1039,61 @@ namespace XRDisplay
         u8g2.drawBox(pageBoxStartX + (pageBetweenPaddingtX * currSelectedPage), 55, 9, 9);
 
         for (int l = 0; l < currTrackPageCount; l++)
+        {
+            if (l == currSelectedPage)
+            {
+                u8g2.setColorIndex((u_int8_t)0);
+                u8g2.drawStr(pageNumStartX + (pageBetweenPaddingtX * l), pageTabPosY, std::to_string(l + 1).c_str());
+                u8g2.setColorIndex((u_int8_t)1);
+            }
+            else
+            {
+                u8g2.drawStr(pageNumStartX + (pageBetweenPaddingtX * l), pageTabPosY, std::to_string(l + 1).c_str());
+            }
+        }
+    }
+
+    void drawPatternPageNumIndicators()
+    {
+        auto currSelectedPage = XRSequencer::getCurrentSelectedPage();
+        if (currSelectedPage > 1) {
+            XRSequencer::setSelectedPage(0);
+            currSelectedPage = 0;
+        }
+
+        uint8_t patternPageCount = 2; // TODO: make a define
+        std::string currPageNameForPattern = "";
+
+        currPageNameForPattern += XRSound::patternPageNames[currSelectedPage];
+
+        int pageNumBasedStartX = 81 - (3 * patternPageCount);
+        int pageTabPosY = 56;
+        int pageTabFooterNameStartX = 17;
+
+        u8g2.drawLine(0, 52, 128, 52);
+        u8g2.drawStr(0, pageTabPosY, currPageNameForPattern.c_str());
+
+        if (patternPageCount == 1 || patternPageCount == 0)
+            return;
+
+        if (patternPageCount == 5)
+        {
+            pageTabFooterNameStartX -= 10;
+        }
+        else if (patternPageCount == 4)
+        {
+            pageTabFooterNameStartX -= 1;
+        }
+
+        int pageBoxStartX = (pageNumBasedStartX + 30) - (patternPageCount * 5);
+        pageBoxStartX += 8 / (patternPageCount);
+
+        int pageNumStartX = pageBoxStartX + 3;
+        int pageBetweenPaddingtX = 10;
+
+        u8g2.drawBox(pageBoxStartX + (pageBetweenPaddingtX * currSelectedPage), 55, 9, 9);
+
+        for (int l = 0; l < patternPageCount; l++)
         {
             if (l == currSelectedPage)
             {
