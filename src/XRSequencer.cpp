@@ -862,6 +862,11 @@ namespace XRSequencer
         if (!XRSD::loadNextTrackLayer(newBank, newPattern, 0)){
             initNextTrackLayer();
         }
+
+        XRSD::saveActiveTrackStepModLayerToSdCard();
+        if (!XRSD::loadActiveTrackStepModLayerFromSdCard(newBank, newPattern, 0)) {
+            initActiveTrackStepModLayer();
+        }
         
         swapSequencerMemoryForTrackLayerChange();
 
@@ -870,11 +875,6 @@ namespace XRSequencer
         _currentSelectedPattern = newPattern;
         _currentSelectedTrack = 0; // when changing patterns, always select first track as default
         _currentSelectedTrackLayer = 0; // when changing patterns, always select first layer as default
-
-        XRSD::saveActiveTrackStepModLayerToSdCard();
-        if (!XRSD::loadActiveTrackStepModLayerFromSdCard(newBank, newPattern, 0)) {
-            initActiveTrackStepModLayer();
-        }
     }
 
     void setSelectedTrack(int8_t track)

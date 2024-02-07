@@ -57,6 +57,7 @@ namespace XRSound
         MSMP_NA_PARAM_E,
         MSMP_LEVEL,
         MSMP_PAN,
+        MSMP_DELAY,
     };
 
     // MONO SYNTH
@@ -89,6 +90,7 @@ namespace XRSound
         DEXE_ALGO = 0,
         DEXE_LEVEL = 15,
         DEXE_PAN = 16,
+        DEXE_DELAY = 17,
         DEXE_NOTE_B = 20,
         DEXE_NOTE_C = 21,
         DEXE_NOTE_D = 22,
@@ -103,6 +105,7 @@ namespace XRSound
         BRAIDS_FM = 3,
         BRAIDS_LEVEL = 15,
         BRAIDS_PAN = 16,
+        BRAIDS_DELAY = 17,
     };
 
     // FM DRUM
@@ -114,6 +117,7 @@ namespace XRSound
         FMD_OVERDRIVE = 4,
         FMD_LEVEL = 15,
         FMD_PAN = 16,
+        FMD_DELAY = 17,
     };
 
     /*** END SOUNDS ***/
@@ -152,6 +156,7 @@ namespace XRSound
         AudioEffectEnvelope &ampEnv;
         AudioAmplifier &ampAccent;
         AudioAmplifier &amp;
+        AudioAmplifier &ampDelaySend;
         AudioAmplifier &left;
         AudioAmplifier &right;
 
@@ -160,12 +165,14 @@ namespace XRSound
             AudioEffectEnvelope &ampEnv,
             AudioAmplifier &ampAccent,
             AudioAmplifier &amp,
+            AudioAmplifier &ampDelaySend,
             AudioAmplifier &left,
             AudioAmplifier &right
         ) : sample{sample},
             ampEnv{ampEnv},
             ampAccent{ampAccent},
             amp{amp},
+            ampDelaySend{ampDelaySend},
             left{left},
             right{right}
         {
@@ -187,6 +194,7 @@ namespace XRSound
         AudioEffectEnvelope &ampEnv;
         AudioAmplifier &ampAccent;
         AudioAmplifier &amp;
+        AudioAmplifier &ampDelaySend;
         AudioAmplifier &left;
         AudioAmplifier &right;
 
@@ -202,6 +210,7 @@ namespace XRSound
             AudioEffectEnvelope &ampEnv,
             AudioAmplifier &ampAccent,
             AudioAmplifier &amp,
+            AudioAmplifier &ampDelaySend,
             AudioAmplifier &left,
             AudioAmplifier &right
         ) : oscA{oscA},
@@ -214,6 +223,7 @@ namespace XRSound
             filter{filter},
             ampEnv{ampEnv},
             ampAccent{ampAccent},
+            ampDelaySend{ampDelaySend},
             amp{amp},
             left{left},
             right{right}
@@ -229,6 +239,7 @@ namespace XRSound
         Dexed &dexed;
         AudioAmplifier &ampAccent;
         AudioAmplifier &amp;
+        AudioAmplifier &ampDelaySend;
         AudioAmplifier &left;
         AudioAmplifier &right;
 
@@ -236,11 +247,13 @@ namespace XRSound
             Dexed &dexed,
             AudioAmplifier &ampAccent,
             AudioAmplifier &amp,
+            AudioAmplifier &ampDelaySend,
             AudioAmplifier &left,
             AudioAmplifier &right
         ) : dexed{dexed},
             ampAccent{ampAccent},
             amp{amp},
+            ampDelaySend{ampDelaySend},
             left{left},
             right{right}
         {
@@ -256,6 +269,7 @@ namespace XRSound
         AudioSynthFMDrum &fmDrum;
         AudioAmplifier &ampAccent;
         AudioAmplifier &amp;
+        AudioAmplifier &ampDelaySend;
         AudioAmplifier &left;
         AudioAmplifier &right;
 
@@ -263,11 +277,13 @@ namespace XRSound
             AudioSynthFMDrum &fmDrum,
             AudioAmplifier &ampAccent,
             AudioAmplifier &amp,
+            AudioAmplifier &ampDelaySend,
             AudioAmplifier &left,
             AudioAmplifier &right
         ) : fmDrum{fmDrum},
             ampAccent{ampAccent},
             amp{amp},
+            ampDelaySend{ampDelaySend},
             left{left},
             right{right}
         {
@@ -280,16 +296,19 @@ namespace XRSound
     // public:
     //     AudioSynthBraids &braids;
     //     AudioAmplifier &amp;
+    //     AudioAmplifier &ampDelaySend;
     //     AudioAmplifier &left;
     //     AudioAmplifier &right;
 
     //     BraidsInstance(
     //         AudioSynthBraids &braids,
     //         AudioAmplifier &amp,
+    //         AudioAmplifier &ampDelaySend,
     //         AudioAmplifier &left,
     //         AudioAmplifier &right
     //     ) : braids{braids},
     //         amp{amp},
+    //         ampDelaySend{ampDelaySend},
     //         left{left},
     //         right{right}
     //     {
@@ -300,26 +319,20 @@ namespace XRSound
     class StereoDelayInstance
     {
     public:
-        AudioEffectDelay &left;
-        AudioEffectDelay &right;
-        AudioMixer4 &leftMix;
-        AudioMixer4 &rightMix;
-        AudioMixer4 &feedbackLeftMix;
-        AudioMixer4 &feedbackRightMix;
+        AudioEffectDelay &delayEffect;
+        AudioMixer4 &feedbackMix;
+        AudioAmplifier &left;
+        AudioAmplifier &right;
 
         StereoDelayInstance(
-            AudioEffectDelay &left,
-            AudioEffectDelay &right,
-            AudioMixer4 &leftMix,
-            AudioMixer4 &rightMix,
-            AudioMixer4 &feedbackLeftMix,
-            AudioMixer4 &feedbackRightMix
-        ) : left{left},
-            right{right},
-            leftMix{leftMix},
-            rightMix{rightMix},
-            feedbackLeftMix{feedbackLeftMix},
-            feedbackRightMix{feedbackRightMix}
+            AudioEffectDelay &delayEffect,
+            AudioMixer4 &feedbackMix,
+            AudioAmplifier &left,
+            AudioAmplifier &right
+        ) : delayEffect{delayEffect},
+            feedbackMix{feedbackMix},
+            left{left},
+            right{right}
         {
             //
         }
@@ -450,6 +463,7 @@ namespace XRSound
     void initVoices();
     void setSoundNeedsReinit(int sound, bool reinit);
     void reinitSoundForTrack(int track);
+    void applyActivePatternSounds();
     
     void saveSoundDataForPatternChange();
     void loadSoundDataForPatternChange(int nextBank, int nextPattern);

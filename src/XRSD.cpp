@@ -368,7 +368,7 @@ namespace XRSD
         XRSound::init();
 
         loadActivePatternSounds();
-        XRSound::initActivePatternSounds();
+        XRSound::applyActivePatternSounds();
 
         XRAsyncPSRAMLoader::startAsyncInitOfCurrentSamples();
 

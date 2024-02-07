@@ -157,61 +157,61 @@ namespace XRSound
     };
 
     MonoSampleInstance monoSampleInstances[MAXIMUM_MONO_SAMPLE_SOUNDS] = {
-        MonoSampleInstance(monoSample1, monoSampleAmpEnv1, monoSampleAmpAccent1, monoSampleAmp1, monoSampleLeft1, monoSampleRight1),
-        MonoSampleInstance(monoSample2, monoSampleAmpEnv2, monoSampleAmpAccent2, monoSampleAmp2, monoSampleLeft2, monoSampleRight2),
-        MonoSampleInstance(monoSample3, monoSampleAmpEnv3, monoSampleAmpAccent3, monoSampleAmp3, monoSampleLeft3, monoSampleRight3),
-        MonoSampleInstance(monoSample4, monoSampleAmpEnv4, monoSampleAmpAccent4, monoSampleAmp4, monoSampleLeft4, monoSampleRight4),
-        MonoSampleInstance(monoSample5, monoSampleAmpEnv5, monoSampleAmpAccent5, monoSampleAmp5, monoSampleLeft5, monoSampleRight5),
-        MonoSampleInstance(monoSample6, monoSampleAmpEnv6, monoSampleAmpAccent6, monoSampleAmp6, monoSampleLeft6, monoSampleRight6),
-        MonoSampleInstance(monoSample7, monoSampleAmpEnv7, monoSampleAmpAccent7, monoSampleAmp7, monoSampleLeft7, monoSampleRight7),
-        MonoSampleInstance(monoSample8, monoSampleAmpEnv8, monoSampleAmpAccent8, monoSampleAmp8, monoSampleLeft8, monoSampleRight8),
-        MonoSampleInstance(monoSample9, monoSampleAmpEnv9, monoSampleAmpAccent9, monoSampleAmp9, monoSampleLeft9, monoSampleRight9),
-        MonoSampleInstance(monoSample10, monoSampleAmpEnv10, monoSampleAmpAccent10, monoSampleAmp10, monoSampleLeft10, monoSampleRight10),
-        MonoSampleInstance(monoSample11, monoSampleAmpEnv11, monoSampleAmpAccent11, monoSampleAmp11, monoSampleLeft11, monoSampleRight11),
-        MonoSampleInstance(monoSample12, monoSampleAmpEnv12, monoSampleAmpAccent12, monoSampleAmp12, monoSampleLeft12, monoSampleRight12),
-        MonoSampleInstance(monoSample13, monoSampleAmpEnv13, monoSampleAmpAccent13, monoSampleAmp13, monoSampleLeft13, monoSampleRight13),
-        MonoSampleInstance(monoSample14, monoSampleAmpEnv14, monoSampleAmpAccent14, monoSampleAmp14, monoSampleLeft14, monoSampleRight14),
-        MonoSampleInstance(monoSample15, monoSampleAmpEnv15, monoSampleAmpAccent15, monoSampleAmp15, monoSampleLeft15, monoSampleRight15),
-        MonoSampleInstance(monoSample16, monoSampleAmpEnv16, monoSampleAmpAccent16, monoSampleAmp16, monoSampleLeft16, monoSampleRight16),
+        MonoSampleInstance(monoSample1, monoSampleAmpEnv1, monoSampleAmpAccent1, monoSampleAmp1, monoSampleAmpDelaySend1, monoSampleLeft1, monoSampleRight1),
+        MonoSampleInstance(monoSample2, monoSampleAmpEnv2, monoSampleAmpAccent2, monoSampleAmp2, monoSampleAmpDelaySend2, monoSampleLeft2, monoSampleRight2),
+        MonoSampleInstance(monoSample3, monoSampleAmpEnv3, monoSampleAmpAccent3, monoSampleAmp3, monoSampleAmpDelaySend3, monoSampleLeft3, monoSampleRight3),
+        MonoSampleInstance(monoSample4, monoSampleAmpEnv4, monoSampleAmpAccent4, monoSampleAmp4, monoSampleAmpDelaySend4, monoSampleLeft4, monoSampleRight4),
+        MonoSampleInstance(monoSample5, monoSampleAmpEnv5, monoSampleAmpAccent5, monoSampleAmp5, monoSampleAmpDelaySend5, monoSampleLeft5, monoSampleRight5),
+        MonoSampleInstance(monoSample6, monoSampleAmpEnv6, monoSampleAmpAccent6, monoSampleAmp6, monoSampleAmpDelaySend6, monoSampleLeft6, monoSampleRight6),
+        MonoSampleInstance(monoSample7, monoSampleAmpEnv7, monoSampleAmpAccent7, monoSampleAmp7, monoSampleAmpDelaySend7, monoSampleLeft7, monoSampleRight7),
+        MonoSampleInstance(monoSample8, monoSampleAmpEnv8, monoSampleAmpAccent8, monoSampleAmp8, monoSampleAmpDelaySend8, monoSampleLeft8, monoSampleRight8),
+        MonoSampleInstance(monoSample9, monoSampleAmpEnv9, monoSampleAmpAccent9, monoSampleAmp9, monoSampleAmpDelaySend9, monoSampleLeft9, monoSampleRight9),
+        MonoSampleInstance(monoSample10, monoSampleAmpEnv10, monoSampleAmpAccent10, monoSampleAmp10, monoSampleAmpDelaySend10, monoSampleLeft10, monoSampleRight10),
+        MonoSampleInstance(monoSample11, monoSampleAmpEnv11, monoSampleAmpAccent11, monoSampleAmp11, monoSampleAmpDelaySend11, monoSampleLeft11, monoSampleRight11),
+        MonoSampleInstance(monoSample12, monoSampleAmpEnv12, monoSampleAmpAccent12, monoSampleAmp12, monoSampleAmpDelaySend12, monoSampleLeft12, monoSampleRight12),
+        MonoSampleInstance(monoSample13, monoSampleAmpEnv13, monoSampleAmpAccent13, monoSampleAmp13, monoSampleAmpDelaySend13, monoSampleLeft13, monoSampleRight13),
+        MonoSampleInstance(monoSample14, monoSampleAmpEnv14, monoSampleAmpAccent14, monoSampleAmp14, monoSampleAmpDelaySend14, monoSampleLeft14, monoSampleRight14),
+        MonoSampleInstance(monoSample15, monoSampleAmpEnv15, monoSampleAmpAccent15, monoSampleAmp15, monoSampleAmpDelaySend15, monoSampleLeft15, monoSampleRight15),
+        MonoSampleInstance(monoSample16, monoSampleAmpEnv16, monoSampleAmpAccent16, monoSampleAmp16, monoSampleAmpDelaySend16, monoSampleLeft16, monoSampleRight16),
     };
     
     MonoSynthInstance monoSynthInstances[MAXIMUM_MONO_SYNTH_SOUNDS] = {
         MonoSynthInstance(
             monoSynthOscA1, monoSynthOscB1, monoSynthNoise1, monoSynthMix1, 
             monoSynthDc1, monoSynthFilterEnv1, monoSynthFilterAccent1, monoSynthFilter1, 
-            monoSynthAmpEnv1, monoSynthAmpAccent1, monoSynthAmp1, monoSynthLeft1, monoSynthRight1
+            monoSynthAmpEnv1, monoSynthAmpAccent1, monoSynthAmp1, monoSynthAmpDelaySend1, monoSynthLeft1, monoSynthRight1
         ),
         MonoSynthInstance(
             monoSynthOscA2, monoSynthOscB2, monoSynthNoise2, monoSynthMix2, 
             monoSynthDc2,  monoSynthFilterEnv2, monoSynthFilterAccent2, monoSynthFilter2,
-            monoSynthAmpEnv2, monoSynthAmpAccent2, monoSynthAmp2, monoSynthLeft2, monoSynthRight2
+            monoSynthAmpEnv2, monoSynthAmpAccent2, monoSynthAmp2, monoSynthAmpDelaySend2, monoSynthLeft2, monoSynthRight2
         ),
         MonoSynthInstance(
             monoSynthOscA3, monoSynthOscB3, monoSynthNoise3, monoSynthMix3, 
             monoSynthDc3, monoSynthFilterEnv3, monoSynthFilterAccent3, monoSynthFilter3, 
-            monoSynthAmpEnv3, monoSynthAmpAccent3, monoSynthAmp3, monoSynthLeft3, monoSynthRight3
+            monoSynthAmpEnv3, monoSynthAmpAccent3, monoSynthAmp3, monoSynthAmpDelaySend3, monoSynthLeft3, monoSynthRight3
         ),
         MonoSynthInstance(
             monoSynthOscA4, monoSynthOscB4, monoSynthNoise4, monoSynthMix4, 
             monoSynthDc4, monoSynthFilterEnv4, monoSynthFilterAccent4, monoSynthFilter4, 
-            monoSynthAmpEnv4, monoSynthAmpAccent4, monoSynthAmp4, monoSynthLeft4, monoSynthRight4
+            monoSynthAmpEnv4, monoSynthAmpAccent4, monoSynthAmp4, monoSynthAmpDelaySend4, monoSynthLeft4, monoSynthRight4
         ),
     };
 
 #ifndef NO_DEXED
     DexedInstance dexedInstances[MAXIMUM_DEXED_SYNTH_SOUNDS] = {
-        DexedInstance(dexed1, dexedAmpAccent1, dexedAmp1, dexedLeft1, dexedRight1),
-        DexedInstance(dexed2, dexedAmpAccent2, dexedAmp2, dexedLeft2, dexedRight2),
-        DexedInstance(dexed3, dexedAmpAccent3, dexedAmp3, dexedLeft3, dexedRight3),
-        DexedInstance(dexed4, dexedAmpAccent4, dexedAmp4, dexedLeft4, dexedRight4),
+        DexedInstance(dexed1, dexedAmpAccent1, dexedAmp1, dexedAmpDelaySend1, dexedLeft1, dexedRight1),
+        DexedInstance(dexed2, dexedAmpAccent2, dexedAmp2, dexedAmpDelaySend2, dexedLeft2, dexedRight2),
+        DexedInstance(dexed3, dexedAmpAccent3, dexedAmp3, dexedAmpDelaySend3, dexedLeft3, dexedRight3),
+        DexedInstance(dexed4, dexedAmpAccent4, dexedAmp4, dexedAmpDelaySend4, dexedLeft4, dexedRight4),
     };
 #endif
 
 #ifndef NO_FMDRUM
     FmDrumInstance fmDrumInstances[MAXIMUM_FM_DRUM_SOUNDS] = {
-        FmDrumInstance(fmDrum1, fmDrumAmpAccent1, fmDrumAmp1, fmDrumLeft1, fmDrumRight1),
-        FmDrumInstance(fmDrum2, fmDrumAmpAccent2, fmDrumAmp2, fmDrumLeft2, fmDrumRight2),
-        FmDrumInstance(fmDrum3, fmDrumAmpAccent3, fmDrumAmp3, fmDrumLeft3, fmDrumRight3),
+        FmDrumInstance(fmDrum1, fmDrumAmpAccent1, fmDrumAmp1, fmDrumAmpDelaySend1, fmDrumLeft1, fmDrumRight1),
+        FmDrumInstance(fmDrum2, fmDrumAmpAccent2, fmDrumAmp2, fmDrumAmpDelaySend2, fmDrumLeft2, fmDrumRight2),
+        FmDrumInstance(fmDrum3, fmDrumAmpAccent3, fmDrumAmp3, fmDrumAmpDelaySend3, fmDrumLeft3, fmDrumRight3),
     };
 #endif
 
@@ -221,9 +221,9 @@ namespace XRSound
 
     StereoDelayInstance delayInstances[1] = {
         StereoDelayInstance(
-            delayLeft1, delayRight1,
-            delayLeftMixer1, delayRightMixer1,
-            delayFeedbackLeftMixer1, delayFeedbackRightMixer1
+            delay1,
+            delayFeedbackMixer1,
+            delayLeftAmp1, delayRightAmp1
         )
     };
 
@@ -503,6 +503,7 @@ namespace XRSound
         auto msmpArel = getValueNormalizedAsFloat(monoSampleInitParams[MSMP_AMP_RELEASE]);
         auto msmpLvl = getValueNormalizedAsFloat(monoSampleInitParams[MSMP_LEVEL]);
         auto msmpPan = getValueNormalizedAsFloat(monoSampleInitParams[MSMP_PAN]);
+        auto msmpDly = getValueNormalizedAsFloat(monoSampleInitParams[MSMP_DELAY]);
 
         // init MonoSampleInstance objects
         for (int i=0; i<MAXIMUM_MONO_SAMPLE_SOUNDS; i++)
@@ -517,6 +518,7 @@ namespace XRSound
 
             monoSampleInstances[i].ampAccent.gain(1.0); // used by track velocity
             monoSampleInstances[i].amp.gain(msmpLvl); // used by sound volume
+            monoSampleInstances[i].ampDelaySend.gain(msmpDly);
 
             PANNED_AMOUNTS monoSamplePannedAmounts = getStereoPanValues(msmpPan);
             monoSampleInstances[i].left.gain(monoSamplePannedAmounts.left);
@@ -541,6 +543,7 @@ namespace XRSound
         auto msynArel = getValueNormalizedAsFloat(monoSynthInitParams[MSYN_AMP_RELEASE]);
         auto msynPan = getValueNormalizedAsFloat(monoSynthInitParams[MSYN_PAN]);
         auto msynLvl = getValueNormalizedAsFloat(monoSynthInitParams[MSYN_LEVEL]);
+        auto msynDly = getValueNormalizedAsFloat(monoSynthInitParams[MSYN_DELAY]);
 
         for (int s=0; s<MAXIMUM_MONO_SYNTH_SOUNDS; s++)
         {
@@ -574,6 +577,7 @@ namespace XRSound
 
             monoSynthInstances[s].ampAccent.gain(1.0); // used by track velocity
             monoSynthInstances[s].amp.gain(msynLvl); // used by sound volume
+            monoSynthInstances[s].ampDelaySend.gain(msynDly);
 
             PANNED_AMOUNTS monoSynthPannedAmounts = getStereoPanValues(msynPan);
             monoSynthInstances[s].left.gain(monoSynthPannedAmounts.left);
@@ -582,6 +586,7 @@ namespace XRSound
 
         auto dexeLvl = getValueNormalizedAsFloat(dexedSynthInitParams[DEXE_LEVEL]);
         auto dexePan = getValueNormalizedAsFloat(dexedSynthInitParams[DEXE_PAN]);
+        auto dexeDly = getValueNormalizedAsFloat(dexedSynthInitParams[DEXE_DELAY]);
 #ifndef NO_DEXED
         for (int d=0; d<MAXIMUM_DEXED_SYNTH_SOUNDS; d++)
         {
@@ -589,6 +594,7 @@ namespace XRSound
 
             dexedInstances[d].ampAccent.gain(1.0); // used by track velocity
             dexedInstances[d].amp.gain(dexeLvl);
+            dexedInstances[d].ampDelaySend.gain(dexeDly);
 
             PANNED_AMOUNTS dexedSynthPannedAmounts = getStereoPanValues(dexePan);
             dexedInstances[d].left.gain(dexedSynthPannedAmounts.left);
@@ -612,6 +618,7 @@ namespace XRSound
 #ifndef NO_FMDRUM
         auto fmDrumLvl = getValueNormalizedAsFloat(fmDrumInitParams[FMD_LEVEL]);
         auto fmDrumPan = getValueNormalizedAsFloat(fmDrumInitParams[FMD_PAN]);
+        auto fmDrumDly = getValueNormalizedAsFloat(dexedSynthInitParams[FMD_DELAY]);
 
         Serial.printf("fmDrumLvl: %f\n");
 
@@ -621,6 +628,7 @@ namespace XRSound
 
             fmDrumInstances[f].ampAccent.gain(1.0); // used by track velocity
             fmDrumInstances[f].amp.gain(fmDrumLvl);
+            fmDrumInstances[f].ampDelaySend.gain(fmDrumDly);
 
             PANNED_AMOUNTS fmDrumPannedAmounts = getStereoPanValues(fmDrumPan);
             fmDrumInstances[f].left.gain(fmDrumPannedAmounts.left);
@@ -628,33 +636,59 @@ namespace XRSound
         }
 #endif
 
-        // Stereo FX instance
-        delayInstances[0].left.delay(0, delayTimeMs); // TODO: init from pattern
-        delayInstances[0].left.disable(1);
-        delayInstances[0].left.disable(2);
-        delayInstances[0].left.disable(3);
-        delayInstances[0].left.disable(4);
-        delayInstances[0].left.disable(5);
-        delayInstances[0].left.disable(6);
-        delayInstances[0].right.delay(0, delayTimeMs); // TODO: init from pattern
-        delayInstances[0].right.disable(1);
-        delayInstances[0].right.disable(2);
-        delayInstances[0].right.disable(3);
-        delayInstances[0].right.disable(4);
-        delayInstances[0].right.disable(5);
-        delayInstances[0].right.disable(6);
-        delayInstances[0].leftMix.gain(0, 0);
-        delayInstances[0].leftMix.gain(1, 0);
-        delayInstances[0].leftMix.gain(2, 0);
-        delayInstances[0].leftMix.gain(3, 0);
-        delayInstances[0].rightMix.gain(0, 0);
-        delayInstances[0].rightMix.gain(1, 0);
-        delayInstances[0].rightMix.gain(2, 0);
-        delayInstances[0].rightMix.gain(3, 0);
-        delayInstances[0].feedbackLeftMix.gain(0, 0); // feedback line
-        delayInstances[0].feedbackLeftMix.gain(1, 1); // signal line
-        delayInstances[0].feedbackRightMix.gain(0, 0); // feedback line
-        delayInstances[0].feedbackRightMix.gain(1, 1); // signal line
+        // Delay sub mixers
+        delaySubMix1.gain(0, 1);
+        delaySubMix1.gain(1, 1);
+        delaySubMix1.gain(2, 1);
+        delaySubMix1.gain(3, 1);
+        delaySubMix2.gain(0, 1);
+        delaySubMix2.gain(1, 1);
+        delaySubMix2.gain(2, 1);
+        delaySubMix2.gain(3, 1);
+        delaySubMix3.gain(0, 1);
+        delaySubMix3.gain(1, 1);
+        delaySubMix3.gain(2, 1);
+        delaySubMix3.gain(3, 1);
+        delaySubMix4.gain(0, 1);
+        delaySubMix4.gain(1, 1);
+        delaySubMix4.gain(2, 1);
+        delaySubMix4.gain(3, 1);
+        delaySubMix5.gain(0, 1);
+        delaySubMix5.gain(1, 1);
+        delaySubMix5.gain(2, 1);
+        delaySubMix5.gain(3, 1);
+        delaySubMix6.gain(0, 1);
+        delaySubMix6.gain(1, 1);
+        delaySubMix6.gain(2, 1);
+        delaySubMix6.gain(3, 1);
+        delaySubMix7.gain(0, 1);
+        delaySubMix7.gain(1, 1);
+        delaySubMix7.gain(2, 1);
+        delaySubMix7.gain(3, 1);
+
+        // Delay mixers
+        delayMix1.gain(0, 1);
+        delayMix1.gain(1, 1);
+        delayMix1.gain(2, 1);
+        delayMix1.gain(3, 1);
+        delayMix2.gain(0, 1);
+        delayMix2.gain(1, 1);
+        delayMix2.gain(2, 1);
+        delayMix2.gain(3, 0); // unused
+
+        // Delay instance
+        delayInstances[0].delayEffect.delay(0, delayTimeMs); // TODO: init from pattern
+        delayInstances[0].delayEffect.disable(1);
+        delayInstances[0].delayEffect.disable(2);
+        delayInstances[0].delayEffect.disable(3);
+        delayInstances[0].delayEffect.disable(4);
+        delayInstances[0].delayEffect.disable(5);
+        delayInstances[0].delayEffect.disable(6);
+        delayInstances[0].feedbackMix.gain(0, 0); // feedback line
+        delayInstances[0].feedbackMix.gain(1, 1); // mix1 signal line
+        delayInstances[0].feedbackMix.gain(2, 1); // mix2 signal line
+        delayInstances[0].left.gain(1); // TODO: init from pattern pan left amount
+        delayInstances[0].right.gain(1); // TODO: init from pattern pan right amount
 
         // Voice/instance sub mixers
         voiceSubMixLeft1.gain(0, 1);
@@ -808,6 +842,25 @@ namespace XRSound
 
     void initActivePatternSounds()
     {
+        for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+        {
+            activePatternSounds[t].type = T_EMPTY;
+
+            for (int p = 0; p < MAXIMUM_SOUND_PARAMS; p++) {
+                activePatternSounds[t].params[p] = 0;
+            }
+
+            for (int dp = 0; dp < MAXIMUM_DEXED_SOUND_PARAMS; dp++) {
+                activePatternSounds[t].dexedParams[dp] = dexedInitVoice[dp];
+            }
+
+            strcpy(activePatternSounds[t].name, "NO SOUND");
+            strcpy(activePatternSounds[t].sampleName, "");
+        }
+    }
+
+    void applyActivePatternSounds()
+    {
         for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++) {
 #ifndef NO_DEXED
             if (t < 4 && activePatternSounds[t].type == T_DEXED_SYNTH) {
@@ -896,9 +949,9 @@ namespace XRSound
 
         case 1: // SEND EFFECTS
             {
-                mods.aName = "D.TIME"; // delay time
-                mods.bName = "D.FDBK"; // delay feedback
-                mods.cName = "--";
+                mods.aName = "TIME"; // delay time
+                mods.bName = "FDBK"; // delay feedback
+                mods.cName = "PAN";
                 mods.dName = "--";
 
                 mods.aValue = std::to_string(round(delayTimeMs * 100) / 100);
@@ -1261,8 +1314,8 @@ namespace XRSound
             {
                 mods.aName = "LVL";
                 mods.bName = "PAN";
-                mods.cName = "DLY";
-                mods.dName = "--"; // fx send?
+                mods.cName = "CHK";
+                mods.dName = "DLY"; // fx send?
 
                 auto lvl = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_LEVEL]);
                 auto pan = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_PAN]);
@@ -1271,8 +1324,8 @@ namespace XRSound
                 mods.aValue = std::to_string(round(lvl * 100));
                 mods.bValue = std::to_string((float)round(pan * 100) / 100);
                 mods.bValue = mods.bValue.substr(0, 3);
-                mods.cValue = std::to_string(round(dly * 100));
-                mods.dValue = "--";
+                mods.cValue = "--";
+                mods.dValue = std::to_string(round(dly * 100));
 
                 mods.bFloatValue = pan;
                 mods.bType = RANGE;
@@ -1703,6 +1756,7 @@ namespace XRSound
         auto msynArel = getValueNormalizedAsFloat(activePatternSounds[track].params[MSYN_AMP_RELEASE]);
         auto msynPan = getValueNormalizedAsFloat(activePatternSounds[track].params[MSYN_PAN]);
         auto msynLvl = getValueNormalizedAsFloat(activePatternSounds[track].params[MSYN_LEVEL]);
+        auto msynDly = getValueNormalizedAsFloat(activePatternSounds[track].params[MSYN_DELAY]);
 
         float foundBaseFreq = _noteToFreqArr[trackToUse.note];
         float octaveFreqA = (foundBaseFreq + (msynFine * 0.01)) * (pow(2, trackToUse.octave));
@@ -1726,8 +1780,9 @@ namespace XRSound
 
         monoSynthInstances[track].filterAccent.gain((trackToUse.velocity * 0.01));
         monoSynthInstances[track].ampAccent.gain((trackToUse.velocity * 0.01));
-
-        monoSynthInstances[track].amp.gain(msynLvl * (trackToUse.velocity * 0.01));
+        //monoSynthInstances[track].amp.gain(msynLvl * (trackToUse.velocity * 0.01));
+        monoSynthInstances[track].amp.gain(msynLvl);
+        monoSynthInstances[track].ampDelaySend.gain(msynDly);
 
         monoSynthInstances[track].left.gain(getStereoPanValues(msynPan).left);
         monoSynthInstances[track].right.gain(getStereoPanValues(msynPan).right);
@@ -1745,12 +1800,18 @@ namespace XRSound
 
         auto &trackToUse = XRSequencer::getTrack(track);
 
+        auto dexeLvl = getValueNormalizedAsFloat(activePatternSounds[track].params[DEXE_LEVEL]);
+        auto dexeDly = getValueNormalizedAsFloat(activePatternSounds[track].params[DEXE_DELAY]);
+
         uint8_t noteToUse = trackToUse.note;
         uint8_t octaveToUse = trackToUse.octave;
 
         int midiNote = (noteToUse + (12 * (octaveToUse)));
 
         dexedInstances[track].ampAccent.gain((trackToUse.velocity * 0.01));
+        dexedInstances[track].amp.gain(dexeLvl);
+        dexedInstances[track].ampDelaySend.gain(dexeDly);
+
         dexedInstances[track].dexed.keydown(midiNote, 50); // TODO: parameterize velocity
     }
 #endif
@@ -1773,7 +1834,13 @@ namespace XRSound
 
         auto &trackToUse = XRSequencer::getTrack(track);
 
+        auto fmDrumLvl = getValueNormalizedAsFloat(activePatternSounds[track].params[FMD_LEVEL]);
+        auto fmDrumDly = getValueNormalizedAsFloat(activePatternSounds[track].params[FMD_DELAY]);
+
         fmDrumInstances[track].ampAccent.gain((trackToUse.velocity * 0.01));
+        fmDrumInstances[track].amp.gain(fmDrumLvl);
+        fmDrumInstances[track].ampDelaySend.gain(fmDrumDly);
+
         fmDrumInstances[track].fmDrum.noteOn();
     }
 #endif
@@ -1804,6 +1871,7 @@ namespace XRSound
         auto msmpArel = getValueNormalizedAsFloat(activePatternSounds[track].params[MSMP_AMP_RELEASE]);
         auto msmpPan = getValueNormalizedAsFloat(activePatternSounds[track].params[MSMP_PAN]);
         auto msmpLvl = getValueNormalizedAsFloat(activePatternSounds[track].params[MSMP_LEVEL]);
+        auto msmpDly = getValueNormalizedAsFloat(activePatternSounds[track].params[MSMP_DELAY]);
 
         // TODO: allow sample chromatic note playback
 
@@ -1862,6 +1930,7 @@ namespace XRSound
         
         monoSampleInstances[track].ampAccent.gain(velocityToUse * 0.01);
         monoSampleInstances[track].amp.gain(msmpLvl);
+        monoSampleInstances[track].ampDelaySend.gain(msmpDly);
 
         monoSampleInstances[track].left.gain(getStereoPanValues(msmpPan).left);
         monoSampleInstances[track].right.gain(getStereoPanValues(msmpPan).right);
@@ -1925,6 +1994,7 @@ namespace XRSound
         auto msynArel = getValueNormalizedAsFloat(activePatternSounds[track].params[MSYN_AMP_RELEASE]);
         auto msynPan = getValueNormalizedAsFloat(activePatternSounds[track].params[MSYN_PAN]);
         auto msynLvl = getValueNormalizedAsFloat(activePatternSounds[track].params[MSYN_LEVEL]);
+        auto msynDly = getValueNormalizedAsFloat(activePatternSounds[track].params[MSYN_DELAY]);
 
         auto currLayer = XRSequencer::getCurrentSelectedTrackLayerNum();
 
@@ -1981,8 +2051,8 @@ namespace XRSound
         
         monoSynthInstances[track].filterAccent.gain((velocityToUse * 0.01));
         monoSynthInstances[track].ampAccent.gain((velocityToUse * 0.01));
-
         monoSynthInstances[track].amp.gain(msynLvl);
+        monoSynthInstances[track].ampDelaySend.gain(msynDly);
 
         monoSynthInstances[track].left.gain(getStereoPanValues(msynPan).left);
         monoSynthInstances[track].right.gain(getStereoPanValues(msynPan).right);
@@ -2025,9 +2095,11 @@ namespace XRSound
 
         auto dexePan = getValueNormalizedAsFloat(activePatternSounds[track].params[DEXE_PAN]);
         auto dexeLvl = getValueNormalizedAsFloat(activePatternSounds[track].params[DEXE_LEVEL]);
+        auto dexeDly = getValueNormalizedAsFloat(activePatternSounds[track].params[DEXE_DELAY]);
         
         dexedInstances[track].ampAccent.gain((velocityToUse * 0.01));
         dexedInstances[track].amp.gain(dexeLvl);
+        dexedInstances[track].ampDelaySend.gain(dexeDly);
 
         dexedInstances[track].left.gain(getStereoPanValues(dexePan).left);
         dexedInstances[track].right.gain(getStereoPanValues(dexePan).right);
@@ -2114,6 +2186,7 @@ namespace XRSound
         auto fmdFreq = getValueNormalizedAsUInt8(activePatternSounds[track].params[FMD_FREQ]);
         auto fmdPan = getValueNormalizedAsFloat(activePatternSounds[track].params[FMD_PAN]);
         auto fmdLvl = getValueNormalizedAsFloat(activePatternSounds[track].params[FMD_LEVEL]);
+        auto fmdDly = getValueNormalizedAsFloat(activePatternSounds[track].params[FMD_DELAY]);
 
         auto currLayer = XRSequencer::getCurrentSelectedTrackLayerNum();
 
@@ -2135,6 +2208,7 @@ namespace XRSound
 
         fmDrumInstances[track].ampAccent.gain((velocityToUse * 0.01));
         fmDrumInstances[track].amp.gain(fmdLvl);
+        fmDrumInstances[track].ampDelaySend.gain(fmdDly);
 
         fmDrumInstances[track].left.gain(getStereoPanValues(fmdPan).left);
         fmDrumInstances[track].right.gain(getStereoPanValues(fmdPan).right);
