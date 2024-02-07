@@ -518,7 +518,7 @@ namespace XRSound
 
             monoSampleInstances[i].ampAccent.gain(1.0); // used by track velocity
             monoSampleInstances[i].amp.gain(msmpLvl); // used by sound volume
-            monoSampleInstances[i].ampDelaySend.gain(msmpDly);
+            monoSampleInstances[i].ampDelaySend.gain(0);
 
             PANNED_AMOUNTS monoSamplePannedAmounts = getStereoPanValues(msmpPan);
             monoSampleInstances[i].left.gain(monoSamplePannedAmounts.left);
@@ -577,7 +577,7 @@ namespace XRSound
 
             monoSynthInstances[s].ampAccent.gain(1.0); // used by track velocity
             monoSynthInstances[s].amp.gain(msynLvl); // used by sound volume
-            monoSynthInstances[s].ampDelaySend.gain(msynDly);
+            monoSynthInstances[s].ampDelaySend.gain(0);
 
             PANNED_AMOUNTS monoSynthPannedAmounts = getStereoPanValues(msynPan);
             monoSynthInstances[s].left.gain(monoSynthPannedAmounts.left);
@@ -594,7 +594,7 @@ namespace XRSound
 
             dexedInstances[d].ampAccent.gain(1.0); // used by track velocity
             dexedInstances[d].amp.gain(dexeLvl);
-            dexedInstances[d].ampDelaySend.gain(dexeDly);
+            dexedInstances[d].ampDelaySend.gain(0);
 
             PANNED_AMOUNTS dexedSynthPannedAmounts = getStereoPanValues(dexePan);
             dexedInstances[d].left.gain(dexedSynthPannedAmounts.left);
@@ -628,7 +628,7 @@ namespace XRSound
 
             fmDrumInstances[f].ampAccent.gain(1.0); // used by track velocity
             fmDrumInstances[f].amp.gain(fmDrumLvl);
-            fmDrumInstances[f].ampDelaySend.gain(fmDrumDly);
+            fmDrumInstances[f].ampDelaySend.gain(0);
 
             PANNED_AMOUNTS fmDrumPannedAmounts = getStereoPanValues(fmDrumPan);
             fmDrumInstances[f].left.gain(fmDrumPannedAmounts.left);
@@ -678,6 +678,7 @@ namespace XRSound
 
         // Delay instance
         delayInstances[0].delayEffect.delay(0, delayTimeMs); // TODO: init from pattern
+        //delayInstances[0].delayEffect.disable(0);
         delayInstances[0].delayEffect.disable(1);
         delayInstances[0].delayEffect.disable(2);
         delayInstances[0].delayEffect.disable(3);
@@ -776,8 +777,8 @@ namespace XRSound
         mainMixerRight.gain(0, 1); // voice mix 1 R 
         mainMixerLeft.gain(1, 1); // voice mix 2 L 
         mainMixerRight.gain(1, 1); // voice mix 2 R 
-        mainMixerLeft.gain(2, 1); // delay L
-        mainMixerRight.gain(2, 1); // delay R
+        mainMixerLeft.gain(2, 0.5); // delay L
+        mainMixerRight.gain(2, 0.5); // delay R
         mainMixerLeft.gain(3, 0);
         mainMixerRight.gain(3, 0);
 
@@ -1810,7 +1811,7 @@ namespace XRSound
 
         dexedInstances[track].ampAccent.gain((trackToUse.velocity * 0.01));
         dexedInstances[track].amp.gain(dexeLvl);
-        dexedInstances[track].ampDelaySend.gain(dexeDly);
+        dexedInstances[track].ampDelaySend.gain(0);
 
         dexedInstances[track].dexed.keydown(midiNote, 50); // TODO: parameterize velocity
     }
@@ -1839,7 +1840,7 @@ namespace XRSound
 
         fmDrumInstances[track].ampAccent.gain((trackToUse.velocity * 0.01));
         fmDrumInstances[track].amp.gain(fmDrumLvl);
-        fmDrumInstances[track].ampDelaySend.gain(fmDrumDly);
+        fmDrumInstances[track].ampDelaySend.gain(0);
 
         fmDrumInstances[track].fmDrum.noteOn();
     }
@@ -1930,7 +1931,7 @@ namespace XRSound
         
         monoSampleInstances[track].ampAccent.gain(velocityToUse * 0.01);
         monoSampleInstances[track].amp.gain(msmpLvl);
-        monoSampleInstances[track].ampDelaySend.gain(msmpDly);
+        monoSampleInstances[track].ampDelaySend.gain(0);
 
         monoSampleInstances[track].left.gain(getStereoPanValues(msmpPan).left);
         monoSampleInstances[track].right.gain(getStereoPanValues(msmpPan).right);
@@ -2099,7 +2100,7 @@ namespace XRSound
         
         dexedInstances[track].ampAccent.gain((velocityToUse * 0.01));
         dexedInstances[track].amp.gain(dexeLvl);
-        dexedInstances[track].ampDelaySend.gain(dexeDly);
+        dexedInstances[track].ampDelaySend.gain(0);
 
         dexedInstances[track].left.gain(getStereoPanValues(dexePan).left);
         dexedInstances[track].right.gain(getStereoPanValues(dexePan).right);
@@ -2208,7 +2209,7 @@ namespace XRSound
 
         fmDrumInstances[track].ampAccent.gain((velocityToUse * 0.01));
         fmDrumInstances[track].amp.gain(fmdLvl);
-        fmDrumInstances[track].ampDelaySend.gain(fmdDly);
+        fmDrumInstances[track].ampDelaySend.gain(0);
 
         fmDrumInstances[track].left.gain(getStereoPanValues(fmdPan).left);
         fmDrumInstances[track].right.gain(getStereoPanValues(fmdPan).right);
