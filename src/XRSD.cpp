@@ -28,8 +28,8 @@ namespace XRSD
     bool _sampleFileListLoaded = false;
     bool _sampleFileListPagedLoaded = false;
 
-    SAMPLE_FILE_LIST _sampleFileList;
-    SAMPLE_FILE_LIST_PAGED _sampleFileListPaged;
+    DMAMEM SAMPLE_FILE_LIST _sampleFileList;
+    DMAMEM SAMPLE_FILE_LIST_PAGED _sampleFileListPaged;
 
     int16_t _lastCursorPos = 0;
     int16_t _currSamplePerPageIdx = 0;
@@ -366,9 +366,8 @@ namespace XRSD
         );
 
         XRSound::init();
-
         loadActivePatternSounds();
-        XRSound::initActivePatternSounds();
+        XRSound::applyActivePatternSounds();
 
         XRAsyncPSRAMLoader::startAsyncInitOfCurrentSamples();
 

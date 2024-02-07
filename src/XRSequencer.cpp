@@ -17,6 +17,16 @@ namespace XRSequencer
     SEQUENCER_STATE _seqState;
     QUEUED_PATTERN_STATE _queuedPatternState;
 
+    int8_t _currentSelectedBank;       // default to 0 (first)
+    int8_t _currentSelectedPattern;    // default to 0 (first)
+    int8_t _currentSelectedTrack;      // default to 0 (first)
+    int8_t _currentSelectedTrackLayer; // default to 0 (first)
+    int8_t _currentSelectedStep;       // default to -1 (none)
+    int8_t _currentStepPage;
+    int8_t _currentSelectedPage;
+    int8_t _ratchetTrack;
+    int8_t _ratchetDivision;
+
     STACK_STEP_DATA _stepStack[STEP_STACK_SIZE];
     STACK_RATCHET_DATA _ratchetStack[RATCHET_STACK_SIZE];
 
@@ -24,16 +34,6 @@ namespace XRSequencer
     DMAMEM PATTERN _patternCopyBuffer;
     DMAMEM TRACK _trackCopyBuffer;
     DMAMEM STEP _stepCopyBuffer;
-
-    int8_t _currentSelectedBank = 0;        // default to 0 (first)
-    int8_t _currentSelectedPattern = 0;     // default to 0 (first)
-    int8_t _currentSelectedTrack = 0;       // default to 0 (first)
-    int8_t _currentSelectedTrackLayer = 0;  // default to 0 (first)
-    int8_t _currentSelectedStep = -1;       // default to -1 (none)
-    int8_t _currentStepPage = 1;
-    int8_t _currentSelectedPage = 0;
-    int8_t _ratchetTrack = -1;
-    int8_t _ratchetDivision = -1;
 
     bool _initTracks[MAXIMUM_SEQUENCER_TRACKS];
 
@@ -62,10 +62,30 @@ namespace XRSequencer
 
     bool init()
     {
-        _currentSelectedBank = 0;
-        _currentSelectedPattern = 0;
-        _currentSelectedTrack = 0;
-        _currentSelectedTrackLayer = 0;
+        _currentSelectedBank = 0;        // default to 0 (first)
+        _currentSelectedPattern = 0;     // default to 0 (first)
+        _currentSelectedTrack = 0;       // default to 0 (first)
+        _currentSelectedTrackLayer = 0;  // default to 0 (first)
+        _currentSelectedStep = -1;       // default to -1 (none)
+        _currentStepPage = 1;
+        _currentSelectedPage = 0;
+        _ratchetTrack = -1;
+        _ratchetDivision = -1;
+
+        // _currentSelectedBank = 0;
+        // _currentSelectedPattern = 0;
+        // _currentSelectedTrack = 0;
+        // _currentSelectedTrackLayer = 0;
+
+        for (size_t ss=0; ss < STEP_STACK_SIZE; ss++) {
+            _stepStack[ss].length = -1;
+            _stepStack[ss].stepNum = -1;
+            _stepStack[ss].trackNum = -1;
+        }
+        for (size_t rs=0; rs < RATCHET_STACK_SIZE; rs++) {
+            _ratchetStack[rs].length = -1;
+            _ratchetStack[rs].trackNum = -1;
+        }
 
         initActivePattern();
         initActiveTrackLayer();
@@ -865,16 +885,16 @@ namespace XRSequencer
         
         swapSequencerMemoryForTrackLayerChange();
 
+        XRSD::saveActiveTrackStepModLayerToSdCard();
+        if (!XRSD::loadActiveTrackStepModLayerFromSdCard(newBank, newPattern, 0)) {
+            initActiveTrackStepModLayer();
+        }
+
         // update currently selected vars
         _currentSelectedBank = newBank;
         _currentSelectedPattern = newPattern;
         _currentSelectedTrack = 0; // when changing patterns, always select first track as default
         _currentSelectedTrackLayer = 0; // when changing patterns, always select first layer as default
-
-        XRSD::saveActiveTrackStepModLayerToSdCard();
-        if (!XRSD::loadActiveTrackStepModLayerFromSdCard(newBank, newPattern, 0)) {
-            initActiveTrackStepModLayer();
-        }
     }
 
     void setSelectedTrack(int8_t track)

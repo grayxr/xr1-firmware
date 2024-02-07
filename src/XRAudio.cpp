@@ -10,7 +10,7 @@ namespace XRAudio
     {
         // Audio connections require memory to work.  For more
         // detailed information, see the MemoryAndCpuUsage example
-        AudioMemory(1000);
+        AudioMemory(200);
 
         // Comment these out if not using the audio adaptor board.
         // This may wait forever if the SDA & SCL pins lack

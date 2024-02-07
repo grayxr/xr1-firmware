@@ -1056,12 +1056,12 @@ namespace XRDisplay
     void drawPatternPageNumIndicators()
     {
         auto currSelectedPage = XRSequencer::getCurrentSelectedPage();
-        if (currSelectedPage > 1) {
+        if (currSelectedPage > 3) {
             XRSequencer::setSelectedPage(0);
             currSelectedPage = 0;
         }
 
-        uint8_t patternPageCount = 2; // TODO: make a define
+        uint8_t patternPageCount = 4; // TODO: make a define
         std::string currPageNameForPattern = "";
 
         currPageNameForPattern += XRSound::patternPageNames[currSelectedPage];

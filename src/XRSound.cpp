@@ -14,23 +14,31 @@ namespace XRSound
 {
     // private variables
 
+    int _cvLevels[128];
+
     // 8MB max of samples per pattern in external PSRAM, 1 sample allowed per track for now    
     newdigate::dualheapasyncflashloader _loader;
     uint8_t _numChannels = 1;
 
     bool patternSoundsDirty = false;
     bool patternSoundStepModsDirty = false;
-
-    float _noteToFreqArr[13] = {
-        16.35, 17.32, 18.35, 19.45, 20.60, 21.83, 23.12, 24.50, 25.96, 27.50, 29.14, 30.87, 32.70
-    };
-
-    int _cvLevels[128];
     
     float delayTimeMs = 500;
     float delayFeedback = 0;
 
-    std::map<int, int> _waveformFindMap = {
+    float compAtt = 0;
+    float compRel = 0.5;
+    float compRat = 35;
+    float compThr = -40;
+    float compKnee = 6;
+    float compMkup = 0;
+    uint8_t compDsmp = 1;
+
+    static const float _noteToFreqArr[13] = {
+        16.35, 17.32, 18.35, 19.45, 20.60, 21.83, 23.12, 24.50, 25.96, 27.50, 29.14, 30.87, 32.70
+    };
+
+    static const std::map<int, int> _waveformFindMap = {
         {WAVEFORM_SAWTOOTH, 0},
         {WAVEFORM_SAWTOOTH_REVERSE, 1},
         {WAVEFORM_TRIANGLE, 2},
@@ -39,7 +47,7 @@ namespace XRSound
         {WAVEFORM_SINE, 5},
     };
 
-    std::map<int, int> _waveformSelMap = {
+    static const std::map<int, int> _waveformSelMap = {
         {0, WAVEFORM_SAWTOOTH},
         {1, WAVEFORM_SAWTOOTH_REVERSE},
         {2, WAVEFORM_TRIANGLE},
@@ -48,32 +56,72 @@ namespace XRSound
         {5, WAVEFORM_SINE},
     };
 
-    int32_t monoSampleInitParams[MAXIMUM_SOUND_PARAMS] = {
+    static const int32_t monoSampleInitParams[MAXIMUM_SOUND_PARAMS] = {
         100,0,0,300000,0,       // sampleplayrate, looptype, loopstart, loopfinish, chromatic
         0,0,0,0,0,              // playstart, n/a, n/a, n/a, n/a
         0,100000,100,500000,0,  // a. attack, a. decay, a. sustain, a. release, n/a
-        100,0,0,0,0,            // level, pan, n/a, n/a, n/a
+        100,0,0,0,0,            // level, pan, delay send, n/a, n/a
         0,0,0,0,0               // n/a, n/a, n/a, n/a, n/a
     };
 
-    int32_t monoSynthInitParams[MAXIMUM_SOUND_PARAMS] = {
+    static const int32_t monoSynthInitParams[MAXIMUM_SOUND_PARAMS] = {
         100,-700,0,100,50,          // waveform, detune, fine, osc-a level, osc-b level
         50,0,160000,0,0,            // width, noise, cutoff, resonance, n/a
         0,100000,100,500000,100,    // f. attack, f. decay, f. sustain, f. release, f. env amount
         0,100000,100,500000,0,      // a. attack, a. decay, a. sustain, a. release, n/a
-        100,0,0,0,0,                // level, pan, delay dry/wet, n/a, n/a
+        100,0,0,0,0,                // level, pan, delay send, n/a, n/a
         0,0,0,0,0                   // n/a, n/a, n/a, n/a, n/a
     };
 
-    int32_t dexedSynthInitParams[MAXIMUM_SOUND_PARAMS] = {
+    static const int32_t dexedSynthInitParams[MAXIMUM_SOUND_PARAMS] = {
         100,0,0,0,0,    // algorithm, n/a, n/a, n/a, n/a
         0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
-        100,0,0,0,0,    // level, pan, n/a, n/a, n/a
+        100,0,0,0,0,    // level, pan, delay send, n/a, n/a
         0,0,0,0,0       // poly note b, poly note c, poly note d, note mode, n/a
     };
 
-    const uint8_t dexedInitVoice[MAXIMUM_DEXED_SOUND_PARAMS] = {
+    static const int32_t braidsSynthInitParams[MAXIMUM_SOUND_PARAMS] = {
+        0,0,0,0,0,      // timbre, color, modulation, fm, n/a
+        0,0,0,0,0,      // coarse, fine, n/a, n/a, n/a
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        100,0,0,0,0,    // level, pan, delay send, n/a, n/a
+        0,0,0,0,0       // n/a, n/a, n/a, n/a, n/a
+    };
+
+    static const int32_t fmDrumInitParams[MAXIMUM_SOUND_PARAMS] = {
+        5000,0,75,0,0,  // frequency, fm, decay, noise, overdrive
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        100,0,0,0,0,    // level, pan, delay send, n/a, n/a
+        0,0,0,0,0       // n/a, n/a, n/a, n/a, n/a
+    };
+
+    static const int32_t midiInitParams[MAXIMUM_SOUND_PARAMS] = {
+        100,0,0,0,0, // channel, n/a, n/a, n/a, n/a
+        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0  // n/a, n/a, n/a, n/a, n/a
+    };
+
+    static const int32_t cvGateInitParams[MAXIMUM_SOUND_PARAMS] = {
+        100,0,0,0,0,    // port, n/a, n/a, n/a, n/a
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0       // n/a, n/a, n/a, n/a, n/a
+    };
+
+    static const int32_t cvTrigInitParams[MAXIMUM_SOUND_PARAMS]  = {
+        100,0,0,0,0,    // port, n/a, n/a, n/a, n/a
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0       // n/a, n/a, n/a, n/a, n/a
+    };
+
+    static const uint8_t dexedInitVoice[MAXIMUM_DEXED_SOUND_PARAMS] = {
       99, 99, 99, 99, 99, 99, 99, 00, 33, 00, 00, 00, 00, 00, 00, 00, 00, 00, 01, 00, 00, // OP6 eg_rate_1-4, level_1-4, kbd_lev_scl_brk_pt, kbd_lev_scl_lft_depth, kbd_lev_scl_rht_depth, kbd_lev_scl_lft_curve, kbd_lev_scl_rht_curve, kbd_rate_scaling, amp_mod_sensitivity, key_vel_sensitivity, operator_output_level, osc_mode, osc_freq_coarse, osc_freq_fine, osc_detune
       99, 99, 99, 99, 99, 99, 99, 00, 33, 00, 00, 00, 00, 00, 00, 00, 00, 00, 01, 00, 00, // OP5
       99, 99, 99, 99, 99, 99, 99, 00, 33, 00, 00, 00, 00, 00, 00, 00, 00, 00, 01, 00, 00, // OP4
@@ -87,47 +135,7 @@ namespace XRSound
       73, 78, 73, 84, 32, 86, 79, 73, 67, 69                                              // 10 * char for name ("INIT VOICE")
     };
 
-    int32_t braidsSynthInitParams[MAXIMUM_SOUND_PARAMS] = {
-        0,0,0,0,0,      // timbre, color, modulation, fm, n/a
-        0,0,0,0,0,      // coarse, fine, n/a, n/a, n/a
-        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
-        100,0,0,0,0,    // level, pan, n/a, n/a, n/a
-        0,0,0,0,0       // n/a, n/a, n/a, n/a, n/a
-    };
-
-    int32_t fmDrumInitParams[MAXIMUM_SOUND_PARAMS] = {
-        5000,0,75,0,0,  // frequency, fm, decay, noise, overdrive
-        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
-        100,0,0,0,0,    // level, pan, n/a, n/a, n/a
-        0,0,0,0,0       // n/a, n/a, n/a, n/a, n/a
-    };
-
-    int32_t midiInitParams[MAXIMUM_SOUND_PARAMS] = {
-        1,0,0,0,0, // channel, n/a, n/a, n/a, n/a
-        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0  // n/a, n/a, n/a, n/a, n/a
-    };
-
-    int32_t cvGateInitParams[MAXIMUM_SOUND_PARAMS] = {
-        100,0,0,0,0,    // port, n/a, n/a, n/a, n/a
-        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0       // n/a, n/a, n/a, n/a, n/a
-    };
-
-    int32_t cvTrigInitParams[MAXIMUM_SOUND_PARAMS] = {
-        100,0,0,0,0,    // port, n/a, n/a, n/a, n/a
-        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
-        0,0,0,0,0       // n/a, n/a, n/a, n/a, n/a
-    };
-
-    std::map<SOUND_TYPE, int8_t> currentPatternSoundInstanceMap = {
+    static const std::map<SOUND_TYPE, int8_t> currentPatternSoundInstanceMap = {
         {T_EMPTY, 0},
         {T_MIDI, 0},
         {T_MONO_SAMPLE, 0},
@@ -157,73 +165,73 @@ namespace XRSound
     };
 
     MonoSampleInstance monoSampleInstances[MAXIMUM_MONO_SAMPLE_SOUNDS] = {
-        MonoSampleInstance(monoSample1, monoSampleAmpEnv1, monoSampleAmpAccent1, monoSampleAmp1, monoSampleLeft1, monoSampleRight1),
-        MonoSampleInstance(monoSample2, monoSampleAmpEnv2, monoSampleAmpAccent2, monoSampleAmp2, monoSampleLeft2, monoSampleRight2),
-        MonoSampleInstance(monoSample3, monoSampleAmpEnv3, monoSampleAmpAccent3, monoSampleAmp3, monoSampleLeft3, monoSampleRight3),
-        MonoSampleInstance(monoSample4, monoSampleAmpEnv4, monoSampleAmpAccent4, monoSampleAmp4, monoSampleLeft4, monoSampleRight4),
-        MonoSampleInstance(monoSample5, monoSampleAmpEnv5, monoSampleAmpAccent5, monoSampleAmp5, monoSampleLeft5, monoSampleRight5),
-        MonoSampleInstance(monoSample6, monoSampleAmpEnv6, monoSampleAmpAccent6, monoSampleAmp6, monoSampleLeft6, monoSampleRight6),
-        MonoSampleInstance(monoSample7, monoSampleAmpEnv7, monoSampleAmpAccent7, monoSampleAmp7, monoSampleLeft7, monoSampleRight7),
-        MonoSampleInstance(monoSample8, monoSampleAmpEnv8, monoSampleAmpAccent8, monoSampleAmp8, monoSampleLeft8, monoSampleRight8),
-        MonoSampleInstance(monoSample9, monoSampleAmpEnv9, monoSampleAmpAccent9, monoSampleAmp9, monoSampleLeft9, monoSampleRight9),
-        MonoSampleInstance(monoSample10, monoSampleAmpEnv10, monoSampleAmpAccent10, monoSampleAmp10, monoSampleLeft10, monoSampleRight10),
-        MonoSampleInstance(monoSample11, monoSampleAmpEnv11, monoSampleAmpAccent11, monoSampleAmp11, monoSampleLeft11, monoSampleRight11),
-        MonoSampleInstance(monoSample12, monoSampleAmpEnv12, monoSampleAmpAccent12, monoSampleAmp12, monoSampleLeft12, monoSampleRight12),
-        MonoSampleInstance(monoSample13, monoSampleAmpEnv13, monoSampleAmpAccent13, monoSampleAmp13, monoSampleLeft13, monoSampleRight13),
-        MonoSampleInstance(monoSample14, monoSampleAmpEnv14, monoSampleAmpAccent14, monoSampleAmp14, monoSampleLeft14, monoSampleRight14),
-        MonoSampleInstance(monoSample15, monoSampleAmpEnv15, monoSampleAmpAccent15, monoSampleAmp15, monoSampleLeft15, monoSampleRight15),
-        MonoSampleInstance(monoSample16, monoSampleAmpEnv16, monoSampleAmpAccent16, monoSampleAmp16, monoSampleLeft16, monoSampleRight16),
+        MonoSampleInstance(monoSample1, monoSampleAmpEnv1, monoSampleAmpAccent1, monoSampleAmp1, monoSampleAmpDelaySend1, monoSampleLeft1, monoSampleRight1),
+        MonoSampleInstance(monoSample2, monoSampleAmpEnv2, monoSampleAmpAccent2, monoSampleAmp2, monoSampleAmpDelaySend2, monoSampleLeft2, monoSampleRight2),
+        MonoSampleInstance(monoSample3, monoSampleAmpEnv3, monoSampleAmpAccent3, monoSampleAmp3, monoSampleAmpDelaySend3, monoSampleLeft3, monoSampleRight3),
+        MonoSampleInstance(monoSample4, monoSampleAmpEnv4, monoSampleAmpAccent4, monoSampleAmp4, monoSampleAmpDelaySend4, monoSampleLeft4, monoSampleRight4),
+        MonoSampleInstance(monoSample5, monoSampleAmpEnv5, monoSampleAmpAccent5, monoSampleAmp5, monoSampleAmpDelaySend5, monoSampleLeft5, monoSampleRight5),
+        MonoSampleInstance(monoSample6, monoSampleAmpEnv6, monoSampleAmpAccent6, monoSampleAmp6, monoSampleAmpDelaySend6, monoSampleLeft6, monoSampleRight6),
+        MonoSampleInstance(monoSample7, monoSampleAmpEnv7, monoSampleAmpAccent7, monoSampleAmp7, monoSampleAmpDelaySend7, monoSampleLeft7, monoSampleRight7),
+        MonoSampleInstance(monoSample8, monoSampleAmpEnv8, monoSampleAmpAccent8, monoSampleAmp8, monoSampleAmpDelaySend8, monoSampleLeft8, monoSampleRight8),
+        MonoSampleInstance(monoSample9, monoSampleAmpEnv9, monoSampleAmpAccent9, monoSampleAmp9, monoSampleAmpDelaySend9, monoSampleLeft9, monoSampleRight9),
+        MonoSampleInstance(monoSample10, monoSampleAmpEnv10, monoSampleAmpAccent10, monoSampleAmp10, monoSampleAmpDelaySend10, monoSampleLeft10, monoSampleRight10),
+        MonoSampleInstance(monoSample11, monoSampleAmpEnv11, monoSampleAmpAccent11, monoSampleAmp11, monoSampleAmpDelaySend11, monoSampleLeft11, monoSampleRight11),
+        MonoSampleInstance(monoSample12, monoSampleAmpEnv12, monoSampleAmpAccent12, monoSampleAmp12, monoSampleAmpDelaySend12, monoSampleLeft12, monoSampleRight12),
+        MonoSampleInstance(monoSample13, monoSampleAmpEnv13, monoSampleAmpAccent13, monoSampleAmp13, monoSampleAmpDelaySend13, monoSampleLeft13, monoSampleRight13),
+        MonoSampleInstance(monoSample14, monoSampleAmpEnv14, monoSampleAmpAccent14, monoSampleAmp14, monoSampleAmpDelaySend14, monoSampleLeft14, monoSampleRight14),
+        MonoSampleInstance(monoSample15, monoSampleAmpEnv15, monoSampleAmpAccent15, monoSampleAmp15, monoSampleAmpDelaySend15, monoSampleLeft15, monoSampleRight15),
+        MonoSampleInstance(monoSample16, monoSampleAmpEnv16, monoSampleAmpAccent16, monoSampleAmp16, monoSampleAmpDelaySend16, monoSampleLeft16, monoSampleRight16),
     };
     
     MonoSynthInstance monoSynthInstances[MAXIMUM_MONO_SYNTH_SOUNDS] = {
         MonoSynthInstance(
             monoSynthOscA1, monoSynthOscB1, monoSynthNoise1, monoSynthMix1, 
             monoSynthDc1, monoSynthFilterEnv1, monoSynthFilterAccent1, monoSynthFilter1, 
-            monoSynthAmpEnv1, monoSynthAmpAccent1, monoSynthAmp1, monoSynthLeft1, monoSynthRight1
+            monoSynthAmpEnv1, monoSynthAmpAccent1, monoSynthAmp1, monoSynthAmpDelaySend1, monoSynthLeft1, monoSynthRight1
         ),
         MonoSynthInstance(
             monoSynthOscA2, monoSynthOscB2, monoSynthNoise2, monoSynthMix2, 
             monoSynthDc2,  monoSynthFilterEnv2, monoSynthFilterAccent2, monoSynthFilter2,
-            monoSynthAmpEnv2, monoSynthAmpAccent2, monoSynthAmp2, monoSynthLeft2, monoSynthRight2
+            monoSynthAmpEnv2, monoSynthAmpAccent2, monoSynthAmp2, monoSynthAmpDelaySend2, monoSynthLeft2, monoSynthRight2
         ),
         MonoSynthInstance(
             monoSynthOscA3, monoSynthOscB3, monoSynthNoise3, monoSynthMix3, 
             monoSynthDc3, monoSynthFilterEnv3, monoSynthFilterAccent3, monoSynthFilter3, 
-            monoSynthAmpEnv3, monoSynthAmpAccent3, monoSynthAmp3, monoSynthLeft3, monoSynthRight3
+            monoSynthAmpEnv3, monoSynthAmpAccent3, monoSynthAmp3, monoSynthAmpDelaySend3, monoSynthLeft3, monoSynthRight3
         ),
         MonoSynthInstance(
             monoSynthOscA4, monoSynthOscB4, monoSynthNoise4, monoSynthMix4, 
             monoSynthDc4, monoSynthFilterEnv4, monoSynthFilterAccent4, monoSynthFilter4, 
-            monoSynthAmpEnv4, monoSynthAmpAccent4, monoSynthAmp4, monoSynthLeft4, monoSynthRight4
+            monoSynthAmpEnv4, monoSynthAmpAccent4, monoSynthAmp4, monoSynthAmpDelaySend4, monoSynthLeft4, monoSynthRight4
         ),
     };
 
 #ifndef NO_DEXED
     DexedInstance dexedInstances[MAXIMUM_DEXED_SYNTH_SOUNDS] = {
-        DexedInstance(dexed1, dexedAmpAccent1, dexedAmp1, dexedLeft1, dexedRight1),
-        DexedInstance(dexed2, dexedAmpAccent2, dexedAmp2, dexedLeft2, dexedRight2),
-        DexedInstance(dexed3, dexedAmpAccent3, dexedAmp3, dexedLeft3, dexedRight3),
-        DexedInstance(dexed4, dexedAmpAccent4, dexedAmp4, dexedLeft4, dexedRight4),
+        DexedInstance(dexed1, dexedAmpAccent1, dexedAmp1, dexedAmpDelaySend1, dexedLeft1, dexedRight1),
+        DexedInstance(dexed2, dexedAmpAccent2, dexedAmp2, dexedAmpDelaySend2, dexedLeft2, dexedRight2),
+        DexedInstance(dexed3, dexedAmpAccent3, dexedAmp3, dexedAmpDelaySend3, dexedLeft3, dexedRight3),
+        DexedInstance(dexed4, dexedAmpAccent4, dexedAmp4, dexedAmpDelaySend4, dexedLeft4, dexedRight4),
     };
 #endif
 
 #ifndef NO_FMDRUM
     FmDrumInstance fmDrumInstances[MAXIMUM_FM_DRUM_SOUNDS] = {
-        FmDrumInstance(fmDrum1, fmDrumAmpAccent1, fmDrumAmp1, fmDrumLeft1, fmDrumRight1),
-        FmDrumInstance(fmDrum2, fmDrumAmpAccent2, fmDrumAmp2, fmDrumLeft2, fmDrumRight2),
-        FmDrumInstance(fmDrum3, fmDrumAmpAccent3, fmDrumAmp3, fmDrumLeft3, fmDrumRight3),
+        FmDrumInstance(fmDrum1, fmDrumAmpAccent1, fmDrumAmp1, fmDrumAmpDelaySend1, fmDrumLeft1, fmDrumRight1),
+        FmDrumInstance(fmDrum2, fmDrumAmpAccent2, fmDrumAmp2, fmDrumAmpDelaySend2, fmDrumLeft2, fmDrumRight2),
+        FmDrumInstance(fmDrum3, fmDrumAmpAccent3, fmDrumAmp3, fmDrumAmpDelaySend3, fmDrumLeft3, fmDrumRight3),
     };
 #endif
 
     // BraidsInstance braidsInstances[MAXIMUM_BRAIDS_SYNTH_SOUNDS] = {
-    //     BraidsInstance(braids1, braidsAmp1, braidsLeft1, braidsRight1),
+    //     BraidsInstance(braids1, braidsAmp1, braidsAmpDelaySend1, braidsLeft1, braidsRight1),
     // };
 
     StereoDelayInstance delayInstances[1] = {
         StereoDelayInstance(
-            delayLeft1, delayRight1,
-            delayLeftMixer1, delayRightMixer1,
-            delayFeedbackLeftMixer1, delayFeedbackRightMixer1
+            delay1,
+            delayFeedbackMixer1,
+            delayLeftAmp1, delayRightAmp1
         )
     };
 
@@ -247,7 +255,7 @@ namespace XRSound
         {play_start_loop, 1},
     };
 
-    std::map<SOUND_TYPE, int32_t*> soundTypeInitParams = {
+    const std::map<SOUND_TYPE, const int32_t*> soundTypeInitParams = {
         { T_MONO_SAMPLE, monoSampleInitParams },
         { T_MONO_SYNTH, monoSynthInitParams },
 #ifndef NO_DEXED
@@ -262,7 +270,7 @@ namespace XRSound
         { T_CV_TRIG, cvTrigInitParams },
     };
 
-    std::map<SOUND_TYPE, int> soundPageNumMap = {
+    const std::map<SOUND_TYPE, int> soundPageNumMap = {
         {T_MONO_SAMPLE, 5},
         {T_MONO_SYNTH, 6},
 #ifndef NO_DEXED
@@ -278,7 +286,7 @@ namespace XRSound
         {T_EMPTY, 1},
     };
 
-    std::map<SOUND_TYPE, std::map<int, std::string>> soundCurrPageNameMap = {
+    const std::map<SOUND_TYPE, std::map<int, std::string>> soundCurrPageNameMap = {
         {T_MONO_SAMPLE, {
                          {0, "MAIN"},
                          {1, "SAMPLE"},
@@ -323,12 +331,14 @@ namespace XRSound
                   }},
     };
 
-    std::string patternPageNames[2] = {
+    const std::string patternPageNames[4] = {
         "MAIN",
-        "SEND EFFECTS"
+        "FX: DELAY",
+        "FX: COMPRESSOR P.1",
+        "FX: COMPRESSOR P.2",
     };
 
-    std::map<SOUND_TYPE, int8_t> soundTypeInstanceLimitMap = {
+    const std::map<SOUND_TYPE, int8_t> soundTypeInstanceLimitMap = {
         {T_EMPTY, MAXIMUM_SEQUENCER_TRACKS},
         {T_MONO_SAMPLE, MAXIMUM_MONO_SAMPLE_SOUNDS},
         {T_MONO_SYNTH, MAXIMUM_MONO_SYNTH_SOUNDS},
@@ -503,6 +513,7 @@ namespace XRSound
         auto msmpArel = getValueNormalizedAsFloat(monoSampleInitParams[MSMP_AMP_RELEASE]);
         auto msmpLvl = getValueNormalizedAsFloat(monoSampleInitParams[MSMP_LEVEL]);
         auto msmpPan = getValueNormalizedAsFloat(monoSampleInitParams[MSMP_PAN]);
+        auto msmpDly = getValueNormalizedAsFloat(monoSampleInitParams[MSMP_DELAY]);
 
         // init MonoSampleInstance objects
         for (int i=0; i<MAXIMUM_MONO_SAMPLE_SOUNDS; i++)
@@ -517,6 +528,7 @@ namespace XRSound
 
             monoSampleInstances[i].ampAccent.gain(1.0); // used by track velocity
             monoSampleInstances[i].amp.gain(msmpLvl); // used by sound volume
+            monoSampleInstances[i].ampDelaySend.gain(msmpDly);
 
             PANNED_AMOUNTS monoSamplePannedAmounts = getStereoPanValues(msmpPan);
             monoSampleInstances[i].left.gain(monoSamplePannedAmounts.left);
@@ -541,6 +553,7 @@ namespace XRSound
         auto msynArel = getValueNormalizedAsFloat(monoSynthInitParams[MSYN_AMP_RELEASE]);
         auto msynPan = getValueNormalizedAsFloat(monoSynthInitParams[MSYN_PAN]);
         auto msynLvl = getValueNormalizedAsFloat(monoSynthInitParams[MSYN_LEVEL]);
+        auto msynDly = getValueNormalizedAsFloat(monoSynthInitParams[MSYN_DELAY]);
 
         for (int s=0; s<MAXIMUM_MONO_SYNTH_SOUNDS; s++)
         {
@@ -574,6 +587,7 @@ namespace XRSound
 
             monoSynthInstances[s].ampAccent.gain(1.0); // used by track velocity
             monoSynthInstances[s].amp.gain(msynLvl); // used by sound volume
+            monoSynthInstances[s].ampDelaySend.gain(msynDly);
 
             PANNED_AMOUNTS monoSynthPannedAmounts = getStereoPanValues(msynPan);
             monoSynthInstances[s].left.gain(monoSynthPannedAmounts.left);
@@ -582,6 +596,7 @@ namespace XRSound
 
         auto dexeLvl = getValueNormalizedAsFloat(dexedSynthInitParams[DEXE_LEVEL]);
         auto dexePan = getValueNormalizedAsFloat(dexedSynthInitParams[DEXE_PAN]);
+        auto dexeDly = getValueNormalizedAsFloat(dexedSynthInitParams[DEXE_DELAY]);
 #ifndef NO_DEXED
         for (int d=0; d<MAXIMUM_DEXED_SYNTH_SOUNDS; d++)
         {
@@ -589,6 +604,7 @@ namespace XRSound
 
             dexedInstances[d].ampAccent.gain(1.0); // used by track velocity
             dexedInstances[d].amp.gain(dexeLvl);
+            dexedInstances[d].ampDelaySend.gain(dexeDly);
 
             PANNED_AMOUNTS dexedSynthPannedAmounts = getStereoPanValues(dexePan);
             dexedInstances[d].left.gain(dexedSynthPannedAmounts.left);
@@ -597,6 +613,7 @@ namespace XRSound
 #endif
         // auto braidsLvl = getValueNormalizedAsFloat(braidsSynthInitParams[BRAIDS_LEVEL]);
         // auto braidsPan = getValueNormalizedAsFloat(braidsSynthInitParams[BRAIDS_PAN]);
+        // auto braidsDly = getValueNormalizedAsFloat(dexedSynthInitParams[BRAIDS_DELAY]);
 
         // for (int b=0; b<MAXIMUM_BRAIDS_SYNTH_SOUNDS; b++)
         // {
@@ -604,6 +621,7 @@ namespace XRSound
 
         //     braidsInstances[b].ampAccent.gain(1.0); // used by track velocity
         //     braidsInstances[b].amp.gain(braidsLvl);
+        //     braidsInstances[b].ampDelaySend.gain(braidsDly);
 
         //     PANNED_AMOUNTS braidsPannedAmounts = getStereoPanValues(braidsPan);
         //     dexedInstances[b].left.gain(braidsPannedAmounts.left);
@@ -612,6 +630,7 @@ namespace XRSound
 #ifndef NO_FMDRUM
         auto fmDrumLvl = getValueNormalizedAsFloat(fmDrumInitParams[FMD_LEVEL]);
         auto fmDrumPan = getValueNormalizedAsFloat(fmDrumInitParams[FMD_PAN]);
+        auto fmDrumDly = getValueNormalizedAsFloat(dexedSynthInitParams[FMD_DELAY]);
 
         Serial.printf("fmDrumLvl: %f\n");
 
@@ -621,6 +640,7 @@ namespace XRSound
 
             fmDrumInstances[f].ampAccent.gain(1.0); // used by track velocity
             fmDrumInstances[f].amp.gain(fmDrumLvl);
+            fmDrumInstances[f].ampDelaySend.gain(fmDrumDly);
 
             PANNED_AMOUNTS fmDrumPannedAmounts = getStereoPanValues(fmDrumPan);
             fmDrumInstances[f].left.gain(fmDrumPannedAmounts.left);
@@ -628,33 +648,68 @@ namespace XRSound
         }
 #endif
 
-        // Stereo FX instance
-        delayInstances[0].left.delay(0, delayTimeMs); // TODO: init from pattern
-        delayInstances[0].left.disable(1);
-        delayInstances[0].left.disable(2);
-        delayInstances[0].left.disable(3);
-        delayInstances[0].left.disable(4);
-        delayInstances[0].left.disable(5);
-        delayInstances[0].left.disable(6);
-        delayInstances[0].right.delay(0, delayTimeMs); // TODO: init from pattern
-        delayInstances[0].right.disable(1);
-        delayInstances[0].right.disable(2);
-        delayInstances[0].right.disable(3);
-        delayInstances[0].right.disable(4);
-        delayInstances[0].right.disable(5);
-        delayInstances[0].right.disable(6);
-        delayInstances[0].leftMix.gain(0, 0);
-        delayInstances[0].leftMix.gain(1, 0);
-        delayInstances[0].leftMix.gain(2, 0);
-        delayInstances[0].leftMix.gain(3, 0);
-        delayInstances[0].rightMix.gain(0, 0);
-        delayInstances[0].rightMix.gain(1, 0);
-        delayInstances[0].rightMix.gain(2, 0);
-        delayInstances[0].rightMix.gain(3, 0);
-        delayInstances[0].feedbackLeftMix.gain(0, 0); // feedback line
-        delayInstances[0].feedbackLeftMix.gain(1, 1); // signal line
-        delayInstances[0].feedbackRightMix.gain(0, 0); // feedback line
-        delayInstances[0].feedbackRightMix.gain(1, 1); // signal line
+        // Delay sub mixers
+        delaySubMix1.gain(0, 1);
+        delaySubMix1.gain(1, 1);
+        delaySubMix1.gain(2, 1);
+        delaySubMix1.gain(3, 1);
+        delaySubMix2.gain(0, 1);
+        delaySubMix2.gain(1, 1);
+        delaySubMix2.gain(2, 1);
+        delaySubMix2.gain(3, 1);
+        delaySubMix3.gain(0, 1);
+        delaySubMix3.gain(1, 1);
+        delaySubMix3.gain(2, 1);
+        delaySubMix3.gain(3, 1);
+        delaySubMix4.gain(0, 1);
+        delaySubMix4.gain(1, 1);
+        delaySubMix4.gain(2, 1);
+        delaySubMix4.gain(3, 1);
+        delaySubMix5.gain(0, 1);
+        delaySubMix5.gain(1, 1);
+        delaySubMix5.gain(2, 1);
+        delaySubMix5.gain(3, 1);
+        delaySubMix6.gain(0, 1);
+        delaySubMix6.gain(1, 1);
+        delaySubMix6.gain(2, 1);
+        delaySubMix6.gain(3, 1);
+        delaySubMix7.gain(0, 1);
+        delaySubMix7.gain(1, 1);
+        delaySubMix7.gain(2, 1);
+        delaySubMix7.gain(3, 1);
+
+        // Delay mixers
+        delayMix1.gain(0, 1);
+        delayMix1.gain(1, 1);
+        delayMix1.gain(2, 1);
+        delayMix1.gain(3, 1);
+        delayMix2.gain(0, 1);
+        delayMix2.gain(1, 1);
+        delayMix2.gain(2, 1);
+        delayMix2.gain(3, 0); // unused
+
+        // Delay instance
+        delayInstances[0].delayEffect.delay(0, delayTimeMs); // TODO: init from pattern
+        delayInstances[0].delayEffect.disable(1);
+        delayInstances[0].delayEffect.disable(2);
+        delayInstances[0].delayEffect.disable(3);
+        delayInstances[0].delayEffect.disable(4);
+        delayInstances[0].delayEffect.disable(5);
+        delayInstances[0].delayEffect.disable(6);
+        delayInstances[0].feedbackMix.gain(0, 0); // feedback line
+        delayInstances[0].feedbackMix.gain(1, 1); // mix1 signal line
+        delayInstances[0].feedbackMix.gain(2, 1); // mix2 signal line
+        delayInstances[0].left.gain(1); // TODO: init from pattern pan left amount
+        delayInstances[0].right.gain(1); // TODO: init from pattern pan right amount
+
+
+    	// compLeftSamples[compSampleBufferSize] = {0};
+    	// compRightSamples[compSampleBufferSize] = {0};
+        // compressorLeft1.init(compLeftSamples);
+        // compressorRight1.init(compRightSamples);
+
+        // compressorLeft1.compression(compThr, compAtt, compRel, compRat, compKnee);
+        // compressorRight1.compression(compThr, compAtt, compRel, compRat, compKnee);
 
         // Voice/instance sub mixers
         voiceSubMixLeft1.gain(0, 1);
@@ -773,7 +828,7 @@ namespace XRSound
 
         // init generic sound params
         auto soundType = activePatternSounds[track].type;
-        auto initParams = soundTypeInitParams[soundType];
+        auto initParams = soundTypeInitParams.at(soundType);
         for (size_t p=0; p<MAXIMUM_SOUND_PARAMS; p++)
         {
             activePatternSounds[track].params[p] = initParams[p];
@@ -807,6 +862,25 @@ namespace XRSound
     }
 
     void initActivePatternSounds()
+    {
+        for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+        {
+            activePatternSounds[t].type = T_EMPTY;
+
+            for (int p = 0; p < MAXIMUM_SOUND_PARAMS; p++) {
+                activePatternSounds[t].params[p] = 0;
+            }
+
+            for (int dp = 0; dp < MAXIMUM_DEXED_SOUND_PARAMS; dp++) {
+                activePatternSounds[t].dexedParams[dp] = dexedInitVoice[dp];
+            }
+
+            strcpy(activePatternSounds[t].name, "NO SOUND");
+            strcpy(activePatternSounds[t].sampleName, "");
+        }
+    }
+
+    void applyActivePatternSounds()
     {
         for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++) {
 #ifndef NO_DEXED
@@ -894,16 +968,46 @@ namespace XRSound
             }
             break;
 
-        case 1: // SEND EFFECTS
+        case 1: // DELAY
             {
-                mods.aName = "D.TIME"; // delay time
-                mods.bName = "D.FDBK"; // delay feedback
-                mods.cName = "--";
+                mods.aName = "TIME"; // delay time
+                mods.bName = "FDBK"; // delay feedback
+                mods.cName = "PAN"; // delay pan
                 mods.dName = "--";
 
                 mods.aValue = std::to_string(round(delayTimeMs * 100) / 100);
                 mods.bValue = std::to_string(round(delayFeedback * 100));
                 mods.cValue = "--";
+                mods.dValue = "--";
+            }
+
+            break;
+
+        case 2: // COMPRESSOR PAGE 1
+            {
+                mods.aName = "ATT";
+                mods.bName = "REL";
+                mods.cName = "RAT";
+                mods.dName = "THR";
+
+                mods.aValue = std::to_string(round(compAtt * 100) / 100);
+                mods.bValue = std::to_string(round(compRel * 100) / 100);
+                mods.cValue = std::to_string(round(compRat * 100) / 100);
+                mods.dValue = std::to_string(round(compThr * 100) / 100);
+            }
+
+            break;
+
+        case 3: // COMPRESSOR PAGE 2
+            {
+                mods.aName = "KNEE";
+                mods.bName = "MKUP";
+                mods.cName = "DSMP";
+                mods.dName = "--";
+
+                mods.aValue = std::to_string(round(compKnee * 100) / 100);
+                mods.bValue = std::to_string(round(compMkup * 100) / 100);
+                mods.cValue = std::to_string(compDsmp);
                 mods.dValue = "--";
             }
 
@@ -1261,21 +1365,22 @@ namespace XRSound
             {
                 mods.aName = "LVL";
                 mods.bName = "PAN";
-                mods.cName = "DLY";
-                mods.dName = "--"; // fx send?
+                mods.cName = "CHK"; // choke
+                mods.dName = "DLY"; // delay send
 
                 auto lvl = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_LEVEL]);
                 auto pan = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_PAN]);
                 auto dly = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_DELAY]);
 
                 mods.aValue = std::to_string(round(lvl * 100));
+
                 mods.bValue = std::to_string((float)round(pan * 100) / 100);
                 mods.bValue = mods.bValue.substr(0, 3);
-                mods.cValue = std::to_string(round(dly * 100));
-                mods.dValue = "--";
-
                 mods.bFloatValue = pan;
                 mods.bType = RANGE;
+
+                mods.cValue = "--";
+                mods.dValue = std::to_string(round(dly * 100));
             }
 
             break;
@@ -1668,14 +1773,14 @@ namespace XRSound
         AudioNoInterrupts();
 
         // always re-initialize loop type
-        monoSampleInstances[track].sample.setLoopType(loopTypeSelMap[msmpLooptype]);
+        monoSampleInstances[track].sample.setLoopType(loopTypeSelMap.at(msmpLooptype));
 
-        if (loopTypeSelMap[msmpLooptype] == looptype_none)
+        if (loopTypeSelMap.at(msmpLooptype) == looptype_none)
         {
             monoSampleInstances[track].sample.setPlayStart(play_start::play_start_sample);
             monoSampleInstances[track].sample.setLoopType(loop_type::looptype_none);
         }
-        else if (loopTypeSelMap[msmpLooptype] == looptype_repeat)
+        else if (loopTypeSelMap.at(msmpLooptype) == looptype_repeat)
         {
             monoSampleInstances[track].sample.setPlayStart(msmpPlaystart == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
             monoSampleInstances[track].sample.setLoopStart(msmpLoopstart);
@@ -1703,6 +1808,7 @@ namespace XRSound
         auto msynArel = getValueNormalizedAsFloat(activePatternSounds[track].params[MSYN_AMP_RELEASE]);
         auto msynPan = getValueNormalizedAsFloat(activePatternSounds[track].params[MSYN_PAN]);
         auto msynLvl = getValueNormalizedAsFloat(activePatternSounds[track].params[MSYN_LEVEL]);
+        auto msynDly = getValueNormalizedAsFloat(activePatternSounds[track].params[MSYN_DELAY]);
 
         float foundBaseFreq = _noteToFreqArr[trackToUse.note];
         float octaveFreqA = (foundBaseFreq + (msynFine * 0.01)) * (pow(2, trackToUse.octave));
@@ -1726,8 +1832,8 @@ namespace XRSound
 
         monoSynthInstances[track].filterAccent.gain((trackToUse.velocity * 0.01));
         monoSynthInstances[track].ampAccent.gain((trackToUse.velocity * 0.01));
-
-        monoSynthInstances[track].amp.gain(msynLvl * (trackToUse.velocity * 0.01));
+        monoSynthInstances[track].amp.gain(msynLvl);
+        monoSynthInstances[track].ampDelaySend.gain(msynDly);
 
         monoSynthInstances[track].left.gain(getStereoPanValues(msynPan).left);
         monoSynthInstances[track].right.gain(getStereoPanValues(msynPan).right);
@@ -1745,12 +1851,17 @@ namespace XRSound
 
         auto &trackToUse = XRSequencer::getTrack(track);
 
+        auto dexeLvl = getValueNormalizedAsFloat(activePatternSounds[track].params[DEXE_LEVEL]);
+        auto dexeDly = getValueNormalizedAsFloat(activePatternSounds[track].params[DEXE_DELAY]);
+
         uint8_t noteToUse = trackToUse.note;
         uint8_t octaveToUse = trackToUse.octave;
 
         int midiNote = (noteToUse + (12 * (octaveToUse)));
 
         dexedInstances[track].ampAccent.gain((trackToUse.velocity * 0.01));
+        dexedInstances[track].amp.gain(dexeLvl);
+        dexedInstances[track].ampDelaySend.gain(dexeDly);
         dexedInstances[track].dexed.keydown(midiNote, 50); // TODO: parameterize velocity
     }
 #endif
@@ -1761,6 +1872,9 @@ namespace XRSound
 
         // uint8_t noteToUse = trackToUse.note;
         // uint8_t octaveToUse = trackToUse.octave;
+
+        // auto braidsLvl = getValueNormalizedAsFloat(activePatternSounds[track].params[BRAIDS_LEVEL]);
+        // auto braidsDly = getValueNormalizedAsFloat(activePatternSounds[track].params[BRAIDS_DELAY]);
 
         // int midiNote = (noteToUse + (12 * (octaveToUse)));
 
@@ -1773,7 +1887,12 @@ namespace XRSound
 
         auto &trackToUse = XRSequencer::getTrack(track);
 
+        auto fmDrumLvl = getValueNormalizedAsFloat(activePatternSounds[track].params[FMD_LEVEL]);
+        auto fmDrumDly = getValueNormalizedAsFloat(activePatternSounds[track].params[FMD_DELAY]);
+
         fmDrumInstances[track].ampAccent.gain((trackToUse.velocity * 0.01));
+        fmDrumInstances[track].amp.gain(fmDrumLvl);
+        fmDrumInstances[track].ampDelaySend.gain(fmDrumDly);
         fmDrumInstances[track].fmDrum.noteOn();
     }
 #endif
@@ -1804,6 +1923,7 @@ namespace XRSound
         auto msmpArel = getValueNormalizedAsFloat(activePatternSounds[track].params[MSMP_AMP_RELEASE]);
         auto msmpPan = getValueNormalizedAsFloat(activePatternSounds[track].params[MSMP_PAN]);
         auto msmpLvl = getValueNormalizedAsFloat(activePatternSounds[track].params[MSMP_LEVEL]);
+        auto msmpDly = getValueNormalizedAsFloat(activePatternSounds[track].params[MSMP_DELAY]);
 
         // TODO: allow sample chromatic note playback
 
@@ -1862,6 +1982,7 @@ namespace XRSound
         
         monoSampleInstances[track].ampAccent.gain(velocityToUse * 0.01);
         monoSampleInstances[track].amp.gain(msmpLvl);
+        monoSampleInstances[track].ampDelaySend.gain(msmpDly);
 
         monoSampleInstances[track].left.gain(getStereoPanValues(msmpPan).left);
         monoSampleInstances[track].right.gain(getStereoPanValues(msmpPan).right);
@@ -1888,14 +2009,14 @@ namespace XRSound
         AudioNoInterrupts();
 
         // always re-initialize loop type
-        monoSampleInstances[track].sample.setLoopType(loopTypeSelMap[looptypeToUse]);
+        monoSampleInstances[track].sample.setLoopType(loopTypeSelMap.at(looptypeToUse));
 
-        if (loopTypeSelMap[looptypeToUse] == looptype_none)
+        if (loopTypeSelMap.at(looptypeToUse) == looptype_none)
         {
             monoSampleInstances[track].sample.setPlayStart(play_start::play_start_sample);
             monoSampleInstances[track].sample.setLoopType(loop_type::looptype_none);
         }
-        else if (loopTypeSelMap[looptypeToUse] == looptype_repeat)
+        else if (loopTypeSelMap.at(looptypeToUse) == looptype_repeat)
         {
             monoSampleInstances[track].sample.setPlayStart(playstartToUse == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
             monoSampleInstances[track].sample.setLoopStart(loopstartToUse);
@@ -1925,6 +2046,7 @@ namespace XRSound
         auto msynArel = getValueNormalizedAsFloat(activePatternSounds[track].params[MSYN_AMP_RELEASE]);
         auto msynPan = getValueNormalizedAsFloat(activePatternSounds[track].params[MSYN_PAN]);
         auto msynLvl = getValueNormalizedAsFloat(activePatternSounds[track].params[MSYN_LEVEL]);
+        auto msynDly = getValueNormalizedAsFloat(activePatternSounds[track].params[MSYN_DELAY]);
 
         auto currLayer = XRSequencer::getCurrentSelectedTrackLayerNum();
 
@@ -1981,8 +2103,8 @@ namespace XRSound
         
         monoSynthInstances[track].filterAccent.gain((velocityToUse * 0.01));
         monoSynthInstances[track].ampAccent.gain((velocityToUse * 0.01));
-
         monoSynthInstances[track].amp.gain(msynLvl);
+        monoSynthInstances[track].ampDelaySend.gain(msynDly);
 
         monoSynthInstances[track].left.gain(getStereoPanValues(msynPan).left);
         monoSynthInstances[track].right.gain(getStereoPanValues(msynPan).right);
@@ -2025,9 +2147,11 @@ namespace XRSound
 
         auto dexePan = getValueNormalizedAsFloat(activePatternSounds[track].params[DEXE_PAN]);
         auto dexeLvl = getValueNormalizedAsFloat(activePatternSounds[track].params[DEXE_LEVEL]);
+        auto dexeDly = getValueNormalizedAsFloat(activePatternSounds[track].params[DEXE_DELAY]);
         
         dexedInstances[track].ampAccent.gain((velocityToUse * 0.01));
         dexedInstances[track].amp.gain(dexeLvl);
+        dexedInstances[track].ampDelaySend.gain(dexeDly);
 
         dexedInstances[track].left.gain(getStereoPanValues(dexePan).left);
         dexedInstances[track].right.gain(getStereoPanValues(dexePan).right);
@@ -2114,6 +2238,7 @@ namespace XRSound
         auto fmdFreq = getValueNormalizedAsUInt8(activePatternSounds[track].params[FMD_FREQ]);
         auto fmdPan = getValueNormalizedAsFloat(activePatternSounds[track].params[FMD_PAN]);
         auto fmdLvl = getValueNormalizedAsFloat(activePatternSounds[track].params[FMD_LEVEL]);
+        auto fmdDly = getValueNormalizedAsFloat(activePatternSounds[track].params[FMD_DELAY]);
 
         auto currLayer = XRSequencer::getCurrentSelectedTrackLayerNum();
 
@@ -2135,6 +2260,7 @@ namespace XRSound
 
         fmDrumInstances[track].ampAccent.gain((velocityToUse * 0.01));
         fmDrumInstances[track].amp.gain(fmdLvl);
+        fmDrumInstances[track].ampDelaySend.gain(fmdDly);
 
         fmDrumInstances[track].left.gain(getStereoPanValues(fmdPan).left);
         fmDrumInstances[track].right.gain(getStereoPanValues(fmdPan).right);
@@ -2529,14 +2655,14 @@ namespace XRSound
         AudioNoInterrupts();
 
         // always re-initialize loop type
-        monoSampleInstances[t].sample.setLoopType(loopTypeSelMap[msmpLooptype]);
+        monoSampleInstances[t].sample.setLoopType(loopTypeSelMap.at(msmpLooptype));
 
-        if (loopTypeSelMap[msmpLooptype] == looptype_none)
+        if (loopTypeSelMap.at(msmpLooptype) == looptype_none)
         {
             monoSampleInstances[t].sample.setPlayStart(play_start::play_start_sample);
             monoSampleInstances[t].sample.setLoopType(loop_type::looptype_none);
         }
-        else if (loopTypeSelMap[msmpLooptype] == looptype_repeat)
+        else if (loopTypeSelMap.at(msmpLooptype) == looptype_repeat)
         {
             monoSampleInstances[t].sample.setPlayStart(msmpPlaystart == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
             monoSampleInstances[t].sample.setLoopStart(msmpLoopstart);
@@ -2858,7 +2984,9 @@ namespace XRSound
         auto currTrack = XRSequencer::getCurrentSelectedTrackNum();
         auto currPage = XRSequencer::getCurrentSelectedPage();
 
-        std::string outputStr = soundCurrPageNameMap[activePatternSounds[currTrack].type][currPage];
+        auto soundPageNameMap = soundCurrPageNameMap.at(activePatternSounds[currTrack].type);
+
+        std::string outputStr = soundPageNameMap[currPage];
 
         return outputStr;
     }
@@ -2867,12 +2995,12 @@ namespace XRSound
     {
         auto currTrack = XRSequencer::getCurrentSelectedTrackNum();
 
-        return soundPageNumMap[activePatternSounds[currTrack].type];
+        return soundPageNumMap.at(activePatternSounds[currTrack].type);
     }
 
     uint8_t getPageCountForTrack(int track)
     {
-        return soundPageNumMap[activePatternSounds[track].type];
+        return soundPageNumMap.at(activePatternSounds[track].type);
     }
 
     std::string getWaveformName(uint8_t waveform)
@@ -2952,11 +3080,11 @@ namespace XRSound
             }
         }
 
-        if (loopTypeSelMap[looptypeToUse] == loop_type::looptype_none)
+        if (loopTypeSelMap.at(looptypeToUse) == loop_type::looptype_none)
         {
             outputStr += "OFF";
         }
-        else if (loopTypeSelMap[looptypeToUse] == loop_type::looptype_repeat)
+        else if (loopTypeSelMap.at(looptypeToUse) == loop_type::looptype_repeat)
         {
             if (chromatic)
             {
@@ -2981,12 +3109,12 @@ namespace XRSound
 
     int getWaveformNumber(uint8_t waveformType)
     {
-        return _waveformFindMap[(int)waveformType];
+        return _waveformFindMap.at((int)waveformType);
     }
 
     int getWaveformTypeSelection(uint8_t waveformNumber)
     {
-        return _waveformSelMap[(int)waveformNumber];
+        return _waveformSelMap.at((int)waveformNumber);
     }
 
     float getDetunedOscFreqB(uint8_t note, float detuneAmount)

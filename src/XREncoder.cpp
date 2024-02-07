@@ -262,7 +262,7 @@ namespace XREncoder
         if (newPage != tPage) {
             auto currUXMode = XRUX::getCurrentMode();
 
-            int maxPages = currUXMode == XRUX::PATTERN_WRITE ? 2 : XRSound::getPageCountForCurrentTrack();
+            int maxPages = currUXMode == XRUX::PATTERN_WRITE ? 4 : XRSound::getPageCountForCurrentTrack();
 
             if (maxPages == 1) {
                 return;
@@ -355,8 +355,56 @@ namespace XREncoder
                 if (newDelayTimeMs != currDelayTimeMs)
                 {
                     delayTimeMs = newDelayTimeMs;
-                    delayInstances[0].left.delay(0, newDelayTimeMs);
-                    delayInstances[0].right.delay(0, newDelayTimeMs);
+
+                    AudioNoInterrupts();
+
+                    delayInstances[0].delayEffect.delay(0, newDelayTimeMs);
+
+                    AudioInterrupts();
+
+                    XRDisplay::drawSequencerScreen(false);
+                }
+            }
+            break;
+        case 2:
+            {
+                float currCompAtt = compAtt;
+                float newCompAtt = currCompAtt + diff * 0.01;
+
+                newCompAtt = constrain(newCompAtt, 0, 4.0);
+
+                if (newCompAtt != currCompAtt)
+                {
+                    compAtt = newCompAtt;
+
+                    AudioNoInterrupts();
+
+                    // compressorLeft1.compression(compThr, compAtt, compRel, compRat, compKnee);
+                    // compressorRight1.compression(compThr, compAtt, compRel, compRat, compKnee);
+
+                    AudioInterrupts();
+
+                    XRDisplay::drawSequencerScreen(false);
+                }
+            }
+            break;
+        case 3:
+            {
+                float currCompKnee = compKnee;
+                float newCompKnee = currCompKnee + diff;
+
+                newCompKnee = constrain(newCompKnee, 0, 32);
+
+                if (newCompKnee != currCompKnee)
+                {
+                    compKnee = newCompKnee;
+
+                    AudioNoInterrupts();
+
+                    // compressorLeft1.compression(compThr, compAtt, compRel, compRat, compKnee);
+                    // compressorRight1.compression(compThr, compAtt, compRel, compRat, compKnee);
+
+                    AudioInterrupts();
 
                     XRDisplay::drawSequencerScreen(false);
                 }
@@ -414,8 +462,55 @@ namespace XREncoder
                 {
                     delayFeedback = newDelayFeedback;
 
-                    delayInstances[0].feedbackLeftMix.gain(0, newDelayFeedback);
-                    delayInstances[0].feedbackRightMix.gain(0, newDelayFeedback);
+                    AudioNoInterrupts();
+
+                    delayInstances[0].feedbackMix.gain(0, newDelayFeedback);
+
+                    AudioInterrupts();
+
+                    XRDisplay::drawSequencerScreen(false);
+                }
+            }
+            break;
+        case 2:
+            {
+                float currCompRel = compRel;
+                float newCompRel = currCompRel + (diff * 0.01);
+
+                newCompRel = constrain(newCompRel, 0, 4.0);
+
+                if (newCompRel != currCompRel)
+                {
+                    compRel = newCompRel;
+
+                    AudioNoInterrupts();
+
+                    // compressorLeft1.compression(compThr, compAtt, compRel, compRat, compKnee);
+                    // compressorRight1.compression(compThr, compAtt, compRel, compRat, compKnee);
+
+                    AudioInterrupts();
+
+                    XRDisplay::drawSequencerScreen(false);
+                }
+            }
+            break;
+        case 3:
+            {
+                float currCompMkup = compMkup;
+                float newCompMkup = currCompMkup + diff;
+
+                newCompMkup = constrain(newCompMkup, -12, 24);
+
+                if (newCompMkup != currCompMkup)
+                {
+                    compMkup = newCompMkup;
+
+                    AudioNoInterrupts();
+
+                    // compressorLeft1.makeupGain(compMkup);
+                    // compressorRight1.makeupGain(compMkup);
+
+                    AudioInterrupts();
 
                     XRDisplay::drawSequencerScreen(false);
                 }
@@ -462,7 +557,34 @@ namespace XREncoder
             }
             break;
         case 1:
-            //
+            // TODO: Delay Pan
+            break;
+        case 2:
+            {
+                float currCompRat = compRat;
+                float newCompRat = currCompRat + diff;
+
+                newCompRat = constrain(newCompRat, 1, 60);
+
+                if (newCompRat != currCompRat)
+                {
+                    compRat = newCompRat;
+
+                    AudioNoInterrupts();
+
+                    // compressorLeft1.compression(compThr, compAtt, compRel, compRat, compKnee);
+                    // compressorRight1.compression(compThr, compAtt, compRel, compRat, compKnee);
+
+                    AudioInterrupts();
+
+                    XRDisplay::drawSequencerScreen(false);
+                }
+            }
+            break;
+        case 3:
+            {
+                //
+            }
             break;
         
         default:
@@ -498,6 +620,31 @@ namespace XREncoder
             }
             break;
         case 1:
+            //
+            break;
+        case 2:
+            {
+                float currCompThr = compThr;
+                float newCompThr = currCompThr + diff;
+
+                newCompThr = constrain(newCompThr, -40, 0);
+
+                if (newCompThr != currCompThr)
+                {
+                    compThr = newCompThr;
+
+                    AudioNoInterrupts();
+
+                    // compressorLeft1.compression(compThr, compAtt, compRel, compRat, compKnee);
+                    // compressorRight1.compression(compThr, compAtt, compRel, compRat, compKnee);
+
+                    AudioInterrupts();
+
+                    XRDisplay::drawSequencerScreen(false);
+                }
+            }
+            break;
+        case 3:
             //
             break;
         
@@ -2018,30 +2165,7 @@ namespace XREncoder
             break;
         case 5:
             {
-                float currDly = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrackNum].params[MSYN_DELAY]);
-                float newDly = currDly + (diff * 0.01);
-
-                if (newDly != currDly)
-                {
-                    newDly = constrain(newDly, 0, 1.0);
-                    
-                    XRSound::activePatternSounds[currSelectedTrackNum].params[MSYN_DELAY] = getFloatValuePaddedAsInt32(newDly);
-                    XRSound::patternSoundsDirty = true;
-
-                    AudioNoInterrupts();
-
-                    // adjust voice sub L&R mixers for track up/down per delay wet/dry setting
-                    // voiceSubMixLeft1.gain(currSelectedTrackNum, constrain(1.0 - newDly, 0, 1.0));
-                    // voiceSubMixRight1.gain(currSelectedTrackNum, constrain(1.0 - newDly, 0, 1.0));
-
-                    // adjust delay L&R mixers for track up/down per delay wet/dry setting
-                    delayInstances[0].leftMix.gain(currSelectedTrackNum, constrain(newDly, 0, 1.0));
-                    delayInstances[0].rightMix.gain(currSelectedTrackNum, constrain(newDly, 0, 1.0));
-
-                    AudioInterrupts();
-
-                    XRDisplay::drawSequencerScreen(false);
-                }
+                // TODO: choke?
             }
 
             break;
@@ -2180,7 +2304,26 @@ namespace XREncoder
             break;
 
         case 5:
-            /* code */
+            {
+                float currDly = getValueNormalizedAsFloat(XRSound::activePatternSounds[currSelectedTrackNum].params[MSYN_DELAY]);
+                float newDly = currDly + (diff * 0.01);
+
+                if (newDly != currDly)
+                {
+                    newDly = constrain(newDly, 0, 1.0);
+                    
+                    XRSound::activePatternSounds[currSelectedTrackNum].params[MSYN_DELAY] = getFloatValuePaddedAsInt32(newDly);
+                    XRSound::patternSoundsDirty = true;
+
+                    AudioNoInterrupts();
+
+                    monoSynthInstance.ampDelaySend.gain(newDly);
+
+                    AudioInterrupts();
+
+                    XRDisplay::drawSequencerScreen(false);
+                }
+            }
             break;
         
         default:
