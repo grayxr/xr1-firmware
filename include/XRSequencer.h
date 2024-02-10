@@ -51,8 +51,32 @@ namespace XRSequencer
         uint8_t amount = 0;
     } PATTERN_GROOVE;
 
+    enum PATTERN_FX_DELAY_PARAMS : uint8_t
+    {
+        TIME = 0,
+        FEEDBACK = 1,
+        PAN = 2
+    };
+
+    enum PATTERN_FX_PAGE_INDEXES : uint8_t
+    {
+        DELAY = 0,
+        NA = 1,
+    };
+
     typedef struct
     {
+        float32_t params[MAXIMUM_PATTERN_FX_PARAMS];
+    } PATTERN_FX_PARAM_PAGE;
+
+    typedef struct
+    {
+        PATTERN_FX_PARAM_PAGE pages[MAXIMUM_PATTERN_FX_PARAM_PAGES];
+    } PATTERN_FX_PARAMS;
+
+    typedef struct
+    {
+        PATTERN_FX_PARAMS fx;
         PATTERN_GROOVE groove;
         uint8_t lstep = DEFAULT_LAST_STEP;
         uint8_t accent = DEFAULT_GLOBAL_ACCENT;
@@ -143,6 +167,7 @@ namespace XRSequencer
     extern DMAMEM TRACK_STEP_MOD_LAYER activeTrackStepModLayer;
 
     extern TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
+    extern PATTERN_FX_PAGE_INDEXES patternFxPages[MAXIMUM_PATTERN_FX_PARAM_PAGES];
 
     bool init();
 
@@ -221,6 +246,8 @@ namespace XRSequencer
     TRACK &getCurrentSelectedTrack();
     TRACK_LAYER &getCurrentSelectedTrackLayer();
     STEP &getCurrentSelectedTrackStep();
+
+    PATTERN_FX_PARAMS getInitActivePatternFxParams();
 
     int8_t getCurrentSelectedBankNum();
     int8_t getCurrentSelectedPatternNum();

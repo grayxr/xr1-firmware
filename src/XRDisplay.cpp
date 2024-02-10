@@ -733,7 +733,25 @@ namespace XRDisplay
 
         u8g2.drawStr(aValuePos, ctrlModHeaderY + 17, mods.aValue.c_str());
         u8g2.drawStr(bValuePos, ctrlModHeaderY + 17, mods.bValue.c_str());
-        u8g2.drawStr(cValuePos, ctrlModHeaderY + 17, mods.cValue.c_str());
+        
+        if (mods.cType == XRSound::RANGE)
+        {
+            int centerLineStartX = ctrlModHeaderStartX + (ctrlModSpaceWidth * 2);
+            int rangeMiddleX = (centerLineStartX + (ctrlModSpaceWidth / 2));
+            u8g2.drawVLine(centerLineStartX + 6, ctrlModHeaderY + 16, 9);                      // left range bound
+            u8g2.drawHLine(centerLineStartX + 6, ctrlModHeaderY + 20, ctrlModSpaceWidth - 12); // range width
+            u8g2.drawVLine(rangeMiddleX, ctrlModHeaderY + 16, 9);                              // range middle
+            u8g2.drawVLine(centerLineStartX + ctrlModSpaceWidth - 6, ctrlModHeaderY + 16, 9);  // right range bound
+
+            // range pos cursor
+            int rangePosI = rangeMiddleX + (int)(mods.cFloatValue * 10);
+            u8g2.drawFilledEllipse(rangePosI, ctrlModHeaderY + 20, 1, 2);
+        }
+        else
+        {
+            u8g2.drawStr(cValuePos, ctrlModHeaderY + 17, mods.cValue.c_str());
+        }
+
         u8g2.drawStr(dValuePos, ctrlModHeaderY + 17, mods.dValue.c_str());
     }
 

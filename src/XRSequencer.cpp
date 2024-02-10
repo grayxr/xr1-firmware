@@ -58,6 +58,8 @@ namespace XRSequencer
     DMAMEM TRACK_LAYER nextTrackLayer;
     DMAMEM TRACK_STEP_MOD_LAYER activeTrackStepModLayer;
 
+    DMAMEM PATTERN_FX_PAGE_INDEXES patternFxPages[MAXIMUM_PATTERN_FX_PARAM_PAGES];;
+
     TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
 
     bool init()
@@ -66,6 +68,11 @@ namespace XRSequencer
         _currentSelectedPattern = 0;
         _currentSelectedTrack = 0;
         _currentSelectedTrackLayer = 0;
+
+        patternFxPages[0] = PATTERN_FX_PAGE_INDEXES::DELAY;
+        patternFxPages[1] = PATTERN_FX_PAGE_INDEXES::NA;
+        patternFxPages[2] = PATTERN_FX_PAGE_INDEXES::NA;
+        patternFxPages[3] = PATTERN_FX_PAGE_INDEXES::NA;
 
         initActivePattern();
         initActiveTrackLayer();
@@ -657,6 +664,14 @@ namespace XRSequencer
         activePattern.groove.amount = 0;
         activePattern.groove.id = -1;
         activePattern.accent = DEFAULT_GLOBAL_ACCENT;
+        activePattern.fx = getInitActivePatternFxParams();
+
+        // Serial.printf(
+        //     "activePattern.fx delay time: %f, delay fdbk: %f, delay pan: %f\n",
+        //     activePattern.fx.pages[PATTERN_FX_PAGE_INDEXES::DELAY].params[PATTERN_FX_DELAY_PARAMS::TIME],
+        //     activePattern.fx.pages[PATTERN_FX_PAGE_INDEXES::DELAY].params[PATTERN_FX_DELAY_PARAMS::FEEDBACK],
+        //     activePattern.fx.pages[PATTERN_FX_PAGE_INDEXES::DELAY].params[PATTERN_FX_DELAY_PARAMS::PAN]
+        // );
     }
 
     void initNextPattern()
@@ -666,6 +681,14 @@ namespace XRSequencer
         nextPattern.groove.amount = 0;
         nextPattern.groove.id = -1;
         nextPattern.accent = DEFAULT_GLOBAL_ACCENT;
+        nextPattern.fx = getInitActivePatternFxParams();
+
+        // Serial.printf(
+        //     "nextPattern.fx delay time: %f, delay fdbk: %f, delay pan: %f\n",
+        //     nextPattern.fx.pages[PATTERN_FX_PAGE_INDEXES::DELAY].params[PATTERN_FX_DELAY_PARAMS::TIME],
+        //     nextPattern.fx.pages[PATTERN_FX_PAGE_INDEXES::DELAY].params[PATTERN_FX_DELAY_PARAMS::FEEDBACK],
+        //     nextPattern.fx.pages[PATTERN_FX_PAGE_INDEXES::DELAY].params[PATTERN_FX_DELAY_PARAMS::PAN]
+        // );
     }
 
     void initActiveTrackLayer()
@@ -719,6 +742,21 @@ namespace XRSequencer
                 }
             }
         }
+    }
+
+    PATTERN_FX_PARAMS getInitActivePatternFxParams()
+    {
+        PATTERN_FX_PARAMS fxParams;
+
+        for (size_t f=0; f<MAXIMUM_PATTERN_FX_PARAM_PAGES; f++) {
+            if (patternFxPages[f] == PATTERN_FX_PAGE_INDEXES::DELAY) {
+                fxParams.pages[f].params[PATTERN_FX_DELAY_PARAMS::TIME] = 300; // 300ms
+                fxParams.pages[f].params[PATTERN_FX_DELAY_PARAMS::FEEDBACK] = 0; // 0-1.0 range
+                fxParams.pages[f].params[PATTERN_FX_DELAY_PARAMS::PAN] = 0; // -1.0-1.0 range
+            }
+        }
+
+        return fxParams;
     }
 
     void handlePatternQueueActions()
@@ -856,6 +894,20 @@ namespace XRSequencer
             XRClock::setShuffleTemplateForGroove(activePattern.groove.id, activePattern.groove.amount);
         } else {
             XRClock::setShuffle(false);
+        }
+
+        XRSound::applyFxForActivePattern();
+
+        // init track chokes
+        for (size_t s = 0; s < MAXIMUM_SEQUENCER_TRACKS; s++) {
+            if (XRSound::activePatternSounds[s].type == XRSound::T_MONO_SAMPLE) {
+                auto chokeDest = XRSound::getValueNormalizedAsInt8(XRSound::activePatternSounds[s].params[XRSound::MSMP_CHOKE]);
+                if (chokeDest > -1 && XRSound::chokeSourceEnabledMap.size() < 8) {
+                    XRSound::chokeSourceEnabledMap[s] = true;
+                    XRSound::chokeSourceDestMap[s] = chokeDest;
+                    XRSound::chokeDestSourceMap[chokeDest] = s;
+                }
+            }
         }
         
         XRSD::saveActiveTrackLayerToSdCard();

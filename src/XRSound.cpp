@@ -26,9 +26,6 @@ namespace XRSound
     };
 
     int _cvLevels[128];
-    
-    float delayTimeMs = 500;
-    float delayFeedback = 0;
 
     std::map<int, int> _waveformFindMap = {
         {WAVEFORM_SAWTOOTH, 0},
@@ -52,7 +49,7 @@ namespace XRSound
         100,0,0,300000,0,       // sampleplayrate, looptype, loopstart, loopfinish, chromatic
         0,0,0,0,0,              // playstart, n/a, n/a, n/a, n/a
         0,100000,100,500000,0,  // a. attack, a. decay, a. sustain, a. release, n/a
-        100,0,0,0,0,            // level, pan, n/a, n/a, n/a
+        100,0,-1,0,0,            // level, pan, choke, delay, n/a
         0,0,0,0,0               // n/a, n/a, n/a, n/a, n/a
     };
 
@@ -66,7 +63,7 @@ namespace XRSound
     };
 
     int32_t dexedSynthInitParams[MAXIMUM_SOUND_PARAMS] = {
-        100,0,0,0,0,    // algorithm, n/a, n/a, n/a, n/a
+        0,100,0,0,0,    // transpose, algorithm, n/a, n/a, n/a
         0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
         100,0,0,0,0,    // level, pan, n/a, n/a, n/a
@@ -155,6 +152,10 @@ namespace XRSound
         false, false, false, false,
         false, false, false, false,
     };
+
+    std::map<int, bool> chokeSourceEnabledMap = {};
+    std::map<int, int> chokeSourceDestMap = {};
+    std::map<int, int> chokeDestSourceMap = {};
 
     MonoSampleInstance monoSampleInstances[MAXIMUM_MONO_SAMPLE_SOUNDS] = {
         MonoSampleInstance(monoSample1, monoSampleAmpEnv1, monoSampleAmpAccent1, monoSampleAmp1, monoSampleAmpDelaySend1, monoSampleLeft1, monoSampleRight1),
@@ -268,9 +269,9 @@ namespace XRSound
 #ifndef NO_DEXED
         {T_DEXED_SYNTH, 5},
 #endif
-        {T_BRAIDS_SYNTH, 2},
+        {T_BRAIDS_SYNTH, 3},
 #ifndef NO_FMDRUM
-        {T_FM_DRUM, 2},
+        {T_FM_DRUM, 3},
 #endif
         {T_MIDI, 1},
         {T_CV_GATE, 1},
@@ -306,7 +307,8 @@ namespace XRSound
 #ifndef NO_FMDRUM
         {T_FM_DRUM, {
                          {0, "MAIN"},
-                         {1, "OUTPUT"},
+                         {1, "DRUM"},
+                         {2, "OUTPUT"},
                      }},
 #endif
         {T_MIDI, {
@@ -323,9 +325,9 @@ namespace XRSound
                   }},
     };
 
-    std::string patternPageNames[2] = {
+    std::string patternPageNames[MAXIMUM_PATTERN_PAGES] = {
         "MAIN",
-        "SEND EFFECTS"
+        "FX: STEREO DELAY"
     };
 
     std::map<SOUND_TYPE, int8_t> soundTypeInstanceLimitMap = {
@@ -456,6 +458,18 @@ namespace XRSound
         initNextPatternSounds();
         initPatternSoundStepMods();
         initVoices();
+
+        // init track chokes
+        for (size_t s = 0; s < MAXIMUM_SEQUENCER_TRACKS; s++) {
+            if (activePatternSounds[s].type == T_MONO_SAMPLE) {
+                auto chokeDest = getValueNormalizedAsInt8(activePatternSounds[s].params[MSMP_CHOKE]);
+                if (chokeDest > -1 && chokeSourceEnabledMap.size() < 8) {
+                    chokeSourceEnabledMap[s] = true;
+                    chokeSourceDestMap[s] = chokeDest;
+                    chokeDestSourceMap[chokeDest] = s;
+                }
+            }
+        }
     }
 
     void initNextPatternSounds()
@@ -677,7 +691,7 @@ namespace XRSound
         delayMix2.gain(3, 0); // unused
 
         // Delay instance
-        delayInstances[0].delayEffect.delay(0, delayTimeMs); // TODO: init from pattern
+        delayInstances[0].delayEffect.delay(0, 300); // TODO: init from pattern
         //delayInstances[0].delayEffect.disable(0);
         delayInstances[0].delayEffect.disable(1);
         delayInstances[0].delayEffect.disable(2);
@@ -777,8 +791,8 @@ namespace XRSound
         mainMixerRight.gain(0, 1); // voice mix 1 R 
         mainMixerLeft.gain(1, 1); // voice mix 2 L 
         mainMixerRight.gain(1, 1); // voice mix 2 R 
-        mainMixerLeft.gain(2, 0.5); // delay L
-        mainMixerRight.gain(2, 0.5); // delay R
+        mainMixerLeft.gain(2, 1); // delay L
+        mainMixerRight.gain(2, 1); // delay R
         mainMixerLeft.gain(3, 0);
         mainMixerRight.gain(3, 0);
 
@@ -835,6 +849,8 @@ namespace XRSound
             // load any dexed voice settings for track
             dexedInstances[track].dexed.loadVoiceParameters(activePatternSounds[track].dexedParams);
             dexedInstances[track].dexed.setMonoMode(!activePatternSounds[track].params[DEXE_NOTE_MODE]);
+            dexedInstances[track].dexed.setTranspose(getValueNormalizedAsInt32(activePatternSounds[track].params[DEXE_TRANSPOSE]));
+            dexedInstances[track].dexed.setAlgorithm(getValueNormalizedAsInt32(activePatternSounds[track].params[DEXE_ALGO]));
         }
 #endif
         // all done reinitializing sound
@@ -860,17 +876,63 @@ namespace XRSound
         }
     }
 
+    void applyFxForActivePattern()
+    {
+        auto &activePattern = XRSequencer::getCurrentSelectedPattern();
+
+        for (size_t fxp = 0; fxp < MAXIMUM_PATTERN_FX_PARAM_PAGES; fxp++)
+        {
+            if (XRSequencer::patternFxPages[fxp] == XRSequencer::PATTERN_FX_PAGE_INDEXES::DELAY) {
+                auto delayParams = activePattern.fx.pages[fxp];
+                auto delayPan = delayParams.params[XRSequencer::PATTERN_FX_DELAY_PARAMS::PAN];
+
+                // Serial.printf(
+                //     "APPLY PTN FX -- delay time: %f delay fdbk: %f delay pan: %f\n",
+                //     delayParams.params[XRSequencer::PATTERN_FX_DELAY_PARAMS::TIME],
+                //     delayParams.params[XRSequencer::PATTERN_FX_DELAY_PARAMS::FEEDBACK],
+                //     delayParams.params[XRSequencer::PATTERN_FX_DELAY_PARAMS::PAN]
+                // );
+
+                float gainL = 1.0;
+                if (delayPan < 0)
+                {
+                    gainL += delayPan;
+                }
+
+                float gainR = 1.0;
+                if (delayPan > 0)
+                {
+                    gainR -= delayPan;
+                }
+                
+                AudioNoInterrupts();
+
+                delayInstances[0].delayEffect.delay(0, delayParams.params[XRSequencer::PATTERN_FX_DELAY_PARAMS::TIME]);
+                delayInstances[0].feedbackMix.gain(0, delayParams.params[XRSequencer::PATTERN_FX_DELAY_PARAMS::FEEDBACK]);
+                delayInstances[0].left.gain(gainR);
+                delayInstances[0].right.gain(gainL);
+
+                AudioInterrupts();
+            }
+        }
+    }
+
     void applyActivePatternSounds()
     {
-        for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++) {
+        for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+        {
 #ifndef NO_DEXED
             if (t < 4 && activePatternSounds[t].type == T_DEXED_SYNTH) {
                 // load any dexed voice settings for track
                 dexedInstances[t].dexed.loadVoiceParameters(activePatternSounds[t].dexedParams);
                 dexedInstances[t].dexed.setMonoMode(!activePatternSounds[t].params[DEXE_NOTE_MODE]);
+                dexedInstances[t].dexed.setTranspose(getValueNormalizedAsInt32(activePatternSounds[t].params[DEXE_TRANSPOSE]));
+                dexedInstances[t].dexed.setAlgorithm(getValueNormalizedAsInt32(activePatternSounds[t].params[DEXE_ALGO]));
             }
 #endif
         }
+
+        applyFxForActivePattern();
     }
 
     void saveSoundDataForPatternChange()
@@ -948,16 +1010,24 @@ namespace XRSound
             }
             break;
 
-        case 1: // SEND EFFECTS
+        case 1: // FX: DELAY
             {
+                auto delayParams = pattern.fx.pages[XRSequencer::PATTERN_FX_PAGE_INDEXES::DELAY]; 
+
                 mods.aName = "TIME"; // delay time
                 mods.bName = "FDBK"; // delay feedback
                 mods.cName = "PAN";
                 mods.dName = "--";
 
-                mods.aValue = std::to_string(round(delayTimeMs * 100) / 100);
-                mods.bValue = std::to_string(round(delayFeedback * 100));
-                mods.cValue = "--";
+                mods.aValue = std::to_string(round(delayParams.params[XRSequencer::PATTERN_FX_DELAY_PARAMS::TIME] * 100) / 100);
+                mods.bValue = std::to_string(round(delayParams.params[XRSequencer::PATTERN_FX_DELAY_PARAMS::FEEDBACK] * 100));
+
+
+                mods.cValue = std::to_string((float)round(delayParams.params[XRSequencer::PATTERN_FX_DELAY_PARAMS::PAN] * 100) / 100);
+                mods.cValue = mods.cValue.substr(0, 3);
+                mods.cFloatValue = delayParams.params[XRSequencer::PATTERN_FX_DELAY_PARAMS::PAN];
+                mods.cType = RANGE;
+
                 mods.dValue = "--";
             }
 
@@ -1040,7 +1110,7 @@ namespace XRSound
 
                 mods.aValue = std::to_string(currentSelectedTrack.lstep);
                 mods.bValue = std::to_string(currentSelectedTrack.velocity);
-                mods.cValue = "--";
+                mods.cValue = "100%";
                 mods.dValue = "--";
             }
 
@@ -1137,11 +1207,13 @@ namespace XRSound
             {
                 mods.aName = "LEVEL";
                 mods.bName = "PAN";
-                mods.cName = "--";
-                mods.dName = "--"; // fx send?
+                mods.cName = "CHOKE";
+                mods.dName = "DELAY"; // fx send?
 
                 auto lvl = getValueNormalizedAsFloat(activePatternSounds[currentSelectedTrackNum].params[MSMP_LEVEL]);
                 auto pan = getValueNormalizedAsFloat(activePatternSounds[currentSelectedTrackNum].params[MSMP_PAN]);
+                auto chk = getValueNormalizedAsInt8(activePatternSounds[currentSelectedTrackNum].params[MSMP_CHOKE]);
+                auto dly = getValueNormalizedAsFloat(activePatternSounds[currentSelectedTrackNum].params[MSMP_DELAY]);
 
                 mods.aValue = std::to_string(round(lvl * 100));
                 mods.bValue = std::to_string((float)round(pan * 100) / 100);
@@ -1149,8 +1221,8 @@ namespace XRSound
                 mods.bFloatValue = pan;
                 mods.bType = RANGE;
 
-                mods.cValue = "--";
-                mods.dValue = "--";
+                mods.cValue = chk > -1 ? std::to_string(chk+1) : "--";
+                mods.dValue = std::to_string(round(dly * 100));
             }
 
             break;
@@ -1371,20 +1443,45 @@ namespace XRSound
                 mods.aValue = std::to_string(currentSelectedTrack.lstep);
                 mods.bValue = std::to_string(len);
                 mods.cValue = std::to_string(currentSelectedTrack.velocity);
-                mods.dValue = "--";
+                mods.dValue = "100%";
             }
 
             break;
 
         case 1: // FM1
             {
-                mods.aName = "ALGO";
-                mods.bName = "--";
+                auto transpose = getValueNormalizedAsInt32(activePatternSounds[currentSelectedTrackNum].params[DEXE_TRANSPOSE]);
+                auto algo = getValueNormalizedAsInt32(activePatternSounds[currentSelectedTrackNum].params[DEXE_ALGO]);
+
+                // dexedInstances[0].dexed.setModWheel();
+
+                // dexedInstances[0].dexed.setPitchRate(0, 99); // increase all PITCH EG rates (R1-R4) at once?
+                // dexedInstances[0].dexed.setPitchRate(1, 99); // increase all PITCH EG rates (R1-R4) at once?
+                // dexedInstances[0].dexed.setPitchRate(2, 99); // increase all PITCH EG rates (R1-R4) at once?
+                // dexedInstances[0].dexed.setPitchRate(3, 99); // increase all PITCH EG rates (R1-R4) at once?
+
+                // dexedInstances[0].dexed.setPitchLevel(0, 99); // increase all PITCH EG levels (L1-L4) at once?
+                // dexedInstances[0].dexed.setPitchLevel(1, 99); // increase all PITCH EG levels (L1-L4) at once?
+                // dexedInstances[0].dexed.setPitchLevel(2, 99); // increase all PITCH EG levels (L1-L4) at once?
+                // dexedInstances[0].dexed.setPitchLevel(3, 99); // increase all PITCH EG levels (L1-L4) at once?
+
+                // dexedInstances[0].dexed.setOPLevel(0,0,99); // increase all OP EG levels (L1-L4) at once?
+                // dexedInstances[0].dexed.setOPLevel(0,1,99); // increase all OP EG levels (L1-L4) at once?
+                // dexedInstances[0].dexed.setOPLevel(0,2,99); // increase all OP EG levels (L1-L4) at once?
+                // dexedInstances[0].dexed.setOPLevel(0,3,99); // increase all OP EG levels (L1-L4) at once?
+
+                // dexedInstances[0].dexed.setOPRate(0,0,99); // increase all OP EG rates (R1-R4) at once?
+                // dexedInstances[0].dexed.setOPRate(0,1,99); // increase all OP EG rates (R1-R4) at once?
+                // dexedInstances[0].dexed.setOPRate(0,2,99); // increase all OP EG rates (R1-R4) at once?
+                // dexedInstances[0].dexed.setOPRate(0,3,99); // increase all OP EG rates (R1-R4) at once?
+
+                mods.aName = "TRNS";
+                mods.bName = "ALGO";
                 mods.cName = "--";
                 mods.dName = "--";
 
-                mods.aValue = "--";
-                mods.bValue = "--";
+                mods.aValue = std::to_string(transpose);
+                mods.bValue = std::to_string(algo + 1);
                 mods.cValue = "--";
                 mods.dValue = "--";
             }
@@ -1478,8 +1575,11 @@ namespace XRSound
     {
         SOUND_CONTROL_MODS mods;
 
+        auto &currentSelectedTrack = XRSequencer::getCurrentSelectedTrack();
         auto currentSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        auto currSelectedStep = XRSequencer::getCurrentSelectedStepNum();
+        auto currentUXMode = XRUX::getCurrentMode();
 
         auto freq = getValueNormalizedAsUInt32(activePatternSounds[currentSelectedTrackNum].params[FMD_FREQ]);
         auto fm = getValueNormalizedAsFloat(activePatternSounds[currentSelectedTrackNum].params[FMD_FM]);
@@ -1489,6 +1589,29 @@ namespace XRSound
         switch (currentSelectedPageNum)
         {
         case 0: // MAIN
+            {
+                mods.aName = "LSTP";
+                mods.bName = "--";
+                mods.cName = "VELO";
+                mods.dName = "PROB";
+
+                auto len = currentSelectedTrack.length;
+
+                if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStep > -1) {
+                    if (XRSequencer::activeTrackStepModLayer.tracks[currentSelectedTrackNum].steps[currSelectedStep].flags[XRSequencer::LENGTH]) {
+                        len = XRSequencer::activeTrackStepModLayer.tracks[currentSelectedTrackNum].steps[currSelectedStep].mods[XRSequencer::LENGTH];
+                    }
+                }
+
+                mods.aValue = std::to_string(currentSelectedTrack.lstep);
+                mods.bValue = "--";
+                mods.cValue = std::to_string(currentSelectedTrack.velocity);
+                mods.dValue = "100%";
+            }
+
+            break;
+
+        case 1: // DRUM
             {
                 mods.aName = "TUNE";
                 mods.bName = "FM";
@@ -1507,7 +1630,7 @@ namespace XRSound
 
             break;
 
-        case 1: // OUTPUT
+        case 2: // OUTPUT
             {
                 mods.aName = "LEVEL";
                 mods.bName = "PAN";
@@ -1685,6 +1808,7 @@ namespace XRSound
         auto msmpArel = getValueNormalizedAsFloat(activePatternSounds[track].params[MSMP_AMP_RELEASE]);
         auto msmpPan = getValueNormalizedAsFloat(activePatternSounds[track].params[MSMP_PAN]);
         auto msmpLvl = getValueNormalizedAsFloat(activePatternSounds[track].params[MSMP_LEVEL]);
+        auto msmpDly = getValueNormalizedAsFloat(activePatternSounds[track].params[MSMP_DELAY]);
 
         AudioNoInterrupts();
 
@@ -1696,6 +1820,7 @@ namespace XRSound
         monoSampleInstances[track].ampAccent.gain(trackToUse.velocity * 0.01);
 
         monoSampleInstances[track].amp.gain(msmpLvl);
+        monoSampleInstances[track].ampDelaySend.gain(msmpDly);
 
         monoSampleInstances[track].left.gain(getStereoPanValues(msmpPan).left);
         monoSampleInstances[track].right.gain(getStereoPanValues(msmpPan).right);
@@ -1861,6 +1986,33 @@ namespace XRSound
         auto &trackToUse = XRSequencer::getTrack(track);
         auto &stepToUse = XRSequencer::getStep(track, step);
 
+        auto chokeSrcTrk = chokeDestSourceMap.count(track) > 0 ? chokeDestSourceMap[track] : -1;
+        auto chokeSrcDestTrk = chokeSourceDestMap.count(chokeSrcTrk) > 0 ? chokeSourceDestMap[chokeSrcTrk] : -1;
+
+        // if a choke source track is mapped to this track,
+        // and if we the choke source track is ON / ACCENTED for current step, 
+        // then return early so it "chokes" the destination track sound
+        if (
+            chokeSrcTrk > -1 && chokeSrcDestTrk == track &&
+            (XRSequencer::activeTrackLayer.tracks[chokeSrcTrk].steps[step].state == XRSequencer::STEP_STATE::STATE_ON ||
+            XRSequencer::activeTrackLayer.tracks[chokeSrcTrk].steps[step].state == XRSequencer::STEP_STATE::STATE_ACCENTED)
+        ) {
+            monoSampleInstances[track].amp.gain(0);
+            monoSampleInstances[track].ampDelaySend.gain(0);
+            return;
+        }
+
+        auto chokeEnabled = chokeSourceEnabledMap.count(track) > 0 ? chokeSourceEnabledMap[track] : false;
+        auto chokeDestTrk = chokeSourceDestMap.count(track) > 0 ? chokeSourceDestMap[track] : -1;
+
+        // TODO: extract to function
+        if (chokeEnabled) {
+            if (activePatternSounds[chokeDestTrk].type == T_MONO_SAMPLE) {
+                monoSampleInstances[chokeDestTrk].amp.gain(0);
+                monoSampleInstances[chokeDestTrk].ampDelaySend.gain(0);
+            }
+        }
+
         auto msmpSamplePlayRate = getValueNormalizedAsFloat(activePatternSounds[track].params[MSMP_SAMPLEPLAYRATE]);
         auto msmpLooptype = getValueNormalizedAsUInt8(activePatternSounds[track].params[MSMP_LOOPTYPE]);
         auto msmpLoopstart = getValueNormalizedAsInt32(activePatternSounds[track].params[MSMP_LOOPSTART]);
@@ -1931,7 +2083,7 @@ namespace XRSound
         
         monoSampleInstances[track].ampAccent.gain(velocityToUse * 0.01);
         monoSampleInstances[track].amp.gain(msmpLvl);
-        monoSampleInstances[track].ampDelaySend.gain(0);
+        monoSampleInstances[track].ampDelaySend.gain(msmpDly);
 
         monoSampleInstances[track].left.gain(getStereoPanValues(msmpPan).left);
         monoSampleInstances[track].right.gain(getStereoPanValues(msmpPan).right);
@@ -3092,6 +3244,9 @@ namespace XRSound
         {
             activePatternSounds[track].dexedParams[dp] = dexedParamData[dp];
         }
+        
+        activePatternSounds[track].params[DEXE_TRANSPOSE] = getInt32ValuePaddedAsInt32(dexedInstances[track].dexed.getTranspose());
+        activePatternSounds[track].params[DEXE_ALGO] = getInt32ValuePaddedAsInt32(dexedInstances[track].dexed.getAlgorithm());
     }
 #endif
 

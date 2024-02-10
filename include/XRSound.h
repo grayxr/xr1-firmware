@@ -57,6 +57,7 @@ namespace XRSound
         MSMP_NA_PARAM_E,
         MSMP_LEVEL,
         MSMP_PAN,
+        MSMP_CHOKE,
         MSMP_DELAY,
     };
 
@@ -87,7 +88,8 @@ namespace XRSound
 
     // DEXED SYNTH
     enum DEXED_SYNTH_PARAM  : uint8_t{
-        DEXE_ALGO = 0,
+        DEXE_TRANSPOSE = 0,
+        DEXE_ALGO = 1,
         DEXE_LEVEL = 15,
         DEXE_PAN = 16,
         DEXE_DELAY = 17,
@@ -403,10 +405,8 @@ namespace XRSound
 #endif
 
     extern StereoDelayInstance delayInstances[1];
-    extern float delayTimeMs; // temp var TODO : put in pattern
-    extern float delayFeedback; // temp var TODO : put in pattern
 
-    extern std::string patternPageNames[2];
+    extern std::string patternPageNames[MAXIMUM_PATTERN_PAGES];
 
     extern std::map<SOUND_TYPE, int8_t> soundTypeInstanceLimitMap;
     
@@ -417,6 +417,10 @@ namespace XRSound
     extern std::map<SOUND_TYPE, int32_t*> soundTypeInitParams;
     extern std::map<SOUND_TYPE, int> soundPageNumMap;
     extern std::map<SOUND_TYPE, std::map<int, std::string>> soundCurrPageNameMap;
+
+    extern std::map<int, bool> chokeSourceEnabledMap;
+    extern std::map<int, int> chokeSourceDestMap;
+    extern std::map<int, int> chokeDestSourceMap;
 
     extern bool patternSoundsDirty;
     extern bool patternSoundStepModsDirty;
@@ -464,6 +468,7 @@ namespace XRSound
     void setSoundNeedsReinit(int sound, bool reinit);
     void reinitSoundForTrack(int track);
     void applyActivePatternSounds();
+    void applyFxForActivePattern();
     
     void saveSoundDataForPatternChange();
     void loadSoundDataForPatternChange(int nextBank, int nextPattern);
