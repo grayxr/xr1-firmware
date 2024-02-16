@@ -34,6 +34,7 @@ namespace XRSound
         SOUND_TYPE type = T_EMPTY;
         char name[MAX_SOUND_NAME_LENGTH];
         char sampleName[MAX_SAMPLE_NAME_LENGTH];
+        char sampleNameB[MAX_SAMPLE_NAME_LENGTH];
         int32_t params[MAXIMUM_SOUND_PARAMS]; // divide by 100 to get real param values
         uint8_t dexedParams[MAXIMUM_DEXED_SOUND_PARAMS];
     } SOUND;
@@ -92,7 +93,7 @@ namespace XRSound
         DEXE_ALGO = 1,
         DEXE_LEVEL = 15,
         DEXE_PAN = 16,
-        DEXE_DELAY = 17,
+        DEXE_DELAY = 18,
         DEXE_NOTE_B = 20,
         DEXE_NOTE_C = 21,
         DEXE_NOTE_D = 22,
@@ -362,6 +363,14 @@ namespace XRSound
 
     typedef struct
     {
+        bool isAbleToStepModA;
+        bool isAbleToStepModB;
+        bool isAbleToStepModC;
+        bool isAbleToStepModD;
+        bool isActiveStepModA;
+        bool isActiveStepModB;
+        bool isActiveStepModC;
+        bool isActiveStepModD;
         std::string aName;
         std::string bName;
         std::string cName;
@@ -418,9 +427,9 @@ namespace XRSound
     extern std::map<SOUND_TYPE, int> soundPageNumMap;
     extern std::map<SOUND_TYPE, std::map<int, std::string>> soundCurrPageNameMap;
 
-    extern std::map<int, bool> chokeSourceEnabledMap;
-    extern std::map<int, int> chokeSourceDestMap;
-    extern std::map<int, int> chokeDestSourceMap;
+    extern bool chokeSourcesEnabled[MAXIMUM_SEQUENCER_TRACKS];
+    extern int chokeSourceDest[MAXIMUM_SEQUENCER_TRACKS];
+    extern int chokeDestSource[MAXIMUM_SEQUENCER_TRACKS];
 
     extern bool patternSoundsDirty;
     extern bool patternSoundStepModsDirty;
@@ -469,6 +478,7 @@ namespace XRSound
     void reinitSoundForTrack(int track);
     void applyActivePatternSounds();
     void applyFxForActivePattern();
+    void applyTrackChokes();
     
     void saveSoundDataForPatternChange();
     void loadSoundDataForPatternChange(int nextBank, int nextPattern);
@@ -490,7 +500,7 @@ namespace XRSound
 
     void handleNoteOffForTrack(int track);
     void handleNoteOffForTrackStep(int track, int step);
-    void noteOffTrackManually(int noteOnKeyboard);
+    void noteOffTrackManually(int noteOnKeyboard, uint8_t octave);
 
     void handleMonoSampleNoteOnForTrackStep(int track, int step);
     void handleMonoSynthNoteOnForTrackStep(int track, int step);
@@ -500,15 +510,20 @@ namespace XRSound
     void handleMIDINoteOnForTrackStep(int track, int step);
     void handleCvGateNoteOnForTrackStep(int track, int step);
 
-    void triggerTrackManually(uint8_t t, uint8_t note);
-    void triggerMonoSampleNoteOn(uint8_t t, uint8_t note);
-    void triggerMonoSynthNoteOn(uint8_t t, uint8_t note);
-    void triggerDexedSynthNoteOn(uint8_t t, uint8_t note);
-    void triggerBraidsNoteOn(uint8_t t, uint8_t note);
-    void triggerFmDrumNoteOn(uint8_t t, uint8_t note);
-    void triggerCvGateNoteOn(uint8_t t, uint8_t note);
+    void triggerTrackManually(uint8_t t, uint8_t note, uint8_t octave, bool accented);
+    void triggerMonoSampleNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented);
+    void triggerMonoSynthNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented);
+    void triggerDexedSynthNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented);
+    void triggerBraidsNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented);
+    void triggerFmDrumNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented);
+    void triggerCvGateNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented);
 
     void applyCurrentDexedPatchToSound();
+
+    int getChokeSourcesEnabledCount();
+    bool isTrackAnActiveChokeDestination(int track);
+    void applyChokeForSourceTrack(int track);
+    bool applyChokeForDestinationTrackStep(int track, int step);
 
     int8_t getValueNormalizedAsInt8(int32_t param);
     uint8_t getValueNormalizedAsUInt8(int32_t param);

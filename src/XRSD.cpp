@@ -36,6 +36,8 @@ namespace XRSD
 
     std::string _currSampleFileHighlighted = "";
 
+    uint8_t _activeSampleSlot = 0;
+
     int dexedCurrentBank = 0;
     int dexedCurrentPatch = 0;
 
@@ -944,6 +946,22 @@ namespace XRSD
         Serial.printf("sizeof(activePatternSoundStepModLayer): %d\n", sizeof(XRSound::activePatternSoundStepModLayer));
     }
 
+    void saveCopiedStep(int track, int sourceStep, int destStep)
+    {
+        XRSequencer::activeTrackLayer.tracks[track].steps[destStep] = XRSequencer::activeTrackLayer.tracks[track].steps[sourceStep];
+        XRSequencer::activeTrackStepModLayer.tracks[track].steps[destStep] = XRSequencer::activeTrackStepModLayer.tracks[track].steps[sourceStep];
+        XRSound::activePatternSoundStepModLayer.sounds[track].steps[destStep] = XRSound::activePatternSoundStepModLayer.sounds[track].steps[sourceStep];
+
+        // TODO: save above to SD card as well !
+    }
+
+    void saveCopiedTrack(int sourceTrack, int destTrack)
+    {
+        Serial.printf("TODO: impl saveCopiedTrack() !!! \n");
+
+        //auto currSelTrackLayer = XRSequencer::getCurrentSelectedTrackLayerNum();
+    }
+
     std::string *getSampleList(int16_t cursor)
     {
         if (_sampleFileListLoaded) {
@@ -1023,6 +1041,16 @@ namespace XRSD
     void unloadSampleFileListPaged()
     {
         _sampleFileListPagedLoaded = false;
+    }
+
+    void setActiveSampleSlot(uint8_t slot)
+    {
+        _activeSampleSlot = slot;
+    }
+
+    uint8_t getActiveSampleSlot()
+    {
+        return _activeSampleSlot;
     }
 
 #ifndef NO_DEXED

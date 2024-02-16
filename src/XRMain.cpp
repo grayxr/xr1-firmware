@@ -10,6 +10,8 @@ namespace XRMain
 
     void boot()
     {
+        randomSeed(analogRead(0));
+
         XRSound::muteAllOutput();
 
         XRDisplay::init();

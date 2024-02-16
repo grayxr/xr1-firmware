@@ -25,6 +25,7 @@ namespace XRDisplay
     void drawPatternControlMods();
     void drawNormalControlMods();
     void drawExtendedControlMods();
+    void drawSampleFileControlMods();
     void drawControlModsForADSR(int att, int dec, float sus, int rel);
     void drawPageNumIndicators();
     void drawPatternPageNumIndicators();
@@ -38,6 +39,7 @@ namespace XRDisplay
     void drawCopyConfirmOverlay(std::string type, uint8_t num);
     void drawCopySelOverlay(std::string type);
     void drawPasteConfirmOverlay(std::string type, uint8_t num);
+    void drawStraightDashedLine(int startX, int endX, int yPos);
 
     std::string getDisplayNote();
 }

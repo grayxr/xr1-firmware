@@ -16,6 +16,7 @@ namespace XRLED
     void displayPageLEDs(int currentBar, bool sequencerRunning, int currentStepPage, int lastStep);
     void clearPageLEDs();
     void clearAllStepLEDs();
+    void displayCurrentlySelectedBank();
     void displayCurrentlySelectedPattern();
     void displayCurrentlySelectedTrack();
     void setDisplayStateForAllStepLEDs();

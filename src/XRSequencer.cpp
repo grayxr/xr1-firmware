@@ -18,12 +18,10 @@ namespace XRSequencer
     QUEUED_PATTERN_STATE _queuedPatternState;
 
     STACK_STEP_DATA _stepStack[STEP_STACK_SIZE];
+    STACK_STEP_DATA _ignoredStepStack[STEP_STACK_SIZE];
     STACK_RATCHET_DATA _ratchetStack[RATCHET_STACK_SIZE];
 
     DMAMEM PATTERN _patternRecordBuffer;
-    DMAMEM PATTERN _patternCopyBuffer;
-    DMAMEM TRACK _trackCopyBuffer;
-    DMAMEM STEP _stepCopyBuffer;
 
     int8_t _currentSelectedBank = 0;        // default to 0 (first)
     int8_t _currentSelectedPattern = 0;     // default to 0 (first)
@@ -289,6 +287,7 @@ namespace XRSequencer
         // step should be removed from stack at rate of 96ppqn / 6
         if (!(tick % 6)) { 
             handleRemoveFromStepStack(tick);
+            handleRemoveFromIgnoredStepStack(tick);
         }
 
         if ((tick % (6)) && !(tick % _bpmBlinkTimer))
@@ -335,6 +334,40 @@ namespace XRSequencer
                 }
             }
         }
+    }
+
+    void handleRemoveFromIgnoredStepStack(uint32_t tick)
+    {
+        for (int i = 0; i < STEP_STACK_SIZE; i++)
+        {
+            if (_ignoredStepStack[i].length != -1)
+            {
+                --_ignoredStepStack[i].length;
+
+                if (_ignoredStepStack[i].length == 0)
+                {
+                    // re-initialize stack entry
+                    _ignoredStepStack[i].trackNum = -1;
+                    _ignoredStepStack[i].stepNum = -1;
+                    _ignoredStepStack[i].length = -1;
+                }
+            }
+        }
+    }
+    
+    bool isTrackStepBeingIgnored(int track, int step)
+    {
+        for (int i = 0; i < STEP_STACK_SIZE; i++)
+        {
+            if (
+                _ignoredStepStack[i].trackNum == track && 
+                _ignoredStepStack[i].stepNum == step
+            ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     void handleNoteOffForTrackStep(int track, int step)
@@ -517,9 +550,33 @@ namespace XRSequencer
 
             if (!trackPerformState[t].muted && ((currTrackStepData.state == STEP_STATE::STATE_ON) || (currTrackStepData.state == STEP_STATE::STATE_ACCENTED)))
             {
-                handleAddToStepStack(tick, t, currTrackStep);
+                if (isStepProbablyEnabled(t, currTrackStep)) {
+                    handleAddToStepStack(tick, t, currTrackStep);
+                } else {
+                    handleAddToIgnoredStepStack(tick, t, currTrackStep);
+                }
             }
         }
+    }
+
+    bool isStepProbablyEnabled(int track, int step)
+    {
+        auto &currTrack = activeTrackLayer.tracks[track];
+        auto prob = currTrack.probability;
+
+        if (activeTrackStepModLayer.tracks[track].steps[step].flags[PROBABILITY]) {
+            prob = activeTrackStepModLayer.tracks[track].steps[step].mods[PROBABILITY];
+        }
+
+        if (prob < 100) {
+            uint8_t r = random(99);
+
+            if (prob == 0 || (r > prob)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     void handleAddToStepStack(uint32_t tick, int track, int step)
@@ -538,6 +595,26 @@ namespace XRSequencer
                 _stepStack[i].length = lenStepModEnabled ? lenStepMod : trackToUse.length;
 
                 handleNoteOnForTrackStep(_stepStack[i].trackNum, _stepStack[i].stepNum);
+
+                return;
+            }
+        }
+    }
+
+    void handleAddToIgnoredStepStack(uint32_t tick, int track, int step)
+    {
+        auto &trackToUse = getTrack(track);
+
+        int lenStepMod = activeTrackStepModLayer.tracks[track].steps[step].mods[LENGTH];
+        bool lenStepModEnabled = activeTrackStepModLayer.tracks[track].steps[step].flags[LENGTH];
+
+        for (size_t i = 0; i < STEP_STACK_SIZE; i++)
+        {
+            if (_ignoredStepStack[i].length == -1)
+            {
+                _ignoredStepStack[i].trackNum = track;
+                _ignoredStepStack[i].stepNum = step;
+                _ignoredStepStack[i].length = lenStepModEnabled ? lenStepMod : trackToUse.length;
 
                 return;
             }
@@ -803,15 +880,14 @@ namespace XRSequencer
             //_currentSelectedTrack = 0;
 
             auto currentUXMode = XRUX::getCurrentMode();
-            if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE)
-            {
+            if (currentUXMode == XRUX::PATTERN_CHANGE_QUEUED) {
                 XRLED::clearAllStepLEDs();
+
+                XRUX::setCurrentMode(XRUX::PATTERN_WRITE);
             }
             else if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE)
             {
-                int lastStep = (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) ? 
-                    activePattern.lstep : 
-                    activeTrackLayer.tracks[_currentSelectedTrack].lstep;
+                int lastStep = activeTrackLayer.tracks[_currentSelectedTrack].lstep;
 
                 XRLED::displayPageLEDs(
                     1,
@@ -897,18 +973,7 @@ namespace XRSequencer
         }
 
         XRSound::applyFxForActivePattern();
-
-        // init track chokes
-        for (size_t s = 0; s < MAXIMUM_SEQUENCER_TRACKS; s++) {
-            if (XRSound::activePatternSounds[s].type == XRSound::T_MONO_SAMPLE) {
-                auto chokeDest = XRSound::getValueNormalizedAsInt8(XRSound::activePatternSounds[s].params[XRSound::MSMP_CHOKE]);
-                if (chokeDest > -1 && XRSound::chokeSourceEnabledMap.size() < 8) {
-                    XRSound::chokeSourceEnabledMap[s] = true;
-                    XRSound::chokeSourceDestMap[s] = chokeDest;
-                    XRSound::chokeDestSourceMap[chokeDest] = s;
-                }
-            }
-        }
+        XRSound::applyTrackChokes();
         
         XRSD::saveActiveTrackLayerToSdCard();
         if (!XRSD::loadNextTrackLayer(newBank, newPattern, 0)){
@@ -1008,18 +1073,17 @@ namespace XRSequencer
 
                 XRLED::setPWM(keyLED, 0);
 
-                int8_t currentSelectedTrackCurrentBar = _seqState.currentTrackSteps[_currentSelectedTrack].currentBar;
-
-                auto &currTrack = getCurrentSelectedTrack();
-
-                XRLED::displayPageLEDs(
-                    currentSelectedTrackCurrentBar,
-                    (_seqState.playbackState == RUNNING),
-                    _currentStepPage,
-                    currTrack.lstep
-                );
-
                 if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE) {
+                    int8_t currentSelectedTrackCurrentBar = _seqState.currentTrackSteps[_currentSelectedTrack].currentBar;
+                    auto &currTrack = getCurrentSelectedTrack();
+
+                    XRLED::displayPageLEDs(
+                        currentSelectedTrackCurrentBar,
+                        (_seqState.playbackState == RUNNING),
+                        _currentStepPage,
+                        currTrack.lstep
+                    );
+
                     XRLED::setDisplayStateForAllStepLEDs(); // TODO: wrap with "if in track view display step LED state" conditional, etc
                 } else if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) {
                     XRLED::clearAllStepLEDs();
@@ -1063,8 +1127,10 @@ namespace XRSequencer
             //_seqState.current_step = 1;
             _seqState.playbackState = RUNNING;
 
+            // make sure pattern fx are unmuted
+            XRSound::applyFxForActivePattern();
+
             XRClock::start();
-            // uClock.start();
         } else if (btn == STOP_BTN_CHAR) {
            // Already stopped, so disable all sound output when stop btn is pressed again
            XRSound::turnOffAllSounds();
@@ -1207,36 +1273,6 @@ namespace XRSequencer
     void setCurrentStepPage(int8_t page)
     {
         _currentStepPage = page;
-    }
-
-    void setCopyBufferForStep(int step)
-    {
-        // _stepCopyBuffer = activeTrackLayer.tracks[_currentSelectedTrack].layers[_currentSelectedTrackLayer].steps[step];
-    }
-
-    void setCopyBufferForTrack(int track)
-    {
-        //_trackCopyBuffer = activePattern.tracks[track];
-    }
-
-    void setCopyBufferForPattern(int pattern)
-    {
-        //_patternCopyBuffer = activePatternBank.patterns[pattern];
-    }
-
-    PATTERN &getCopyBufferForPattern()
-    {
-        return _patternCopyBuffer;
-    }
-
-    TRACK &getCopyBufferForTrack()
-    {
-        return _trackCopyBuffer;
-    }
-
-    STEP &getCopyBufferForStep()
-    {
-        return _stepCopyBuffer;
     }
 
     void setRatchetTrack(int track)

@@ -5,6 +5,7 @@
 #include <XRConfig.h>
 #include <XRSound.h>
 #include <TeensyVariablePlayback.h>
+#include <Entropy.h>
 
 namespace XRSequencer
 {
@@ -171,6 +172,8 @@ namespace XRSequencer
 
     bool init();
 
+    bool isStepProbablyEnabled(int track, int step);
+
     void initActivePattern();
     void initActiveTrackLayer();
     void initActiveTrackStepModLayer();
@@ -200,6 +203,10 @@ namespace XRSequencer
     void handleRemoveFromStepStack(uint32_t tick);
     void handleRemoveFromRatchetStack();
 
+    void handleAddToIgnoredStepStack(uint32_t tick, int track, int step);
+    void handleRemoveFromIgnoredStepStack(uint32_t tick);
+    bool isTrackStepBeingIgnored(int track, int step);
+
     void handleNoteOnForTrack(int track);
     void handleNoteOffForTrack(int track);
     void handleNoteOnForTrackStep(int track, int step);
@@ -223,16 +230,8 @@ namespace XRSequencer
     void setRatchetTrack(int track);
     void setRatchetDivision(int track);
 
-    void setCopyBufferForPattern(int pattern);
-    void setCopyBufferForTrack(int track);
-    void setCopyBufferForStep(int step);
-
     void toggleSequencerPlayback(char btn);
     void rewindAllCurrentStepsForAllTracks();
-
-    PATTERN &getCopyBufferForPattern();
-    TRACK &getCopyBufferForTrack();
-    STEP &getCopyBufferForStep();
 
     SEQUENCER_STATE &getSeqState();
     QUEUED_PATTERN_STATE &getQueuedPatternState();

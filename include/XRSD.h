@@ -59,11 +59,17 @@ namespace XRSD
     void saveActiveSoundStepModLayerToSdCard();
 
     void loadDexedVoiceToCurrentTrack(int t = -1);
+
+    void saveCopiedStep(int track, int sourceStep, int destStep);
+    void saveCopiedTrack(int sourceTrack, int destTrack);
     
     std::string *getSampleList(int16_t cursor);
     std::string getCurrSampleFileHighlighted();
     void rewindSampleDir();
     void unloadSampleFileListPaged();
+
+    void setActiveSampleSlot(uint8_t slot);
+    uint8_t getActiveSampleSlot();
 
     std::string getCurrentDexedSysexBank();
     std::string getCurrentDexedSysexPatchName();

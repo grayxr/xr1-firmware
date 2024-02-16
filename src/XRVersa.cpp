@@ -298,7 +298,9 @@ namespace XRVersa
             if (currentUXMode != XRUX::SUBMITTING_STEP_VALUE) {
                 XRSound::triggerTrackManually(
                     XRSequencer::getCurrentSelectedTrackNum(), 
-                    _noteOnKeyboard
+                    _noteOnKeyboard,
+                    XRKeyMatrix::getKeyboardOctave(),
+                    XRKeyMatrix::isSelectBtnHeld()
                 );
             }
 
@@ -325,7 +327,7 @@ namespace XRVersa
 
             // noteOff
             if (currentUXMode != XRUX::SUBMITTING_STEP_VALUE) {
-                XRSound::noteOffTrackManually(invertedNoteNumber);
+                XRSound::noteOffTrackManually(invertedNoteNumber, XRKeyMatrix::getKeyboardOctave());
             } 
             else if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelStepNum > -1) {
                 XRSequencer::activeTrackStepModLayer.tracks[currSelTrackNum].steps[currSelStepNum].mods[XRSequencer::NOTE] = invertedNoteNumber;
@@ -336,6 +338,7 @@ namespace XRVersa
                 XRDisplay::drawSequencerScreen(false);
             } 
             else if (currentUXMode == XRUX::TRACK_SEL) {
+                // set track note
                 currTrack.note = invertedNoteNumber;
                 currTrack.octave = XRKeyMatrix::getKeyboardOctave();
 

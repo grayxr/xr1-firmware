@@ -174,6 +174,12 @@ namespace XRAsyncPSRAMLoader
                     Serial.printf("initializing this sample name: %s\n", sampleName.c_str());
                     addSampleFileNameForNextAsyncLoadBatch(sampleName);
                 }
+                
+                if (strcmp(sound.sampleNameB, "") != 0) {
+                    auto sampleNameB = std::string("/audio enjoyer/xr-1/samples/") + std::string(sound.sampleNameB);
+                    Serial.printf("initializing this sample name: %s\n", sampleNameB.c_str());
+                    addSampleFileNameForNextAsyncLoadBatch(sampleNameB);
+                }
             }
             i++;
         }
@@ -190,6 +196,12 @@ namespace XRAsyncPSRAMLoader
                     auto sampleName = std::string("/audio enjoyer/xr-1/samples/") + std::string(sound.sampleName);
                     Serial.printf("initializing this sample name: %s\n", sampleName.c_str());
                     addSampleFileNameForNextAsyncLoadBatch(sampleName);
+                }
+
+                if (strcmp(sound.sampleNameB, "") != 0) {
+                    auto sampleNameB = std::string("/audio enjoyer/xr-1/samples/") + std::string(sound.sampleNameB);
+                    Serial.printf("initializing this sample B name: %s\n", sampleNameB.c_str());
+                    addSampleFileNameForNextAsyncLoadBatch(sampleNameB);
                 }
             }
             i++;

@@ -279,6 +279,22 @@ namespace XRDisplay
         }
     }
 
+    void drawStraightDashedLine(int startX, int endX, int yPos)
+    {
+        int width = (endX - startX);
+
+        int spacing = 2;
+
+        // fill up template
+        for (int i = 0; i < width; i++)
+        {
+            if (i == 0 || (i % spacing == 0))
+            {
+                u8g2.drawPixel(startX + i, yPos);
+            }
+        }
+    }
+
     void drawSequencerScreen(bool queueBlink)
     {
         Serial.println("enter drawSequencerScreen!");
@@ -287,12 +303,12 @@ namespace XRDisplay
 
         uint8_t currentBpm = (uint8_t)XRClock::getTempo();
         std::string currentBpmStr = XRHelpers::strldz(std::to_string(currentBpm), 3);
-        u8g2.drawStr(104, 0, currentBpmStr.c_str());
+        u8g2.drawStr(108, 0, currentBpmStr.c_str());
 
         auto seqState = XRSequencer::getSeqState();
 
         // transport indicator (play, pause, stop)
-        uint8_t transportIconStartX = 119;
+        uint8_t transportIconStartX = 122;
         if (seqState.playbackState == XRSequencer::STOPPED)
         {
             u8g2.drawBox(transportIconStartX, 1, 5, 5);
@@ -427,6 +443,9 @@ namespace XRDisplay
         auto currentSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
         auto &queuedPattern = XRSequencer::getQueuedPatternState();
 
+        u8g2.drawFrame(0, 8, 128, 11);
+        u8g2.drawFrame(0, 8, 128, 55);
+
         bool bnkBlink = false;
         int bnkNumber = currentSelectedBank + 1;
 
@@ -436,7 +455,7 @@ namespace XRDisplay
             bnkBlink = (queuedPattern.bank != currentSelectedBank);
         }
 
-        drawMenuHeader("BNK:", bnkNumber, 0, (queueBlink && bnkBlink));
+        drawMenuHeader("B", bnkNumber, 0, (queueBlink && bnkBlink));
 
         bool ptnBlink = false;
         int ptnNumber = currentSelectedPattern + 1;
@@ -445,42 +464,35 @@ namespace XRDisplay
         {
             ptnNumber = queuedPattern.number + 1;
             ptnBlink = (queuedPattern.number != currentSelectedPattern);
-
-            //Serial.printf("ptnNumber: %d, ptnBlink: %d, queueBlink: %d\n", ptnNumber, ptnBlink, queueBlink);
         }
 
-
-        if (currentUXMode == XRUX::PATTERN_WRITE || currentUXMode == XRUX::PATTERN_SEL)
+        if (currentUXMode == XRUX::PATTERN_WRITE || currentUXMode == XRUX::PATTERN_SEL || currentUXMode == XRUX::PATTERN_CHANGE_QUEUED)
         {
-            u8g2.setColorIndex((u_int8_t)1);
-            u8g2.drawBox(26, 0, 29, 7);
-            u8g2.setColorIndex((u_int8_t)0);
-            drawMenuHeader("PTN:", ptnNumber, 29, (queueBlink && ptnBlink));
-            u8g2.setColorIndex((u_int8_t)1);
+            u8g2.drawLine(13, 2, 15, 2);
+
+            drawMenuHeader("P", ptnNumber, 18, (queueBlink && ptnBlink));
+
+            u8g2.drawLine(31, 2, 34, 2);
+            u8g2.drawLine(34, 2, 34, 7);
         }
         else if (currentUXMode == XRUX::TRACK_WRITE || currentUXMode == XRUX::TRACK_SEL || currentUXMode == XRUX::SUBMITTING_STEP_VALUE)
         {
-            drawMenuHeader("PTN:", ptnNumber, 29, (queueBlink && ptnBlink));
+            u8g2.drawLine(13, 2, 15, 2);
+
+            drawMenuHeader("P", ptnNumber, 18, (queueBlink && ptnBlink));
+            
+            u8g2.drawLine(31, 2, 33, 2);
+
+            drawMenuHeader("T", currentSelectedTrack + 1, 36, false);
+
+            u8g2.drawLine(49, 2, 52, 2);
+            u8g2.drawLine(52, 2, 52, 7);
         }
 
-        if (currentUXMode == XRUX::TRACK_WRITE || currentUXMode == XRUX::TRACK_SEL || currentUXMode == XRUX::SUBMITTING_STEP_VALUE)
+        if (currentUXMode == XRUX::PATTERN_WRITE || currentUXMode == XRUX::PATTERN_SEL || currentUXMode == XRUX::PATTERN_CHANGE_QUEUED)
         {
-            u8g2.setColorIndex((u_int8_t)1);
-            u8g2.drawBox(55, 0, 29, 7);
-            u8g2.setColorIndex((u_int8_t)0);
-            drawMenuHeader("TRK:", currentSelectedTrack + 1, 58, false);
-            u8g2.setColorIndex((u_int8_t)1);
-        }
-
-        if (currentUXMode == XRUX::PATTERN_WRITE || currentUXMode == XRUX::PATTERN_SEL)
-        {
-            // draw pattern header box
-            u8g2.setColorIndex((u_int8_t)1);
-            u8g2.drawBox(0, 9, 128, 9);
-            u8g2.setColorIndex((u_int8_t)0);
-            std::string patternHeaderStr = "PATTERN EDIT";
-            u8g2.drawStr(2, 10, patternHeaderStr.c_str());
-            u8g2.setColorIndex((u_int8_t)1);
+            std::string patternHeaderStr = "PATTERN";
+            u8g2.drawStr(3, 10, patternHeaderStr.c_str());
 
             // draw control mod area
             drawPatternControlMods();
@@ -495,15 +507,7 @@ namespace XRDisplay
             auto currSoundForTrack = XRSound::activePatternSounds[currTrackNum];
 
             // draw track meta type box
-            int trackMetaStrX = 2;
-            if (currSoundForTrack.type == XRSound::T_MONO_SYNTH || currSoundForTrack.type == XRSound::T_MIDI)
-            {
-                trackMetaStrX = 4;
-            }
-
-            u8g2.setColorIndex((u_int8_t)1);
-            u8g2.drawBox(0, 9, 128, 9);
-            u8g2.setColorIndex((u_int8_t)0);
+            int trackMetaStrX = 3;
 
             std::string trackMetaStr = XRSound::getSoundMetaStr(currSoundForTrack.type);
             std::string trackInfoStr;
@@ -532,9 +536,13 @@ namespace XRDisplay
 #endif
             else if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE)
             {
-                std::string sampleName(currSoundForTrack.sampleName);
+                // std::string sampleName(currSoundForTrack.sampleName);
                 
-                trackInfoStr += sampleName.length() > 0 ? sampleName : "N/A"; // TODO change to use patch name?
+                // trackInfoStr += sampleName.length() > 0 ? sampleName : "N/A"; // TODO change to use patch name?
+
+                std::string soundName(currSoundForTrack.name);
+
+                trackInfoStr += soundName.length() > 0 ? soundName : "INIT";
             }
             else if (currSoundForTrack.type == XRSound::T_MIDI)
             {
@@ -547,7 +555,14 @@ namespace XRDisplay
 
             std::string combStr = trackMetaStr + " " + trackInfoStr;
             u8g2.drawStr(trackMetaStrX, 10, combStr.c_str());
-            u8g2.setColorIndex((u_int8_t)1);
+
+            // track layer number
+
+            auto currTrackLayerNum = XRSequencer::getCurrentSelectedTrackLayerNum();
+            std::string currTrackLayerStr = "L";
+            currTrackLayerStr += XRHelpers::strldz(std::to_string(currTrackLayerNum+1), 2);
+            u8g2.drawStr(128 - 14, 10, currTrackLayerStr.c_str());
+            u8g2.drawLine(128 - 17, 9, 128 - 17, 18);
 
             auto currentSelectedPage = XRSequencer::getCurrentSelectedPage();
 
@@ -560,14 +575,11 @@ namespace XRDisplay
                 currSoundForTrack.type == XRSound::T_MIDI ||
                 currSoundForTrack.type == XRSound::T_CV_GATE)
             {
-                if (
-                    (currSoundForTrack.type != XRSound::T_MONO_SYNTH) ||
-                    ((currSoundForTrack.type == XRSound::T_MONO_SYNTH && currentSelectedPage != 3) &&
-                     (currSoundForTrack.type == XRSound::T_MONO_SYNTH && currentSelectedPage != 4)))
+                if (currentSelectedPage == 0)
                 {
-                    u8g2.drawStr(6, 23, "NOTE");
+                    u8g2.drawStr(7, 23, "NOTE");
                     u8g2.setFont(bitocra13_c);
-                    u8g2.drawStr(8, 32, getDisplayNote().c_str());
+                    u8g2.drawStr(9, 32, getDisplayNote().c_str());
                     u8g2.setFont(bitocra7_c);
                 }
             }
@@ -761,7 +773,7 @@ namespace XRDisplay
         auto currPageSelected = XRSequencer::getCurrentSelectedPage();
         auto currSoundForTrack = XRSound::activePatternSounds[currTrackNum];
 
-        if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 3)
+        if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 4)
         {
             auto msmpAatt = XRSound::getValueNormalizedAsUInt32(currSoundForTrack.params[XRSound::MSMP_AMP_ATTACK]);
             auto msmpAdec = XRSound::getValueNormalizedAsUInt32(currSoundForTrack.params[XRSound::MSMP_AMP_DECAY]);
@@ -789,27 +801,18 @@ namespace XRDisplay
             drawControlModsForADSR(msynFatt, msynFdec, msynFsus, msynFrel);
         }
         else if (
-            (currSoundForTrack.type == XRSound::T_EMPTY) ||
-            (currSoundForTrack.type == XRSound::T_CV_TRIG) ||
-#ifndef NO_DEXED
-            (currSoundForTrack.type == XRSound::T_FM_DRUM) ||
-#endif
-            (currSoundForTrack.type == XRSound::T_MONO_SAMPLE))
+            currPageSelected == 0 &&
+            ((currSoundForTrack.type == XRSound::T_MONO_SYNTH) ||
+            (currSoundForTrack.type == XRSound::T_DEXED_SYNTH))
+        ) {
+            drawNormalControlMods();
+        } else if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 1)
         {
-            drawExtendedControlMods();
-
-            // sample folder icon
-            if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 0) {
-                u8g2.setColorIndex((u_int8_t)0);
-                u8g2.drawBox(105, 36, 15, 10);
-                u8g2.setColorIndex((u_int8_t)1);
-                u8g2.drawFrame(105, 36, 15, 10);
-                u8g2.drawStr(107, 37, "uSD");
-            }
+            drawSampleFileControlMods();
         }
         else
         {
-            drawNormalControlMods();
+            drawExtendedControlMods();
         }
     }
 
@@ -881,6 +884,74 @@ namespace XRDisplay
 
         u8g2.drawStr(cValuePos, ctrlModHeaderY + 17, mods.cValue.c_str());
         u8g2.drawStr(dValuePos, ctrlModHeaderY + 17, mods.dValue.c_str());
+
+        if (mods.isAbleToStepModA) {
+            if (mods.isActiveStepModA) {
+                u8g2.drawLine(
+                    (ctrlModHeaderStartCenteredX - 9),
+                    ctrlModHeaderY + 29,
+                    (ctrlModHeaderStartCenteredX - 9) + 18,
+                    ctrlModHeaderY + 29
+                );
+            } else {
+                drawStraightDashedLine(
+                    (ctrlModHeaderStartCenteredX - 9),
+                    (ctrlModHeaderStartCenteredX - 9) + 20,
+                    ctrlModHeaderY + 29
+                );
+            }
+        }
+
+        if (mods.isAbleToStepModB) {
+            if (mods.isActiveStepModB) {
+                u8g2.drawLine(
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpacerMult * 1) - 9),
+                    ctrlModHeaderY + 29,
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpacerMult * 1) - 9) + 18,
+                    ctrlModHeaderY + 29
+                );
+            } else {
+                drawStraightDashedLine(
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpacerMult * 1) - 9),
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpacerMult * 1) - 9) + 20,
+                    ctrlModHeaderY + 29
+                );
+            }
+        }
+
+        if (mods.isAbleToStepModC) {
+            if (mods.isActiveStepModC) {
+                u8g2.drawLine(
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpacerMult * 2) - 9),
+                    ctrlModHeaderY + 29,
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpacerMult * 2) - 9) + 18,
+                    ctrlModHeaderY + 29
+                );
+            } else {
+                drawStraightDashedLine(
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpacerMult * 2) - 9),
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpacerMult * 2) - 9) + 20,
+                    ctrlModHeaderY + 29
+                );
+            }
+        }
+
+        if (mods.isAbleToStepModD) {
+            if (mods.isActiveStepModD) {
+                u8g2.drawLine(
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpacerMult * 3) - 9),
+                    ctrlModHeaderY + 29,
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpacerMult * 3) - 9) + 18,
+                    ctrlModHeaderY + 29
+                );
+            } else {
+                drawStraightDashedLine(
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpacerMult * 3) - 9),
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpacerMult * 3) - 9) + 20,
+                    ctrlModHeaderY + 29
+                );
+            }
+        }
     }
 
     void drawExtendedControlMods()
@@ -951,11 +1022,145 @@ namespace XRDisplay
 
         u8g2.drawStr(cValuePos, ctrlModHeaderY + 17, mods.cValue.c_str());
         u8g2.drawStr(dValuePos, ctrlModHeaderY + 17, mods.dValue.c_str());
+
+        if (mods.isAbleToStepModA) {
+            if (mods.isActiveStepModA) {
+                u8g2.drawLine(
+                    (ctrlModHeaderStartCenteredX - 12),
+                    ctrlModHeaderY + 29,
+                    (ctrlModHeaderStartCenteredX - 12) + 24,
+                    ctrlModHeaderY + 29
+                );
+            } else {
+                drawStraightDashedLine(
+                    (ctrlModHeaderStartCenteredX - 12),
+                    (ctrlModHeaderStartCenteredX - 12) + 25,
+                    ctrlModHeaderY + 29
+                );
+            }
+        }
+
+        if (mods.isAbleToStepModB) {
+            if (mods.isActiveStepModB) {
+                u8g2.drawLine(
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 1) - 12),
+                    ctrlModHeaderY + 29,
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 1) - 12) + 24,
+                    ctrlModHeaderY + 29
+                );
+            } else {
+                drawStraightDashedLine(
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 1) - 12),
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 1) - 12) + 25,
+                    ctrlModHeaderY + 29
+                );
+            }
+        }
+
+        if (mods.isAbleToStepModC) {
+            if (mods.isActiveStepModC) {
+                u8g2.drawLine(
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 2) - 12),
+                    ctrlModHeaderY + 29,
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 2) - 12) + 24,
+                    ctrlModHeaderY + 29
+                );
+            } else {
+                drawStraightDashedLine(
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 2) - 12),
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 2) - 12) + 25,
+                    ctrlModHeaderY + 29
+                );
+            }
+        }
+
+        if (mods.isAbleToStepModD) {
+            if (mods.isActiveStepModD) {
+                u8g2.drawLine(
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 3) - 12),
+                    ctrlModHeaderY + 29,
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 3) - 12) + 24,
+                    ctrlModHeaderY + 29
+                );
+            } else {
+                drawStraightDashedLine(
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 3) - 12),
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 3) - 12) + 25,
+                    ctrlModHeaderY + 29
+                );
+            }
+        }
+    }
+
+    void drawSampleFileControlMods()
+    {
+        int ctrlModHeaderY = 20;
+        int ctrlModHeaderStartX = 0;
+        int ctrlModHeaderStartCenteredX = ((DISPLAY_MAX_WIDTH / 4) / 2);
+        int ctrlModSpaceWidth = (DISPLAY_MAX_WIDTH / 4);
+
+        // header
+        u8g2.drawLine(ctrlModHeaderStartX, 30, (DISPLAY_MAX_WIDTH / 2), 30);
+
+        // dividers
+        u8g2.drawLine(ctrlModSpaceWidth, 20, ctrlModSpaceWidth, 52);
+        u8g2.drawLine(ctrlModSpaceWidth + (ctrlModSpaceWidth * 1), 20, ctrlModSpaceWidth + (ctrlModSpaceWidth * 1), 52);
+
+        auto mods = XRSound::getControlModDataForTrack();
+
+        int aPosX = ctrlModHeaderStartCenteredX;
+        aPosX -= (mods.aName.length() > 0 ? u8g2.getStrWidth(mods.aName.c_str()) / 2 : 0);
+
+        int bPosX = ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 1);
+        bPosX -= (mods.bName.length() > 0 ? u8g2.getStrWidth(mods.bName.c_str()) / 2 : 0);
+
+        u8g2.drawStr(aPosX, ctrlModHeaderY + 1, mods.aName.c_str());
+        u8g2.drawStr(bPosX, ctrlModHeaderY + 1, mods.bName.c_str());
+
+        int aValuePos = ctrlModHeaderStartCenteredX;
+        aValuePos -= (mods.aValue.length() > 0 ? u8g2.getStrWidth(mods.aValue.c_str()) / 2 : 0);
+
+        int bValuePos = ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 1);
+        bValuePos -= (mods.bValue.length() > 0 ? u8g2.getStrWidth(mods.bValue.c_str()) / 2 : 0);
+
+        int cValuePos = ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 2);
+        cValuePos -= (mods.cValue.length() > 0 ? u8g2.getStrWidth(mods.cValue.c_str()) / 2 : 0);
+
+        auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+        auto currSoundForTrack = XRSound::activePatternSounds[currTrackNum];
+
+        std::string sampleName(currSoundForTrack.sampleName);
+        std::string sampleNameB(currSoundForTrack.sampleNameB);
+        
+        std::string fileName1 = "1.";
+        std::string fileName2 = "2.";
+
+        fileName1 += sampleName.length() > 0 ? sampleName : " --";
+        fileName2 += sampleNameB.length() > 0 ? sampleNameB : " --";
+
+        drawStraightDashedLine(bPosX, 128, 30);
+
+        u8g2.drawStr(cValuePos - 10, ctrlModHeaderY + 1, fileName1.c_str());
+        u8g2.drawStr(cValuePos - 10, ctrlModHeaderY + 12, fileName2.c_str());
+
+        if (sampleName.length() > 0 && sampleNameB.length() == 0) {
+            drawStraightDashedLine(aValuePos - 10, aValuePos + 18, ctrlModHeaderY + 20);
+
+            u8g2.drawStr(aValuePos, ctrlModHeaderY + 12, "ON");
+            u8g2.drawStr(aValuePos - 9, ctrlModHeaderY + 22, "ACCENT");
+            u8g2.drawStr(bValuePos, ctrlModHeaderY + 17, "--");
+        }
+        
+
+        if (sampleName.length() > 0 && sampleNameB.length() > 0) {
+            u8g2.drawStr(aValuePos - 4, ctrlModHeaderY + 17, "100%");
+            u8g2.drawStr(bValuePos - 4, ctrlModHeaderY + 17, "100%");
+        }
     }
 
     void drawControlModsForADSR(int att, int dec, float sus, int rel)
     {
-        int ctrlModHeaderStartX = 1;
+        int ctrlModHeaderStartX = 3;
         int adsrMaxTopPosY = 24;
         int adsrMaxBottomPosY = 48;
 
@@ -1016,57 +1221,42 @@ namespace XRDisplay
     void drawPageNumIndicators()
     {
         auto currSelectedPage = XRSequencer::getCurrentSelectedPage();
-        auto currTrackLayerNum = XRSequencer::getCurrentSelectedTrackLayerNum();
 
         uint8_t currTrackPageCount = 0;
         std::string currPageNameForTrack = "";
 
-        std::string currTrackLayerStr = "L";
-        currTrackLayerStr += XRHelpers::strldz(std::to_string(currTrackLayerNum+1), 2);
-
         currTrackPageCount = XRSound::getPageCountForCurrentTrack();
         currPageNameForTrack += XRSound::getPageNameForCurrentTrack();
 
-        int pageNumBasedStartX = 81 - (3 * currTrackPageCount);
-        int pageTabPosY = 56;
-        int pageTabFooterNameStartX = 17;
+        int pageTabPosY = 54;
 
         u8g2.drawLine(0, 52, 128, 52);
-        u8g2.drawStr(0, pageTabPosY, currTrackLayerStr.c_str());
-        u8g2.drawLine(15, 52, 15, 64);
-        u8g2.drawStr(20, pageTabPosY, currPageNameForTrack.c_str());
+        u8g2.drawStr(3, pageTabPosY, currPageNameForTrack.c_str());
 
         if (currTrackPageCount == 1 || currTrackPageCount == 0)
             return;
 
-        if (currTrackPageCount == 5)
-        {
-            pageTabFooterNameStartX -= 10;
-        }
-        else if (currTrackPageCount == 4)
-        {
-            pageTabFooterNameStartX -= 1;
-        }
+        int pageNumBasedStartX = 128;
+        int pageNumStartX = pageNumBasedStartX - 9;
+        int pageBetweenPaddingX = 9;
 
-        int pageBoxStartX = (pageNumBasedStartX + 30) - (currTrackPageCount * 5);
-        pageBoxStartX += 8 / (currTrackPageCount);
-
-        int pageNumStartX = pageBoxStartX + 3;
-        int pageBetweenPaddingtX = 10;
-
-        u8g2.drawBox(pageBoxStartX + (pageBetweenPaddingtX * currSelectedPage), 55, 9, 9);
+        auto multX = currTrackPageCount - currSelectedPage;
+        auto pageBoxStartX = 128 - (multX * pageBetweenPaddingX);
+        u8g2.drawBox(pageBoxStartX, 54, 7, 7);
 
         for (int l = 0; l < currTrackPageCount; l++)
         {
+            auto distMultX = currTrackPageCount - (l+1);
+
             if (l == currSelectedPage)
             {
                 u8g2.setColorIndex((u_int8_t)0);
-                u8g2.drawStr(pageNumStartX + (pageBetweenPaddingtX * l), pageTabPosY, std::to_string(l + 1).c_str());
+                u8g2.drawStr(pageNumStartX + 2 - (pageBetweenPaddingX * distMultX), pageTabPosY, std::to_string(l + 1).c_str());
                 u8g2.setColorIndex((u_int8_t)1);
             }
             else
             {
-                u8g2.drawStr(pageNumStartX + (pageBetweenPaddingtX * l), pageTabPosY, std::to_string(l + 1).c_str());
+                u8g2.drawStr(pageNumStartX + 2 - (pageBetweenPaddingX * distMultX), pageTabPosY, std::to_string(l + 1).c_str());
             }
         }
     }
@@ -1079,49 +1269,40 @@ namespace XRDisplay
             currSelectedPage = 0;
         }
 
-        uint8_t patternPageCount = 2; // TODO: make a define
+        uint8_t patternPageCount = MAXIMUM_PATTERN_PAGES;
         std::string currPageNameForPattern = "";
 
         currPageNameForPattern += XRSound::patternPageNames[currSelectedPage];
 
-        int pageNumBasedStartX = 81 - (3 * patternPageCount);
-        int pageTabPosY = 56;
-        int pageTabFooterNameStartX = 17;
+        int pageTabPosY = 54;
 
         u8g2.drawLine(0, 52, 128, 52);
-        u8g2.drawStr(0, pageTabPosY, currPageNameForPattern.c_str());
+        u8g2.drawStr(3, pageTabPosY, currPageNameForPattern.c_str());
 
         if (patternPageCount == 1 || patternPageCount == 0)
             return;
 
-        if (patternPageCount == 5)
-        {
-            pageTabFooterNameStartX -= 10;
-        }
-        else if (patternPageCount == 4)
-        {
-            pageTabFooterNameStartX -= 1;
-        }
+        int pageNumBasedStartX = 128;
+        int pageNumStartX = pageNumBasedStartX - 9;
+        int pageBetweenPaddingX = 9;
 
-        int pageBoxStartX = (pageNumBasedStartX + 30) - (patternPageCount * 5);
-        pageBoxStartX += 8 / (patternPageCount);
-
-        int pageNumStartX = pageBoxStartX + 3;
-        int pageBetweenPaddingtX = 10;
-
-        u8g2.drawBox(pageBoxStartX + (pageBetweenPaddingtX * currSelectedPage), 55, 9, 9);
+        auto multX = patternPageCount - currSelectedPage;
+        auto pageBoxStartX = 128 - (multX * pageBetweenPaddingX);
+        u8g2.drawBox(pageBoxStartX, 54, 7, 7);
 
         for (int l = 0; l < patternPageCount; l++)
         {
+            auto distMultX = patternPageCount - (l+1);
+
             if (l == currSelectedPage)
             {
                 u8g2.setColorIndex((u_int8_t)0);
-                u8g2.drawStr(pageNumStartX + (pageBetweenPaddingtX * l), pageTabPosY, std::to_string(l + 1).c_str());
+                u8g2.drawStr(pageNumStartX + 2 - (pageBetweenPaddingX * distMultX), pageTabPosY, std::to_string(l + 1).c_str());
                 u8g2.setColorIndex((u_int8_t)1);
             }
             else
             {
-                u8g2.drawStr(pageNumStartX + (pageBetweenPaddingtX * l), pageTabPosY, std::to_string(l + 1).c_str());
+                u8g2.drawStr(pageNumStartX + 2 - (pageBetweenPaddingX * distMultX), pageTabPosY, std::to_string(l + 1).c_str());
             }
         }
     }

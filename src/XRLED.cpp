@@ -155,6 +155,23 @@ namespace XRLED
         }
     }
 
+    void displayCurrentlySelectedBank()
+    {
+        auto currentSelectedBank = XRSequencer::getCurrentSelectedBankNum();
+
+        for (size_t b = 0; b < MAXIMUM_SEQUENCER_BANKS; b++)
+        {
+            if (b == currentSelectedBank)
+            {
+                setPWM(_stepLEDPins[b], 4095);
+            }
+            else
+            {
+                setPWM(_stepLEDPins[b], 512);
+            }
+        }
+    }
+
     void displayCurrentlySelectedPattern()
     {
         //auto &bank = XRSequencer::getActivePatternBank();
