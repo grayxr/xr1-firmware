@@ -71,7 +71,9 @@ namespace XREncoder
 
     bool handleMenuCursor(XRUX::UX_MODE menuMode, int diff);
 #ifndef NO_DEXED
-    void handleDexedBrowser();
+    void handleDexedBrowserMod1();
+    void handleDexedBrowserMod2();
+    void handleDexedBrowserMod3();
 #endif
     int getDiff(int address);
 
@@ -140,7 +142,9 @@ namespace XREncoder
 
 #ifndef NO_DEXED
         if (currentUXMode == XRUX::UX_MODE::SOUND_MENU_DEXED_SYSEX_BROWSER) {
-            handleDexedBrowser();
+            handleDexedBrowserMod1();
+            handleDexedBrowserMod2();
+            handleDexedBrowserMod3();
 
             return;
         }
@@ -1972,9 +1976,26 @@ namespace XREncoder
             }
             break;
         case 2:
-            {
+        {
+            float currDly = getValueNormalizedAsFloat(XRSound::activePatternSounds[currTrackNum].params[FMD_DELAY]);
+            float newDly = currDly + (diff * 0.01);
 
+            if (newDly != currDly)
+            {
+                newDly = constrain(newDly, 0, 1.0);
+
+                XRSound::activePatternSounds[currTrackNum].params[FMD_DELAY] = getFloatValuePaddedAsInt32(newDly);
+                XRSound::patternSoundsDirty = true;
+
+                AudioNoInterrupts();
+
+                fmDrumInstance.ampDelaySend.gain(newDly);
+
+                AudioInterrupts();
+
+                XRDisplay::drawSequencerScreen(false);
             }
+        }
             break;
         
         default:
@@ -2745,31 +2766,56 @@ namespace XREncoder
         }
     }
 #ifndef NO_DEXED
-    void handleDexedBrowser()
+    
+    void handleDexedBrowserMod1()
     {
-        int diff = getDiff(MAIN_ENCODER_ADDRESS);
+        int diff = getDiff(MOD1_ENCODER_ADDRESS);
 
         if (diff != 0) {
-            int dif = XRSD::dexedCurrentPatch + diff;
+            int dif = constrain(XRSD::dexedCurrentPool + diff, 0, 1);
+            if (dif == XRSD::dexedCurrentPool)
+            {
+                return;
+            }
+
+            XRSD::dexedCurrentPool = constrain(XRSD::dexedCurrentPool + diff, 0, 1);
+            XRSD::dexedCurrentBank = 0; // always reset bank to first when changing pools
+            XRSD::dexedCurrentPatch = 0; // always reset patch to first when changing pools
+
+            XRSD::loadDexedVoiceToCurrentTrack();
+            XRDisplay::drawDexedSysexBrowser();
+        }
+    }
+    void handleDexedBrowserMod2()
+    {
+        int diff = getDiff(MOD2_ENCODER_ADDRESS);
+
+        if (diff != 0) {
+            int dif = constrain(XRSD::dexedCurrentBank + diff, 0, 98);
+            if (dif == XRSD::dexedCurrentBank)
+            {
+                return;
+            }
+
+            XRSD::dexedCurrentBank = constrain(XRSD::dexedCurrentBank + diff, 0, 98);
+            XRSD::dexedCurrentPatch = 0; // always reset patch to first when changing banks
+
+            XRSD::loadDexedVoiceToCurrentTrack();
+            XRDisplay::drawDexedSysexBrowser();
+        }
+    }
+    void handleDexedBrowserMod3()
+    {
+        int diff = getDiff(MOD3_ENCODER_ADDRESS);
+
+        if (diff != 0) {
+            int dif = constrain(XRSD::dexedCurrentPatch + diff, 0, 31);
             if (dif == XRSD::dexedCurrentPatch)
             {
                 return;
             }
 
-            XRSD::dexedCurrentPatch = XRSD::dexedCurrentPatch + diff;
-
-            if (XRSD::dexedCurrentPatch < 0)
-            {
-                auto nextBank = XRSD::dexedCurrentBank - 1;
-                XRSD::dexedCurrentBank = constrain(nextBank, 0, 98);
-                XRSD::dexedCurrentPatch = 31;
-            }
-            else if (XRSD::dexedCurrentPatch > 31)
-            {
-                auto nextBank = XRSD::dexedCurrentBank + 1;
-                XRSD::dexedCurrentBank = constrain(nextBank, 0, 98);
-                XRSD::dexedCurrentPatch = 0;
-            }
+            XRSD::dexedCurrentPatch = constrain(XRSD::dexedCurrentPatch + diff, 0, 31);
 
             XRSD::loadDexedVoiceToCurrentTrack();
             XRDisplay::drawDexedSysexBrowser();

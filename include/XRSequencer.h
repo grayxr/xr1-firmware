@@ -167,6 +167,10 @@ namespace XRSequencer
     extern DMAMEM TRACK_LAYER nextTrackLayer;
     extern DMAMEM TRACK_STEP_MOD_LAYER activeTrackStepModLayer;
 
+    // extern DMAMEM PATTERN patternCopyBuffer;
+    // extern DMAMEM TRACK_LAYER trackLayerCopyBuffer;
+    // extern DMAMEM TRACK_STEP_MOD_LAYER trackStepModLayerCopyBuffer;
+
     extern TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
     extern PATTERN_FX_PAGE_INDEXES patternFxPages[MAXIMUM_PATTERN_FX_PARAM_PAGES];
 
@@ -180,6 +184,8 @@ namespace XRSequencer
 
     void initNextPattern();
     void initNextTrackLayer();
+
+    void initTrackLayerCopyBuffer();
     
     void swapSequencerMemoryForPattern(int newBank, int newPattern);
     void swapSequencerMemoryForTrackLayerChange();

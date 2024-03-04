@@ -443,8 +443,10 @@ namespace XRDisplay
         auto currentSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
         auto &queuedPattern = XRSequencer::getQueuedPatternState();
 
-        u8g2.drawFrame(0, 8, 128, 11);
-        u8g2.drawFrame(0, 8, 128, 55);
+        u8g2.drawLine(0,8,128,8);
+        u8g2.drawLine(0,18,128,18);
+        //u8g2.drawFrame(0, 8, 128, 11);
+        //u8g2.drawFrame(0, 8, 128, 55);
 
         bool bnkBlink = false;
         int bnkNumber = currentSelectedBank + 1;
@@ -468,25 +470,25 @@ namespace XRDisplay
 
         if (currentUXMode == XRUX::PATTERN_WRITE || currentUXMode == XRUX::PATTERN_SEL || currentUXMode == XRUX::PATTERN_CHANGE_QUEUED)
         {
-            u8g2.drawLine(13, 2, 15, 2);
+            u8g2.drawTriangle(14,0,14,6,17,3);
 
-            drawMenuHeader("P", ptnNumber, 18, (queueBlink && ptnBlink));
-
-            u8g2.drawLine(31, 2, 34, 2);
-            u8g2.drawLine(34, 2, 34, 7);
+            drawMenuHeader("P", ptnNumber, 20, (queueBlink && ptnBlink));
         }
         else if (currentUXMode == XRUX::TRACK_WRITE || currentUXMode == XRUX::TRACK_SEL || currentUXMode == XRUX::SUBMITTING_STEP_VALUE)
         {
-            u8g2.drawLine(13, 2, 15, 2);
+            u8g2.drawTriangle(14,0,14,6,17,3);
 
-            drawMenuHeader("P", ptnNumber, 18, (queueBlink && ptnBlink));
+            drawMenuHeader("P", ptnNumber, 20, (queueBlink && ptnBlink));
             
-            u8g2.drawLine(31, 2, 33, 2);
+            u8g2.drawTriangle(34,0,34,6,37,3);
 
-            drawMenuHeader("T", currentSelectedTrack + 1, 36, false);
+            auto currTrackLayerNum = XRSequencer::getCurrentSelectedTrackLayerNum();
 
-            u8g2.drawLine(49, 2, 52, 2);
-            u8g2.drawLine(52, 2, 52, 7);
+            std::string layerNumStr = "L";
+            layerNumStr += XRHelpers::strldz(std::to_string(currTrackLayerNum + 1), 2);
+            layerNumStr += ":T";
+            layerNumStr += XRHelpers::strldz(std::to_string(currentSelectedTrack + 1), 2);
+            u8g2.drawStr(40, 0, layerNumStr.c_str());
         }
 
         if (currentUXMode == XRUX::PATTERN_WRITE || currentUXMode == XRUX::PATTERN_SEL || currentUXMode == XRUX::PATTERN_CHANGE_QUEUED)
@@ -512,66 +514,34 @@ namespace XRDisplay
             std::string trackMetaStr = XRSound::getSoundMetaStr(currSoundForTrack.type);
             std::string trackInfoStr;
 
-            if (currSoundForTrack.type == XRSound::T_MONO_SYNTH)
-            {
+            if (
+                currSoundForTrack.type == XRSound::T_MONO_SAMPLE ||
+                currSoundForTrack.type == XRSound::T_MONO_SYNTH ||
+                currSoundForTrack.type == XRSound::T_DEXED_SYNTH ||
+                currSoundForTrack.type == XRSound::T_FM_DRUM
+            ){
                 std::string soundName(currSoundForTrack.name);
 
                 trackInfoStr += soundName.length() > 0 ? soundName : "INIT";
             }
-#ifndef NO_DEXED
-            else if (currSoundForTrack.type == XRSound::T_DEXED_SYNTH)
-            {
-                std::string soundName(currSoundForTrack.name);
-
-                trackInfoStr += soundName.length() > 0 ? soundName : "INIT";
-            }
-#endif
-#ifndef NO_FMDRUM
-            else if (currSoundForTrack.type == XRSound::T_FM_DRUM)
-            {
-                std::string soundName(currSoundForTrack.name);
-
-                trackInfoStr += soundName.length() > 0 ? soundName : "INIT";
-            }
-#endif
-            else if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE)
-            {
-                // std::string sampleName(currSoundForTrack.sampleName);
-                
-                // trackInfoStr += sampleName.length() > 0 ? sampleName : "N/A"; // TODO change to use patch name?
-
-                std::string soundName(currSoundForTrack.name);
-
-                trackInfoStr += soundName.length() > 0 ? soundName : "INIT";
-            }
-            else if (currSoundForTrack.type == XRSound::T_MIDI)
-            {
-                trackInfoStr += "";
-            }
-            else if (currSoundForTrack.type == XRSound::T_CV_GATE || currSoundForTrack.type == XRSound::T_CV_TRIG)
-            {
+            else if (
+                currSoundForTrack.type == XRSound::T_MIDI || 
+                currSoundForTrack.type == XRSound::T_CV_GATE || 
+                currSoundForTrack.type == XRSound::T_CV_TRIG
+            ){
                 trackInfoStr += "";
             }
 
-            std::string combStr = trackMetaStr + " " + trackInfoStr;
-            u8g2.drawStr(trackMetaStrX, 10, combStr.c_str());
-
-            // track layer number
-
-            auto currTrackLayerNum = XRSequencer::getCurrentSelectedTrackLayerNum();
-            std::string currTrackLayerStr = "L";
-            currTrackLayerStr += XRHelpers::strldz(std::to_string(currTrackLayerNum+1), 2);
-            u8g2.drawStr(128 - 14, 10, currTrackLayerStr.c_str());
-            u8g2.drawLine(128 - 17, 9, 128 - 17, 18);
+            u8g2.drawStr(2, 10, trackMetaStr.c_str());
+            u8g2.drawLine(32,8,32,18);
+            u8g2.drawStr(36, 10, trackInfoStr.c_str());
 
             auto currentSelectedPage = XRSequencer::getCurrentSelectedPage();
 
             // draw track description / main icon area
             if (
                 currSoundForTrack.type == XRSound::T_MONO_SYNTH ||
-#ifndef NO_DEXED
                 currSoundForTrack.type == XRSound::T_DEXED_SYNTH ||
-#endif
                 currSoundForTrack.type == XRSound::T_MIDI ||
                 currSoundForTrack.type == XRSound::T_CV_GATE)
             {
@@ -1100,7 +1070,7 @@ namespace XRDisplay
         int ctrlModSpaceWidth = (DISPLAY_MAX_WIDTH / 4);
 
         // header
-        u8g2.drawLine(ctrlModHeaderStartX, 30, (DISPLAY_MAX_WIDTH / 2), 30);
+        u8g2.drawLine(ctrlModHeaderStartX, 30, DISPLAY_MAX_WIDTH, 30);
 
         // dividers
         u8g2.drawLine(ctrlModSpaceWidth, 20, ctrlModSpaceWidth, 52);
@@ -1138,23 +1108,36 @@ namespace XRDisplay
         fileName1 += sampleName.length() > 0 ? sampleName : " --";
         fileName2 += sampleNameB.length() > 0 ? sampleNameB : " --";
 
-        drawStraightDashedLine(bPosX, 128, 30);
+        u8g2.drawStr(cValuePos - 9, ctrlModHeaderY + 1, "FILENAME");
 
-        u8g2.drawStr(cValuePos - 10, ctrlModHeaderY + 1, fileName1.c_str());
-        u8g2.drawStr(cValuePos - 10, ctrlModHeaderY + 12, fileName2.c_str());
+        u8g2.drawStr(cValuePos - 9, ctrlModHeaderY + 12, fileName1.c_str());
+
+        drawStraightDashedLine(cValuePos - 12, 128, 41);
+
+        u8g2.drawStr(cValuePos - 9, ctrlModHeaderY + 23, fileName2.c_str());
 
         if (sampleName.length() > 0 && sampleNameB.length() == 0) {
             drawStraightDashedLine(aValuePos - 10, aValuePos + 18, ctrlModHeaderY + 20);
 
             u8g2.drawStr(aValuePos, ctrlModHeaderY + 12, "ON");
-            u8g2.drawStr(aValuePos - 9, ctrlModHeaderY + 22, "ACCENT");
+            u8g2.drawStr(aValuePos - 8, ctrlModHeaderY + 22, "ACCENT");
+            u8g2.drawStr(bValuePos, ctrlModHeaderY + 17, "--");
+        } else if (sampleName.length() == 0 && sampleNameB.length() > 0) {
+            u8g2.drawStr(aValuePos, ctrlModHeaderY + 17, "--");
+
+            drawStraightDashedLine(bValuePos - 10, bValuePos + 18, ctrlModHeaderY + 20);
+
+            u8g2.drawStr(bValuePos, ctrlModHeaderY + 12, "ON");
+            u8g2.drawStr(bValuePos - 8, ctrlModHeaderY + 22, "ACCENT");
+        } else if (sampleName.length() == 0 && sampleNameB.length() == 0) {
+            u8g2.drawStr(aValuePos, ctrlModHeaderY + 17, "--");
             u8g2.drawStr(bValuePos, ctrlModHeaderY + 17, "--");
         }
         
 
         if (sampleName.length() > 0 && sampleNameB.length() > 0) {
-            u8g2.drawStr(aValuePos - 4, ctrlModHeaderY + 17, "100%");
-            u8g2.drawStr(bValuePos - 4, ctrlModHeaderY + 17, "100%");
+            u8g2.drawStr(aValuePos, ctrlModHeaderY + 17, "ON");
+            u8g2.drawStr(bValuePos - 8, ctrlModHeaderY + 17, "ACCENT");
         }
     }
 
@@ -1446,36 +1429,62 @@ namespace XRDisplay
         auto list = XRSD::getSampleList(cursor);
 
         // todo: impl minimap scroll bar
-        drawPagedMenuList("SAMPLES", list, 5);
+        drawPagedMenuList("SELECT SAMPLE", list, 5);
 
         u8g2.sendBuffer();
     }
 
     void drawDexedSysexBrowser()
     {
-        auto bank = XRSD::getCurrentDexedSysexBank();
+        int ctrlHeaderY = 17;
+        int ctrlSpaceWidth = (DISPLAY_MAX_WIDTH / 3);
+        int ctrlSpaceStartCenteredX = ((DISPLAY_MAX_WIDTH / 3) / 2);
 
         // todo: impl minimap scroll bar
         drawGenericOverlayFrame();
 
+        std::string headerStr = "LOAD PATCH: ";
+        headerStr += XRSD::dexedPatchName;
+
         // menu header
-        u8g2.drawStr(6, 4, "LOAD DEXED SYSEX TO TRACK");
+        u8g2.drawStr(6, 5, headerStr.c_str());
 
-        std::string bankStr = "BANK: ";
-        bankStr += bank;
-        std::string patchStr = "PATCH: ";
-        patchStr += XRSD::dexedPatchName;
+        u8g2.drawLine(3, 25, 124, 25);
+        u8g2.drawLine(ctrlSpaceWidth, 15, ctrlSpaceWidth, 49);
+        u8g2.drawLine(ctrlSpaceWidth * 2, 15, ctrlSpaceWidth * 2, 49);
 
-        u8g2.drawStr(6, 19, bankStr.c_str());
-        u8g2.drawStr(6, 28, patchStr.c_str());
+        std::string poolHeaderStr = "SYX.POOL";
+        std::string bankHeaderStr = "SYX.BANK";
+        std::string patchHeaderStr = "SYX.PATCH";
 
-        // drawKeyboard(4);
+        std::string poolStr = XRSD::getCurrentDexedSysexPool();
+        std::string bankStr = XRSD::getCurrentDexedSysexBank();
+        std::string patchStr = XRSD::getCurrentDexedSysexPatchNum();
+
+        int aPosX = ctrlSpaceStartCenteredX;
+        aPosX -= (poolStr.length() > 0 ? u8g2.getStrWidth(poolStr.c_str()) / 2 : 0);
+
+        int bPosX = ctrlSpaceStartCenteredX + (ctrlSpaceWidth * 1);
+        bPosX -= (bankStr.length() > 0 ? u8g2.getStrWidth(bankStr.c_str()) / 2 : 0);
+
+        int cPosX = ctrlSpaceStartCenteredX + (ctrlSpaceWidth * 2);
+        cPosX -= (patchStr.length() > 0 ? u8g2.getStrWidth(patchStr.c_str()) / 2 : 0);
+
+        u8g2.drawStr(6, ctrlHeaderY, poolHeaderStr.c_str());
+        u8g2.drawStr(aPosX, ctrlHeaderY + 17, poolStr.c_str());
+
+        u8g2.drawStr(48, ctrlHeaderY, bankHeaderStr.c_str());
+        u8g2.drawStr(bPosX, ctrlHeaderY + 17, bankStr.c_str());
+
+        u8g2.drawStr(87, ctrlHeaderY, patchHeaderStr.c_str());
+        u8g2.drawStr(cPosX, ctrlHeaderY + 17, patchStr.c_str());
 
         // esc / sel button legend
-        // u8g2.drawStr(93, 5, "ESC");
-        // u8g2.drawStr(110, 5, "SEL");
-        // u8g2.drawFrame(91, 4, 15, 9);
-        // u8g2.drawFrame(108, 4, 15, 9);
+        u8g2.drawLine(3, 49, 124, 49);
+        u8g2.drawStr(93, 52, "ESC");
+        u8g2.drawStr(110, 52, "SEL");
+        u8g2.drawFrame(91, 51, 15, 9);
+        u8g2.drawFrame(108, 51, 15, 9);
 
         u8g2.sendBuffer();
     }

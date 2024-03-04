@@ -24,6 +24,7 @@ namespace XRSD
     extern MACHINE_STATE_0_1_0 _machine_state;
     extern PROJECT _current_project;
 
+    extern int dexedCurrentPool;
     extern int dexedCurrentBank;
     extern int dexedCurrentPatch;
     extern std::string dexedPatchName;
@@ -61,7 +62,7 @@ namespace XRSD
     void loadDexedVoiceToCurrentTrack(int t = -1);
 
     void saveCopiedStep(int track, int sourceStep, int destStep);
-    void saveCopiedTrack(int sourceTrack, int destTrack);
+    void saveCopiedTrackToSamePattern(int sourceTrack, int destTrack);
     
     std::string *getSampleList(int16_t cursor);
     std::string getCurrSampleFileHighlighted();
@@ -71,7 +72,9 @@ namespace XRSD
     void setActiveSampleSlot(uint8_t slot);
     uint8_t getActiveSampleSlot();
 
+    std::string getCurrentDexedSysexPool();
     std::string getCurrentDexedSysexBank();
+    std::string getCurrentDexedSysexPatchNum();
     std::string getCurrentDexedSysexPatchName();
 }
 

@@ -38,6 +38,7 @@ namespace XRSD
 
     uint8_t _activeSampleSlot = 0;
 
+    int dexedCurrentPool = 0;
     int dexedCurrentBank = 0;
     int dexedCurrentPatch = 0;
 
@@ -952,14 +953,208 @@ namespace XRSD
         XRSequencer::activeTrackStepModLayer.tracks[track].steps[destStep] = XRSequencer::activeTrackStepModLayer.tracks[track].steps[sourceStep];
         XRSound::activePatternSoundStepModLayer.sounds[track].steps[destStep] = XRSound::activePatternSoundStepModLayer.sounds[track].steps[sourceStep];
 
-        // TODO: save above to SD card as well !
+        // TODO: save above to SD card as well ?
     }
 
-    void saveCopiedTrack(int sourceTrack, int destTrack)
+    void saveCopiedTrackToSamePattern(int sourceTrack, int destTrack)
     {
-        Serial.printf("TODO: impl saveCopiedTrack() !!! \n");
+        // -- BEGIN COPY TRACK SOUND
 
-        //auto currSelTrackLayer = XRSequencer::getCurrentSelectedTrackLayerNum();
+        // Serial.printf("COPY TRACK: BEGIN COPY SOUND! \n");
+
+        // get project path
+        char projectsPathPrefixBuf[50];
+        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
+        std::string projectPath(projectsPathPrefixBuf); // read char array into string
+
+        std::string baseDir = projectPath;
+        baseDir += "/";
+        baseDir += _current_project.name;
+        baseDir += "/.data/sequencer/banks/";
+        baseDir += std::to_string(XRSequencer::getCurrentSelectedBankNum());
+
+        // verify bnk dir exists first
+        if (!SD.exists(baseDir.c_str()))
+        {
+            if (!SD.mkdir(baseDir.c_str()))
+            {
+                XRDisplay::drawError("SD MKDIR ERR!");
+                return;
+            }
+        }
+
+        // IMPORTANT: FOR NOW ONLY ALLOW COPYING TRACKS WITHIN SAME PATTERN
+        // LATER ALLOW COPYING TRACKS ACROSS PATTERNS
+
+        baseDir += "/patterns/";
+        baseDir += std::to_string(XRSequencer::getCurrentSelectedPatternNum());
+
+        // verify ptn dir exists first
+        if (!SD.exists(baseDir.c_str()))
+        {
+            if (!SD.mkdir(baseDir.c_str()))
+            {
+                XRDisplay::drawError("SD MKDIR ERR!");
+                return;
+            }
+        }
+        
+        std::string sFileDir = baseDir;
+        sFileDir += "/sounds.bin";
+
+        // File sFileR = SD.open(baseDir.c_str(), FILE_READ);
+        // sFileR.read((byte *)&XRSound::patternSoundsCopyBuffer, sizeof(XRSound::patternSoundsCopyBuffer));
+        // sFileR.close();
+
+        // put sound from source track into copy buffer destination track sound
+        XRSound::activePatternSounds[destTrack] = XRSound::activePatternSounds[sourceTrack];
+
+        // save the sounds file
+
+        File sFileW = SD.open(sFileDir.c_str(), FILE_WRITE);
+        sFileW.truncate();
+        sFileW.write((byte *)&XRSound::activePatternSounds, sizeof(XRSound::activePatternSounds));
+        sFileW.close();
+
+        // Serial.printf("COPY TRACK: DONE COPY SOUND! \n");
+
+        // --- END COPY TRACK SOUND
+
+        std::string baseLayerDir = baseDir;
+        baseLayerDir += "/layers";
+
+        // verify layer dir exists first
+        if (!SD.exists(baseLayerDir.c_str()))
+        {
+            if (!SD.mkdir(baseLayerDir.c_str()))
+            {
+                XRDisplay::drawError("SD MKDIR ERR!");
+                return;
+            }
+        }
+
+        // -- BEGIN LAYER LOOP
+
+        auto baseLayerDirObj = SD.open(baseLayerDir.c_str(), FILE_READ);
+        if (!baseLayerDirObj.isDirectory())
+        {
+            XRDisplay::drawError("SD ERR!");
+            baseLayerDirObj.close();
+            return;
+        }
+
+        // Serial.printf("COPY TRACK: BEGIN COPY LAYERS! \n");
+
+        // search all potential track layer folders
+        for (int l=0; l < MAXIMUM_SEQUENCER_TRACK_LAYERS; l++)
+        {
+            std::string layerDir = baseLayerDir;
+            layerDir += "/";
+            layerDir += std::to_string(l);
+
+            auto layerDirObj = SD.open(layerDir.c_str(), FILE_READ);
+            
+            // Serial.print("COPY TRACK: LAYER DIR: ");
+            // Serial.println(layerDir.c_str());
+
+            // Serial.printf("layerDirObj.isDirectory: %d \n", layerDirObj.isDirectory());
+
+            if (layerDirObj && layerDirObj.isDirectory()) 
+            {
+                // copy track data
+                std::string lTrackDir = layerDir;
+                lTrackDir += "/track.bin";
+                
+                File lTrackFileR = SD.open(lTrackDir.c_str(), FILE_READ);
+                if (lTrackFileR.available())
+                {
+                    // Serial.printf("COPY TRACK: BEGIN COPY TRACK DATA FOR LAYER %d! \n", l);
+                    // XRSequencer::initTrackLayerCopyBuffer();
+
+                    // lTrackFileR.read((byte *)&XRSequencer::trackLayerCopyBuffer, sizeof(XRSequencer::trackLayerCopyBuffer));
+                    // lTrackFileR.close();
+
+                    // XRSequencer::trackLayerCopyBuffer.tracks[destTrack] = XRSequencer::activeTrackLayer.tracks[sourceTrack];
+                    XRSequencer::activeTrackLayer.tracks[destTrack] = XRSequencer::activeTrackLayer.tracks[sourceTrack];
+
+                    File lTrackFileW = SD.open(lTrackDir.c_str(), FILE_WRITE);
+                    lTrackFileW.truncate();
+                    lTrackFileW.write((byte *)&XRSequencer::activeTrackLayer, sizeof(XRSequencer::activeTrackLayer));
+                    lTrackFileW.close();
+                    lTrackFileR.close();
+
+                    // Serial.printf("COPY TRACK: DONE COPY TRACK DATA FOR LAYER %d! \n", l);
+                } else {
+                    lTrackFileR.close();
+                }
+
+                // copy step mod data
+                std::string lTrackStepModDir = layerDir;
+                lTrackStepModDir += "/track_step_mod.bin";
+
+                File lTrackStepModR = SD.open(lTrackStepModDir.c_str(), FILE_READ);
+                if (lTrackStepModR.available())
+                {
+                    // Serial.printf("COPY TRACK: BEGIN COPY TRACK STEP MOD DATA FOR LAYER %d! \n", l);
+
+                    // TODO: impl this?
+                    // XRSequencer::initTrackStepModLayerCopyBuffer(); 
+
+                    // lTrackStepModR.read((byte *)&XRSequencer::trackStepModLayerCopyBuffer, sizeof(XRSequencer::trackStepModLayerCopyBuffer));
+                    // lTrackStepModR.close();
+
+                    // XRSequencer::trackStepModLayerCopyBuffer.tracks[destTrack] = XRSequencer::activeTrackStepModLayer.tracks[sourceTrack];
+                    XRSequencer::activeTrackStepModLayer.tracks[destTrack] = XRSequencer::activeTrackStepModLayer.tracks[sourceTrack];
+
+                    File lTrackStepModW = SD.open(lTrackStepModDir.c_str(), FILE_WRITE);
+                    lTrackStepModW.truncate();
+                    lTrackStepModW.write((byte *)&XRSequencer::activeTrackStepModLayer, sizeof(XRSequencer::activeTrackStepModLayer));
+                    lTrackStepModW.close();
+                    lTrackStepModR.close();
+
+                    // Serial.printf("COPY TRACK: DONE COPY TRACK STEP MOD DATA FOR LAYER %d! \n", l);
+                } else {
+                    lTrackStepModR.close();
+                }
+
+                // copy sound step mod data
+                std::string lSoundStepModDir = layerDir;
+                lSoundStepModDir += "/sound_step_mod.bin";
+
+                File lSoundStepModR = SD.open(lSoundStepModDir.c_str(), FILE_READ);
+                if (lSoundStepModR.available())
+                {
+                    // Serial.printf("COPY TRACK: BEGIN COPY SOUND STEP MOD DATA FOR LAYER %d! \n", l);
+
+                    // TODO: impl this?
+                    // XRSound::initPatternSoundStepModLayerCopyBuffer(); 
+
+                    // lSoundStepModR.read((byte *)&XRSound::patternSoundStepModLayerCopyBuffer, sizeof(XRSound::patternSoundStepModLayerCopyBuffer));
+                    // lSoundStepModR.close();
+
+                    //XRSound::patternSoundStepModLayerCopyBuffer.sounds[destTrack] = XRSound::activePatternSoundStepModLayer.sounds[sourceTrack];
+                    XRSound::activePatternSoundStepModLayer.sounds[destTrack] = XRSound::activePatternSoundStepModLayer.sounds[sourceTrack];
+
+                    File lSoundStepModW = SD.open(lTrackStepModDir.c_str(), FILE_WRITE);
+                    lSoundStepModW.truncate();
+                    lSoundStepModW.write((byte *)&XRSound::activePatternSoundStepModLayer, sizeof(XRSound::activePatternSoundStepModLayer));
+                    lSoundStepModW.close();
+                    lSoundStepModR.close();
+
+                    // Serial.printf("COPY TRACK: DONE COPY SOUND STEP MOD DATA FOR LAYER %d! \n", l);
+                } else {
+                    lSoundStepModR.close();
+                }
+            }
+
+            layerDirObj.close();
+        }
+
+        // Serial.printf("COPY TRACK: DONE COPY LAYERS! \n");
+
+        baseLayerDirObj.close();
+
+        // -- END LAYER LOOP
     }
 
     std::string *getSampleList(int16_t cursor)
@@ -992,8 +1187,10 @@ namespace XRSD
             return _sampleFileListPaged.list;
         }
 
-        uint8_t batchSize = 255;
-        for (uint8_t b = 0; b < batchSize; b++) {
+        _sampleFileList.list[0] = "--NONE--";
+
+        uint16_t batchSize = 256;
+        for (uint16_t b = 1; b < batchSize; b++) {
             auto sampleFile = sampleDir.openNextFile();
 
             if (sampleFile && !sampleFile.isDirectory()) {
@@ -1004,6 +1201,8 @@ namespace XRSD
                 break;
             }
         }
+
+        sampleDir.close();
 
         uint8_t pageSize = 5;
         for (uint8_t p = 0; p < pageSize; p++) {
@@ -1058,7 +1257,9 @@ namespace XRSD
     {
         File sysexDir;
 
-        std::string voiceBankName = "/audio enjoyer/xr-1/sysex/dexed/0/";
+        std::string voiceBankName = "/audio enjoyer/xr-1/sysex/dexed/";
+        voiceBankName += std::to_string(dexedCurrentPool);
+        voiceBankName += "/";
         voiceBankName += std::to_string(dexedCurrentBank);
 
         AudioNoInterrupts();
@@ -1184,13 +1385,23 @@ namespace XRSD
         return _currSampleFileHighlighted;
     }
 
+    std::string getCurrentDexedSysexPool()
+    {
+        return std::to_string(dexedCurrentPool);
+    }
+    
     std::string getCurrentDexedSysexBank()
     {
         return std::to_string(dexedCurrentBank);
     }
 
-    std::string getCurrentDexedSysexPatchName()
+    std::string getCurrentDexedSysexPatchNum()
     {
         return std::to_string(dexedCurrentPatch);
+    }
+
+    std::string getCurrentDexedSysexPatchName()
+    {
+        return dexedPatchName;
     }
 }

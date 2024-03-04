@@ -55,8 +55,11 @@ namespace XRSequencer
     DMAMEM TRACK_LAYER activeTrackLayer;
     DMAMEM TRACK_LAYER nextTrackLayer;
     DMAMEM TRACK_STEP_MOD_LAYER activeTrackStepModLayer;
+    DMAMEM PATTERN_FX_PAGE_INDEXES patternFxPages[MAXIMUM_PATTERN_FX_PARAM_PAGES];
 
-    DMAMEM PATTERN_FX_PAGE_INDEXES patternFxPages[MAXIMUM_PATTERN_FX_PARAM_PAGES];;
+    // DMAMEM PATTERN patternCopyBuffer;
+    // DMAMEM TRACK_LAYER trackLayerCopyBuffer;
+    // DMAMEM TRACK_STEP_MOD_LAYER trackStepModLayerCopyBuffer;
 
     TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
 
@@ -785,6 +788,25 @@ namespace XRSequencer
                 activeTrackLayer.tracks[t].steps[s].state = STEP_STATE::STATE_OFF;
             }
         }
+    }
+
+    void initTrackLayerCopyBuffer()
+    {
+        // for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++) {
+        //     trackLayerCopyBuffer.tracks[t].length = 4;
+        //     trackLayerCopyBuffer.tracks[t].note = 0;
+        //     trackLayerCopyBuffer.tracks[t].octave = 4;
+        //     trackLayerCopyBuffer.tracks[t].velocity = 50;
+        //     trackLayerCopyBuffer.tracks[t].probability = 100;
+        //     trackLayerCopyBuffer.tracks[t].lstep = DEFAULT_LAST_STEP;
+        //     trackLayerCopyBuffer.tracks[t].initialized = false;
+
+        //     // now fill in steps
+        //     for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
+        //     {
+        //         trackLayerCopyBuffer.tracks[t].steps[s].state = STEP_STATE::STATE_OFF;
+        //     }
+        // }
     }
 
     void initNextTrackLayer()

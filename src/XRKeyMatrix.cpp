@@ -92,7 +92,8 @@ namespace XRKeyMatrix
     // TODO: extract to XRSound namespace method
     XRSound::SOUND_TYPE selectNewSoundTypeForTrack(int currTrackNum, XRSound::SOUND_TYPE currType);
 
-    bool btnCharIsATrack(char btnChar);
+    bool keyIsATrack(char keyChar);
+    bool keyIsAStep(char keyChar);
     bool isSelectBtnHeld();
 
     uint8_t getKeyStepNum(char idx);
@@ -212,7 +213,7 @@ namespace XRKeyMatrix
 
             return;
         }       
-        else if (currentUXMode == XRUX::UX_MODE::TRACK_SEL && btnCharIsATrack(key)) {
+        else if (currentUXMode == XRUX::UX_MODE::TRACK_SEL && keyIsATrack(key)) {
             uint8_t selTrack = getKeyStepNum(key)-1; // zero-based
 
             XRSequencer::setSelectedTrack(selTrack);
@@ -296,7 +297,7 @@ namespace XRKeyMatrix
             return;
 
         } 
-        else if (currentUXMode == XRUX::UX_MODE::PATTERN_SEL && btnCharIsATrack(key))
+        else if (currentUXMode == XRUX::UX_MODE::PATTERN_SEL && keyIsATrack(key))
         {
             auto &seqState = XRSequencer::getSeqState();
             auto currBank = XRSequencer::getCurrentSelectedBankNum();
@@ -351,10 +352,16 @@ namespace XRKeyMatrix
         }
 
         // pattern write allow tapping tracks (and recording steps in rec mode)
-        else if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE && btnCharIsATrack(key))
+        else if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE && keyIsATrack(key))
         {
             auto trackNum = getKeyStepNum(key) - 1;
             auto &trackToUse = XRSequencer::getTrack(trackNum);
+
+            if (XRSequencer::getSeqState().playbackState == XRSequencer::SEQUENCER_PLAYBACK_STATE::STOPPED)
+            {
+                // make sure pattern fx are unmuted before triggering a track manually
+                XRSound::applyFxForActivePattern();
+            }
 
             XRSequencer::setSelectedTrack(trackNum);
             XRSound::triggerTrackManually(trackNum, trackToUse.note, trackToUse.octave, _selectBtnHeld);
@@ -375,7 +382,7 @@ namespace XRKeyMatrix
         }
 
         // bank sel
-        else if (currentUXMode == XRUX::UX_MODE::BANK_SEL && btnCharIsATrack(key)) {
+        else if (currentUXMode == XRUX::UX_MODE::BANK_SEL && keyIsATrack(key)) {
             auto &seqState = XRSequencer::getSeqState();
 
             int nextBank = getKeyStepNum(key) - 1; // zero-based
@@ -429,11 +436,11 @@ namespace XRKeyMatrix
         else if (
             currentUXMode == XRUX::COPY_SEL && 
             (_stepCopyAvailable < 0 && _stepCopyAvailable < 0 && _patternCopyAvailable < 0) && 
-            (btnCharIsATrack(key) || key == PATTERN_BTN_CHAR || key == TRACK_BTN_CHAR)
+            (keyIsATrack(key) || key == PATTERN_BTN_CHAR || key == TRACK_BTN_CHAR)
         ) {         
             auto prevMode = XRUX::getPreviousMode();
 
-            if (prevMode == XRUX::TRACK_WRITE && _stepCopyAvailable < 0 && btnCharIsATrack(key))
+            if (prevMode == XRUX::TRACK_WRITE && _stepCopyAvailable < 0 && keyIsATrack(key))
             { 
                 // copy step
                 auto currStepPage = XRSequencer::getCurrentStepPage();
@@ -483,7 +490,7 @@ namespace XRKeyMatrix
 
             return;
         }
-        else if (currentUXMode == XRUX::COPY_PATTERN && _patternCopyAvailable < 0 && btnCharIsATrack(key))
+        else if (currentUXMode == XRUX::COPY_PATTERN && _patternCopyAvailable < 0 && keyIsATrack(key))
         {
             Serial.printf("copy selected pattern %d !!!\n", getKeyStepNum(key));
 
@@ -510,7 +517,7 @@ namespace XRKeyMatrix
 
             return;
         }
-        else if (currentUXMode == XRUX::COPY_TRACK && _trackCopyAvailable < 0 && btnCharIsATrack(key))
+        else if (currentUXMode == XRUX::COPY_TRACK && _trackCopyAvailable < 0 && keyIsATrack(key))
         {
             Serial.printf("copy selected track %d !!!\n", getKeyStepNum(key));
 
@@ -524,7 +531,7 @@ namespace XRKeyMatrix
         // paste
         else if (
             currentUXMode == XRUX::COPY_STEP && _stepCopyAvailable > -1 && 
-            (btnCharIsATrack(key) || key == ESCAPE_BTN_CHAR)
+            (keyIsATrack(key) || key == ESCAPE_BTN_CHAR)
         ) { 
             // paste step
 
@@ -562,6 +569,10 @@ namespace XRKeyMatrix
                 stepToUse += 48;
             }
 
+            XRUX::setCurrentMode(XRUX::PASTE_STEP);
+
+            XRDisplay::drawPasteConfirmOverlay("STEP", stepToUse);
+
             XRSD::saveCopiedStep(
                 XRSequencer::getCurrentSelectedTrackNum(),
                 _stepCopyAvailable,
@@ -570,13 +581,9 @@ namespace XRKeyMatrix
 
             _stepCopyAvailable = -1;
 
-            XRUX::setCurrentMode(XRUX::PASTE_STEP);
-
-            XRDisplay::drawPasteConfirmOverlay("STEP", stepToUse);
-
             return;
         }
-        else if (currentUXMode == XRUX::COPY_PATTERN && _patternCopyAvailable > -1 && (btnCharIsATrack(key) || key == ESCAPE_BTN_CHAR))
+        else if (currentUXMode == XRUX::COPY_PATTERN && _patternCopyAvailable > -1 && (keyIsATrack(key) || key == ESCAPE_BTN_CHAR))
         { 
             // paste pattern
 
@@ -644,7 +651,7 @@ namespace XRKeyMatrix
 
             return;
         }
-        else if (currentUXMode == XRUX::COPY_TRACK && _trackCopyAvailable > -1 && (btnCharIsATrack(key) || key == ESCAPE_BTN_CHAR))
+        else if (currentUXMode == XRUX::COPY_TRACK && _trackCopyAvailable > -1 && (keyIsATrack(key) || key == ESCAPE_BTN_CHAR))
         { 
             // paste track
             
@@ -700,26 +707,23 @@ namespace XRKeyMatrix
 
                 XRUX::setCurrentMode(XRUX::COPY_ERROR);
 
-                XRDisplay::drawError("TRACK CANNOT BE COPIED!");
+                XRDisplay::drawError("TRACK SOUND CANNOT BE COPIED!");
 
                 delay(1000);
 
                 return;
             }
 
-            XRSD::saveCopiedTrack(_trackCopyAvailable, destTrack);
-
-            _trackCopyAvailable = -1;
-
             XRUX::setCurrentMode(XRUX::PASTE_TRACK);
 
             XRDisplay::drawPasteConfirmOverlay("TRACK", getKeyStepNum(key));
 
-            delay(500);
+            XRSD::saveCopiedTrackToSamePattern(_trackCopyAvailable, destTrack);
+
+            _trackCopyAvailable = -1;
 
             // transition to target track as well?
-
-            // XRSequencer::setSelectedTrack(destTrack);
+            XRSequencer::setSelectedTrack(destTrack);
 
             return;
         }
@@ -779,7 +783,7 @@ namespace XRKeyMatrix
 
             return;
         }
-        else if (currentUXMode == XRUX::PERFORM_SEL && btnCharIsATrack(key) && getKeyStepNum(key) >= 13)
+        else if (currentUXMode == XRUX::PERFORM_SEL && keyIsATrack(key) && getKeyStepNum(key) >= 13)
         {
             _performModeHeldForSelection = getKeyStepNum(key) - 1;
 
@@ -833,7 +837,7 @@ namespace XRKeyMatrix
 
             return;
         }
-        else if (currentUXMode == XRUX::PERFORM_TAP && btnCharIsATrack(key))
+        else if (currentUXMode == XRUX::PERFORM_TAP && keyIsATrack(key))
         {
             uint8_t selTrackLayer = getKeyStepNum(key)-1; // zero-based
 
@@ -884,7 +888,7 @@ namespace XRKeyMatrix
 
             return;
         }
-        else if (currentUXMode == XRUX::PERFORM_MUTE && btnCharIsATrack(key))
+        else if (currentUXMode == XRUX::PERFORM_MUTE && keyIsATrack(key))
         { 
             auto trackNum = getKeyStepNum(key) - 1;
 
@@ -896,7 +900,7 @@ namespace XRKeyMatrix
 
             return;
         }
-        else if (currentUXMode == XRUX::PERFORM_SOLO && btnCharIsATrack(key))
+        else if (currentUXMode == XRUX::PERFORM_SOLO && keyIsATrack(key))
         { 
             auto trackNum = getKeyStepNum(key) - 1;
 
@@ -1032,7 +1036,7 @@ namespace XRKeyMatrix
 
             return true;
         } 
-        else if (currentUXMode == XRUX::PASTE_STEP && (btnCharIsATrack(key)))
+        else if (currentUXMode == XRUX::PASTE_STEP && (keyIsATrack(key)))
         {
             Serial.println("PASTE STEP RELEASE");
 
@@ -1045,13 +1049,13 @@ namespace XRKeyMatrix
 
             XRLED::setDisplayStateForAllStepLEDs();
 
-            delay(250);
+            // delay(250);
 
             XRDisplay::drawSequencerScreen(false);
 
             return true;
         }
-        else if (currentUXMode == XRUX::PASTE_TRACK && (btnCharIsATrack(key)))
+        else if (currentUXMode == XRUX::PASTE_TRACK && (keyIsATrack(key)))
         {
             Serial.println("PASTE TRACK RELEASE");
 
@@ -1064,11 +1068,13 @@ namespace XRKeyMatrix
 
             XRLED::clearAllStepLEDs();
 
+            // delay(250);
+
             XRDisplay::drawSequencerScreen(false);
 
             return true;
         }
-        else if (currentUXMode == XRUX::COPY_ERROR && (btnCharIsATrack(key)))
+        else if (currentUXMode == XRUX::COPY_ERROR && (keyIsATrack(key)))
         {
             Serial.println("COPY ERROR RELEASE");
 
@@ -1076,9 +1082,8 @@ namespace XRKeyMatrix
                 XRUX::setCurrentMode(XRUX::TRACK_WRITE);
                 XRUX::setPreviousMode(XRUX::TRACK_WRITE);
             } else {
-
-            XRUX::setCurrentMode(XRUX::PATTERN_WRITE);
-            XRUX::setPreviousMode(XRUX::PATTERN_WRITE);
+                XRUX::setCurrentMode(XRUX::PATTERN_WRITE);
+                XRUX::setPreviousMode(XRUX::PATTERN_WRITE);
             }
             
             _patternCopyAvailable = -1;
@@ -1097,7 +1102,7 @@ namespace XRKeyMatrix
     {
         auto currentUXMode = XRUX::getCurrentMode();
 
-        if (currentUXMode == XRUX::STEP_PREVIEW && (key == SELECT_BTN_CHAR || btnCharIsATrack(key)))
+        if (currentUXMode == XRUX::STEP_PREVIEW && (key == SELECT_BTN_CHAR || keyIsATrack(key)))
         {
             auto &currTrack = XRSequencer::getCurrentSelectedTrack();
             auto track = XRSequencer::getCurrentSelectedTrackNum();
@@ -1125,7 +1130,7 @@ namespace XRKeyMatrix
             _selectBtnHeld = false;
 
             return true;
-        } else if (currentUXMode == XRUX::STEP_PREVIEW && btnCharIsATrack(key))
+        } else if (currentUXMode == XRUX::STEP_PREVIEW && keyIsATrack(key))
         {
             XRUX::setCurrentMode(XRUX::TRACK_WRITE);
 
@@ -1186,7 +1191,7 @@ namespace XRKeyMatrix
         XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
 
         // track layer select
-        if (currentUXMode == XRUX::UX_MODE::TRACK_LAYER_SEL && btnCharIsATrack(key)) {
+        if (currentUXMode == XRUX::UX_MODE::TRACK_LAYER_SEL && keyIsATrack(key)) {
             uint8_t selTrackLayer = getKeyStepNum(key)-1; // zero-based
 
             Serial.printf(
@@ -1282,7 +1287,7 @@ namespace XRKeyMatrix
 
             return true;
         }
-        else if (currentUXMode == XRUX::TRACK_SEL && btnCharIsATrack(key) && ((getKeyStepNum(key) - 1) == _trackHeldForSelection))
+        else if (currentUXMode == XRUX::TRACK_SEL && keyIsATrack(key) && ((getKeyStepNum(key) - 1) == _trackHeldForSelection))
         {
             Serial.println("unmarking track as held for selection!");
 
@@ -1308,8 +1313,13 @@ namespace XRKeyMatrix
 
             return true;
         }
-        else if (!_isFunctionActive && !_copyBtnHeld && currentUXMode == XRUX::TRACK_WRITE && btnCharIsATrack(key) && _trackHeldForSelection == -1)
-        {
+        else if (
+            !_isFunctionActive && 
+            !_copyBtnHeld && 
+            currentUXMode == XRUX::TRACK_WRITE && 
+            keyIsAStep(key) && 
+            _trackHeldForSelection == -1
+        ) {
             uint8_t stepToToggle = getKeyStepNum(key);
 
             XRSequencer::toggleSelectedStep(stepToToggle);
@@ -1639,7 +1649,7 @@ namespace XRKeyMatrix
         XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
 
         // param lock release
-        if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && btnCharIsATrack(key)) {
+        if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && keyIsAStep(key)) {
             // revert
             XRUX::setCurrentMode(XRUX::TRACK_WRITE);
 
@@ -1685,7 +1695,7 @@ namespace XRKeyMatrix
         // param lock step
         bool allowedModeToParamLockFrom = (currentUXMode == XRUX::TRACK_WRITE);
 
-        if (allowedModeToParamLockFrom && btnCharIsATrack(key))
+        if (allowedModeToParamLockFrom && keyIsAStep(key))
         {
             // editing a step value / parameter locking this step
             XRUX::setCurrentMode(XRUX::SUBMITTING_STEP_VALUE);
@@ -1762,7 +1772,7 @@ namespace XRKeyMatrix
     {
         auto currentUXMode = XRUX::getCurrentMode();
 
-        if (currentUXMode == XRUX::PERFORM_RATCHET && btnCharIsATrack(key))
+        if (currentUXMode == XRUX::PERFORM_RATCHET && keyIsATrack(key))
         {
             Serial.println("release track ratchet");
 
@@ -1783,7 +1793,7 @@ namespace XRKeyMatrix
         auto &seqState = XRSequencer::getSeqState();
 
         // perform ratchet
-        if (currentUXMode == XRUX::PERFORM_RATCHET && btnCharIsATrack(key))
+        if (currentUXMode == XRUX::PERFORM_RATCHET && keyIsATrack(key))
         { 
             // handle ratchets
             if (seqState.playbackState == XRSequencer::SEQUENCER_PLAYBACK_STATE::RUNNING)
@@ -1843,35 +1853,24 @@ namespace XRKeyMatrix
         }
     }
 
-    bool btnCharIsATrack(char btnChar)
+    bool keyIsATrack(char keyChar)
     {
-        // Serial.println("enter btnCharIsATrack!");
-
-        std::string btnCharStr;
-        btnCharStr += btnChar;
-
-        // Serial.printf("btnCharStr: %s\n", btnCharStr.c_str());
+        std::string keyCharStr;
+        keyCharStr += keyChar;
         
         std::string checkStr = "mnopstuvyz125678";
-        if (btnCharStr.length() > 0) {
-            if (checkStr.find(btnChar) != std::string::npos) {
-                // Serial.println("char found!");
-                // Serial.println("leave btnCharIsATrack!");
+        if (keyCharStr.length() > 0) {
+            if (checkStr.find(keyChar) != std::string::npos) {
                 return true;
             }
         }
-        
-
-        // char *validTrackChars = "mnopstuvyz125678";
-        // if (strchr(validTrackChars, btnChar) != NULL)
-        // {
-        //     return true;
-        // }
-
-        // Serial.println("char NOT found!");
-        // Serial.println("leave btnCharIsATrack!");
 
         return false;
+    }
+
+    bool keyIsAStep(char keyChar)
+    {
+        return keyIsATrack(keyChar);
     }
 
     uint8_t getKeyStepNum(char idx)
