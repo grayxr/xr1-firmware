@@ -106,10 +106,15 @@ add_executable(xr1
         src/XRSequencer.cpp
         src/XRSound.cpp
         src/XRUX.cpp
-        src/XRVersa.cpp)
+        src/XRVersa.cpp
+        ../lib/stbi/stb_image_aug.c
+        ../lib/stbi/stbi_DDS_aug_c.h
+)
 target_link_libraries(xr1 ${teensy_audio_x86_stubs_soundio_LIBS} ${teensy_x86_responsiveanalogread_stubs_LIBS} ${teensy_sampleflashloader_LIBS} ${teensy_x86_keypad_stubs_LIBS} ${teensy_x86_midi_stubs_rtmidi_LIBS} ${teensy_x86_time_stubs_LIBS} ${teensy_x86_u8g2_stubs_LIBS} ${teensy_x86_midi_stubs_LIBS} ${teensy_variable_playback_LIBS} ${teensy_x86_u8g2_stubs_LIBS} ${teensy_x86_uClock_stubs_LIBS} ${teensy_x86_IntervalTimer_stubs_LIBS} ${teensy_audio_x86_stubs_LIBS} ${teensy_x86_twowire_stubs_LIBS} ${teensy_x86_mpr121_stubs_LIBS} ${teensy_x86_tlc5947_stubs_LIBS}  ${teensy_x86_midi_stubs_LIBS}  ${teensy_x86_sd_stubs_LIBS} fasttouch ${teensy_x86_spi_stubs_LIBS} ${teensy_x86_stubs_LIBS})
 target_link_libraries(xr1 -L/usr/local/lib/ rtmidi)
 target_link_libraries(xr1 "-L/usr/local/lib -lsoundio")
+target_link_libraries(xr1 assimp)
+target_link_libraries(xr1 -L/usr/local/Cellar/assimp/5.3.1/lib/)
 
 target_link_libraries(xr1 ${teensy_x86_u8g2_stubs_LIBS})
 target_link_libraries(xr1 ${teensy_x86_u8g2_stubs_opengl_LIBS})
