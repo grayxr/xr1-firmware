@@ -2246,13 +2246,16 @@ namespace XRSound
             } else if (activePatternSounds[track].type == T_MONO_SYNTH) {
                 monoSynthInstances[track].amp.gain(0);
                 monoSynthInstances[track].ampDelaySend.gain(0);
-            } else if (activePatternSounds[track].type == T_DEXED_SYNTH) {
+            }
+#ifndef NO_DEXED
+            else if (activePatternSounds[track].type == T_DEXED_SYNTH) {
                 dexedInstances[track].amp.gain(0);
                 dexedInstances[track].ampDelaySend.gain(0);
             } else if (activePatternSounds[track].type == T_FM_DRUM) {
                 fmDrumInstances[track].amp.gain(0);
                 fmDrumInstances[track].ampDelaySend.gain(0);
-            } 
+            }
+#endif
             // else if (activePatternSounds[track].type == T_BRAIDS_SYNTH) {
             //     braidsInstances[track].amp.gain(0);
             //     braidsInstances[track].ampDelaySend.gain(0);
@@ -2278,13 +2281,16 @@ namespace XRSound
             } else if (activePatternSounds[chokeDestTrk].type == T_MONO_SYNTH) {
                 monoSynthInstances[chokeDestTrk].amp.gain(0);
                 monoSynthInstances[chokeDestTrk].ampDelaySend.gain(0);
-            } else if (activePatternSounds[chokeDestTrk].type == T_DEXED_SYNTH) {
+            }
+#ifndef NO_DEXED
+            else if (activePatternSounds[chokeDestTrk].type == T_DEXED_SYNTH) {
                 dexedInstances[chokeDestTrk].amp.gain(0);
                 dexedInstances[chokeDestTrk].ampDelaySend.gain(0);
             } else if (activePatternSounds[chokeDestTrk].type == T_FM_DRUM) {
                 fmDrumInstances[chokeDestTrk].amp.gain(0);
                 fmDrumInstances[chokeDestTrk].ampDelaySend.gain(0);
-            } 
+            }
+#endif
             // else if (activePatternSounds[chokeDestTrk].type == T_BRAIDS_SYNTH) {
             //     braidsInstances[chokeDestTrk].amp.gain(0);
             //     braidsInstances[chokeDestTrk].ampDelaySend.gain(0);
@@ -2748,21 +2754,24 @@ namespace XRSound
     void turnOffAllSounds()
     {
         for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++) {
+#ifndef NO_DEXED
             if (t < 4) { // dexed voice instances are only available to tracks 0-3
                 dexedInstances[t].dexed.notesOff();
             }
-
+#endif
             if (activePatternSounds[t].type == T_MONO_SAMPLE) {
                 monoSampleInstances[t].amp.gain(0);
                 monoSampleInstances[t].ampDelaySend.gain(0);
             } else if (activePatternSounds[t].type == T_MONO_SYNTH) {
                 monoSynthInstances[t].amp.gain(0);
                 monoSynthInstances[t].ampDelaySend.gain(0);
-            } else if (activePatternSounds[t].type == T_FM_DRUM) {
+            }
+#ifndef NO_DEXED
+            else if (activePatternSounds[t].type == T_FM_DRUM) {
                 fmDrumInstances[t].amp.gain(0);
                 fmDrumInstances[t].ampDelaySend.gain(0);
             }
-
+#endif
             // else if (activePatternSounds[t].type == T_BRAIDS_SYNTH) {
             //     braidsInstances[t].amp.gain(0);
             //     braidsInstances[t].ampDelaySend.gain(0);

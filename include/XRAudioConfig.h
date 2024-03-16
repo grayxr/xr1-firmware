@@ -65,6 +65,7 @@ extern AudioPlayArrayResmp  monoSample11; //xy=1710.4760932922363,3794.071386575
 extern AudioPlayArrayResmp  monoSample5; //xy=1714.9998893737793,2777.5002624988556
 extern AudioPlayArrayResmp  monoSample10; //xy=1712.1427192687988,3630.738134622574
 extern AudioPlayArrayResmp  monoSample9; //xy=1713.3333930969238,3465.8335993289948
+#ifndef NO_DEXED
 extern AudioSynthDexed          dexed3; //xy=1736.666763305664,1188.5714526176453
 extern AudioSynthDexed          dexed2; //xy=1740.0000343322754,1061.190508365631
 extern AudioSynthDexed          dexed1; //xy=1740.9009475708008,930.3614101409912
@@ -72,6 +73,7 @@ extern AudioSynthDexed          dexed4; //xy=1739.999912261963,1318.095381259918
 extern AudioSynthFMDrum         fmDrum3; //xy=1749.9999656677246,1775.0001382827759
 extern AudioSynthFMDrum         fmDrum2; //xy=1754.999927520752,1631.6667580604553
 extern AudioSynthFMDrum         fmDrum1; //xy=1759.8810081481934,1486.2304241657257
+#endif
 //extern AudioSynthBraids         braids1;        //xy=1759.9999542236328,1920.0003108978271
 extern AudioAmplifier           monoSynthAmp2; //xy=1819.499885559082,415.88091564178467
 extern AudioAmplifier           monoSynthAmp1; //xy=1821.6665344238281,220.00006008148193

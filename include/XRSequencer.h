@@ -5,7 +5,7 @@
 #include <XRConfig.h>
 #include <XRSound.h>
 #include <TeensyVariablePlayback.h>
-#include <Entropy.h>
+//#include <Entropy.h>
 
 namespace XRSequencer
 {

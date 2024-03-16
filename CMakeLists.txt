@@ -121,11 +121,11 @@ target_link_libraries(xr1 ${teensy_x86_u8g2_stubs_opengl_LIBS})
 
 target_link_libraries(xr1 ${LIBS})
 
-add_custom_command(
-        TARGET xr1 POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-           ${CMAKE_SOURCE_DIR}/imgui.ini
-           ${CMAKE_CURRENT_BINARY_DIR}/imgui.ini)
+#add_custom_command(
+#        TARGET xr1 POST_BUILD
+#        COMMAND ${CMAKE_COMMAND} -E copy
+#           ${CMAKE_SOURCE_DIR}/imgui.ini
+#           ${CMAKE_CURRENT_BINARY_DIR}/imgui.ini)
 
 if  (APPLE)
     target_link_libraries(xr1

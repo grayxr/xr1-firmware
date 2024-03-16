@@ -572,7 +572,8 @@ namespace XRSequencer
         }
 
         if (prob < 100) {
-            uint8_t r = random(99);
+            // uint8_t r = random(99);
+            uint8_t r = rand() % 100;
 
             if (prob == 0 || (r > prob)) {
                 return false;

@@ -516,9 +516,11 @@ namespace XRDisplay
 
             if (
                 currSoundForTrack.type == XRSound::T_MONO_SAMPLE ||
-                currSoundForTrack.type == XRSound::T_MONO_SYNTH ||
-                currSoundForTrack.type == XRSound::T_DEXED_SYNTH ||
+                currSoundForTrack.type == XRSound::T_MONO_SYNTH
+#ifndef NO_DEXED
+                || currSoundForTrack.type == XRSound::T_DEXED_SYNTH ||
                 currSoundForTrack.type == XRSound::T_FM_DRUM
+#endif
             ){
                 std::string soundName(currSoundForTrack.name);
 
@@ -541,7 +543,9 @@ namespace XRDisplay
             // draw track description / main icon area
             if (
                 currSoundForTrack.type == XRSound::T_MONO_SYNTH ||
+#ifndef NO_DEXED
                 currSoundForTrack.type == XRSound::T_DEXED_SYNTH ||
+#endif
                 currSoundForTrack.type == XRSound::T_MIDI ||
                 currSoundForTrack.type == XRSound::T_CV_GATE)
             {
@@ -772,9 +776,11 @@ namespace XRDisplay
         }
         else if (
             currPageSelected == 0 &&
-            ((currSoundForTrack.type == XRSound::T_MONO_SYNTH) ||
-            (currSoundForTrack.type == XRSound::T_DEXED_SYNTH))
-        ) {
+                    ((currSoundForTrack.type == XRSound::T_MONO_SYNTH)
+#ifndef NO_DEXED
+                    || (currSoundForTrack.type == XRSound::T_DEXED_SYNTH)
+#endif
+            )) {
             drawNormalControlMods();
         } else if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 1)
         {

@@ -683,6 +683,7 @@ namespace XRKeyMatrix
 
             if (_trackCopyAvailable < 4 && destTrack > 3)
             {
+#ifndef NO_DEXED
                 if (_trackCopyAvailable < 3 && destTrack > 2)
                 {
                     if (XRSound::activePatternSounds[_trackCopyAvailable].type == XRSound::T_FM_DRUM)
@@ -690,11 +691,14 @@ namespace XRKeyMatrix
                         trackCanBeCopied = false;
                     }
                 }
-                
+#endif
+
                 if (
                     XRSound::activePatternSounds[_trackCopyAvailable].type == XRSound::T_MONO_SYNTH ||
+#ifndef NO_DEXED
                     XRSound::activePatternSounds[_trackCopyAvailable].type == XRSound::T_DEXED_SYNTH ||
                     XRSound::activePatternSounds[_trackCopyAvailable].type == XRSound::T_FM_DRUM ||
+#endif
                     XRSound::activePatternSounds[_trackCopyAvailable].type == XRSound::T_BRAIDS_SYNTH
                 ) {
                     trackCanBeCopied = false;

@@ -10,7 +10,7 @@ namespace XRMain
 
     void boot()
     {
-        randomSeed(analogRead(0));
+        //randomSeed(analogRead(0));
 
         XRSound::muteAllOutput();
 

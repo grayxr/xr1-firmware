@@ -49,6 +49,7 @@ AudioPlayArrayResmp  monoSample11; //xy=1710.4760932922363,3794.071386575699
 AudioPlayArrayResmp  monoSample5; //xy=1714.9998893737793,2777.5002624988556
 AudioPlayArrayResmp  monoSample10; //xy=1712.1427192687988,3630.738134622574
 AudioPlayArrayResmp  monoSample9; //xy=1713.3333930969238,3465.8335993289948
+#ifndef NO_DEXED
 AudioSynthDexed          dexed3(4, SAMPLE_RATE); //xy=1736.666763305664,1188.5714526176453
 AudioSynthDexed          dexed2(4, SAMPLE_RATE); //xy=1740.0000343322754,1061.190508365631
 AudioSynthDexed          dexed1(4, SAMPLE_RATE); //xy=1740.9009475708008,930.3614101409912
@@ -56,6 +57,7 @@ AudioSynthDexed          dexed4(4, SAMPLE_RATE); //xy=1739.999912261963,1318.095
 AudioSynthFMDrum         fmDrum3; //xy=1749.9999656677246,1775.0001382827759
 AudioSynthFMDrum         fmDrum2; //xy=1754.999927520752,1631.6667580604553
 AudioSynthFMDrum         fmDrum1; //xy=1759.8810081481934,1486.2304241657257
+#endif
 //AudioSynthBraids         braids1;        //xy=1759.9999542236328,1920.0003108978271
 AudioAmplifier           monoSynthAmp2; //xy=1819.499885559082,415.88091564178467
 AudioAmplifier           monoSynthAmp1; //xy=1821.6665344238281,220.00006008148193
@@ -313,6 +315,7 @@ AudioConnection          patchCord49(monoSample11, monoSampleAmpEnv11);
 AudioConnection          patchCord50(monoSample5, monoSampleAmpEnv5);
 AudioConnection          patchCord51(monoSample10, monoSampleAmpEnv10);
 AudioConnection          patchCord52(monoSample9, monoSampleAmpEnv9);
+#ifndef NO_DEXED
 AudioConnection          patchCord53(dexed3, 0, dexedAmpAccent3, 0);
 AudioConnection          patchCord54(dexed2, 0, dexedAmpAccent2, 0);
 AudioConnection          patchCord55(dexed1, 0, dexedAmpAccent1, 0);
@@ -320,6 +323,7 @@ AudioConnection          patchCord56(dexed4, 0, dexedAmpAccent4, 0);
 AudioConnection          patchCord57(fmDrum3, fmDrumAmpAccent3);
 AudioConnection          patchCord58(fmDrum2, fmDrumAmpAccent2);
 AudioConnection          patchCord59(fmDrum1, fmDrumAmpAccent1);
+#endif
 //AudioConnection          patchCord60(braids1, braidsAmpAccent1);
 AudioConnection          patchCord61(monoSynthAmp2, monoSynthLeft2);
 AudioConnection          patchCord62(monoSynthAmp2, monoSynthRight2);
