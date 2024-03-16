@@ -24,6 +24,7 @@ namespace XRSD
     extern MACHINE_STATE_0_1_0 _machine_state;
     extern PROJECT _current_project;
 
+    extern int dexedCurrentPool;
     extern int dexedCurrentBank;
     extern int dexedCurrentPatch;
     extern std::string dexedPatchName;
@@ -37,24 +38,43 @@ namespace XRSD
     bool loadLastProject();
     void saveProject();
 
-    bool loadSequencer();
-    bool loadPatternTrackStepModsFromSdCard(int bank, int pattern);
-    void saveSequencer();
-    void savePatternTrackStepModsToSdCard();
+    void saveCurrentSequencerData();
+    
+    bool loadActivePattern();
+    void saveActivePatternToSdCard();
+
+    bool loadActiveTrackLayer();
+    void saveActiveTrackLayerToSdCard();
+
+    bool loadNextPattern(int bank, int pattern);
+    bool loadNextTrackLayer(int bank, int pattern, int layer);
+
+    bool loadActiveTrackStepModLayerFromSdCard(int bank, int pattern, int layer);
+    void saveActiveTrackStepModLayerToSdCard();
+
+    bool loadActivePatternSounds();
+    void saveActivePatternSounds();
 
     bool loadNextPatternSounds(int bank, int pattern);
-    bool loadPatternSoundStepModsFromSdCard(int bank, int pattern);
-    void savePatternSounds();
-    void savePatternSoundStepModsToSdCard();
+    bool loadPatternSoundStepModLayerFromSdCard(int bank, int pattern, int layer);
+    void saveActiveSoundStepModLayerToSdCard();
 
     void loadDexedVoiceToCurrentTrack(int t = -1);
+
+    void saveCopiedStep(int track, int sourceStep, int destStep);
+    void saveCopiedTrackToSamePattern(int sourceTrack, int destTrack);
     
     std::string *getSampleList(int16_t cursor);
     std::string getCurrSampleFileHighlighted();
     void rewindSampleDir();
     void unloadSampleFileListPaged();
 
+    void setActiveSampleSlot(uint8_t slot);
+    uint8_t getActiveSampleSlot();
+
+    std::string getCurrentDexedSysexPool();
     std::string getCurrentDexedSysexBank();
+    std::string getCurrentDexedSysexPatchNum();
     std::string getCurrentDexedSysexPatchName();
 }
 

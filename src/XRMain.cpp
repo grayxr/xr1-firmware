@@ -10,6 +10,8 @@ namespace XRMain
 
     void boot()
     {
+        randomSeed(analogRead(0));
+
         XRSound::muteAllOutput();
 
         XRDisplay::init();
@@ -74,6 +76,7 @@ namespace XRMain
         XRVersa::handleStates();
         XREncoder::handleStates();
 
-        XRSequencer::handleQueueActions();
+        XRSequencer::handlePatternQueueActions();
+        XRSequencer::handleTrackLayerQueueActions();
     }
 }

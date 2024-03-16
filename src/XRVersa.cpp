@@ -100,7 +100,7 @@ namespace XRVersa
 
     void handleStates()
     {
-        auto &queuedPattern = XRSequencer::getQueuedPattern();
+        auto &queuedPattern = XRSequencer::getQueuedPatternState();
         auto currentUXMode = XRUX::getCurrentMode();
 
         // TODO: remove?
@@ -298,7 +298,9 @@ namespace XRVersa
             if (currentUXMode != XRUX::SUBMITTING_STEP_VALUE) {
                 XRSound::triggerTrackManually(
                     XRSequencer::getCurrentSelectedTrackNum(), 
-                    _noteOnKeyboard
+                    _noteOnKeyboard,
+                    XRKeyMatrix::getKeyboardOctave(),
+                    XRKeyMatrix::isSelectBtnHeld()
                 );
             }
 
@@ -308,7 +310,7 @@ namespace XRVersa
 
     void handleNoteOffInput(uint8_t pin)
     {
-        auto &currTrack = XRSequencer::getHeapCurrentSelectedTrack(); 
+        auto &currTrack = XRSequencer::getCurrentSelectedTrack();
         auto currSelTrackNum = XRSequencer::getCurrentSelectedTrackNum(); 
         auto currSelStepNum = XRSequencer::getCurrentSelectedStepNum(); 
         auto currentUXMode = XRUX::getCurrentMode();
@@ -325,17 +327,18 @@ namespace XRVersa
 
             // noteOff
             if (currentUXMode != XRUX::SUBMITTING_STEP_VALUE) {
-                XRSound::noteOffTrackManually(invertedNoteNumber);
+                XRSound::noteOffTrackManually(invertedNoteNumber, XRKeyMatrix::getKeyboardOctave());
             } 
             else if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelStepNum > -1) {
-                XRSequencer::patternTrackStepMods.tracks[currSelTrackNum].steps[currSelStepNum].mods[XRSequencer::NOTE] = invertedNoteNumber;
-                XRSequencer::patternTrackStepMods.tracks[currSelTrackNum].steps[currSelStepNum].flags[XRSequencer::NOTE] = true;
-                XRSequencer::patternTrackStepMods.tracks[currSelTrackNum].steps[currSelStepNum].mods[XRSequencer::OCTAVE] = XRKeyMatrix::getKeyboardOctave();
-                XRSequencer::patternTrackStepMods.tracks[currSelTrackNum].steps[currSelStepNum].flags[XRSequencer::OCTAVE] = true;
+                XRSequencer::activeTrackStepModLayer.tracks[currSelTrackNum].steps[currSelStepNum].mods[XRSequencer::NOTE] = invertedNoteNumber;
+                XRSequencer::activeTrackStepModLayer.tracks[currSelTrackNum].steps[currSelStepNum].flags[XRSequencer::NOTE] = true;
+                XRSequencer::activeTrackStepModLayer.tracks[currSelTrackNum].steps[currSelStepNum].mods[XRSequencer::OCTAVE] = XRKeyMatrix::getKeyboardOctave();
+                XRSequencer::activeTrackStepModLayer.tracks[currSelTrackNum].steps[currSelStepNum].flags[XRSequencer::OCTAVE] = true;
 
                 XRDisplay::drawSequencerScreen(false);
             } 
             else if (currentUXMode == XRUX::TRACK_SEL) {
+                // set track note
                 currTrack.note = invertedNoteNumber;
                 currTrack.octave = XRKeyMatrix::getKeyboardOctave();
 

@@ -16,6 +16,7 @@ namespace XRLED
     void displayPageLEDs(int currentBar, bool sequencerRunning, int currentStepPage, int lastStep);
     void clearPageLEDs();
     void clearAllStepLEDs();
+    void displayCurrentlySelectedBank();
     void displayCurrentlySelectedPattern();
     void displayCurrentlySelectedTrack();
     void setDisplayStateForAllStepLEDs();
@@ -24,6 +25,7 @@ namespace XRLED
     void displayMuteLEDs();
     void displayInitializedPatternLEDs();
     void displayInitializedTrackLEDs();
+    void displayTrackLayers();
 
     int8_t getKeyLED(char idx);
     extern Adafruit_TLC5947 tlc;

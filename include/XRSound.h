@@ -34,6 +34,7 @@ namespace XRSound
         SOUND_TYPE type = T_EMPTY;
         char name[MAX_SOUND_NAME_LENGTH];
         char sampleName[MAX_SAMPLE_NAME_LENGTH];
+        char sampleNameB[MAX_SAMPLE_NAME_LENGTH];
         int32_t params[MAXIMUM_SOUND_PARAMS]; // divide by 100 to get real param values
         uint8_t dexedParams[MAXIMUM_DEXED_SOUND_PARAMS];
     } SOUND;
@@ -57,6 +58,8 @@ namespace XRSound
         MSMP_NA_PARAM_E,
         MSMP_LEVEL,
         MSMP_PAN,
+        MSMP_CHOKE,
+        MSMP_DELAY,
     };
 
     // MONO SYNTH
@@ -81,13 +84,20 @@ namespace XRSound
         MSYN_AMP_RELEASE = 18,
         MSYN_LEVEL = 20,
         MSYN_PAN = 21,
+        MSYN_DELAY = 22,
     };
 
     // DEXED SYNTH
     enum DEXED_SYNTH_PARAM  : uint8_t{
-        DEXE_ALGO = 0,
+        DEXE_TRANSPOSE = 0,
+        DEXE_ALGO = 1,
         DEXE_LEVEL = 15,
         DEXE_PAN = 16,
+        DEXE_DELAY = 18,
+        DEXE_NOTE_B = 20,
+        DEXE_NOTE_C = 21,
+        DEXE_NOTE_D = 22,
+        DEXE_NOTE_MODE = 23,
     };
 
     // BRAIDS SYNTH
@@ -98,6 +108,7 @@ namespace XRSound
         BRAIDS_FM = 3,
         BRAIDS_LEVEL = 15,
         BRAIDS_PAN = 16,
+        BRAIDS_DELAY = 17,
     };
 
     // FM DRUM
@@ -109,6 +120,7 @@ namespace XRSound
         FMD_OVERDRIVE = 4,
         FMD_LEVEL = 15,
         FMD_PAN = 16,
+        FMD_DELAY = 17,
     };
 
     /*** END SOUNDS ***/
@@ -116,26 +128,25 @@ namespace XRSound
     /*** BEGIN SOUND MODS ***/
 
     /**
-     * All sound step mods for all other banks and patterns are stored in SD card,
-     * they are fetched when changing patterns, stored in RAM2 / DMAMEM,
-     * and then they replace the step mods in RAM1 / heap once the pattern change occurs
+     * All sound step mods for all other banks, patterns, layers are stored in SD card,
+     * they are fetched when changing patterns or layers, stored in RAM2 / DMAMEM
     */
 
     typedef struct
     {
         int32_t mods[MAXIMUM_SOUND_PARAMS]; // divide by 100 to get real param mod values
         bool flags[MAXIMUM_SOUND_PARAMS]; // whether the param mod should apply or not
-    } SOUND_STEP_MODS;
+    } SOUND_STEP_MOD;
 
     typedef struct
     {
-        SOUND_STEP_MODS steps[MAXIMUM_SEQUENCER_STEPS];
-    } SOUND_MODS;
+        SOUND_STEP_MOD steps[MAXIMUM_SEQUENCER_STEPS];
+    } SOUND_MOD;
     
     typedef struct
     {
-        SOUND_MODS sounds[MAXIMUM_SEQUENCER_TRACKS];
-    } PATTERN_SOUND_MODS;
+        SOUND_MOD sounds[MAXIMUM_SEQUENCER_TRACKS];
+    } PATTERN_SOUND_MOD_LAYER;
 
     /*** END SOUND MODS ***/
 
@@ -148,6 +159,7 @@ namespace XRSound
         AudioEffectEnvelope &ampEnv;
         AudioAmplifier &ampAccent;
         AudioAmplifier &amp;
+        AudioAmplifier &ampDelaySend;
         AudioAmplifier &left;
         AudioAmplifier &right;
 
@@ -156,12 +168,14 @@ namespace XRSound
             AudioEffectEnvelope &ampEnv,
             AudioAmplifier &ampAccent,
             AudioAmplifier &amp,
+            AudioAmplifier &ampDelaySend,
             AudioAmplifier &left,
             AudioAmplifier &right
         ) : sample{sample},
             ampEnv{ampEnv},
             ampAccent{ampAccent},
             amp{amp},
+            ampDelaySend{ampDelaySend},
             left{left},
             right{right}
         {
@@ -183,6 +197,7 @@ namespace XRSound
         AudioEffectEnvelope &ampEnv;
         AudioAmplifier &ampAccent;
         AudioAmplifier &amp;
+        AudioAmplifier &ampDelaySend;
         AudioAmplifier &left;
         AudioAmplifier &right;
 
@@ -198,6 +213,7 @@ namespace XRSound
             AudioEffectEnvelope &ampEnv,
             AudioAmplifier &ampAccent,
             AudioAmplifier &amp,
+            AudioAmplifier &ampDelaySend,
             AudioAmplifier &left,
             AudioAmplifier &right
         ) : oscA{oscA},
@@ -210,6 +226,7 @@ namespace XRSound
             filter{filter},
             ampEnv{ampEnv},
             ampAccent{ampAccent},
+            ampDelaySend{ampDelaySend},
             amp{amp},
             left{left},
             right{right}
@@ -225,6 +242,7 @@ namespace XRSound
         Dexed &dexed;
         AudioAmplifier &ampAccent;
         AudioAmplifier &amp;
+        AudioAmplifier &ampDelaySend;
         AudioAmplifier &left;
         AudioAmplifier &right;
 
@@ -232,11 +250,13 @@ namespace XRSound
             Dexed &dexed,
             AudioAmplifier &ampAccent,
             AudioAmplifier &amp,
+            AudioAmplifier &ampDelaySend,
             AudioAmplifier &left,
             AudioAmplifier &right
         ) : dexed{dexed},
             ampAccent{ampAccent},
             amp{amp},
+            ampDelaySend{ampDelaySend},
             left{left},
             right{right}
         {
@@ -252,6 +272,7 @@ namespace XRSound
         AudioSynthFMDrum &fmDrum;
         AudioAmplifier &ampAccent;
         AudioAmplifier &amp;
+        AudioAmplifier &ampDelaySend;
         AudioAmplifier &left;
         AudioAmplifier &right;
 
@@ -259,11 +280,13 @@ namespace XRSound
             AudioSynthFMDrum &fmDrum,
             AudioAmplifier &ampAccent,
             AudioAmplifier &amp,
+            AudioAmplifier &ampDelaySend,
             AudioAmplifier &left,
             AudioAmplifier &right
         ) : fmDrum{fmDrum},
             ampAccent{ampAccent},
             amp{amp},
+            ampDelaySend{ampDelaySend},
             left{left},
             right{right}
         {
@@ -276,22 +299,47 @@ namespace XRSound
     // public:
     //     AudioSynthBraids &braids;
     //     AudioAmplifier &amp;
+    //     AudioAmplifier &ampDelaySend;
     //     AudioAmplifier &left;
     //     AudioAmplifier &right;
 
     //     BraidsInstance(
     //         AudioSynthBraids &braids,
     //         AudioAmplifier &amp,
+    //         AudioAmplifier &ampDelaySend,
     //         AudioAmplifier &left,
     //         AudioAmplifier &right
     //     ) : braids{braids},
     //         amp{amp},
+    //         ampDelaySend{ampDelaySend},
     //         left{left},
     //         right{right}
     //     {
     //         //
     //     }
     // };
+
+    class StereoDelayInstance
+    {
+    public:
+        AudioEffectDelay &delayEffect;
+        AudioMixer4 &feedbackMix;
+        AudioAmplifier &left;
+        AudioAmplifier &right;
+
+        StereoDelayInstance(
+            AudioEffectDelay &delayEffect,
+            AudioMixer4 &feedbackMix,
+            AudioAmplifier &left,
+            AudioAmplifier &right
+        ) : delayEffect{delayEffect},
+            feedbackMix{feedbackMix},
+            left{left},
+            right{right}
+        {
+            //
+        }
+    };
 
     /*** END VOICES/INSTANCES */
 
@@ -315,6 +363,14 @@ namespace XRSound
 
     typedef struct
     {
+        bool isAbleToStepModA;
+        bool isAbleToStepModB;
+        bool isAbleToStepModC;
+        bool isAbleToStepModD;
+        bool isActiveStepModA;
+        bool isActiveStepModB;
+        bool isActiveStepModC;
+        bool isActiveStepModD;
         std::string aName;
         std::string bName;
         std::string cName;
@@ -340,9 +396,12 @@ namespace XRSound
     } PANNED_AMOUNTS;
 
     // extern globals
-    extern SOUND currentPatternSounds[MAXIMUM_SEQUENCER_TRACKS];
+    extern DMAMEM SOUND activePatternSounds[MAXIMUM_SEQUENCER_TRACKS];
     extern DMAMEM SOUND nextPatternSounds[MAXIMUM_SEQUENCER_TRACKS];
-    extern DMAMEM PATTERN_SOUND_MODS patternSoundStepMods;
+    extern DMAMEM PATTERN_SOUND_MOD_LAYER activePatternSoundStepModLayer;
+
+    // extern DMAMEM SOUND patternSoundsCopyBuffer[MAXIMUM_SEQUENCER_TRACKS];
+    // extern DMAMEM PATTERN_SOUND_MOD_LAYER patternSoundStepModLayerCopyBuffer;
     
     extern bool soundNeedsReinit[MAXIMUM_SEQUENCER_TRACKS];
 
@@ -357,6 +416,9 @@ namespace XRSound
     extern FmDrumInstance fmDrumInstances[MAXIMUM_FM_DRUM_SOUNDS];
 #endif
 
+    extern StereoDelayInstance delayInstances[1];
+
+    extern std::string patternPageNames[MAXIMUM_PATTERN_PAGES];
 
     extern std::map<SOUND_TYPE, int8_t> soundTypeInstanceLimitMap;
     
@@ -367,6 +429,10 @@ namespace XRSound
     extern std::map<SOUND_TYPE, int32_t*> soundTypeInitParams;
     extern std::map<SOUND_TYPE, int> soundPageNumMap;
     extern std::map<SOUND_TYPE, std::map<int, std::string>> soundCurrPageNameMap;
+
+    extern bool chokeSourcesEnabled[MAXIMUM_SEQUENCER_TRACKS];
+    extern int chokeSourceDest[MAXIMUM_SEQUENCER_TRACKS];
+    extern int chokeDestSource[MAXIMUM_SEQUENCER_TRACKS];
 
     extern bool patternSoundsDirty;
     extern bool patternSoundStepModsDirty;
@@ -407,11 +473,15 @@ namespace XRSound
     void muteAllOutput();
 
     void init();
+    void initActivePatternSounds();
     void initNextPatternSounds();
     void initPatternSoundStepMods();
     void initVoices();
     void setSoundNeedsReinit(int sound, bool reinit);
     void reinitSoundForTrack(int track);
+    void applyActivePatternSounds();
+    void applyFxForActivePattern();
+    void applyTrackChokes();
     
     void saveSoundDataForPatternChange();
     void loadSoundDataForPatternChange(int nextBank, int nextPattern);
@@ -433,7 +503,7 @@ namespace XRSound
 
     void handleNoteOffForTrack(int track);
     void handleNoteOffForTrackStep(int track, int step);
-    void noteOffTrackManually(int noteOnKeyboard);
+    void noteOffTrackManually(int noteOnKeyboard, uint8_t octave);
 
     void handleMonoSampleNoteOnForTrackStep(int track, int step);
     void handleMonoSynthNoteOnForTrackStep(int track, int step);
@@ -443,15 +513,20 @@ namespace XRSound
     void handleMIDINoteOnForTrackStep(int track, int step);
     void handleCvGateNoteOnForTrackStep(int track, int step);
 
-    void triggerTrackManually(uint8_t t, uint8_t note);
-    void triggerMonoSampleNoteOn(uint8_t t, uint8_t note);
-    void triggerMonoSynthNoteOn(uint8_t t, uint8_t note);
-    void triggerDexedSynthNoteOn(uint8_t t, uint8_t note);
-    void triggerBraidsNoteOn(uint8_t t, uint8_t note);
-    void triggerFmDrumNoteOn(uint8_t t, uint8_t note);
-    void triggerCvGateNoteOn(uint8_t t, uint8_t note);
+    void triggerTrackManually(uint8_t t, uint8_t note, uint8_t octave, bool accented);
+    void triggerMonoSampleNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented);
+    void triggerMonoSynthNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented);
+    void triggerDexedSynthNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented);
+    void triggerBraidsNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented);
+    void triggerFmDrumNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented);
+    void triggerCvGateNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented);
 
     void applyCurrentDexedPatchToSound();
+
+    int getChokeSourcesEnabledCount();
+    bool isTrackAnActiveChokeDestination(int track);
+    void applyChokeForSourceTrack(int track);
+    bool applyChokeForDestinationTrackStep(int track, int step);
 
     int8_t getValueNormalizedAsInt8(int32_t param);
     uint8_t getValueNormalizedAsUInt8(int32_t param);
