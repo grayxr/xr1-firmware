@@ -118,8 +118,8 @@ namespace XRKeyMatrix
                     {
                         case PRESSED: 
                             {
-                                Serial.print("button pressed: ");
-                                Serial.println(kpd.key[i].kchar);
+                                //Serial.print("button pressed: ");
+                                //Serial.println(kpd.key[i].kchar);
 
                                 // if active UX mode involves project data changes, 
                                 // ignore all key input until UX state changes
@@ -145,15 +145,15 @@ namespace XRKeyMatrix
 
                             break;
                         case HOLD:
-                            Serial.print("button held: ");
-                            Serial.println(kpd.key[i].kchar);
+                            //Serial.print("button held: ");
+                            //Serial.println(kpd.key[i].kchar);
 
                             handleHoldForKey(kpd.key[i].kchar);
 
                             break;
                         case RELEASED:
-                            Serial.print("button released: ");
-                            Serial.println(kpd.key[i].kchar);
+                            //Serial.print("button released: ");
+                            //Serial.println(kpd.key[i].kchar);
 
                             handleReleaseForKey(kpd.key[i].kchar);
 
@@ -318,6 +318,11 @@ namespace XRKeyMatrix
                     XRSequencer::initNextPattern();
                 }
 
+                if (!XRSD::loadNextPatternSounds(nextBank, nextPattern)) 
+                {
+                    XRSound::initNextPatternSounds();
+                }
+
                 if (!XRSD::loadNextTrackLayer(nextBank, nextPattern, 0)) 
                 {
                     XRSequencer::initNextTrackLayer();
@@ -330,6 +335,21 @@ namespace XRKeyMatrix
             } else {
                 // instant pattern change
                 XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_CHANGE_INSTANT);
+
+                if (!XRSD::loadNextPattern(nextBank, nextPattern)) 
+                {
+                    XRSequencer::initNextPattern();
+                }
+
+                if (!XRSD::loadNextPatternSounds(nextBank, nextPattern)) 
+                {
+                    XRSound::initNextPatternSounds();
+                }
+
+                if (!XRSD::loadNextTrackLayer(nextBank, nextPattern, 0)) 
+                {
+                    XRSequencer::initNextTrackLayer();
+                }
 
                 // IMPORTANT: must change sound data before sequencer data!
                 XRSound::saveSoundDataForPatternChange(); // save current sound data first
@@ -401,6 +421,11 @@ namespace XRKeyMatrix
                     XRSequencer::initNextPattern();
                 }
 
+                if (!XRSD::loadNextPatternSounds(nextBank, nextPattern)) 
+                {
+                    XRSound::initNextPatternSounds();
+                }
+
                 if (!XRSD::loadNextTrackLayer(nextBank, nextPattern, 0)) 
                 {
                     XRSequencer::initNextTrackLayer();
@@ -416,6 +441,22 @@ namespace XRKeyMatrix
 
                 // IMPORTANT: must change sound data before sequencer data!
                 XRSound::saveSoundDataForPatternChange(); // save current sound data first
+
+                if (!XRSD::loadNextPattern(nextBank, nextPattern)) 
+                {
+                    XRSequencer::initNextPattern();
+                }
+
+                if (!XRSD::loadNextPatternSounds(nextBank, nextPattern)) 
+                {
+                    XRSound::initNextPatternSounds();
+                }
+
+                if (!XRSD::loadNextTrackLayer(nextBank, nextPattern, 0)) 
+                {
+                    XRSequencer::initNextTrackLayer();
+                }
+
                 XRSound::loadSoundDataForPatternChange(nextBank, nextPattern);
 
                 // save any track step mods for current pattern to SD

@@ -636,6 +636,9 @@ namespace XRSequencer
             Serial.printf("reinit sounds for track: %d\n", track);
 
             XRSound::reinitSoundForTrack(track);
+
+            // TODO: apply specific track choke instead of reapplying all chokes here
+            XRSound::applyTrackChokes();
         }
 
         switch (XRSound::activePatternSounds[track].type)
@@ -976,9 +979,9 @@ namespace XRSequencer
     void swapSequencerMemoryForPattern(int newBank, int newPattern)
     {
         XRSD::saveActivePatternToSdCard();
-        if (!XRSD::loadNextPattern(newBank, newPattern)){
-            initNextPattern();
-        }
+        // if (!XRSD::loadNextPattern(newBank, newPattern)){
+        //     initNextPattern();
+        // }
 
         // swap data
         activePattern = nextPattern;
@@ -998,9 +1001,9 @@ namespace XRSequencer
         XRSound::applyTrackChokes();
         
         XRSD::saveActiveTrackLayerToSdCard();
-        if (!XRSD::loadNextTrackLayer(newBank, newPattern, 0)){
-            initNextTrackLayer();
-        }
+        // if (!XRSD::loadNextTrackLayer(newBank, newPattern, 0)){
+        //     initNextTrackLayer();
+        // }
 
         XRSD::saveActiveTrackStepModLayerToSdCard();
         if (!XRSD::loadActiveTrackStepModLayerFromSdCard(newBank, newPattern, 0)) {

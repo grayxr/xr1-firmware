@@ -282,8 +282,8 @@ namespace XRSD
         std::string patternFilePath = activePatternDir;
         patternFilePath += "/pattern.bin";
 
-        Serial.println("Write active pattern file binary file to SD card at path: ");
-        Serial.println(patternFilePath.c_str());
+        //Serial.println("Write active pattern file binary file to SD card at path: ");
+        //Serial.println(patternFilePath.c_str());
 
         File patternFileW = SD.open(patternFilePath.c_str(), FILE_WRITE);
         patternFileW.truncate();
@@ -306,7 +306,7 @@ namespace XRSD
 
         trackLayerFilePath += "/track.bin";
 
-        Serial.println("Write active pattern track layer binary file to SD card!");
+        //Serial.println("Write active pattern track layer binary file to SD card!");
 
         File trackLayerFileW = SD.open(trackLayerFilePath.c_str(), FILE_WRITE);
         trackLayerFileW.truncate();
@@ -422,7 +422,7 @@ namespace XRSD
         ptnFileR.read((byte *)&XRSequencer::activePattern, sizeof(XRSequencer::activePattern));
         ptnFileR.close();
 
-        Serial.printf("sizeof(:activePattern): %d\n", sizeof(XRSequencer::activePattern));
+        //Serial.printf("sizeof(:activePattern): %d\n", sizeof(XRSequencer::activePattern));
 
         // if loaded active pattern has a groove, set it on the clock
         if (XRSequencer::activePattern.groove.id > -1) {
@@ -461,7 +461,7 @@ namespace XRSD
         trackLayerFileR.read((byte *)&XRSequencer::activeTrackLayer, sizeof(XRSequencer::activeTrackLayer));
         trackLayerFileR.close();
 
-        Serial.printf("sizeof(activeTrackLayer): %d\n", sizeof(XRSequencer::activeTrackLayer));
+        //Serial.printf("sizeof(activeTrackLayer): %d\n", sizeof(XRSequencer::activeTrackLayer));
 
         return true;
     }
@@ -519,15 +519,15 @@ namespace XRSD
 
         baseDir += "/track.bin";
 
-        Serial.print("attempt to write active track layer file to path: ");
-        Serial.println(baseDir.c_str());
+        //Serial.print("attempt to write active track layer file to path: ");
+        //Serial.println(baseDir.c_str());
 
         File lFile = SD.open(baseDir.c_str(), FILE_WRITE);
         lFile.truncate();
         lFile.write((byte *)&XRSequencer::activeTrackLayer, sizeof(XRSequencer::activeTrackLayer));
         lFile.close();
 
-        Serial.printf("sizeof(activeTrackLayer): %d\n", sizeof(XRSequencer::activeTrackLayer));
+        //Serial.printf("sizeof(activeTrackLayer): %d\n", sizeof(XRSequencer::activeTrackLayer));
     }
 
     bool loadActiveTrackStepModLayerFromSdCard(int bank, int pattern, int layer)
@@ -559,7 +559,7 @@ namespace XRSD
         mFile.read((byte *)&XRSequencer::activeTrackStepModLayer, sizeof(XRSequencer::activeTrackStepModLayer));
         mFile.close();
 
-        Serial.printf("sizeof(activeTrackStepModLayer): %d\n", sizeof(XRSequencer::activeTrackStepModLayer));
+        //Serial.printf("sizeof(activeTrackStepModLayer): %d\n", sizeof(XRSequencer::activeTrackStepModLayer));
         
         return true;
     }
@@ -621,7 +621,7 @@ namespace XRSD
         mFile.write((byte *)&XRSequencer::activeTrackStepModLayer, sizeof(XRSequencer::activeTrackStepModLayer));
         mFile.close();
 
-        Serial.printf("sizeof(activeTrackStepModLayer): %d\n", sizeof(XRSequencer::activeTrackStepModLayer));
+        //Serial.printf("sizeof(activeTrackStepModLayer): %d\n", sizeof(XRSequencer::activeTrackStepModLayer));
     }
 
     bool loadNextPattern(int bank, int pattern)
@@ -651,7 +651,7 @@ namespace XRSD
         patternFile.read((byte *)&XRSequencer::nextPattern, sizeof(XRSequencer::nextPattern));
         patternFile.close();
 
-        Serial.printf("sizeof(nextPattern): %d\n", sizeof(XRSequencer::nextPattern));
+        //Serial.printf("sizeof(nextPattern): %d\n", sizeof(XRSequencer::nextPattern));
 
         return true;
     }
@@ -677,8 +677,8 @@ namespace XRSD
         std::string trackLayerDir = baseDir;
         trackLayerDir += "/track.bin";
 
-        Serial.print("attempt to read next track layer file from path: ");
-        Serial.println(trackLayerDir.c_str());
+        //Serial.print("attempt to read next track layer file from path: ");
+        //Serial.println(trackLayerDir.c_str());
 
         File trackLayerFile = SD.open(trackLayerDir.c_str(), FILE_READ);
         if (!trackLayerFile.available()) {
@@ -690,7 +690,7 @@ namespace XRSD
         trackLayerFile.read((byte *)&XRSequencer::nextTrackLayer, sizeof(XRSequencer::nextTrackLayer));
         trackLayerFile.close();
 
-        Serial.printf("sizeof(nextTrackLayer): %d\n", sizeof(XRSequencer::nextTrackLayer));
+        //Serial.printf("sizeof(nextTrackLayer): %d\n", sizeof(XRSequencer::nextTrackLayer));
 
         return true;
     }
@@ -722,7 +722,7 @@ namespace XRSD
         soundsFile.read((byte *)&XRSound::activePatternSounds, sizeof(XRSound::activePatternSounds));
         soundsFile.close();
 
-        Serial.printf("sizeof(activePatternSounds): %d\n", sizeof(XRSound::activePatternSounds));
+        //Serial.printf("sizeof(activePatternSounds): %d\n", sizeof(XRSound::activePatternSounds));
 
         return true;
     }
@@ -754,7 +754,7 @@ namespace XRSD
         soundsFile.read((byte *)&XRSound::nextPatternSounds, sizeof(XRSound::nextPatternSounds));
         soundsFile.close();
 
-        Serial.printf("sizeof(nextPatternSounds): %d\n", sizeof(XRSound::nextPatternSounds));
+        //Serial.printf("sizeof(nextPatternSounds): %d\n", sizeof(XRSound::nextPatternSounds));
 
         return true;
     }
@@ -803,7 +803,7 @@ namespace XRSD
         ptnFile.write((byte *)&XRSequencer::activePattern, sizeof(XRSequencer::activePattern));
         ptnFile.close();
 
-        Serial.printf("sizeof(activePattern): %d\n", sizeof(XRSequencer::activePattern));
+        //Serial.printf("sizeof(activePattern): %d\n", sizeof(XRSequencer::activePattern));
     }
 
     void saveActivePatternSounds()
@@ -850,7 +850,7 @@ namespace XRSD
         soundsFile.write((byte *)&XRSound::activePatternSounds, sizeof(XRSound::activePatternSounds));
         soundsFile.close();
 
-        Serial.printf("sizeof(activePatternSounds): %d\n", sizeof(XRSound::activePatternSounds));
+        //Serial.printf("sizeof(activePatternSounds): %d\n", sizeof(XRSound::activePatternSounds));
     }
 
     bool loadPatternSoundStepModLayerFromSdCard(int bank, int pattern, int layer)
@@ -882,7 +882,7 @@ namespace XRSD
         mFile.read((byte *)&XRSound::activePatternSoundStepModLayer, sizeof(XRSound::activePatternSoundStepModLayer));
         mFile.close();
 
-        Serial.printf("sizeof(activePatternSoundStepModLayer): %d\n", sizeof(XRSound::activePatternSoundStepModLayer));
+        //Serial.printf("sizeof(activePatternSoundStepModLayer): %d\n", sizeof(XRSound::activePatternSoundStepModLayer));
         
         return true;
     }
@@ -944,7 +944,7 @@ namespace XRSD
         sFile.write((byte *)&XRSound::activePatternSoundStepModLayer, sizeof(XRSound::activePatternSoundStepModLayer));
         sFile.close();
 
-        Serial.printf("sizeof(activePatternSoundStepModLayer): %d\n", sizeof(XRSound::activePatternSoundStepModLayer));
+        //Serial.printf("sizeof(activePatternSoundStepModLayer): %d\n", sizeof(XRSound::activePatternSoundStepModLayer));
     }
 
     void saveCopiedStep(int track, int sourceStep, int destStep)

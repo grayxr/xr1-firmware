@@ -1003,10 +1003,10 @@ namespace XRSound
 
     void loadSoundDataForPatternChange(int nextBank, int nextPattern)
     {
-        if (!XRSD::loadNextPatternSounds(nextBank, nextPattern))
-        {
-            initNextPatternSounds();
-        }
+        // if (!XRSD::loadNextPatternSounds(nextBank, nextPattern))
+        // {
+        //     initNextPatternSounds();
+        // }
 
         if (!XRSD::loadPatternSoundStepModLayerFromSdCard(nextBank, nextPattern, 0)) {
             initPatternSoundStepMods();
