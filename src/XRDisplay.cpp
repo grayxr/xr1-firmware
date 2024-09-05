@@ -301,28 +301,6 @@ namespace XRDisplay
 
         u8g2.clearBuffer();
 
-        uint8_t currentBpm = (uint8_t)XRClock::getTempo();
-        std::string currentBpmStr = XRHelpers::strldz(std::to_string(currentBpm), 3);
-        u8g2.drawStr(108, 0, currentBpmStr.c_str());
-
-        auto seqState = XRSequencer::getSeqState();
-
-        // transport indicator (play, pause, stop)
-        uint8_t transportIconStartX = 122;
-        if (seqState.playbackState == XRSequencer::STOPPED)
-        {
-            u8g2.drawBox(transportIconStartX, 1, 5, 5);
-        }
-        else if (seqState.playbackState == XRSequencer::RUNNING)
-        {
-            u8g2.drawTriangle(transportIconStartX, 0, transportIconStartX, 6, transportIconStartX + 6, 3);
-        }
-        else if (seqState.playbackState == XRSequencer::PAUSED)
-        {
-            u8g2.drawBox(transportIconStartX, 1, 2, 5);
-            u8g2.drawBox(transportIconStartX + 3, 1, 2, 5);
-        }
-
         auto currentUXMode = XRUX::getCurrentMode();
         if (currentUXMode == XRUX::PERFORM_TAP)
         {
@@ -443,10 +421,11 @@ namespace XRDisplay
         auto currentSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
         auto &queuedPattern = XRSequencer::getQueuedPatternState();
 
-        u8g2.drawLine(0,8,128,8);
-        u8g2.drawLine(0,18,128,18);
-        //u8g2.drawFrame(0, 8, 128, 11);
-        //u8g2.drawFrame(0, 8, 128, 55);
+        u8g2.drawBox(0,0,128,7);
+        //u8g2.drawLine(0,8,128,8);
+        //drawStraightDashedLine(0, 128, 8);
+
+        u8g2.setColorIndex((u_int8_t)0);
 
         bool bnkBlink = false;
         int bnkNumber = currentSelectedBank + 1;
@@ -457,7 +436,7 @@ namespace XRDisplay
             bnkBlink = (queuedPattern.bank != currentSelectedBank);
         }
 
-        drawMenuHeader("B", bnkNumber, 0, (queueBlink && bnkBlink));
+        drawMenuHeader("B", bnkNumber, 1, (queueBlink && bnkBlink));
 
         bool ptnBlink = false;
         int ptnNumber = currentSelectedPattern + 1;
@@ -470,17 +449,17 @@ namespace XRDisplay
 
         if (currentUXMode == XRUX::PATTERN_WRITE || currentUXMode == XRUX::PATTERN_SEL || currentUXMode == XRUX::PATTERN_CHANGE_QUEUED)
         {
-            u8g2.drawTriangle(14,0,14,6,17,3);
+            u8g2.drawTriangle(15,0,15,6,18,3);
 
-            drawMenuHeader("P", ptnNumber, 20, (queueBlink && ptnBlink));
+            drawMenuHeader("P", ptnNumber, 21, (queueBlink && ptnBlink));
         }
         else if (currentUXMode == XRUX::TRACK_WRITE || currentUXMode == XRUX::TRACK_SEL || currentUXMode == XRUX::SUBMITTING_STEP_VALUE)
         {
-            u8g2.drawTriangle(14,0,14,6,17,3);
+            u8g2.drawTriangle(15,0,15,6,18,3);
 
-            drawMenuHeader("P", ptnNumber, 20, (queueBlink && ptnBlink));
+            drawMenuHeader("P", ptnNumber, 21, (queueBlink && ptnBlink));
             
-            u8g2.drawTriangle(34,0,34,6,37,3);
+            u8g2.drawTriangle(35,0,35,6,38,3);
 
             auto currTrackLayerNum = XRSequencer::getCurrentSelectedTrackLayerNum();
 
@@ -488,13 +467,20 @@ namespace XRDisplay
             layerNumStr += XRHelpers::strldz(std::to_string(currTrackLayerNum + 1), 2);
             layerNumStr += ":T";
             layerNumStr += XRHelpers::strldz(std::to_string(currentSelectedTrack + 1), 2);
-            u8g2.drawStr(40, 0, layerNumStr.c_str());
+            u8g2.drawStr(41, 0, layerNumStr.c_str());
         }
+
+        u8g2.setColorIndex((u_int8_t)1);
+
+
+        u8g2.drawLine(0,18,128,18);
+        //u8g2.drawFrame(0, 8, 128, 11);
+        //u8g2.drawFrame(0, 8, 128, 55);
 
         if (currentUXMode == XRUX::PATTERN_WRITE || currentUXMode == XRUX::PATTERN_SEL || currentUXMode == XRUX::PATTERN_CHANGE_QUEUED)
         {
             std::string patternHeaderStr = "PATTERN";
-            u8g2.drawStr(3, 10, patternHeaderStr.c_str());
+            u8g2.drawStr(1, 9, patternHeaderStr.c_str());
 
             // draw control mod area
             drawPatternControlMods();
@@ -532,9 +518,9 @@ namespace XRDisplay
                 trackInfoStr += "";
             }
 
-            u8g2.drawStr(2, 10, trackMetaStr.c_str());
+            u8g2.drawStr(1, 9, trackMetaStr.c_str());
             u8g2.drawLine(32,8,32,18);
-            u8g2.drawStr(36, 10, trackInfoStr.c_str());
+            u8g2.drawStr(36, 9, trackInfoStr.c_str());
 
             auto currentSelectedPage = XRSequencer::getCurrentSelectedPage();
 
@@ -566,6 +552,32 @@ namespace XRDisplay
             drawControlMods();
             drawPageNumIndicators();
         }
+
+        u8g2.setColorIndex((u_int8_t)0);
+
+        uint8_t currentBpm = (uint8_t)XRClock::getTempo();
+        std::string currentBpmStr = XRHelpers::strldz(std::to_string(currentBpm), 3);
+        u8g2.drawStr(108, 0, currentBpmStr.c_str());
+
+        auto seqState = XRSequencer::getSeqState();
+
+        // transport indicator (play, pause, stop)
+        uint8_t transportIconStartX = 121;
+        if (seqState.playbackState == XRSequencer::STOPPED)
+        {
+            u8g2.drawBox(transportIconStartX, 1, 5, 5);
+        }
+        else if (seqState.playbackState == XRSequencer::RUNNING)
+        {
+            u8g2.drawTriangle(transportIconStartX, 0, transportIconStartX, 6, transportIconStartX + 6, 3);
+        }
+        else if (seqState.playbackState == XRSequencer::PAUSED)
+        {
+            u8g2.drawBox(transportIconStartX, 1, 2, 5);
+            u8g2.drawBox(transportIconStartX + 3, 1, 2, 5);
+        }
+
+        u8g2.setColorIndex((u_int8_t)1);
 
         u8g2.sendBuffer();
     }
@@ -1209,12 +1221,12 @@ namespace XRDisplay
         std::string currPageNameForTrack = "";
 
         currTrackPageCount = XRSound::getPageCountForCurrentTrack();
-        currPageNameForTrack += XRSound::getPageNameForCurrentTrack();
+        currPageNameForTrack = XRSound::getPageNameForCurrentTrack();
 
         int pageTabPosY = 54;
 
         u8g2.drawLine(0, 52, 128, 52);
-        u8g2.drawStr(3, pageTabPosY, currPageNameForTrack.c_str());
+        u8g2.drawStr(1, pageTabPosY, currPageNameForTrack.c_str());
 
         if (currTrackPageCount == 1 || currTrackPageCount == 0)
             return;
@@ -1254,13 +1266,12 @@ namespace XRDisplay
 
         uint8_t patternPageCount = MAXIMUM_PATTERN_PAGES;
         std::string currPageNameForPattern = "";
-
-        currPageNameForPattern += XRSound::patternPageNames[currSelectedPage];
+        currPageNameForPattern = XRSound::patternPageNames[currSelectedPage];
 
         int pageTabPosY = 54;
 
         u8g2.drawLine(0, 52, 128, 52);
-        u8g2.drawStr(3, pageTabPosY, currPageNameForPattern.c_str());
+        u8g2.drawStr(1, pageTabPosY, currPageNameForPattern.c_str());
 
         if (patternPageCount == 1 || patternPageCount == 0)
             return;

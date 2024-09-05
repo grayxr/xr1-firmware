@@ -1081,11 +1081,13 @@ namespace XRSequencer
 
         if (_seqState.playbackState > STOPPED) { // either RUNNING or PAUSED
             if (_seqState.playbackState == RUNNING && btn == START_BTN_CHAR) {
-                _seqState.playbackState = PAUSED;
+                XRClock::stop();
 
-                XRClock::pause(); // toggle pause ON
+                // Stopped, so reset sequencer to FIRST step in pattern
+                _seqState.currentStep = 1;
+                _seqState.currentBar = 1;
 
-                XRLED::setPWM(23, 0);
+                rewindAllCurrentStepsForAllTracks();
 
                 if (
                     currentUXMode == XRUX::UX_MODE::PERFORM_TAP ||
@@ -1096,28 +1098,54 @@ namespace XRSequencer
                     return;
                 }
 
-                XRLED::setPWM(keyLED, 0);
+                XRLED::setPWM(keyLED, 0); // turn off current step LED
+                XRLED::setPWM(23, 0);     // turn start button led OFF
 
                 if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE) {
-                    int8_t currentSelectedTrackCurrentBar = _seqState.currentTrackSteps[_currentSelectedTrack].currentBar;
-                    auto &currTrack = getCurrentSelectedTrack();
-
-                    XRLED::displayPageLEDs(
-                        currentSelectedTrackCurrentBar,
-                        (_seqState.playbackState == RUNNING),
-                        _currentStepPage,
-                        currTrack.lstep
-                    );
-
-                    XRLED::setDisplayStateForAllStepLEDs(); // TODO: wrap with "if in track view display step LED state" conditional, etc
+                    XRLED::setDisplayStateForAllStepLEDs();
                 } else if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) {
                     XRLED::clearAllStepLEDs();
                 }
-            } else if (_seqState.playbackState == PAUSED && btn == START_BTN_CHAR) {
-                // Unpaused, so advance sequencer from last known step
-                _seqState.playbackState = RUNNING;
+                
+                XRClock::start();
 
-                XRClock::pause(); // toggle pause OFF
+                // _seqState.playbackState = PAUSED;
+
+                // XRClock::pause(); // toggle pause ON
+
+                // XRLED::setPWM(23, 0);
+
+                // if (
+                //     currentUXMode == XRUX::UX_MODE::PERFORM_TAP ||
+                //     currentUXMode == XRUX::UX_MODE::PERFORM_MUTE ||
+                //     currentUXMode == XRUX::UX_MODE::PERFORM_SOLO ||
+                //     currentUXMode == XRUX::UX_MODE::PERFORM_RATCHET
+                // ) {
+                //     return;
+                // }
+
+                // XRLED::setPWM(keyLED, 0);
+
+                // if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE) {
+                //     int8_t currentSelectedTrackCurrentBar = _seqState.currentTrackSteps[_currentSelectedTrack].currentBar;
+                //     auto &currTrack = getCurrentSelectedTrack();
+
+                //     XRLED::displayPageLEDs(
+                //         currentSelectedTrackCurrentBar,
+                //         (_seqState.playbackState == RUNNING),
+                //         _currentStepPage,
+                //         currTrack.lstep
+                //     );
+
+                //     XRLED::setDisplayStateForAllStepLEDs(); // TODO: wrap with "if in track view display step LED state" conditional, etc
+                // } else if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) {
+                //     XRLED::clearAllStepLEDs();
+                // }
+            } else if (_seqState.playbackState == PAUSED && btn == START_BTN_CHAR) {
+                // // Unpaused, so advance sequencer from last known step
+                // _seqState.playbackState = RUNNING;
+
+                // XRClock::pause(); // toggle pause OFF
             } else if (btn == STOP_BTN_CHAR) {
                 _seqState.playbackState = STOPPED;
 

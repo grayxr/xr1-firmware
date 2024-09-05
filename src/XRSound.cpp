@@ -49,16 +49,16 @@ namespace XRSound
         100,0,0,300000,0,       // sampleplayrate, looptype, loopstart, loopfinish, chromatic
         0,0,0,0,0,              // playstart, n/a, n/a, n/a, n/a
         0,100000,100,500000,0,  // a. attack, a. decay, a. sustain, a. release, n/a
-        100,0,-100,0,0,            // level, pan, choke, delay send, n/a
+        100,0,-100,0,0,         // level, pan, choke, delay send, n/a
         0,0,0,0,0               // n/a, n/a, n/a, n/a, n/a
     };
 
     int32_t monoSynthInitParams[MAXIMUM_SOUND_PARAMS] = {
         100,-700,0,100,50,          // waveform, detune, fine, osc-a level, osc-b level
-        50,0,160000,0,0,            // width, noise, cutoff, resonance, n/a
+        50,0,300000,0,0,            // width, noise, cutoff, resonance, n/a
         0,100000,100,500000,100,    // f. attack, f. decay, f. sustain, f. release, f. env amount
         0,100000,100,500000,0,      // a. attack, a. decay, a. sustain, a. release, n/a
-        100,0,-100,0,0,                // level, pan, choke, delay send, n/a
+        100,0,-100,0,0,             // level, pan, choke, delay send, n/a
         0,0,0,0,0                   // n/a, n/a, n/a, n/a, n/a
     };
 
@@ -66,7 +66,7 @@ namespace XRSound
         0,100,0,0,0,    // transpose, algorithm, n/a, n/a, n/a
         0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
-        100,0,0,0,0,    // level, pan, n/a, delay send, n/a
+        100,0,-100,0,0, // level, pan, choke, delay send, n/a
         0,0,0,0,0       // poly note b, poly note c, poly note d, note mode, n/a
     };
 
@@ -96,7 +96,7 @@ namespace XRSound
         5000,0,75,0,0,  // frequency, fm, decay, noise, overdrive
         0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
-        100,0,-100,0,0,    // level, pan, choke, delay send, n/a
+        100,0,-100,0,0, // level, pan, choke, delay send, n/a
         0,0,0,0,0       // n/a, n/a, n/a, n/a, n/a
     };
 
@@ -1528,8 +1528,8 @@ namespace XRSound
 
                 mods.aName = "LVL";
                 mods.bName = "PAN";
-                mods.cName = "CHK";
-                mods.dName = "DLY"; // fx send?
+                mods.cName = "--"; // choke is unused on synth tracks
+                mods.dName = "DLY";
 
                 auto lvl = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_LEVEL]);
                 auto pan = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_PAN]);
@@ -1720,7 +1720,7 @@ namespace XRSound
 
                 mods.aName = "LEVEL";
                 mods.bName = "PAN";
-                mods.cName = "--";
+                mods.cName = "--"; // choke is unused on synth tracks
                 mods.dName = "DLY";
 
                 auto lvl = getValueNormalizedAsFloat(activePatternSounds[currentSelectedTrackNum].params[DEXE_LEVEL]);
@@ -1831,11 +1831,12 @@ namespace XRSound
 
                 mods.aName = "LEVEL";
                 mods.bName = "PAN";
-                mods.cName = "--";
+                mods.cName = "CHOKE";
                 mods.dName = "DELAY";
 
                 auto lvl = getValueNormalizedAsFloat(activePatternSounds[currentSelectedTrackNum].params[FMD_LEVEL]);
                 auto pan = getValueNormalizedAsFloat(activePatternSounds[currentSelectedTrackNum].params[FMD_PAN]);
+                auto chk = getValueNormalizedAsInt8(activePatternSounds[currentSelectedTrackNum].params[FMD_CHOKE]);
                 auto dly = getValueNormalizedAsFloat(activePatternSounds[currentSelectedTrackNum].params[FMD_DELAY]);
 
                 mods.aValue = std::to_string(round(lvl * 100));
@@ -1844,7 +1845,7 @@ namespace XRSound
                 mods.bFloatValue = pan;
                 mods.bType = RANGE;
 
-                mods.cValue = "--";
+                mods.cValue = chk > -1 ? std::to_string(chk+1) : "--";
                 mods.dValue = std::to_string(round(dly * 100));
             }
             

@@ -65,26 +65,29 @@ namespace XRSound
     // MONO SYNTH
     enum MONO_SYNTH_PARAM  : uint8_t {
         MSYN_WAVE = 0,
-        MSYN_DETUNE = 1,
-        MSYN_FINE = 2,
-        MSYN_OSCA_LEVEL = 3,
-        MSYN_OSCB_LEVEL = 4,
-        MSYN_WIDTH = 5,
-        MSYN_NOISE = 6,
-        MSYN_CUTOFF = 7,
-        MSYN_RESONANCE = 8,
-        MSYN_FILTER_ATTACK = 10,
-        MSYN_FILTER_DECAY = 11,
-        MSYN_FILTER_SUSTAIN = 12,
-        MSYN_FILTER_RELEASE = 13,
-        MSYN_FILTER_ENV_AMT = 14,
-        MSYN_AMP_ATTACK = 15,
-        MSYN_AMP_DECAY = 16,
-        MSYN_AMP_SUSTAIN = 17,
-        MSYN_AMP_RELEASE = 18,
-        MSYN_LEVEL = 20,
-        MSYN_PAN = 21,
-        MSYN_DELAY = 22,
+        MSYN_DETUNE,
+        MSYN_FINE,
+        MSYN_OSCA_LEVEL,
+        MSYN_OSCB_LEVEL,
+        MSYN_WIDTH,
+        MSYN_NOISE,
+        MSYN_CUTOFF,
+        MSYN_RESONANCE,
+        MSYN_NA_PARAM_A,
+        MSYN_FILTER_ATTACK,
+        MSYN_FILTER_DECAY,
+        MSYN_FILTER_SUSTAIN,
+        MSYN_FILTER_RELEASE,
+        MSYN_FILTER_ENV_AMT,
+        MSYN_AMP_ATTACK,
+        MSYN_AMP_DECAY,
+        MSYN_AMP_SUSTAIN,
+        MSYN_AMP_RELEASE,
+        MSYN_NA_PARAM_B,
+        MSYN_LEVEL,
+        MSYN_PAN,
+        MSYN_CHOKE,
+        MSYN_DELAY,
     };
 
     // DEXED SYNTH
@@ -93,6 +96,7 @@ namespace XRSound
         DEXE_ALGO = 1,
         DEXE_LEVEL = 15,
         DEXE_PAN = 16,
+        DEXE_CHOKE = 17,
         DEXE_DELAY = 18,
         DEXE_NOTE_B = 20,
         DEXE_NOTE_C = 21,
@@ -108,7 +112,8 @@ namespace XRSound
         BRAIDS_FM = 3,
         BRAIDS_LEVEL = 15,
         BRAIDS_PAN = 16,
-        BRAIDS_DELAY = 17,
+        BRAIDS_CHOKE = 17,
+        BRAIDS_DELAY = 18,
     };
 
     // FM DRUM
@@ -120,7 +125,8 @@ namespace XRSound
         FMD_OVERDRIVE = 4,
         FMD_LEVEL = 15,
         FMD_PAN = 16,
-        FMD_DELAY = 17,
+        FMD_CHOKE = 17,
+        FMD_DELAY = 18,
     };
 
     /*** END SOUNDS ***/
