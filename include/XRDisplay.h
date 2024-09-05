@@ -25,17 +25,21 @@ namespace XRDisplay
     void drawPatternControlMods();
     void drawNormalControlMods();
     void drawExtendedControlMods();
+    void drawSampleFileControlMods();
     void drawControlModsForADSR(int att, int dec, float sus, int rel);
     void drawPageNumIndicators();
+    void drawPatternPageNumIndicators();
     void drawGenericMenuList(std::string headerStr, std::string *menuItems, int menuItemMax);
     void drawPagedMenuList(std::string headerStr, std::string *menuItems, int menuItemMax);
     void drawSoundMenuMain();
     void drawSetupMenu();
     void drawSampleBrowser();
     void drawDexedSysexBrowser();
+    void drawGeneralConfirmOverlay(std::string message);
     void drawCopyConfirmOverlay(std::string type, uint8_t num);
     void drawCopySelOverlay(std::string type);
     void drawPasteConfirmOverlay(std::string type, uint8_t num);
+    void drawStraightDashedLine(int startX, int endX, int yPos);
 
     std::string getDisplayNote();
 }

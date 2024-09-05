@@ -696,21 +696,21 @@ uint8_t Dexed::getVoiceDataElement(uint8_t address)
 
 void Dexed::loadVoiceParameters(uint8_t* new_data)
 {
-//#if defined(MICRODEXED_VERSION) && defined(DEBUG)
+#if defined(MICRODEXED_VERSION) && defined(DEBUG)
   char dexed_voice_name[11];
-//#endif
+#endif
 
   panic();
   memcpy(&data, new_data, 155);
   doRefreshVoice();
-//#if defined(MICRODEXED_VERSION) && defined(DEBUG)
+#if defined(MICRODEXED_VERSION) && defined(DEBUG)
   strncpy(dexed_voice_name, (char *)&new_data[145], sizeof(dexed_voice_name) - 1);
   dexed_voice_name[10] = '\0';
 
   Serial.print(F("Voice ["));
   Serial.print(dexed_voice_name);
   Serial.println(F("] loaded."));
-//#endif
+#endif
 }
 
 void Dexed::loadInitVoice(void)

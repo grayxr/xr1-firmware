@@ -10,6 +10,7 @@ namespace XRKeyMatrix
     void init();
     void handleStates(bool discard = false);
     bool isFunctionActive();
+    bool isSelectBtnHeld();
     int8_t getKeyboardOctave();
     extern Keypad kpd;
 }
