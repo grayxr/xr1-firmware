@@ -40,6 +40,7 @@ namespace XRDisplay
     void drawCopySelOverlay(std::string type);
     void drawPasteConfirmOverlay(std::string type, uint8_t num);
     void drawStraightDashedLine(int startX, int endX, int yPos);
+    void drawStepMicrotimingOverlay(std::string value);
 
     std::string getDisplayNote();
 }

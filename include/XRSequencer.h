@@ -122,7 +122,6 @@ namespace XRSequencer
         int8_t trackNum = -1;
         int8_t stepNum = -1;
         int8_t length = -1; // need -1 to know if active/not active
-        // int8_t microtiming;
     } STACK_STEP_DATA;
 
     typedef struct
@@ -159,6 +158,26 @@ namespace XRSequencer
         TRACK_MOD tracks[MAXIMUM_SEQUENCER_TRACKS];
     } TRACK_STEP_MOD_LAYER;
 
+    // recording
+
+    typedef struct
+    {
+        STEP_STATE state = STATE_OFF;
+        int16_t length = -1;
+        int16_t note = -1;
+        bool queued = false;
+    } RECORDING_STEP;
+
+    typedef struct
+    {
+        RECORDING_STEP steps[MAXIMUM_SEQUENCER_STEPS];
+    } RECORDING_TRACK;
+    
+    typedef struct
+    {
+        RECORDING_TRACK tracks[MAXIMUM_SEQUENCER_TRACKS];
+    } RECORDING_STATE;
+
     // extern globals
 
     extern DMAMEM PATTERN activePattern;
@@ -167,12 +186,13 @@ namespace XRSequencer
     extern DMAMEM TRACK_LAYER nextTrackLayer;
     extern DMAMEM TRACK_STEP_MOD_LAYER activeTrackStepModLayer;
 
-    // extern DMAMEM PATTERN patternCopyBuffer;
-    // extern DMAMEM TRACK_LAYER trackLayerCopyBuffer;
-    // extern DMAMEM TRACK_STEP_MOD_LAYER trackStepModLayerCopyBuffer;
+    extern DMAMEM PATTERN patternCopyBuffer;
+    extern DMAMEM TRACK_LAYER trackLayerCopyBuffer;
+    extern DMAMEM TRACK_STEP_MOD_LAYER trackStepModLayerCopyBuffer;
 
     extern TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
     extern PATTERN_FX_PAGE_INDEXES patternFxPages[MAXIMUM_PATTERN_FX_PARAM_PAGES];
+    extern RECORDING_STATE recordingState;
 
     bool init();
 
@@ -196,12 +216,21 @@ namespace XRSequencer
 
     void onClockStart();
     void onClockStop();
+    void ClockOutTracked16PPQN(uint8_t track, uint32_t tick);
+    void ClockOutRigidTracked16PPQN(uint8_t t, uint32_t tick);
     void ClockOut16PPQN(uint32_t tick);
+    void ClockOutRigid16PPQN(uint32_t tick);
     void ClockOut96PPQN(uint32_t tick);
 
     void handle16PPQN(uint32_t tick);
     void handle96PPQN(uint32_t tick);
 
+    void startRecording();
+    void stopRecording();
+    void applyRecordingToSequencer(uint8_t t, bool lastStep);
+    void applyRecordingToSequencerWhenStopped();
+
+    void triggerAllStepsForTrack(uint8_t t, uint32_t tick);
     void triggerAllStepsForAllTracks(uint32_t tick);
     void triggerRatchetingTrack(uint32_t tick);
     void handleAddToStepStack(uint32_t tick, int track, int step);
@@ -218,9 +247,10 @@ namespace XRSequencer
     void handleNoteOnForTrackStep(int track, int step);
     void handleNoteOffForTrackStep(int track, int step);
     
-    void updateAllTrackStepStates();
+    void handleCurrentTrackStepLEDs(uint8_t t);
+    void updateTrackStepState(uint8_t t, uint32_t tick);
     void updateCurrentPatternStepState();
-    void setDisplayStateForPatternActiveTracksLEDs(bool enable);
+    void displayAllTrackNoteOnLEDs(bool enable);
     void noteOffForAllSounds();
     void handlePatternQueueActions();
     void handleTrackLayerQueueActions();

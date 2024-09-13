@@ -200,7 +200,7 @@ namespace XRKeyMatrix
         }
 
         // track select
-        else if ((currentUXMode != XRUX::UX_MODE::COPY_SEL) && key == 'c') {
+        else if ((currentUXMode != XRUX::UX_MODE::COPY_SEL) && key == TRACK_BTN_CHAR) {
             Serial.println("enter track select mode!");
             XRUX::setCurrentMode(XRUX::UX_MODE::TRACK_SEL);
 
@@ -252,6 +252,8 @@ namespace XRKeyMatrix
             XRSequencer::setSelectedPage(0);
 
             XRSound::changeTrackSoundType(currTrackNum, newType);
+
+            // TODO: ALSO STOP CURRENTLY PLAYING SOUND
 
             XRDisplay::drawSequencerScreen(false);
 
@@ -384,18 +386,42 @@ namespace XRKeyMatrix
             }
 
             XRSequencer::setSelectedTrack(trackNum);
+
             XRSound::triggerTrackManually(trackNum, trackToUse.note, trackToUse.octave, _selectBtnHeld);
 
-            if (_recording)
+            if (_recording && XRSequencer::getSeqState().playbackState == XRSequencer::SEQUENCER_PLAYBACK_STATE::RUNNING)
             {
-                // add tapped steps to rec seq buffer @ 96ppqn scale?
-                // e.g.
-                // _rec_seq_heap.pattern.tracks[getKeyStepNum(kpd.key[i].kchar)-1].steps[_current_96ppqn].state = ON/ACCENTED
-                // rec buffer struct looks like:
-                // { int state, int note }
+                // TODO: make it so that we track tap length so we can set the step length
 
-                // in rec mode, page buttons toggle between accent on/off?
-                // or main encoder can be twisted right/left to engage/disengage accent?
+                // get zero-based current seq state track step number to see where to add the step
+                auto currStep = XRSequencer::getSeqState().currentStep-1; 
+                auto currTrackStep = XRSequencer::getSeqState().currentTrackSteps[trackNum].currentStep-1; 
+
+                // get the current tick and determine the closest microtiming amount
+                auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+                auto clockModStepCounter = uClock.getModTrackStepCounter(currTrackNum);
+                auto &currTrack = XRSequencer::getCurrentSelectedTrack();
+                
+                auto targetStep = currTrackStep;
+
+                Serial.printf("RAW STEP: for track %d at pattern step %d track targetStep %d, mtc: %d\n", currTrackNum+1, currStep+1, currTrackStep+1, clockModStepCounter);
+
+                // if tapped step bleeds into next step timeframe, enable the previous step instead
+                if (clockModStepCounter <= 4) {
+                    targetStep = currTrackStep == 0 ? currTrack.lstep-1 : currTrackStep-1;
+
+                    Serial.printf("TAKE PREV STEP: for track %d at pattern step %d track targetStep %d, mtc: %d\n", currTrackNum+1, currStep+1, targetStep+1, clockModStepCounter);
+                } else {
+                    //auto targetStep = currTrackStep+1 == currTrack.lstep ? 0 : currTrackStep;
+
+                    Serial.printf("TAKE NEXT STEP: for track %d at pattern step %d track targetStep %d, mtc: %d\n", currTrackNum+1, currStep+1, currTrackStep+1, clockModStepCounter);
+                }
+
+                // then change the step state to ON
+                XRSequencer::recordingState.tracks[currTrackNum].steps[targetStep].queued = true;
+                XRSequencer::recordingState.tracks[currTrackNum].steps[targetStep].state = XRSequencer::STEP_STATE::STATE_ON; // TODO: make accentable
+                // TODO: track step length
+                // TODO: track step note number from track OR versa keys
             }
 
             return;
@@ -1370,6 +1396,22 @@ namespace XRKeyMatrix
 
             return true;
         }
+        else if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE && keyIsATrack(key))
+        {
+            auto trackNum = getKeyStepNum(key) - 1;
+            auto &track = XRSequencer::activeTrackLayer.tracks[trackNum];
+            auto trackNote = track.note;
+
+            // if track sound type is synth, trigger note off
+            if (XRSound::activePatternSounds[trackNum].type == XRSound::T_MONO_SYNTH ||
+                XRSound::activePatternSounds[trackNum].type == XRSound::T_DEXED_SYNTH ||
+                XRSound::activePatternSounds[trackNum].type == XRSound::T_BRAIDS_SYNTH)
+            {
+                XRSound::noteOffTrackManually(trackNote, XRKeyMatrix::getKeyboardOctave());
+
+                // TODO: capture note length here and dequeue the step?
+            }
+        }
 
         return false;
     }
@@ -1604,6 +1646,20 @@ namespace XRKeyMatrix
                     XRSequencer::getCurrentSelectedTrack().lstep // TODO: use pattern last step here?
                 );
             }
+
+            return true;
+        }
+
+        if (key == START_BTN_CHAR) {
+            _recording = _recording ? false : true;
+
+            if (_recording) {
+                XRSequencer::startRecording();
+            } else {
+                XRSequencer::stopRecording();
+            }
+
+            Serial.printf("start button pressed! value: %d\n", _recording);
 
             return true;
         }

@@ -56,10 +56,11 @@ namespace XRSequencer
     DMAMEM TRACK_LAYER nextTrackLayer;
     DMAMEM TRACK_STEP_MOD_LAYER activeTrackStepModLayer;
     DMAMEM PATTERN_FX_PAGE_INDEXES patternFxPages[MAXIMUM_PATTERN_FX_PARAM_PAGES];
+    DMAMEM RECORDING_STATE recordingState;
 
-    // DMAMEM PATTERN patternCopyBuffer;
-    // DMAMEM TRACK_LAYER trackLayerCopyBuffer;
-    // DMAMEM TRACK_STEP_MOD_LAYER trackStepModLayerCopyBuffer;
+    DMAMEM PATTERN patternCopyBuffer;
+    DMAMEM TRACK_LAYER trackLayerCopyBuffer;
+    DMAMEM TRACK_STEP_MOD_LAYER trackStepModLayerCopyBuffer;
 
     TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
 
@@ -75,11 +76,92 @@ namespace XRSequencer
         patternFxPages[2] = PATTERN_FX_PAGE_INDEXES::NA;
         patternFxPages[3] = PATTERN_FX_PAGE_INDEXES::NA;
 
+        // init recording state
+        for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+        {
+            for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
+            {
+                recordingState.tracks[t].steps[s].state = STEP_STATE::STATE_OFF;
+                recordingState.tracks[t].steps[s].length = 4;
+                recordingState.tracks[t].steps[s].note = 0;
+                recordingState.tracks[t].steps[s].queued = false;
+            }
+        }
+
         initActivePattern();
         initActiveTrackLayer();
         initActiveTrackStepModLayer();
 
         return true;
+    }
+
+    void startRecording()
+    {
+        _recording = true;
+    }
+
+    void stopRecording()
+    {
+        _recording = false;
+    }
+
+    void applyRecordingToSequencer(uint8_t t, bool lastStep)
+    {
+        auto &track = activeTrackLayer.tracks[t];
+        auto trackLastStep = track.lstep;
+
+        if (!lastStep) {
+            auto currStep = _seqState.currentTrackSteps[t].currentStep == 1 ? trackLastStep : _seqState.currentTrackSteps[t].currentStep;
+
+            for (int zPrevStep = 0; zPrevStep < currStep; zPrevStep++) {
+                if (recordingState.tracks[t].steps[zPrevStep].queued) {
+                    Serial.printf("STEP applying recording for track: %d, step: %d, step queue state: %d ?\n", t+1, zPrevStep+1, recordingState.tracks[t].steps[zPrevStep].queued);
+
+                    // then apply recording state to sequencer data
+                    track.steps[zPrevStep].state = recordingState.tracks[t].steps[zPrevStep].state;
+
+                    // TODO: impl recording based track step mod layer NOTE and LENGTH tracking
+                    // e.g. if note is not -1, then set note to track step mod layer
+                    // e.g. if length is not -1, then set length to track step mod layer
+
+                    // then reinit recording state
+                    recordingState.tracks[t].steps[zPrevStep].state = STEP_STATE::STATE_OFF;
+                    recordingState.tracks[t].steps[zPrevStep].queued = false;
+                }
+            }
+        } else {
+            auto &track = activeTrackLayer.tracks[t];
+            auto zLastStep = trackLastStep - 1;
+
+            if (recordingState.tracks[t].steps[zLastStep].queued) { 
+
+                Serial.printf("LAST STEP applying recording for track %d last step: %d\n", t+1, zLastStep);
+
+                // then apply recording state to sequencer data
+                track.steps[zLastStep].state = recordingState.tracks[t].steps[zLastStep].state;
+
+                // TODO: impl recording based track step mod layer NOTE and LENGTH tracking
+                // e.g. if note is not -1, then set note to track step mod layer
+                // e.g. if length is not -1, then set length to track step mod layer
+
+                // then reinit recording state
+                recordingState.tracks[t].steps[zLastStep].state = STEP_STATE::STATE_OFF;
+                recordingState.tracks[t].steps[zLastStep].queued = false;
+            }
+        }
+    }
+
+    void applyRecordingToSequencerWhenStopped()
+    {
+        for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+        {
+            auto &track = activeTrackLayer.tracks[t];
+
+            for (int s = 0; s < track.lstep; s++)
+            {
+                applyRecordingToSequencer(t, (s+1) == track.lstep);
+            }
+        }
     }
 
     void onClockStart()
@@ -114,10 +196,12 @@ namespace XRSequencer
             return;
         }
 
-        handle16PPQN(tick);
+        // NOTE: this function is affected by swing
+
+        // handle16PPQN(tick);
     }
 
-    void ClockOut96PPQN(uint32_t tick)
+    void ClockOutRigid16PPQN(uint32_t tick)
     {
         auto currentUXMode = XRUX::getCurrentMode();
         if (currentUXMode == XRUX::UX_MODE::PROJECT_INITIALIZE || currentUXMode == XRUX::UX_MODE::PROJECT_BUSY)
@@ -125,22 +209,107 @@ namespace XRSequencer
             return;
         }
 
-        handle96PPQN(tick);
+        // NOTE: this function is NOT affected by swing
 
-        // Send MIDI_CLOCK to external gears
-        // usbMIDI.sendRealTime(usbMIDI.Clock);
+        auto seqState = getSeqState();
+        bool isOnStraightQtrNote = (seqState.currentStep == 1 || !((seqState.currentStep - 1) % 4));
+
+        if (isOnStraightQtrNote && !(tick % 4))
+        {
+            XRLED::setPWM(23, 4095); // when recording, each straight quarter note start button led FULL ON
+        }
+        
+        updateCurrentPatternStepState();
+
+        if (!(tick % 4)) {
+            // blink queued pattern number every qtr note if pattern is queued
+            if (_queuedPatternState.bank > -1 && _queuedPatternState.number > -1) {
+                _drawPatternQueueBlink = 1;
+            } else if (_queuedTrackLayer > -1) {
+                _drawTrackLayerQueueBlink = 1;
+            }
+        } else if ((_drawPatternQueueBlink > -1) && !(tick % 2)) {
+            _drawPatternQueueBlink = 0;
+        } else if ((_drawTrackLayerQueueBlink > -1) && !(tick % 2)) {
+            _drawTrackLayerQueueBlink = 0;
+        }
+
+        // every 1/4 step log memory usage
+        if (!(tick % 4)) {
+            XRAudio::logMetrics();
+        }
     }
 
-    void handle16PPQN(uint32_t tick)
+    void ClockOutTracked16PPQN(uint8_t t, uint32_t tick)
     {
         auto currentUXMode = XRUX::getCurrentMode();
-        auto seqState = getSeqState();
-        auto currentSelectedTrack = getCurrentSelectedTrackNum();
-        auto currentStepPage = getCurrentStepPage();
+        if (currentUXMode == XRUX::UX_MODE::PROJECT_INITIALIZE || currentUXMode == XRUX::UX_MODE::PROJECT_BUSY)
+        {
+            return;
+        }
 
+        // NOTE: this function is affected by swing
+
+        handleCurrentTrackStepLEDs(t);
+
+        triggerAllStepsForTrack(t, tick);
+
+        updateTrackStepState(t, tick);
+    }
+
+    void ClockOutRigidTracked16PPQN(uint8_t t, uint32_t tick)
+    {
+        auto currentUXMode = XRUX::getCurrentMode();
+        if (currentUXMode == XRUX::UX_MODE::PROJECT_INITIALIZE || currentUXMode == XRUX::UX_MODE::PROJECT_BUSY)
+        {
+            return;
+        }
+
+        // NOTE: this function is NOT affected by swing
+    }
+
+    void updateTrackStepState(uint8_t t, uint32_t tick)
+    {
+        auto &track = activeTrackLayer.tracks[t];
+        auto trackLastStep = track.lstep;
+        auto trackCurrentStep = _seqState.currentTrackSteps[t].currentStep;
+
+        if (trackCurrentStep <= trackLastStep)
+        {
+            if (trackCurrentStep < trackLastStep)
+            {
+                if (!((trackCurrentStep + 1) % 16))
+                { // TODO: make this bar division configurable?
+                    ++_seqState.currentTrackSteps[t].currentBar;
+                }
+
+                ++_seqState.currentTrackSteps[t].currentStep; // advance current step for track
+
+                applyRecordingToSequencer(t, false);
+            }
+            else
+            {
+                _seqState.currentTrackSteps[t].currentStep = 1; // reset current step for track
+                _seqState.currentTrackSteps[t].currentBar = 1;  // reset current bar for track
+
+                applyRecordingToSequencer(t, true);
+            }
+        }
+    }
+
+    void handleCurrentTrackStepLEDs(uint8_t t)
+    {
+        auto currentUXMode = XRUX::getCurrentMode();
+        auto currentSelectedTrack = getCurrentSelectedTrackNum();
+
+        if (t != currentSelectedTrack) {
+            return;
+        }
+
+        auto seqState = getSeqState();
+        auto currentStepPage = getCurrentStepPage();
         bool functionActive = XRKeyMatrix::isFunctionActive();
 
-        // int8_t currentSelectedPatternCurrentStep = seqState.currentStep;
         int8_t currentSelectedTrackCurrentStep = seqState.currentTrackSteps[currentSelectedTrack].currentStep;
         int8_t currentSelectedTrackCurrentBar = seqState.currentTrackSteps[currentSelectedTrack].currentBar;
 
@@ -173,11 +342,6 @@ namespace XRSequencer
             );
         }
 
-        if (isOnStraightQtrNote)
-        {
-            XRLED::setPWM(23, 4095); // when recording, each straight quarter note start button led ON
-        }
-
         // This method handles advancing the sequencer
         // and displaying the start btn and step btn BPM LEDs
         int8_t currStepChar = XRHelpers::stepCharMap[currStepPaged];
@@ -185,12 +349,8 @@ namespace XRSequencer
 
         if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE)
         {
-            setDisplayStateForPatternActiveTracksLEDs(true);
+            displayAllTrackNoteOnLEDs(true);
         }
-
-        // TODO: move out of 16th step !(tick % (6)) condition
-        // so we can check for microtiming adjustments at the 96ppqn scale
-        triggerAllStepsForAllTracks(tick);
 
         if (currentUXMode == XRUX::UX_MODE::PATTERN_SEL)
         {
@@ -205,14 +365,14 @@ namespace XRSequencer
         else if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE)
         {
             bool transitionStepLEDs = ((currentStepPage == 1 && currentSelectedTrackCurrentStep <= 16) ||
-                                       (currentStepPage == 2 && currentSelectedTrackCurrentStep > 16 && currentSelectedTrackCurrentStep <= 32) ||
-                                       (currentStepPage == 3 && currentSelectedTrackCurrentStep > 32 && currentSelectedTrackCurrentStep <= 48) ||
-                                       (currentStepPage == 4 && currentSelectedTrackCurrentStep > 48 && currentSelectedTrackCurrentStep <= 64));
+                                    (currentStepPage == 2 && currentSelectedTrackCurrentStep > 16 && currentSelectedTrackCurrentStep <= 32) ||
+                                    (currentStepPage == 3 && currentSelectedTrackCurrentStep > 32 && currentSelectedTrackCurrentStep <= 48) ||
+                                    (currentStepPage == 4 && currentSelectedTrackCurrentStep > 48 && currentSelectedTrackCurrentStep <= 64));
 
             bool turnOffLastLED = ((currentStepPage == 1 && currentSelectedTrackCurrentStep == 1) ||
-                                   (currentStepPage == 2 && currentSelectedTrackCurrentStep == 16) ||
-                                   (currentStepPage == 3 && currentSelectedTrackCurrentStep == 32) ||
-                                   (currentStepPage == 4 && currentSelectedTrackCurrentStep == 48));
+                                (currentStepPage == 2 && currentSelectedTrackCurrentStep == 16) ||
+                                (currentStepPage == 3 && currentSelectedTrackCurrentStep == 32) ||
+                                (currentStepPage == 4 && currentSelectedTrackCurrentStep == 48));
 
             if (currentSelectedTrackCurrentStep > 1)
             {
@@ -220,7 +380,17 @@ namespace XRSequencer
                 {
                     uint8_t prevKeyLED = XRLED::getKeyLED(XRHelpers::stepCharMap[currStepPaged - 1]);
 
-                    XRLED::setPWM(prevKeyLED, 0); // turn prev sixteenth led OFF
+                    auto &currTrack = activeTrackLayer.tracks[t];
+                    auto prevTrackStepData = currTrack.steps[currentSelectedTrackCurrentStep-2];
+
+                    if (prevTrackStepData.state == STEP_STATE::STATE_ACCENTED)
+                    {
+                        XRLED::setPWM(keyLED, 4095); // turn prev sixteenth led ACCENTED ON
+                    } else if (prevTrackStepData.state == STEP_STATE::STATE_ON) {
+                        XRLED::setPWM(keyLED, 512); // turn prev sixteenth led ON
+                    } else {
+                        XRLED::setPWM(prevKeyLED, 0); // turn prev sixteenth led OFF
+                    }
                 }
             }
             else
@@ -243,35 +413,31 @@ namespace XRSequencer
 
             if (transitionStepLEDs)
             {
-                XRLED::setPWM(keyLED, 4095); // turn sixteenth led ON
+                auto &currTrack = activeTrackLayer.tracks[t];
+                auto currTrackStepData = currTrack.steps[currentSelectedTrackCurrentStep-1];
+
+                if (currTrackStepData.state == STEP_STATE::STATE_ACCENTED)
+                {
+                    XRLED::setPWM(keyLED, 0); // turn sixteenth led OFF
+                } else {
+                    XRLED::setPWM(keyLED, 4095); // turn sixteenth led ON
+                }
             }
         }
-        
-        updateCurrentPatternStepState();
-        updateAllTrackStepStates();
+    }
 
-        if (!(tick % 4)) {
-            // blink queued pattern number every qtr note if pattern is queued
-            if (_queuedPatternState.bank > -1 && _queuedPatternState.number > -1) {
-                _drawPatternQueueBlink = 1;
-            } else if (_queuedTrackLayer > -1) {
-                _drawTrackLayerQueueBlink = 1;
-            }
-        } else if ((_drawPatternQueueBlink > -1) && !(tick % 2)) {
-            _drawPatternQueueBlink = 0;
-        } else if ((_drawTrackLayerQueueBlink > -1) && !(tick % 2)) {
-            _drawTrackLayerQueueBlink = 0;
+    void ClockOut96PPQN(uint32_t tick)
+    {
+        auto currentUXMode = XRUX::getCurrentMode();
+        if (currentUXMode == XRUX::UX_MODE::PROJECT_INITIALIZE || currentUXMode == XRUX::UX_MODE::PROJECT_BUSY)
+        {
+            return;
         }
 
-        // every 1/4 step log memory usage
-        if (!(tick % 4)) {
-            XRAudio::logMetrics();
-        }
+        handle96PPQN(tick);
 
-        if (_recording) {
-            XRLED::setPWM(23, 512);
-            //XRLED::setPWM(23, 1024);
-        }
+        // Send MIDI_CLOCK to external gears
+        // usbMIDI.sendRealTime(usbMIDI.Clock);
     }
 
     void handle96PPQN(uint32_t tick)
@@ -281,6 +447,11 @@ namespace XRSequencer
         if ((tick % 6) && !(tick % _bpmBlinkTimer))
         {
             XRLED::setPWM(23, 0); // turn start button led OFF every 16th note
+        }
+
+        if (_recording) {
+            XRLED::setPWM(23, 512);
+            //XRLED::setPWM(23, 1024);
         }
 
         //if (!(tick % 8)) {
@@ -297,7 +468,7 @@ namespace XRSequencer
         {
             if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE)
             {
-                setDisplayStateForPatternActiveTracksLEDs(false);
+                displayAllTrackNoteOnLEDs(false);
             }
             else if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE || currentUXMode == XRUX::UX_MODE::SUBMITTING_STEP_VALUE)
             {
@@ -512,7 +683,7 @@ namespace XRSequencer
         return _ratchetDivision;
     }
 
-    void setDisplayStateForPatternActiveTracksLEDs(bool enable)
+    void displayAllTrackNoteOnLEDs(bool enable)
     {
         const int MAX_PATTERN_TRACK_SIZE = 17; // plus one
 
@@ -542,23 +713,27 @@ namespace XRSequencer
         }
     }
 
+    void triggerAllStepsForTrack(uint8_t t, uint32_t tick) {
+        int8_t currTrackStep = _seqState.currentTrackSteps[t].currentStep - 1; // get zero-based track step number
+
+        auto &currTrack = activeTrackLayer.tracks[t];
+        auto currTrackStepData = currTrack.steps[currTrackStep];
+        
+        if (!trackPerformState[t].muted && ((currTrackStepData.state == STEP_STATE::STATE_ON) || (currTrackStepData.state == STEP_STATE::STATE_ACCENTED)))
+        {
+            if (isStepProbablyEnabled(t, currTrackStep)) {
+                handleAddToStepStack(tick, t, currTrackStep);
+            } else {
+                handleAddToIgnoredStepStack(tick, t, currTrackStep);
+            }
+        }
+    }
+
     void triggerAllStepsForAllTracks(uint32_t tick)
     {
         for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
         {
-            int8_t currTrackStep = _seqState.currentTrackSteps[t].currentStep - 1; // get zero-based track step number
-
-            auto &currTrack = activeTrackLayer.tracks[t];
-            auto currTrackStepData = currTrack.steps[currTrackStep];
-
-            if (!trackPerformState[t].muted && ((currTrackStepData.state == STEP_STATE::STATE_ON) || (currTrackStepData.state == STEP_STATE::STATE_ACCENTED)))
-            {
-                if (isStepProbablyEnabled(t, currTrackStep)) {
-                    handleAddToStepStack(tick, t, currTrackStep);
-                } else {
-                    handleAddToIgnoredStepStack(tick, t, currTrackStep);
-                }
-            }
+            triggerAllStepsForTrack(t, tick);
         }
     }
 
@@ -989,14 +1164,6 @@ namespace XRSequencer
         // always initialize next pattern?
         activePattern.initialized = true;
 
-        // if the new pattern has a groove, set it on the clock
-        if (activePattern.groove.id > -1) {
-            XRClock::setShuffle(true);
-            XRClock::setShuffleTemplateForGroove(activePattern.groove.id, activePattern.groove.amount);
-        } else {
-            XRClock::setShuffle(false);
-        }
-
         XRSound::applyFxForActivePattern();
         XRSound::applyTrackChokes();
         
@@ -1008,6 +1175,18 @@ namespace XRSequencer
         XRSD::saveActiveTrackStepModLayerToSdCard();
         if (!XRSD::loadActiveTrackStepModLayerFromSdCard(newBank, newPattern, 0)) {
             initActiveTrackStepModLayer();
+        }
+
+        // if the new pattern has a groove, set it on the clock
+        if (activePattern.groove.id > -1) {
+            XRClock::setShuffle(true);
+            XRClock::setShuffleTemplateForGroove(activePattern.groove.id, activePattern.groove.amount);
+
+            XRClock::setShuffleForAllTracks(true);
+            XRClock::setShuffleTemplateForGrooveForAllTracks(activePattern.groove.id, activePattern.groove.amount);
+        } else {
+            XRClock::setShuffle(false);
+            XRClock::setShuffleForAllTracks(false);
         }
         
         swapSequencerMemoryForTrackLayerChange();
@@ -1082,6 +1261,8 @@ namespace XRSequencer
         if (_seqState.playbackState > STOPPED) { // either RUNNING or PAUSED
             if (_seqState.playbackState == RUNNING && btn == START_BTN_CHAR) {
                 XRClock::stop();
+
+                applyRecordingToSequencerWhenStopped();
 
                 // Stopped, so reset sequencer to FIRST step in pattern
                 _seqState.currentStep = 1;

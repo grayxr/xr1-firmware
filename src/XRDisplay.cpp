@@ -219,6 +219,22 @@ namespace XRDisplay
         u8g2.sendBuffer();
     }
 
+    void drawStepMicrotimingOverlay(std::string value)
+    {
+        drawGenericOverlayFrame();
+
+        u8g2.drawStr(32, 5, "STEP MICROTIMING");
+
+        int valPosX = DISPLAY_MAX_WIDTH / 2;
+        valPosX -= (value.length() > 0 ? u8g2.getStrWidth(value.c_str()) / 2 : 0);
+
+        u8g2.setFont(bitocra13_c);
+        u8g2.drawStr(valPosX, 30, value.c_str());
+        u8g2.setFont(small_font);
+
+        u8g2.sendBuffer();
+    }
+
     void drawHatchedBackground()
     {
         int leftBoundX = 0;
@@ -522,31 +538,34 @@ namespace XRDisplay
             u8g2.drawLine(32,8,32,18);
             u8g2.drawStr(36, 9, trackInfoStr.c_str());
 
-            auto currentSelectedPage = XRSequencer::getCurrentSelectedPage();
-
-            // draw track description / main icon area
+            // draw note indicator
             if (
                 currSoundForTrack.type == XRSound::T_MONO_SYNTH ||
                 currSoundForTrack.type == XRSound::T_DEXED_SYNTH ||
                 currSoundForTrack.type == XRSound::T_MIDI ||
                 currSoundForTrack.type == XRSound::T_CV_GATE)
             {
+                auto currentSelectedPage = XRSequencer::getCurrentSelectedPage();
+
                 if (currentSelectedPage == 0)
                 {
-                    u8g2.drawStr(7, 23, "NOTE");
-                    u8g2.setFont(bitocra13_c);
-                    u8g2.drawStr(9, 32, getDisplayNote().c_str());
-                    u8g2.setFont(bitocra7_c);
+                    u8g2.drawStr(17, 9, getDisplayNote().c_str());
+                    u8g2.drawLine(14,8,14,18);
+
+                    // u8g2.setColorIndex((u_int8_t)0);
+                    // u8g2.drawStr(90, 0, getDisplayNote().c_str());
+                    // u8g2.setColorIndex((u_int8_t)1);
                 }
             }
-            else if (currSoundForTrack.type == XRSound::T_CV_TRIG)
-            {
-                // u8g2.drawLine(3,42,14,42);
-                // u8g2.drawLine(14,42,14,28);
-                // u8g2.drawLine(14,28,19,28);
-                // u8g2.drawLine(19,28,19,42);
-                // u8g2.drawLine(19,42,24,42);
-            }
+
+            // else if (currSoundForTrack.type == XRSound::T_CV_TRIG)
+            // {
+            //     // u8g2.drawLine(3,42,14,42);
+            //     // u8g2.drawLine(14,42,14,28);
+            //     // u8g2.drawLine(14,28,19,28);
+            //     // u8g2.drawLine(19,28,19,42);
+            //     // u8g2.drawLine(19,42,24,42);
+            // }
 
             // draw control mod area
             drawControlMods();
@@ -782,13 +801,14 @@ namespace XRDisplay
 
             drawControlModsForADSR(msynFatt, msynFdec, msynFsus, msynFrel);
         }
-        else if (
-            currPageSelected == 0 &&
-            ((currSoundForTrack.type == XRSound::T_MONO_SYNTH) ||
-            (currSoundForTrack.type == XRSound::T_DEXED_SYNTH))
-        ) {
-            drawNormalControlMods();
-        } else if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 1)
+        // else if (
+        //     currPageSelected == 0 &&
+        //     ((currSoundForTrack.type == XRSound::T_MONO_SYNTH) ||
+        //     (currSoundForTrack.type == XRSound::T_DEXED_SYNTH))
+        // ) {
+        //     drawNormalControlMods();
+        //} 
+        else if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 1)
         {
             drawSampleFileControlMods();
         }

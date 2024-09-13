@@ -146,8 +146,8 @@ namespace XRSound
     DMAMEM SOUND nextPatternSounds[MAXIMUM_SEQUENCER_TRACKS];
     DMAMEM PATTERN_SOUND_MOD_LAYER activePatternSoundStepModLayer;
 
-    // DMAMEM SOUND patternSoundsCopyBuffer[MAXIMUM_SEQUENCER_TRACKS];
-    // DMAMEM PATTERN_SOUND_MOD_LAYER patternSoundStepModLayerCopyBuffer;
+    DMAMEM SOUND patternSoundsCopyBuffer[MAXIMUM_SEQUENCER_TRACKS];
+    DMAMEM PATTERN_SOUND_MOD_LAYER patternSoundStepModLayerCopyBuffer;
 
     bool soundNeedsReinit[MAXIMUM_SEQUENCER_TRACKS] = {
         false, false, false, false,
@@ -3394,11 +3394,11 @@ namespace XRSound
             break;
 
         case T_MONO_SYNTH:
-            outputStr = "MSYNTH";
+            outputStr = "MS1";
             break;
 #ifndef NO_DEXED
         case T_DEXED_SYNTH:
-            outputStr = "FMSYNTH";
+            outputStr = "FM1";
             break;
 #endif
         case T_BRAIDS_SYNTH:

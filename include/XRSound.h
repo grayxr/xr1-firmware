@@ -406,8 +406,8 @@ namespace XRSound
     extern DMAMEM SOUND nextPatternSounds[MAXIMUM_SEQUENCER_TRACKS];
     extern DMAMEM PATTERN_SOUND_MOD_LAYER activePatternSoundStepModLayer;
 
-    // extern DMAMEM SOUND patternSoundsCopyBuffer[MAXIMUM_SEQUENCER_TRACKS];
-    // extern DMAMEM PATTERN_SOUND_MOD_LAYER patternSoundStepModLayerCopyBuffer;
+    extern DMAMEM SOUND patternSoundsCopyBuffer[MAXIMUM_SEQUENCER_TRACKS];
+    extern DMAMEM PATTERN_SOUND_MOD_LAYER patternSoundStepModLayerCopyBuffer;
     
     extern bool soundNeedsReinit[MAXIMUM_SEQUENCER_TRACKS];
 

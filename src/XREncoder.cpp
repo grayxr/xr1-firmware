@@ -28,6 +28,7 @@ namespace XREncoder
     };
 
     void handleEncoderSetTempo(int diff);
+    void handleEncoderSetStepMicrotime(int diff);
     void handleEncoderSetPatternMods();
     void handleEncoderSetTrackMods();
     void handleEncoderTraversePages(int diff);
@@ -171,7 +172,6 @@ namespace XREncoder
         if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) {
             int diff = getDiff(MAIN_ENCODER_ADDRESS);
             handleEncoderTraversePages(diff);
-
             handleEncoderSetPatternMods();
 
             return;
@@ -186,6 +186,8 @@ namespace XREncoder
 
             if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE) {
                 handleEncoderTraversePages(diff);
+            } else if (currentUXMode == XRUX::UX_MODE::SUBMITTING_STEP_VALUE) {
+                handleEncoderSetStepMicrotime(diff);
             }
 
             handleEncoderSetTrackMods();
@@ -229,6 +231,78 @@ namespace XREncoder
             }
         }
     }
+
+    void handleEncoderSetStepMicrotime(int diff)
+    {
+        if (diff != 0)
+        {
+            auto &currPattern = XRSequencer::getCurrentSelectedPattern();
+            auto &currTrack = XRSequencer::getCurrentSelectedTrack();
+            auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+            auto currStep = XRSequencer::getCurrentSelectedStepNum();
+            int currGrooveId = currPattern.groove.id;
+            int currGrooveAmt = currPattern.groove.amount;
+            auto currPatternTemplate = XRClock::getShuffleTemplateForGroove(currGrooveId, currGrooveAmt);
+
+            // build the shuffle template for the track based on the pattern first
+            int8_t trackShuffleTemplate[MAXIMUM_SEQUENCER_STEPS];
+            size_t currPatternTemplateLength = sizeof(currPatternTemplate);
+
+            for (size_t i = 0; i < MAXIMUM_SEQUENCER_STEPS; i++)
+            {
+                trackShuffleTemplate[i] = currPatternTemplate[i % currPatternTemplateLength];
+            }
+
+            // then get any existing step mods for the entire track and apply them to the template
+            for (size_t i = 0; i < MAXIMUM_SEQUENCER_STEPS; i++)
+            {
+                if (XRSequencer::activeTrackStepModLayer.tracks[currTrackNum].steps[i].flags[XRSequencer::MICROTIMING]) {
+                    trackShuffleTemplate[i] = XRSequencer::activeTrackStepModLayer.tracks[currTrackNum].steps[i].mods[XRSequencer::MICROTIMING];
+                }
+            }
+
+            // then compare the current microtiming value with the new one to see if it needs to be updated
+            auto currStepMicrotiming = trackShuffleTemplate[currStep];
+
+            // step 1 is not allowed negative microtiming (TODO: fix?)
+            // because when negative microtiming is applied to step 1, 
+            // it doesn't advance the seqState.trackSteps[t].currentStep
+            int8_t leftLimit = currStep == 0 ? 0 : -12;
+            int8_t rightLimit = 12;
+
+            int8_t newStepMicrotiming = constrain(currStepMicrotiming + diff, leftLimit, rightLimit);
+
+            if (newStepMicrotiming != currStepMicrotiming)
+            {
+                // set the mod
+                XRSequencer::activeTrackStepModLayer.tracks[currTrackNum].steps[currStep].flags[XRSequencer::MICROTIMING] = true;
+                XRSequencer::activeTrackStepModLayer.tracks[currTrackNum].steps[currStep].mods[XRSequencer::MICROTIMING] = newStepMicrotiming;
+
+                // set the new shuffle template for the track
+                trackShuffleTemplate[currStep] = newStepMicrotiming;
+                XRClock::setShuffleTemplateForTrack(currTrackNum, trackShuffleTemplate, currTrack.lstep);
+
+                // // print tmpl as one string
+                Serial.printf("enc track template: ");
+                for (size_t i = 0; i < currTrack.lstep; i++)
+                {
+                    Serial.printf("%d, ", trackShuffleTemplate[i]);
+                }
+                Serial.printf("\n");
+            }
+
+            // draw the microtiming value on the screen
+            std::string microtimingStr = std::to_string(newStepMicrotiming);
+            
+            if (newStepMicrotiming > 0)
+            {
+                microtimingStr = "+" + microtimingStr;
+            }
+
+            XRDisplay::drawStepMicrotimingOverlay(microtimingStr);
+        }
+    }
+
 
     bool handleMenuCursor(XRUX::UX_MODE menuMode, int diff)
     {
@@ -421,9 +495,13 @@ namespace XREncoder
 
                     if (newGrooveId == -1) {
                         XRClock::setShuffle(false);
+                        XRClock::setShuffleForAllTracks(false);
                     } else {
                         XRClock::setShuffleTemplateForGroove(currPattern.groove.id, currPattern.groove.amount);
                         XRClock::setShuffle(true);
+
+                        XRClock::setShuffleTemplateForGrooveForAllTracks(currPattern.groove.id, currPattern.groove.amount);
+                        XRClock::setShuffleForAllTracks(true);
                     }
 
                     XRDisplay::drawSequencerScreen(false);
@@ -488,6 +566,7 @@ namespace XREncoder
                     currPattern.groove.amount = newGrooveAmt;
 
                     XRClock::setShuffleTemplateForGroove(currPattern.groove.id, newGrooveAmt);
+                    XRClock::setShuffleTemplateForGrooveForAllTracks(currPattern.groove.id, newGrooveAmt);
 
                     XRDisplay::drawSequencerScreen(false);
                 }

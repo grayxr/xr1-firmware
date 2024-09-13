@@ -55,6 +55,8 @@ namespace XRSD
     bool loadActivePatternSounds();
     void saveActivePatternSounds();
 
+    void applyActivePatternGroove();
+
     bool loadNextPatternSounds(int bank, int pattern);
     bool loadPatternSoundStepModLayerFromSdCard(int bank, int pattern, int layer);
     void saveActiveSoundStepModLayerToSdCard();

@@ -28,7 +28,12 @@ namespace XRClock
 
     void setTempo(float tempo);
     void setShuffle(bool active);
+    void setShuffleForTrack(uint8_t track, bool active);
+    void setShuffleForAllTracks(bool active);
     void setShuffleTemplateForGroove(int8_t grooveId, int8_t grooveAmount);
+    void setShuffleTemplateForGrooveForAllTracks(int8_t grooveId, int8_t grooveAmount);
+    void setShuffleTemplateForTrack(int8_t track, int8_t * t, uint8_t s);
+    void initializeShuffleForAllTrackMods();
     
     float getTempo();
 

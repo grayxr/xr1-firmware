@@ -368,6 +368,8 @@ namespace XRSD
             XRSequencer::getCurrentSelectedTrackLayerNum()
         );
 
+        applyActivePatternGroove();
+
         XRSound::init();
 
         loadActivePatternSounds();
@@ -424,13 +426,27 @@ namespace XRSD
 
         //Serial.printf("sizeof(:activePattern): %d\n", sizeof(XRSequencer::activePattern));
 
+        return true;
+    }
+
+    void applyActivePatternGroove()
+    {
         // if loaded active pattern has a groove, set it on the clock
         if (XRSequencer::activePattern.groove.id > -1) {
+            // first apply pattern groove
             XRClock::setShuffle(true);
             XRClock::setShuffleTemplateForGroove(XRSequencer::activePattern.groove.id, XRSequencer::activePattern.groove.amount);
-        }
 
-        return true;
+            // then apply track level groove / microtiming
+            XRClock::setShuffleForAllTracks(true);
+            XRClock::setShuffleTemplateForGrooveForAllTracks(
+                XRSequencer::activePattern.groove.id, 
+                XRSequencer::activePattern.groove.amount
+            );
+        } else {
+            // otherwise make sure any track microtiming mod grooves are enabled
+            XRClock::initializeShuffleForAllTrackMods();
+        }
     }
 
     bool loadActiveTrackLayer()

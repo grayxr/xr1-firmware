@@ -40,12 +40,19 @@ namespace XRClock
     {
         uClock.init();
         uClock.setOnPPQN(XRSequencer::ClockOut96PPQN);
-        uClock.setOnStep(XRSequencer::ClockOut16PPQN);
+        uClock.setOnRigidStep(XRSequencer::ClockOutRigid16PPQN);       
+        uClock.setTrackOnStep(XRSequencer::ClockOutTracked16PPQN);
         uClock.setOnClockStart(XRSequencer::onClockStart);
         uClock.setOnClockStop(XRSequencer::onClockStop);
         uClock.setTempo(120);
         uClock.setShuffle(false);
         uClock.setShuffleTemplate(_shuffle_templates[1], 2);
+
+        for (size_t i = 0; i < MAXIMUM_SEQUENCER_TRACKS; i++)
+        {
+            uClock.setTrackShuffleTemplate(i, _shuffle_templates[1], 2);
+        }
+        
     }
 
     void setTempo(float tempo)
@@ -103,11 +110,115 @@ namespace XRClock
         uClock.setShuffle(active);
     }
 
+    void setShuffleForTrack(uint8_t track, bool active)
+    {
+        uClock.setTrackShuffle(track, active);
+    }
+
+    void setShuffleForAllTracks(bool active)
+    {
+        for (size_t t=0; t < MAXIMUM_SEQUENCER_TRACKS; t++) {
+            // if a track has any step with microtiming, we leave the shuffle active on the track
+            for (size_t s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
+            {
+                if (XRSequencer::activeTrackStepModLayer.tracks[t].steps[s].flags[XRSequencer::MICROTIMING]) {
+                    // make sure microtiming based shuffle is always enabled
+                    active = true;
+                    break;
+                }
+            }
+
+            uClock.setTrackShuffle(t, active);
+        }
+    }
+
     void setShuffleTemplateForGroove(int8_t grooveId, int8_t grooveAmount)
     {
         auto t = _grooves.configs[grooveId].templates[grooveAmount];
         auto s = _grooves.configs[grooveId].templateSize;
 
         uClock.setShuffleTemplate(t, s);
+    }
+
+    void setShuffleTemplateForGrooveForAllTracks(int8_t grooveId, int8_t grooveAmount)
+    {
+        auto baseTemplate = _grooves.configs[grooveId].templates[grooveAmount];
+        auto baseSize = _grooves.configs[grooveId].templateSize;
+
+        for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+        {
+            auto &currTrack = XRSequencer::getTrack(t);
+
+            int8_t tmpl[currTrack.lstep] = {0};
+            int8_t size = currTrack.lstep;
+
+            // if a track has any step with microtiming, we merge the pattern groove into the track shuffle template
+            // and apply it to the steps that don't already have microtiming mods
+            for (size_t s = 0; s < currTrack.lstep; s++)
+            {
+                auto val = baseTemplate[s % baseSize];
+
+                if (XRSequencer::activeTrackStepModLayer.tracks[t].steps[s].flags[XRSequencer::MICROTIMING]) {
+                    val = XRSequencer::activeTrackStepModLayer.tracks[t].steps[s].mods[XRSequencer::MICROTIMING];
+                }
+
+                //if (t == 0) Serial.printf("track 1 step: %d baseSize: %d, orig: %d, val: %d\n", s, baseSize, baseTemplate[s % baseSize], val);
+
+                tmpl[s] = val;
+            }
+
+            // print tmpl as one string
+            // if (t == 0) {
+            //     Serial.printf("track 1 template: ");
+            //     for (size_t i = 0; i < currTrack.lstep; i++)
+            //     {
+            //         Serial.printf("%d, ", tmpl[i]);
+            //     }
+            //     Serial.printf("\n");
+            // }
+                
+            uClock.setTrackShuffleTemplate(t, tmpl, size);
+        }
+    }
+
+    void initializeShuffleForAllTrackMods()
+    {
+        for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+        {
+            auto &currTrack = XRSequencer::getTrack(t);
+
+            bool shuffleEnabled = false;            
+            int8_t tmpl[currTrack.lstep] = {0};
+            int8_t size = currTrack.lstep;
+
+            for (size_t s = 0; s < currTrack.lstep; s++)
+            {
+                if (XRSequencer::activeTrackStepModLayer.tracks[t].steps[s].flags[XRSequencer::MICROTIMING]) {
+                    shuffleEnabled = true;
+
+                    tmpl[s] = XRSequencer::activeTrackStepModLayer.tracks[t].steps[s].mods[XRSequencer::MICROTIMING];
+                }
+            }
+
+            if (shuffleEnabled) {
+                // print tmpl as one string
+                // if (t == 0) {
+                //     Serial.printf("track 1 template: ");
+                //     for (size_t i = 0; i < currTrack.lstep; i++)
+                //     {
+                //         Serial.printf("%d, ", tmpl[i]);
+                //     }
+                //     Serial.printf("\n");
+                // }
+                    
+                uClock.setTrackShuffle(t, true);
+                uClock.setTrackShuffleTemplate(t, tmpl, size);
+            }
+        }
+    }
+
+    void setShuffleTemplateForTrack(int8_t track, int8_t * t, uint8_t s)
+    {
+        uClock.setTrackShuffleTemplate(track, t, s);
     }
 }

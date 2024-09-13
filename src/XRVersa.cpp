@@ -135,6 +135,7 @@ namespace XRVersa
 
         bool allowedModeToPlayKeysFrom = (
             currentUXMode == XRUX::UX_MODE::PATTERN_WRITE || 
+            currentUXMode == XRUX::UX_MODE::TRACK_SEL || 
             currentUXMode == XRUX::UX_MODE::TRACK_WRITE || 
             currentUXMode == XRUX::UX_MODE::PERFORM_TAP ||
             currentUXMode == XRUX::UX_MODE::PERFORM_MUTE ||
@@ -295,7 +296,7 @@ namespace XRVersa
             _notesPressed[invertedNoteNumber] = true;
 
             // noteOn
-            if (currentUXMode != XRUX::SUBMITTING_STEP_VALUE) {
+            if (currentUXMode != XRUX::SUBMITTING_STEP_VALUE && currentUXMode != XRUX::TRACK_SEL) {
                 XRSound::triggerTrackManually(
                     XRSequencer::getCurrentSelectedTrackNum(), 
                     _noteOnKeyboard,
@@ -326,7 +327,7 @@ namespace XRVersa
             _notesPressed[invertedNoteNumber] = false;
 
             // noteOff
-            if (currentUXMode != XRUX::SUBMITTING_STEP_VALUE) {
+            if (currentUXMode != XRUX::SUBMITTING_STEP_VALUE && currentUXMode != XRUX::TRACK_SEL) {
                 XRSound::noteOffTrackManually(invertedNoteNumber, XRKeyMatrix::getKeyboardOctave());
             } 
             else if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelStepNum > -1) {
