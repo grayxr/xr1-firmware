@@ -71,11 +71,11 @@ namespace XREncoder
     void updateTrackProbability(int diff);
 
     bool handleMenuCursor(XRUX::UX_MODE menuMode, int diff);
-#ifndef NO_DEXED
+
     void handleDexedBrowserMod1();
     void handleDexedBrowserMod2();
     void handleDexedBrowserMod3();
-#endif
+
     int getDiff(int address);
 
     void init()
@@ -141,7 +141,6 @@ namespace XREncoder
     {
         auto currentUXMode = XRUX::getCurrentMode();
 
-#ifndef NO_DEXED
         if (currentUXMode == XRUX::UX_MODE::SOUND_MENU_DEXED_SYSEX_BROWSER) {
             handleDexedBrowserMod1();
             handleDexedBrowserMod2();
@@ -149,7 +148,6 @@ namespace XREncoder
 
             return;
         }
-#endif
 
         // if (!(elapsedMs % 25) && currentUXMode == XRUX::UX_MODE::SET_TEMPO) {
         //     handleEncoderSetTempo();
@@ -314,11 +312,10 @@ namespace XREncoder
                 menuItems = SOUND_MENU_ITEM_MAX;
 
                 auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-#ifndef NO_DEXED
+
                 if (activePatternSounds[currTrackNum].type == T_DEXED_SYNTH) {
                     menuItems = DEXED_SOUND_MENU_ITEM_MAX;
                 }
-#endif
             } else if (menuMode == XRUX::UX_MODE::CHANGE_SETUP) {
                 menuItems = SETUP_MENU_ITEM_MAX;
             } else if (menuMode == XRUX::UX_MODE::ASSIGN_SAMPLE_TO_TRACK_SOUND) {
@@ -689,7 +686,6 @@ namespace XREncoder
                     handleEncoderMonoSynthModD(mDiff);
                 }
             }
-#ifndef NO_DEXED
             else if (XRSound::activePatternSounds[currTrackNum].type == T_DEXED_SYNTH)
             {
                 if (m == 1) {
@@ -702,8 +698,6 @@ namespace XREncoder
                     handleEncoderDexedSynthModD(mDiff);
                 }
             }
-#endif
-#ifndef NO_FMDRUM
             else if (XRSound::activePatternSounds[currTrackNum].type == T_FM_DRUM)
             {
                 if (m == 1) {
@@ -716,7 +710,6 @@ namespace XREncoder
                     handleEncoderFmDrumModD(mDiff);
                 }
             }
-#endif
             else if (XRSound::activePatternSounds[currTrackNum].type == T_CV_GATE)
             {
                 // if (m == 1) {
@@ -1387,7 +1380,7 @@ namespace XREncoder
             break;
         }
     }
-#ifndef NO_DEXED
+
     void handleEncoderDexedSynthModA(int diff)
     {
         auto &currPattern = XRSequencer::getCurrentSelectedPattern();
@@ -1860,8 +1853,7 @@ namespace XREncoder
             break;
         }
     }
-#endif
-#ifndef NO_FMDRUM
+
     void handleEncoderFmDrumModB(int diff)
     {
         if (diff == 0) {
@@ -2081,7 +2073,6 @@ namespace XREncoder
             break;
         }
     }
-#endif
 
     void handleEncoderMonoSynthModA(int diff)
     {
@@ -2844,7 +2835,6 @@ namespace XREncoder
             XRDisplay::drawSequencerScreen(false);
         }
     }
-#ifndef NO_DEXED
     
     void handleDexedBrowserMod1()
     {
@@ -2900,7 +2890,6 @@ namespace XREncoder
             XRDisplay::drawDexedSysexBrowser();
         }
     }
-#endif
 
     void updateTrackProbability(int diff)
     {

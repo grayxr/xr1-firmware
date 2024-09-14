@@ -17,13 +17,9 @@ namespace XRSound
         T_EMPTY = 0,
         T_MONO_SAMPLE = 1,
         T_MONO_SYNTH = 2,
-#ifndef NO_DEXED
         T_DEXED_SYNTH = 3,
-#endif
         T_BRAIDS_SYNTH = 4,
-#ifndef NO_FMDRUM
         T_FM_DRUM = 5,
-#endif
         T_MIDI = 6,
         T_CV_GATE = 7,
         T_CV_TRIG = 8,
@@ -241,7 +237,7 @@ namespace XRSound
         }
     };
 
-#ifndef NO_DEXED
+
     class DexedInstance
     {
     public:
@@ -269,9 +265,7 @@ namespace XRSound
             //
         }
     };
-#endif
 
-#ifndef NO_FMDRUM
     class FmDrumInstance
     {
     public:
@@ -299,7 +293,7 @@ namespace XRSound
             //
         }
     };
-#endif
+
     // class BraidsInstance
     // {
     // public:
@@ -413,14 +407,9 @@ namespace XRSound
 
     extern MonoSampleInstance monoSampleInstances[MAXIMUM_MONO_SAMPLE_SOUNDS];
     extern MonoSynthInstance monoSynthInstances[MAXIMUM_MONO_SYNTH_SOUNDS];
-#ifndef NO_DEXED
     extern DexedInstance dexedInstances[MAXIMUM_DEXED_SYNTH_SOUNDS];
-#endif
-
     // extern BraidsInstance braidsInstances[MAXIMUM_BRAIDS_SYNTH_SOUNDS];
-#ifndef NO_FMDRUM
     extern FmDrumInstance fmDrumInstances[MAXIMUM_FM_DRUM_SOUNDS];
-#endif
 
     extern StereoDelayInstance delayInstances[1];
 
@@ -447,13 +436,9 @@ namespace XRSound
     SOUND_CONTROL_MODS getControlModDataForTrack();
     SOUND_CONTROL_MODS getMonoSynthControlModData();
     SOUND_CONTROL_MODS getMonoSampleControlModData();
-#ifndef NO_DEXED
     SOUND_CONTROL_MODS getDexedSynthControlModData();
-#endif
     SOUND_CONTROL_MODS getBraidsControlModData();
-#ifndef NO_FMDRUM
     SOUND_CONTROL_MODS getFmDrumControlModData();
-#endif
     SOUND_CONTROL_MODS getMidiControlModData();
     SOUND_CONTROL_MODS getCvGateControlModData();
     SOUND_CONTROL_MODS getCvTrigControlModData();

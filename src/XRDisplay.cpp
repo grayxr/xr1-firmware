@@ -1327,12 +1327,11 @@ namespace XRDisplay
         auto menuItemMax = SOUND_MENU_ITEM_MAX;
 
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-#ifndef NO_DEXED
+
         if (XRSound::activePatternSounds[currTrackNum].type == XRSound::T_DEXED_SYNTH) {
             menuItems = XRMenu::getDexedSoundMenuItems();
             menuItemMax = DEXED_SOUND_MENU_ITEM_MAX;
         }
-#endif
 
         drawGenericMenuList("SOUND", menuItems, menuItemMax);
 

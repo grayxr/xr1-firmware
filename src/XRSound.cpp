@@ -129,12 +129,8 @@ namespace XRSound
         {T_MIDI, 0},
         {T_MONO_SAMPLE, 0},
         {T_MONO_SYNTH, 0},
-#ifndef NO_DEXED
         {T_DEXED_SYNTH, 0},
-#endif
-#ifndef NO_FMDRUM
         {T_FM_DRUM, 0},
-#endif
         {T_CV_GATE, 0},
         {T_CV_TRIG, 0},
         {T_BRAIDS_SYNTH, 0},
@@ -219,22 +215,18 @@ namespace XRSound
         ),
     };
 
-#ifndef NO_DEXED
     DexedInstance dexedInstances[MAXIMUM_DEXED_SYNTH_SOUNDS] = {
         DexedInstance(dexed1, dexedAmpAccent1, dexedAmp1, dexedAmpDelaySend1, dexedLeft1, dexedRight1),
         DexedInstance(dexed2, dexedAmpAccent2, dexedAmp2, dexedAmpDelaySend2, dexedLeft2, dexedRight2),
         DexedInstance(dexed3, dexedAmpAccent3, dexedAmp3, dexedAmpDelaySend3, dexedLeft3, dexedRight3),
         DexedInstance(dexed4, dexedAmpAccent4, dexedAmp4, dexedAmpDelaySend4, dexedLeft4, dexedRight4),
     };
-#endif
 
-#ifndef NO_FMDRUM
     FmDrumInstance fmDrumInstances[MAXIMUM_FM_DRUM_SOUNDS] = {
         FmDrumInstance(fmDrum1, fmDrumAmpAccent1, fmDrumAmp1, fmDrumAmpDelaySend1, fmDrumLeft1, fmDrumRight1),
         FmDrumInstance(fmDrum2, fmDrumAmpAccent2, fmDrumAmp2, fmDrumAmpDelaySend2, fmDrumLeft2, fmDrumRight2),
         FmDrumInstance(fmDrum3, fmDrumAmpAccent3, fmDrumAmp3, fmDrumAmpDelaySend3, fmDrumLeft3, fmDrumRight3),
     };
-#endif
 
     // BraidsInstance braidsInstances[MAXIMUM_BRAIDS_SYNTH_SOUNDS] = {
     //     BraidsInstance(braids1, braidsAmp1, braidsLeft1, braidsRight1),
@@ -271,13 +263,9 @@ namespace XRSound
     std::map<SOUND_TYPE, int32_t*> soundTypeInitParams = {
         { T_MONO_SAMPLE, monoSampleInitParams },
         { T_MONO_SYNTH, monoSynthInitParams },
-#ifndef NO_DEXED
         { T_DEXED_SYNTH, dexedSynthInitParams },
-#endif
         { T_BRAIDS_SYNTH, braidsSynthInitParams },
-#ifndef NO_FMDRUM
         { T_FM_DRUM, fmDrumInitParams },
-#endif
         { T_MIDI, midiInitParams },
         { T_CV_GATE, cvGateInitParams },
         { T_CV_TRIG, cvTrigInitParams },
@@ -286,13 +274,9 @@ namespace XRSound
     std::map<SOUND_TYPE, int> soundPageNumMap = {
         {T_MONO_SAMPLE, 6},
         {T_MONO_SYNTH, 6},
-#ifndef NO_DEXED
         {T_DEXED_SYNTH, 5},
-#endif
         {T_BRAIDS_SYNTH, 3},
-#ifndef NO_FMDRUM
         {T_FM_DRUM, 3},
-#endif
         {T_MIDI, 1},
         {T_CV_GATE, 1},
         {T_CV_TRIG, 1},
@@ -301,49 +285,45 @@ namespace XRSound
 
     std::map<SOUND_TYPE, std::map<int, std::string>> soundCurrPageNameMap = {
         {T_MONO_SAMPLE, {
-                         {0, "STEP"},
-                         {1, "FILE"},
-                         {2, "PITCH"},
-                         {3, "LOOP"},
-                         {4, "AMP ENV"},
-                         {5, "OUTPUT"},
-                     }},
+                        {0, "STEP"},
+                        {1, "FILE"},
+                        {2, "PITCH"},
+                        {3, "LOOP"},
+                        {4, "AMP ENV"},
+                        {5, "OUTPUT"},
+                    }},
         {T_MONO_SYNTH, {
-                                {0, "STEP"},
-                                {1, "OSC"},
-                                {2, "FILTER"},
-                                {3, "FILTER ENV"},
-                                {4, "AMP ENV"},
-                                {5, "OUTPUT"},
-                            }},
-#ifndef NO_DEXED
+                        {0, "STEP"},
+                        {1, "OSC"},
+                        {2, "FILTER"},
+                        {3, "FILTER ENV"},
+                        {4, "AMP ENV"},
+                        {5, "OUTPUT"},
+                    }},
         {T_DEXED_SYNTH, {
-                         {0, "STEP"},
-                         {1, "FM1"},
-                         {2, "FM2"},
-                         {3, "POLY"},
-                         {4, "OUTPUT"},
-                     }},
-#endif
-#ifndef NO_FMDRUM
+                        {0, "STEP"},
+                        {1, "FM1"},
+                        {2, "FM2"},
+                        {3, "POLY"},
+                        {4, "OUTPUT"},
+                    }},
         {T_FM_DRUM, {
-                         {0, "STEP"},
-                         {1, "DRUM"},
-                         {2, "OUTPUT"},
-                     }},
-#endif
+                        {0, "STEP"},
+                        {1, "DRUM"},
+                        {2, "OUTPUT"},
+                    }},
         {T_MIDI, {
-                       {0, "STEP"},
-                   }},
+                    {0, "STEP"},
+                }},
         {T_CV_GATE, {
-                      {0, "STEP"},
-                  }},
+                    {0, "STEP"},
+                }},
         {T_CV_TRIG, {
-                      {0, "STEP"},
-                  }},
+                    {0, "STEP"},
+                }},
         {T_EMPTY, {
-                      {0, ""},
-                  }},
+                    {0, ""},
+                }},
     };
 
     std::string patternPageNames[MAXIMUM_PATTERN_PAGES] = {
@@ -355,13 +335,9 @@ namespace XRSound
         {T_EMPTY, MAXIMUM_SEQUENCER_TRACKS},
         {T_MONO_SAMPLE, MAXIMUM_MONO_SAMPLE_SOUNDS},
         {T_MONO_SYNTH, MAXIMUM_MONO_SYNTH_SOUNDS},
-#ifndef NO_DEXED
         {T_DEXED_SYNTH, MAXIMUM_DEXED_SYNTH_SOUNDS},
-#endif
         {T_BRAIDS_SYNTH, MAXIMUM_BRAIDS_SYNTH_SOUNDS},
-#ifndef NO_FMDRUM
         {T_FM_DRUM, MAXIMUM_FM_DRUM_SOUNDS},
-#endif
         {T_MIDI, MAXIMUM_SEQUENCER_TRACKS},
         {T_CV_GATE, MAXIMUM_CV_GATE_SOUNDS},
         {T_CV_TRIG, MAXIMUM_CV_TRIG_SOUNDS},
@@ -611,7 +587,7 @@ namespace XRSound
         auto dexeLvl = getValueNormalizedAsFloat(dexedSynthInitParams[DEXE_LEVEL]);
         auto dexePan = getValueNormalizedAsFloat(dexedSynthInitParams[DEXE_PAN]);
         auto dexeDly = getValueNormalizedAsFloat(dexedSynthInitParams[DEXE_DELAY]);
-#ifndef NO_DEXED
+
         for (int d=0; d<MAXIMUM_DEXED_SYNTH_SOUNDS; d++)
         {
             dexedInstances[d].dexed.loadInitVoice();
@@ -624,7 +600,7 @@ namespace XRSound
             dexedInstances[d].left.gain(dexedSynthPannedAmounts.left);
             dexedInstances[d].right.gain(dexedSynthPannedAmounts.right);
         }
-#endif
+
         // auto braidsLvl = getValueNormalizedAsFloat(braidsSynthInitParams[BRAIDS_LEVEL]);
         // auto braidsPan = getValueNormalizedAsFloat(braidsSynthInitParams[BRAIDS_PAN]);
 
@@ -639,7 +615,7 @@ namespace XRSound
         //     dexedInstances[b].left.gain(braidsPannedAmounts.left);
         //     dexedInstances[b].right.gain(braidsPannedAmounts.right);
         // }
-#ifndef NO_FMDRUM
+
         auto fmDrumLvl = getValueNormalizedAsFloat(fmDrumInitParams[FMD_LEVEL]);
         auto fmDrumPan = getValueNormalizedAsFloat(fmDrumInitParams[FMD_PAN]);
         auto fmDrumDly = getValueNormalizedAsFloat(dexedSynthInitParams[FMD_DELAY]);
@@ -658,7 +634,6 @@ namespace XRSound
             fmDrumInstances[f].left.gain(fmDrumPannedAmounts.left);
             fmDrumInstances[f].right.gain(fmDrumPannedAmounts.right);
         }
-#endif
 
         // Delay sub mixers
         delaySubMix1.gain(0, 1);
@@ -855,7 +830,6 @@ namespace XRSound
     {
         activePatternSounds[track] = nextPatternSounds[track];
 
-#ifndef NO_DEXED
         if (track < 4 && activePatternSounds[track].type == T_DEXED_SYNTH) {
             // load any dexed voice settings for track
             dexedInstances[track].dexed.loadVoiceParameters(activePatternSounds[track].dexedParams);
@@ -863,7 +837,7 @@ namespace XRSound
             dexedInstances[track].dexed.setTranspose(getValueNormalizedAsInt32(activePatternSounds[track].params[DEXE_TRANSPOSE]));
             dexedInstances[track].dexed.setAlgorithm(getValueNormalizedAsInt32(activePatternSounds[track].params[DEXE_ALGO]));
         }
-#endif
+
         // all done reinitializing sound
         soundNeedsReinit[track] = false;
     }
@@ -933,7 +907,6 @@ namespace XRSound
     {
         for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
         {
-#ifndef NO_DEXED
             if (t < 4 && activePatternSounds[t].type == T_DEXED_SYNTH) {
                 // load any dexed voice settings for track
                 dexedInstances[t].dexed.loadVoiceParameters(activePatternSounds[t].dexedParams);
@@ -941,7 +914,6 @@ namespace XRSound
                 dexedInstances[t].dexed.setTranspose(getValueNormalizedAsInt32(activePatternSounds[t].params[DEXE_TRANSPOSE]));
                 dexedInstances[t].dexed.setAlgorithm(getValueNormalizedAsInt32(activePatternSounds[t].params[DEXE_ALGO]));
             }
-#endif
         }
 
         applyFxForActivePattern();
@@ -1021,12 +993,12 @@ namespace XRSound
             {
                 if (
                     tracks[t].initialized
-#ifndef NO_DEXED
                     && activePatternSounds[t].type != T_DEXED_SYNTH // don't load dexed changes async since it cuts out the sound
-#endif
                 ) {
                     setSoundNeedsReinit(t, true); // reinit sound asynchronously since the upcoming track is active
                 } else {
+                    // TODO: try having 8 total dexed instances, and have 4 of them be used for pattern changes
+                    // so that loading voices doesn't cut out the sound
                     reinitSoundForTrack(t); // reinit sound synchronously since the upcoming track is either empty or a dexed sound
                 }
             }
@@ -1050,7 +1022,7 @@ namespace XRSound
         {
         case 0: // MAIN
             {
-               std::string grooveForPattern = pattern.groove.id > -1 ? XRClock::getGrooveString(pattern.groove.id) : "";
+                std::string grooveForPattern = pattern.groove.id > -1 ? XRClock::getGrooveString(pattern.groove.id) : "";
                 std::string grooveAmountForPattern = XRClock::getGrooveAmountString(pattern.groove.id, pattern.groove.amount);
 
                 mods.aName = "L.STEP";
@@ -1076,7 +1048,6 @@ namespace XRSound
 
                 mods.aValue = std::to_string(round(delayParams.params[XRSequencer::PATTERN_FX_DELAY_PARAMS::TIME] * 100) / 100);
                 mods.bValue = std::to_string(round(delayParams.params[XRSequencer::PATTERN_FX_DELAY_PARAMS::FEEDBACK] * 100));
-
 
                 mods.cValue = std::to_string((float)round(delayParams.params[XRSequencer::PATTERN_FX_DELAY_PARAMS::PAN] * 100) / 100);
                 mods.cValue = mods.cValue.substr(0, 3);
@@ -1107,36 +1078,27 @@ namespace XRSound
         case T_MONO_SAMPLE:
             mods = getMonoSampleControlModData();
             break;
-
         case T_MONO_SYNTH:
             mods = getMonoSynthControlModData();
             break;
-#ifndef NO_DEXED
         case T_DEXED_SYNTH:
             mods = getDexedSynthControlModData();
             break;
-#endif
-#ifndef NO_FMDRUM
             case T_FM_DRUM:
             mods = getFmDrumControlModData();
             break;
-#endif
         case T_MIDI:
             mods = getMidiControlModData();
             break;
-
         case T_CV_GATE:
             mods = getCvGateControlModData();
             break;
-
         case T_CV_TRIG:
             mods = getCvTrigControlModData();
             break;
-
         case T_EMPTY:
             mods = getEmptyControlModData();
             break;
-
         default:
             break;
         }
@@ -2159,7 +2121,6 @@ namespace XRSound
         monoSynthInstances[track].ampEnv.noteOn();
         monoSynthInstances[track].filterEnv.noteOn();
     }
-#ifndef NO_DEXED
     void handleDexedSynthNoteOnForTrack(int track)
     {
         if (track > 3) return;
@@ -2180,7 +2141,6 @@ namespace XRSound
 
         dexedInstances[track].dexed.keydown(midiNote, 50); // TODO: parameterize velocity
     }
-#endif
 
     void handleBraidsNoteOnForTrack(int track)
     {
@@ -2193,7 +2153,6 @@ namespace XRSound
 
         // braidsInstances[track].braids.set_braids_pitch(midiNote << 7);
     }
-#ifndef NO_FMDRUM
     void handleFmDrumNoteOnForTrack(int track)
     {
         if (track > 2) return;
@@ -2209,7 +2168,6 @@ namespace XRSound
 
         fmDrumInstances[track].fmDrum.noteOn();
     }
-#endif
 
     void handleMIDINoteOnForTrack(int track)
     {
@@ -2521,7 +2479,6 @@ namespace XRSound
         monoSynthInstances[track].ampEnv.noteOn();
         monoSynthInstances[track].filterEnv.noteOn();
     }
-#ifndef NO_DEXED
     void handleDexedSynthNoteOnForTrackStep(int track, int step)
     {
         if (track > 3) return;
@@ -2602,7 +2559,6 @@ namespace XRSound
             if (noteD != 0) dexedInstances[track].dexed.keydown(midiNoteD, velocityToUse);
         }
     }
-#endif
 
     void handleBraidsNoteOnForTrackStep(int track, int step)
     {
@@ -2638,7 +2594,7 @@ namespace XRSound
 
         // braidsInstances[track].braids.set_braids_pitch(midiNote << 7);
     }
-#ifndef NO_FMDRUM
+
     void handleFmDrumNoteOnForTrackStep(int track, int step)
     {
         if (track > 2) return;
@@ -2685,7 +2641,6 @@ namespace XRSound
 
         fmDrumInstances[track].fmDrum.noteOn();
     }
-#endif
 
     void handleMIDINoteOnForTrackStep(int track, int step)
     {
@@ -2795,7 +2750,6 @@ namespace XRSound
                 }
             }
             break;
-#ifndef NO_DEXED
         case T_DEXED_SYNTH:
             {
                 if (track < 4)
@@ -2808,12 +2762,9 @@ namespace XRSound
                 }
             }
             break;
-#endif
-#ifndef NO_FMDRUM
         case T_FM_DRUM:
             // n/a
             break;
-#endif
         case T_MIDI:
             {
                 XRMIDI::sendNoteOff(64, 100, 1);
@@ -2874,7 +2825,6 @@ namespace XRSound
                 }
             }
             break;
-#ifndef NO_DEXED
         case T_DEXED_SYNTH:
             {
                 uint8_t noteToUse = trackToUse.note;
@@ -2923,12 +2873,9 @@ namespace XRSound
                 if (noteD != 0) dexedInstances[track].dexed.keyup(midiNoteD);
             }
             break;
-#endif
-#ifndef NO_FMDRUM
         case T_FM_DRUM:
             // n/a
             break;
-#endif
         case T_MIDI:
             {
                 XRMIDI::sendNoteOff(64, 100, 1);
@@ -3037,22 +2984,18 @@ namespace XRSound
             triggerMonoSynthNoteOn(t, note, octave, accented);
             
             break;
-#ifndef NO_DEXED
         case T_DEXED_SYNTH:
             triggerDexedSynthNoteOn(t, note, octave, accented);
             
             break;
-#endif
         case T_BRAIDS_SYNTH:
             triggerBraidsNoteOn(t, note, octave, accented);
 
             break;
-#ifndef NO_FMDRUM
         case T_FM_DRUM:
             triggerFmDrumNoteOn(t, note, octave, accented);
             
             break;
-#endif
         case T_CV_GATE:
             triggerCvGateNoteOn(t, note, octave, accented);
             
@@ -3205,7 +3148,7 @@ namespace XRSound
         monoSynthInstances[t].ampEnv.noteOn();
         monoSynthInstances[t].filterEnv.noteOn();
     }
-#ifndef NO_DEXED
+
     void triggerDexedSynthNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented)
     {
         if (t > 3) return;
@@ -3222,14 +3165,14 @@ namespace XRSound
         dexedInstances[t].ampAccent.gain(velocityToUse * 0.01);
         dexedInstances[t].dexed.keydown(midiNote, 50);
     }
-#endif
+
     void triggerBraidsNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented)
     {
         int midiNote = (note + (12 * (octave)));
 
         // braidsInstances[t].braids.set_braids_pitch(midiNote << 7);
     }
-#ifndef NO_FMDRUM
+
     void triggerFmDrumNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented)
     {
         if (t > 2) return;
@@ -3258,7 +3201,6 @@ namespace XRSound
 
         fmDrumInstances[t].fmDrum.noteOn();
     }
-#endif
 
     void triggerCvGateNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented)
     {
@@ -3308,7 +3250,6 @@ namespace XRSound
                 monoSynthInstances[currSelTrackNum].filterEnv.noteOff();
             }
             break;
-#ifndef NO_DEXED
         case T_DEXED_SYNTH:
             {
                 int midiNote = (noteOnKeyboard + (12 * (octave)));
@@ -3316,7 +3257,6 @@ namespace XRSound
                 dexedInstances[currSelTrackNum].dexed.keyup(midiNote);
             }
             break;
-#endif
         case T_BRAIDS_SYNTH:
             {
                 // int midiNote = (noteOnKeyboard + (12 * (XRKeyMatrix::getKeyboardOctave())));
@@ -3396,19 +3336,15 @@ namespace XRSound
         case T_MONO_SYNTH:
             outputStr = "MS1";
             break;
-#ifndef NO_DEXED
         case T_DEXED_SYNTH:
             outputStr = "FM1";
             break;
-#endif
         case T_BRAIDS_SYNTH:
             outputStr = "BRAIDS";
             break;
-#ifndef NO_FMDRUM
         case T_FM_DRUM:
             outputStr = "FMDRUM";
             break;
-#endif
         case T_MIDI:
             outputStr = "MIDI";
             break;
@@ -3443,22 +3379,18 @@ namespace XRSound
             str = "INIT";
 
             break;
-#ifndef NO_DEXED
         case T_DEXED_SYNTH:
             str = "INIT";
 
             break;
-#endif
         case T_BRAIDS_SYNTH:
             str = "INIT";
 
             break;
-#ifndef NO_FMDRUM
         case T_FM_DRUM:
             str = "INIT";
 
             break;
-#endif
         case T_MIDI:
             str = "MIDI";
 
@@ -3632,7 +3564,7 @@ namespace XRSound
 
         return (foundBaseFreq + (fine * 0.01)) * (pow(2, keyboardOctave));
     }
-#ifndef NO_DEXED
+
     void applyCurrentDexedPatchToSound()
     {
         auto track = XRSequencer::getCurrentSelectedTrackNum();
@@ -3649,7 +3581,6 @@ namespace XRSound
         activePatternSounds[track].params[DEXE_TRANSPOSE] = getInt32ValuePaddedAsInt32(dexedInstances[track].dexed.getTranspose());
         activePatternSounds[track].params[DEXE_ALGO] = getInt32ValuePaddedAsInt32(dexedInstances[track].dexed.getAlgorithm());
     }
-#endif
 
     int8_t getValueNormalizedAsInt8(int32_t param)
     {

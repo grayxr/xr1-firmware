@@ -1268,7 +1268,6 @@ namespace XRSD
         return _activeSampleSlot;
     }
 
-#ifndef NO_DEXED
     void loadDexedVoiceToCurrentTrack(int t)
     {
         File sysexDir;
@@ -1341,7 +1340,6 @@ namespace XRSD
 
         AudioInterrupts();
     }
-#endif
 
     bool get_sd_voice(File sysex, uint8_t voice_number, uint8_t *data)
     {
