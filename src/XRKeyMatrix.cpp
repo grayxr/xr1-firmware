@@ -362,13 +362,6 @@ namespace XRKeyMatrix
 
                 // load next dexed instances
                 XRSound::loadNextDexedInstances();
-        
-                // swap dexed instances so inactive = active and vice versa
-                XRDexedManager::swapInstances();
-                // for (size_t d = 0; d < 4; d++) {
-                //     auto in = XRDexedManager::getInactiveInstanceForTrack(d);
-                //     XRSound::dexedInstances[in].dexed.notesOffLive();
-                // }
 
                 // IMPORTANT: must change sound data before sequencer data!
                 XRSound::saveSoundDataForPatternChange(); // save current sound data first
@@ -379,6 +372,9 @@ namespace XRKeyMatrix
                 XRSD::saveCurrentSequencerData();
                 XRSequencer::swapSequencerMemoryForPattern(nextBank, nextPattern);
                 XRAsyncPSRAMLoader::prePatternChange();
+
+                // swap dexed instances so inactive = active and vice versa
+                XRDexedManager::swapInstances();
 
                 //_ptnHeldForSelection = nextPattern; // TODO: need?
 
@@ -503,13 +499,6 @@ namespace XRKeyMatrix
         
                 // load next dexed instances
                 XRSound::loadNextDexedInstances();
-        
-                // swap dexed instances so inactive = active and vice versa
-                XRDexedManager::swapInstances();
-                // for (size_t d = 0; d < 4; d++) {
-                //     auto in = XRDexedManager::getInactiveInstanceForTrack(d);
-                //     XRSound::dexedInstances[in].dexed.notesOffLive();
-                // }
 
                 XRSound::loadNextPatternSoundData(nextBank, nextPattern);
                 XRSound::prepareSoundDataForPatternChange(nextBank, nextPattern);
@@ -518,6 +507,9 @@ namespace XRKeyMatrix
                 XRSD::saveCurrentSequencerData();
                 XRSequencer::swapSequencerMemoryForPattern(nextBank, nextPattern);
                 XRAsyncPSRAMLoader::prePatternChange();
+
+                // swap dexed instances so inactive = active and vice versa
+                XRDexedManager::swapInstances();
 
                 //_ptnHeldForSelection = nextPattern; // TODO: need?
 

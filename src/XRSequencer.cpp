@@ -833,7 +833,14 @@ namespace XRSequencer
                     AudioInterrupts();
                 }
             }
+            
+            // if (track == 0) {
+            //     Serial.printf("reinit sound for track: %d\n", track);
 
+            //     XRSound::reinitSoundForTrack(track);
+            //     // TODO: apply specific track choke instead of reapplying all chokes here
+            //     XRSound::applyTrackChokes();
+            // }
 
             Serial.printf("reinit sounds for track: %d\n", track);
 
@@ -1096,6 +1103,8 @@ namespace XRSequencer
             XRDexedManager::swapInstances();
             XRSound::prepareSoundDataForPatternChange(_queuedPatternState.bank, _queuedPatternState.number);
             swapSequencerMemoryForPattern(_queuedPatternState.bank, _queuedPatternState.number);
+
+            XRDexedManager::swapInstances();
 
             if (_dequeueLoadNewPatternSamples) {
                 XRAsyncPSRAMLoader::postPatternChange();

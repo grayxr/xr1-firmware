@@ -2565,7 +2565,7 @@ namespace XRSound
         dexedInstances[di].ampAccent.gain((velocityToUse * 0.01));
         dexedInstances[di].amp.gain(dexeLvl);
         dexedInstances[di].ampDelaySend.gain(dexeDly);
-
+        
         dexedInstances[di].left.gain(getStereoPanValues(dexePan).left);
         dexedInstances[di].right.gain(getStereoPanValues(dexePan).right);
 
