@@ -466,6 +466,8 @@ namespace XRSound
         initNextPatternSounds();
         initPatternSoundStepMods();
         initVoices();
+
+        XRDexedManager::init();
     }
 
     void initNextPatternSounds()
@@ -838,6 +840,26 @@ namespace XRSound
         // }
     }
 
+    void loadNextDexedInstances()
+    {
+        // first 4 tracks are dexed synth capable
+        for (int t = 0; t < 4; t++)
+        {
+            if (nextPatternSounds[t].type == T_DEXED_SYNTH) {
+                auto i = XRDexedManager::inactiveInstances[t];
+
+                // print loading next pattern's track's dexed voice settings into the inactive instance
+                //Serial.printf("LOADING DEXED FOR NEXT TRACK %d USING INSTANCE %d\n", t, i);
+
+                // load the next pattern's track's dexed voice settings into the inactive instance
+                dexedInstances[i].dexed.loadVoiceParameters(nextPatternSounds[t].dexedParams);
+                dexedInstances[i].dexed.setMonoMode(!nextPatternSounds[t].params[DEXE_NOTE_MODE]);
+                dexedInstances[i].dexed.setTranspose(getValueNormalizedAsInt32(nextPatternSounds[t].params[DEXE_TRANSPOSE]));
+                dexedInstances[i].dexed.setAlgorithm(getValueNormalizedAsInt32(nextPatternSounds[t].params[DEXE_ALGO]));
+            }
+        }
+    }
+
     void setSoundNeedsReinit(int sound, bool reinit)
     {
         soundNeedsReinit[sound] = reinit;
@@ -846,14 +868,6 @@ namespace XRSound
     void reinitSoundForTrack(int track)
     {
         activePatternSounds[track] = nextPatternSounds[track];
-
-        if (track < 4 && activePatternSounds[track].type == T_DEXED_SYNTH) {
-            // load any dexed voice settings for track
-            dexedInstances[track].dexed.loadVoiceParameters(activePatternSounds[track].dexedParams);
-            dexedInstances[track].dexed.setMonoMode(!activePatternSounds[track].params[DEXE_NOTE_MODE]);
-            dexedInstances[track].dexed.setTranspose(getValueNormalizedAsInt32(activePatternSounds[track].params[DEXE_TRANSPOSE]));
-            dexedInstances[track].dexed.setAlgorithm(getValueNormalizedAsInt32(activePatternSounds[track].params[DEXE_ALGO]));
-        }
 
         // all done reinitializing sound
         soundNeedsReinit[track] = false;
@@ -925,11 +939,15 @@ namespace XRSound
         for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
         {
             if (t < 4 && activePatternSounds[t].type == T_DEXED_SYNTH) {
+                auto di = XRDexedManager::getActiveInstanceForTrack(t);
+
+                Serial.printf("APPLYING DEXED FOR TRACK %d USING INSTANCE %d\n", t, di);
+
                 // load any dexed voice settings for track
-                dexedInstances[t].dexed.loadVoiceParameters(activePatternSounds[t].dexedParams);
-                dexedInstances[t].dexed.setMonoMode(!activePatternSounds[t].params[DEXE_NOTE_MODE]);
-                dexedInstances[t].dexed.setTranspose(getValueNormalizedAsInt32(activePatternSounds[t].params[DEXE_TRANSPOSE]));
-                dexedInstances[t].dexed.setAlgorithm(getValueNormalizedAsInt32(activePatternSounds[t].params[DEXE_ALGO]));
+                dexedInstances[di].dexed.loadVoiceParameters(activePatternSounds[t].dexedParams);
+                dexedInstances[di].dexed.setMonoMode(!activePatternSounds[t].params[DEXE_NOTE_MODE]);
+                dexedInstances[di].dexed.setTranspose(getValueNormalizedAsInt32(activePatternSounds[t].params[DEXE_TRANSPOSE]));
+                dexedInstances[di].dexed.setAlgorithm(getValueNormalizedAsInt32(activePatternSounds[t].params[DEXE_ALGO]));
             }
         }
 
@@ -1008,19 +1026,17 @@ namespace XRSound
 
             for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
             {
-                if (
-                    tracks[t].initialized
-                    && activePatternSounds[t].type != T_DEXED_SYNTH // don't load dexed changes async since it cuts out the sound
-                ) {
+                if (tracks[t].initialized) {
                     setSoundNeedsReinit(t, true); // reinit sound asynchronously since the upcoming track is active
                 } else {
                     // TODO: try having 8 total dexed instances, and have 4 of them be used for pattern changes
                     // so that loading voices doesn't cut out the sound
-                    reinitSoundForTrack(t); // reinit sound synchronously since the upcoming track is either empty or a dexed sound
+                    reinitSoundForTrack(t); // reinit sound synchronously since the upcoming track is inactive?
                 }
             }
         } else {
             XRAsyncPSRAMLoader::startAsyncInitOfNextSamples();
+
             for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
             {
                 reinitSoundForTrack(t); // reinit all sounds synchronously since the sequencer isn't running
@@ -2153,11 +2169,13 @@ namespace XRSound
 
         int midiNote = (noteToUse + (12 * (octaveToUse)));
 
-        dexedInstances[track].ampAccent.gain((trackToUse.velocity * 0.01));
-        dexedInstances[track].amp.gain(dexeLvl);
-        dexedInstances[track].ampDelaySend.gain(0);
+        auto di = XRDexedManager::getActiveInstanceForTrack(track);
 
-        dexedInstances[track].dexed.keydown(midiNote, 50); // TODO: parameterize velocity
+        dexedInstances[di].ampAccent.gain((trackToUse.velocity * 0.01));
+        dexedInstances[di].amp.gain(dexeLvl);
+        dexedInstances[di].ampDelaySend.gain(0);
+
+        dexedInstances[di].dexed.keydown(midiNote, 50); // TODO: parameterize velocity
     }
 
     void handleBraidsNoteOnForTrack(int track)
@@ -2225,8 +2243,10 @@ namespace XRSound
                 monoSynthInstances[track].amp.gain(0);
                 monoSynthInstances[track].ampDelaySend.gain(0);
             } else if (activePatternSounds[track].type == T_DEXED_SYNTH) {
-                dexedInstances[track].amp.gain(0);
-                dexedInstances[track].ampDelaySend.gain(0);
+                auto di = XRDexedManager::getActiveInstanceForTrack(track);
+
+                dexedInstances[di].amp.gain(0);
+                dexedInstances[di].ampDelaySend.gain(0);
             } else if (activePatternSounds[track].type == T_FM_DRUM) {
                 fmDrumInstances[track].amp.gain(0);
                 fmDrumInstances[track].ampDelaySend.gain(0);
@@ -2257,8 +2277,10 @@ namespace XRSound
                 monoSynthInstances[chokeDestTrk].amp.gain(0);
                 monoSynthInstances[chokeDestTrk].ampDelaySend.gain(0);
             } else if (activePatternSounds[chokeDestTrk].type == T_DEXED_SYNTH) {
-                dexedInstances[chokeDestTrk].amp.gain(0);
-                dexedInstances[chokeDestTrk].ampDelaySend.gain(0);
+                auto di = XRDexedManager::getActiveInstanceForTrack(chokeDestTrk);
+
+                dexedInstances[di].amp.gain(0);
+                dexedInstances[di].ampDelaySend.gain(0);
             } else if (activePatternSounds[chokeDestTrk].type == T_FM_DRUM) {
                 fmDrumInstances[chokeDestTrk].amp.gain(0);
                 fmDrumInstances[chokeDestTrk].ampDelaySend.gain(0);
@@ -2498,6 +2520,7 @@ namespace XRSound
         monoSynthInstances[track].ampEnv.noteOn();
         monoSynthInstances[track].filterEnv.noteOn();
     }
+
     void handleDexedSynthNoteOnForTrackStep(int track, int step)
     {
         if (track > 3) return;
@@ -2535,12 +2558,14 @@ namespace XRSound
         auto dexeLvl = getValueNormalizedAsFloat(activePatternSounds[track].params[DEXE_LEVEL]);
         auto dexeDly = getValueNormalizedAsFloat(activePatternSounds[track].params[DEXE_DELAY]);
         
-        dexedInstances[track].ampAccent.gain((velocityToUse * 0.01));
-        dexedInstances[track].amp.gain(dexeLvl);
-        dexedInstances[track].ampDelaySend.gain(dexeDly);
+        auto di = XRDexedManager::getActiveInstanceForTrack(track);
 
-        dexedInstances[track].left.gain(getStereoPanValues(dexePan).left);
-        dexedInstances[track].right.gain(getStereoPanValues(dexePan).right);
+        dexedInstances[di].ampAccent.gain((velocityToUse * 0.01));
+        dexedInstances[di].amp.gain(dexeLvl);
+        dexedInstances[di].ampDelaySend.gain(dexeDly);
+
+        dexedInstances[di].left.gain(getStereoPanValues(dexePan).left);
+        dexedInstances[di].right.gain(getStereoPanValues(dexePan).right);
 
         // handle poly note assignments
         // TODO: do check for mono mode so we're not redundantly keydowning all notes when in mono mode?
@@ -2571,11 +2596,11 @@ namespace XRSound
         int midiNoteC = (noteToUse + noteC + (12 * (octaveToUse)));
         int midiNoteD = (noteToUse + noteD + (12 * (octaveToUse)));
 
-        dexedInstances[track].dexed.keydown(midiNoteA, velocityToUse);
+        dexedInstances[di].dexed.keydown(midiNoteA, velocityToUse);
         if (noteMode == 1) { // 0 = mono, 1 = poly
-            if (noteB != 0) dexedInstances[track].dexed.keydown(midiNoteB, velocityToUse);
-            if (noteC != 0) dexedInstances[track].dexed.keydown(midiNoteC, velocityToUse);
-            if (noteD != 0) dexedInstances[track].dexed.keydown(midiNoteD, velocityToUse);
+            if (noteB != 0) dexedInstances[di].dexed.keydown(midiNoteB, velocityToUse);
+            if (noteC != 0) dexedInstances[di].dexed.keydown(midiNoteC, velocityToUse);
+            if (noteD != 0) dexedInstances[di].dexed.keydown(midiNoteD, velocityToUse);
         }
     }
 
@@ -2722,11 +2747,11 @@ namespace XRSound
 
     void turnOffAllSounds()
     {
-        for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++) {
-            if (t < 4) { // dexed voice instances are only available to tracks 0-3
-                dexedInstances[t].dexed.notesOff();
-            }
+        for (size_t d = 0; d < MAXIMUM_DEXED_SYNTH_SOUNDS; d++) {
+            dexedInstances[d].dexed.notesOff();
+        }
 
+        for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++) {
             if (activePatternSounds[t].type == T_MONO_SAMPLE) {
                 monoSampleInstances[t].amp.gain(0);
                 monoSampleInstances[t].ampDelaySend.gain(0);
@@ -2777,7 +2802,9 @@ namespace XRSound
                     uint8_t octaveToUse = trackToUse.octave;
                     int midiNote = (noteToUse + (12 * (octaveToUse)));
 
-                    dexedInstances[track].dexed.keyup(midiNote);
+                    auto di = XRDexedManager::getActiveInstanceForTrack(track);
+
+                    dexedInstances[di].dexed.keyup(midiNote);
                 }
             }
             break;
@@ -2886,10 +2913,12 @@ namespace XRSound
                 int midiNoteC = (noteToUse + noteC + (12 * (octaveToUse)));
                 int midiNoteD = (noteToUse + noteD + (12 * (octaveToUse)));
 
-                dexedInstances[track].dexed.keyup(midiNoteA);
-                if (noteB != 0) dexedInstances[track].dexed.keyup(midiNoteB);
-                if (noteC != 0) dexedInstances[track].dexed.keyup(midiNoteC);
-                if (noteD != 0) dexedInstances[track].dexed.keyup(midiNoteD);
+                auto di = XRDexedManager::getActiveInstanceForTrack(track);
+
+                dexedInstances[di].dexed.keyup(midiNoteA);
+                if (noteB != 0) dexedInstances[di].dexed.keyup(midiNoteB);
+                if (noteC != 0) dexedInstances[di].dexed.keyup(midiNoteC);
+                if (noteD != 0) dexedInstances[di].dexed.keyup(midiNoteD);
             }
             break;
         case T_FM_DRUM:
@@ -3181,8 +3210,10 @@ namespace XRSound
             velocityToUse = max(trackToUse.velocity, XRSequencer::activePattern.accent);
         }
 
-        dexedInstances[t].ampAccent.gain(velocityToUse * 0.01);
-        dexedInstances[t].dexed.keydown(midiNote, 50);
+        auto di = XRDexedManager::getActiveInstanceForTrack(t);
+
+        dexedInstances[di].ampAccent.gain(velocityToUse * 0.01);
+        dexedInstances[di].dexed.keydown(midiNote, 50);
     }
 
     void triggerBraidsNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented)
@@ -3273,7 +3304,9 @@ namespace XRSound
             {
                 int midiNote = (noteOnKeyboard + (12 * (octave)));
 
-                dexedInstances[currSelTrackNum].dexed.keyup(midiNote);
+                auto di = XRDexedManager::getActiveInstanceForTrack(currSelTrackNum);
+
+                dexedInstances[di].dexed.keyup(midiNote);
             }
             break;
         case T_BRAIDS_SYNTH:
@@ -3590,15 +3623,17 @@ namespace XRSound
 
         uint8_t dexedParamData[MAXIMUM_DEXED_SOUND_PARAMS];
 
-        dexedInstances[track].dexed.getVoiceData(dexedParamData);
+        auto di = XRDexedManager::getActiveInstanceForTrack(track);
+
+        dexedInstances[di].dexed.getVoiceData(dexedParamData);
 
         for (int dp=0; dp<MAXIMUM_DEXED_SOUND_PARAMS; dp++)
         {
             activePatternSounds[track].dexedParams[dp] = dexedParamData[dp];
         }
         
-        activePatternSounds[track].params[DEXE_TRANSPOSE] = getInt32ValuePaddedAsInt32(dexedInstances[track].dexed.getTranspose());
-        activePatternSounds[track].params[DEXE_ALGO] = getInt32ValuePaddedAsInt32(dexedInstances[track].dexed.getAlgorithm());
+        activePatternSounds[track].params[DEXE_TRANSPOSE] = getInt32ValuePaddedAsInt32(dexedInstances[di].dexed.getTranspose());
+        activePatternSounds[track].params[DEXE_ALGO] = getInt32ValuePaddedAsInt32(dexedInstances[di].dexed.getAlgorithm());
     }
 
     int8_t getValueNormalizedAsInt8(int32_t param)

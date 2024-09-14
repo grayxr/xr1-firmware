@@ -313,7 +313,6 @@ namespace XRKeyMatrix
                 XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_CHANGE_QUEUED);
 
                 XRSequencer::queuePattern(nextPattern, nextBank);
-
                 if (!XRSD::loadNextPattern(nextBank, nextPattern)) 
                 {
                     XRSequencer::initNextPattern();
@@ -352,6 +351,9 @@ namespace XRKeyMatrix
                     XRSequencer::initNextTrackLayer();
                 }
 
+                // load next dexed instances
+                XRSound::loadNextDexedInstances();
+
                 // IMPORTANT: must change sound data before sequencer data!
                 XRSound::saveSoundDataForPatternChange(); // save current sound data first
                 XRSound::loadSoundDataForPatternChange(nextBank, nextPattern);
@@ -360,6 +362,9 @@ namespace XRKeyMatrix
                 XRSD::saveCurrentSequencerData();
                 XRSequencer::swapSequencerMemoryForPattern(nextBank, nextPattern);
                 XRAsyncPSRAMLoader::prePatternChange();
+
+                // swap dexed instances so inactive = active and vice versa
+                XRDexedManager::swapInstances();
 
                 //_ptnHeldForSelection = nextPattern; // TODO: need?
 
@@ -482,12 +487,18 @@ namespace XRKeyMatrix
                     XRSequencer::initNextTrackLayer();
                 }
 
+                // load next dexed instances
+                XRSound::loadNextDexedInstances();
+
                 XRSound::loadSoundDataForPatternChange(nextBank, nextPattern);
 
                 // save any track step mods for current pattern to SD
                 XRSD::saveCurrentSequencerData();
                 XRSequencer::swapSequencerMemoryForPattern(nextBank, nextPattern);
                 XRAsyncPSRAMLoader::prePatternChange();
+
+                // swap dexed instances so inactive = active and vice versa
+                XRDexedManager::swapInstances();
 
                 //_ptnHeldForSelection = nextPattern; // TODO: need?
 

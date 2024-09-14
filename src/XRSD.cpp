@@ -522,7 +522,6 @@ namespace XRSD
         baseDir += "/layers/";
         baseDir += std::to_string(XRSequencer::getCurrentSelectedTrackLayerNum());
 
-
         // verify lyr dir exists first
         if (!SD.exists(baseDir.c_str()))
         {
@@ -1319,11 +1318,13 @@ namespace XRSD
                 trackNum = XRSequencer::getCurrentSelectedTrackNum();
             }
 
-            if (XRSound::dexedInstances[trackNum].dexed.decodeVoice(tmp_data, data)) {
-                XRSound::dexedInstances[trackNum].dexed.loadVoiceParameters(tmp_data);
+            auto di = XRDexedManager::getActiveInstanceForTrack(trackNum);
+
+            if (XRSound::dexedInstances[di].dexed.decodeVoice(tmp_data, data)) {
+                XRSound::dexedInstances[di].dexed.loadVoiceParameters(tmp_data);
 
                 char dexedTempNameBuf[11];
-                XRSound::dexedInstances[trackNum].dexed.getName(dexedTempNameBuf);
+                XRSound::dexedInstances[di].dexed.getName(dexedTempNameBuf);
 
                 std::string tempDexedPatchName(dexedTempNameBuf);
                 dexedPatchName = tempDexedPatchName;

@@ -806,6 +806,39 @@ namespace XRSequencer
             return;
         }
 
+        if (step == 0 && XRSound::soundNeedsReinit[track]) {
+            for (int d = 0; d < 4; d++)
+            {
+                if (XRSound::activePatternSounds[d].type == XRSound::T_DEXED_SYNTH) {
+                    XRSound::reinitSoundForTrack(track);
+
+                    auto a = XRDexedManager::getActiveInstanceForTrack(d);
+                    auto in = XRDexedManager::getInactiveInstanceForTrack(d);
+
+                    // enable active instance, mute inactive instance
+                    // TODO: fade out quick instead?
+                    AudioNoInterrupts();
+                    XRSound::dexedInstances[a].amp.gain(1);
+                    XRSound::dexedInstances[in].amp.gain(0);
+                    XRSound::dexedInstances[in].dexed.notesOff();
+                    AudioInterrupts();
+                }
+            }
+
+            // if (track == 0) {
+            //     Serial.printf("reinit sound for track: %d\n", track);
+
+            //     XRSound::reinitSoundForTrack(track);
+            //     // TODO: apply specific track choke instead of reapplying all chokes here
+            //     XRSound::applyTrackChokes();
+            // }
+            Serial.printf("reinit sound for track: %d\n", track);
+
+            XRSound::reinitSoundForTrack(track);
+            // TODO: apply specific track choke instead of reapplying all chokes here
+            XRSound::applyTrackChokes();
+        }
+
         if (XRSound::soundNeedsReinit[track])
         {
             Serial.printf("reinit sounds for track: %d\n", track);
@@ -1060,6 +1093,8 @@ namespace XRSequencer
             XRSound::saveSoundDataForPatternChange(); // make sure current sounds are saved first
             XRSound::loadSoundDataForPatternChange(_queuedPatternState.bank, _queuedPatternState.number);
             swapSequencerMemoryForPattern(_queuedPatternState.bank, _queuedPatternState.number);
+
+            XRDexedManager::swapInstances();
 
             if (_dequeueLoadNewPatternSamples) {
                 XRAsyncPSRAMLoader::postPatternChange();
@@ -1329,6 +1364,8 @@ namespace XRSequencer
                 _seqState.playbackState = STOPPED;
 
                 XRClock::stop();
+
+                applyRecordingToSequencerWhenStopped();
 
                 // Stopped, so reset sequencer to FIRST step in pattern
                 _seqState.currentStep = 1;
