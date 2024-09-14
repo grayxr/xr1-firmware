@@ -71,12 +71,66 @@ namespace XRMain
     void update()
     {
         XRAsyncPSRAMLoader::handleAsyncPSRAMLoading();
+
+        // TODO: execute async checklist for pattern queue actions
+        auto &queuedPattern = XRSequencer::getQueuedPatternState();
+
+        if (!(elapsedMs % 2) && XRSequencer::patternChecklist != 5 && (queuedPattern.bank > -1 && queuedPattern.number > -1)) {
+            auto newBank = queuedPattern.bank;
+            auto newPattern = queuedPattern.number;
+
+            if (XRSequencer::patternChecklist == 0) {
+                Serial.println("checklist index 0");
+
+                // IMPORTANT: must change sounds before changing sequencer data!
+                if (XRSound::patternSoundsDirty) {
+                    XRSD::saveActivePatternSounds();
+                }
+                if (!XRSD::loadNextPatternSounds(newBank, newPattern))
+                {
+                    XRSound::initNextPatternSounds();
+                }
+                XRSequencer::patternChecklist++;
+            } else if (XRSequencer::patternChecklist == 1) {
+                Serial.println("checklist index 1");
+                // IMPORTANT: must change sounds before changing sequencer data!
+                if (XRSound::patternSoundStepModsDirty) {
+                    XRSD::saveActiveSoundStepModLayerToSdCard();
+                }
+                if (!XRSD::loadPatternSoundStepModLayerFromSdCard(newBank, newPattern, 0)) {
+                    XRSound::initPatternSoundStepMods();
+                }
+                XRSequencer::patternChecklist++;
+            } else if (XRSequencer::patternChecklist == 2) {
+                Serial.println("checklist index 2");
+                XRSD::saveActivePatternToSdCard();
+                if (!XRSD::loadNextPattern(newBank, newPattern)){
+                    XRSequencer::initNextPattern();
+                }
+                XRSequencer::patternChecklist++;
+            } else if (XRSequencer::patternChecklist == 3) {
+                Serial.println("checklist index 3");
+                XRSD::saveActiveTrackLayerToSdCard();
+                if (!XRSD::loadNextTrackLayer(newBank, newPattern, 0)){
+                    XRSequencer::initNextTrackLayer();
+                }
+                XRSequencer::patternChecklist++;
+            } else if (XRSequencer::patternChecklist == 4) {
+                Serial.println("checklist index 4");
+                XRSD::saveActiveTrackStepModLayerToSdCard();
+                if (!XRSD::loadActiveTrackStepModLayerFromSdCard(newBank, newPattern, 0)) {
+                    XRSequencer::initActiveTrackStepModLayer();
+                }
+                XRSequencer::patternChecklist++;
+            }
+        }
+
         XRAudio::handleHeadphones();
         XRKeyMatrix::handleStates(false);
         XRVersa::handleStates();
         XREncoder::handleStates();
 
-        XRSequencer::handlePatternQueueActions();
-        XRSequencer::handleTrackLayerQueueActions();
+        XRSequencer::handlePatternDequeueActions();
+        XRSequencer::handleTrackLayerDequeueActions();
     }
 }

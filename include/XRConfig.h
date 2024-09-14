@@ -39,7 +39,7 @@
 #define MAX_USABLE_WAV_SAMPLE_IDS 512
 #define MAX_SOUND_NAME_LENGTH 32
 #define MAX_SAMPLE_NAME_LENGTH 32
-#define MAX_PATTERN_SAMPLES 16 // there are only 16 tracks per patter, so a max of 16 samples per pattern, for now
+#define MAX_PATTERN_SAMPLES 16 // there are only 16 tracks per pattern, so a max of 16 samples per pattern, for now
 // Sequencer data
 #define MAXIMUM_SEQUENCER_STEPS 64
 #define MAXIMUM_SEQUENCER_TRACKS 16

@@ -5,6 +5,7 @@
 #include <Audio.h>
 #include <XRConfig.h>
 #include <XRAudioConfig.h>
+#include <XRDexedManager.h>
 #include <string>
 #include <map>
 
@@ -473,9 +474,12 @@ namespace XRSound
     void applyActivePatternSounds();
     void applyFxForActivePattern();
     void applyTrackChokes();
+
+    void loadNextDexedInstances();
     
     void saveSoundDataForPatternChange();
-    void loadSoundDataForPatternChange(int nextBank, int nextPattern);
+    void prepareSoundDataForPatternChange(int nextBank, int nextPattern);
+    void loadNextPatternSoundData(int nextBank, int nextPattern);
 
     void assignSampleToTrackSound();
 

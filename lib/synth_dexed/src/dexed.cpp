@@ -495,6 +495,15 @@ void Dexed::notesOff(void) {
   }
 }
 
+void Dexed::notesOffLive(void) {
+  for (uint8_t i = 0; i < max_notes; i++) {
+    if (voices[i].live == true) {
+      voices[i].keydown = false;
+      //voices[i].sustained = false;
+    }
+  }
+}
+
 uint8_t Dexed::getMaxNotes(void)
 {
   return max_notes;

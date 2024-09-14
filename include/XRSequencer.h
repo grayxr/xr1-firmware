@@ -194,6 +194,11 @@ namespace XRSequencer
     extern PATTERN_FX_PAGE_INDEXES patternFxPages[MAXIMUM_PATTERN_FX_PARAM_PAGES];
     extern RECORDING_STATE recordingState;
 
+    extern bool patternBusy; // TODO: make this a UX mode?
+    extern int patternBusyBank;
+    extern int patternBusyPattern;
+    extern int patternChecklist;
+
     bool init();
 
     bool isStepProbablyEnabled(int track, int step);
@@ -252,8 +257,8 @@ namespace XRSequencer
     void updateCurrentPatternStepState();
     void displayAllTrackNoteOnLEDs(bool enable);
     void noteOffForAllSounds();
-    void handlePatternQueueActions();
-    void handleTrackLayerQueueActions();
+    void handlePatternDequeueActions();
+    void handleTrackLayerDequeueActions();
     void queuePattern(int pattern, int bank);
 
     void setSelectedPattern(int8_t pattern);

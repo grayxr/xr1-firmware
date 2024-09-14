@@ -284,6 +284,9 @@ namespace XRKeyMatrix
         // pattern select
         else if (!(currentUXMode == XRUX::UX_MODE::COPY_SEL) && key == PATTERN_BTN_CHAR)
         {
+            // IMPORTANT: WHEN PATTERN IS BUSY, DO NOT ALLOW PATTERN SELECTION
+            if (XRSequencer::patternBusy) return;
+
             XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_SEL);
 
             _patternCopyAvailable = -1;
@@ -314,22 +317,27 @@ namespace XRKeyMatrix
 
                 XRSequencer::queuePattern(nextPattern, nextBank);
 
-                if (!XRSD::loadNextPattern(nextBank, nextPattern)) 
-                {
-                    XRSequencer::initNextPattern();
-                }
+                // TODO: put in checklist?
 
-                if (!XRSD::loadNextPatternSounds(nextBank, nextPattern)) 
-                {
-                    XRSound::initNextPatternSounds();
-                }
-
-                if (!XRSD::loadNextTrackLayer(nextBank, nextPattern, 0)) 
-                {
-                    XRSequencer::initNextTrackLayer();
-                }
+                // load next dexed instances
+                XRSound::loadNextDexedInstances();
 
                 XRAsyncPSRAMLoader::startAsyncInitOfNextSamples();
+
+                // if (!XRSD::loadNextPattern(nextBank, nextPattern)) 
+                // {
+                //     XRSequencer::initNextPattern();
+                // }
+
+                // if (!XRSD::loadNextPatternSounds(nextBank, nextPattern)) 
+                // {
+                //     XRSound::initNextPatternSounds();
+                // }
+
+                // if (!XRSD::loadNextTrackLayer(nextBank, nextPattern, 0)) 
+                // {
+                //     XRSequencer::initNextTrackLayer();
+                // }
 
                 XRLED::clearAllStepLEDs();
                 XRDisplay::drawSequencerScreen(false);
@@ -352,9 +360,20 @@ namespace XRKeyMatrix
                     XRSequencer::initNextTrackLayer();
                 }
 
+                // load next dexed instances
+                XRSound::loadNextDexedInstances();
+        
+                // swap dexed instances so inactive = active and vice versa
+                XRDexedManager::swapInstances();
+                // for (size_t d = 0; d < 4; d++) {
+                //     auto in = XRDexedManager::getInactiveInstanceForTrack(d);
+                //     XRSound::dexedInstances[in].dexed.notesOffLive();
+                // }
+
                 // IMPORTANT: must change sound data before sequencer data!
                 XRSound::saveSoundDataForPatternChange(); // save current sound data first
-                XRSound::loadSoundDataForPatternChange(nextBank, nextPattern);
+                XRSound::loadNextPatternSoundData(nextBank, nextPattern);
+                XRSound::prepareSoundDataForPatternChange(nextBank, nextPattern);
 
                 // save any track step mods for current pattern to SD
                 XRSD::saveCurrentSequencerData();
@@ -481,8 +500,19 @@ namespace XRKeyMatrix
                 {
                     XRSequencer::initNextTrackLayer();
                 }
+        
+                // load next dexed instances
+                XRSound::loadNextDexedInstances();
+        
+                // swap dexed instances so inactive = active and vice versa
+                XRDexedManager::swapInstances();
+                // for (size_t d = 0; d < 4; d++) {
+                //     auto in = XRDexedManager::getInactiveInstanceForTrack(d);
+                //     XRSound::dexedInstances[in].dexed.notesOffLive();
+                // }
 
-                XRSound::loadSoundDataForPatternChange(nextBank, nextPattern);
+                XRSound::loadNextPatternSoundData(nextBank, nextPattern);
+                XRSound::prepareSoundDataForPatternChange(nextBank, nextPattern);
 
                 // save any track step mods for current pattern to SD
                 XRSD::saveCurrentSequencerData();

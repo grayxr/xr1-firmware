@@ -144,8 +144,13 @@ namespace XRAsyncPSRAMLoader
                 Serial.println("WARN: postPatternChange: not all the samples managed to load in time!");
             }
 
+            Serial.println("INFO: postPatternChange: toggle_afterNewPatternStarts!");
             asyncflashloader.toggle_afterNewPatternStarts();
+            Serial.println("INFO: postPatternChange: toggle_afterNewPatternStarts DONE!");
+
+            Serial.println("INFO: postPatternChange: heap_switch()!");
             heap_switch();
+            Serial.println("INFO: postPatternChange: heap_switch() DONE!");
             Serial.printf("INFO: postPatternChange: readheap=%d writeheap=%d asyncChanging=%d\n", currentReadHeap, currentWriteHeap, asyncChanging);
         } else
             Serial.printf("WARN: postPatternChange was called unexpectedly, as asyncChanging==false... readheap=%d writeheap=%d \n", currentReadHeap, currentWriteHeap);
@@ -156,7 +161,9 @@ namespace XRAsyncPSRAMLoader
             // just before pattern change...
             // after this call, the audiosample will be deallocated, so don't play any new samples from the heap.
             // Existing samples will continue to play because the psram will still be intact
+            Serial.println("INFO: prePatternChange: toggle_beforeNewPatternVoicesStart()!");
             asyncflashloader.toggle_beforeNewPatternVoicesStart();
+            Serial.println("INFO: prePatternChange: toggle_beforeNewPatternVoicesStart() DONE!");
             asyncChanging = true;
             Serial.printf("INFO: prePatternChange: readheap=%d writeheap=%d asyncChanging=%d\n", currentReadHeap, currentWriteHeap, asyncChanging);
 
@@ -177,7 +184,7 @@ namespace XRAsyncPSRAMLoader
                 
                 if (strcmp(sound.sampleNameB, "") != 0) {
                     auto sampleNameB = std::string("/audio enjoyer/xr-1/samples/") + std::string(sound.sampleNameB);
-                    Serial.printf("initializing this sample name: %s\n", sampleNameB.c_str());
+                    Serial.printf("initializing this sample B name: %s\n", sampleNameB.c_str());
                     addSampleFileNameForNextAsyncLoadBatch(sampleNameB);
                 }
             }

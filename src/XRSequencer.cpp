@@ -64,6 +64,11 @@ namespace XRSequencer
 
     TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
 
+    bool patternBusy = false;
+    int patternBusyBank = -1;
+    int patternBusyPattern = -1;
+    int patternChecklist = 0;
+
     bool init()
     {
         _currentSelectedBank = 0;
@@ -806,6 +811,37 @@ namespace XRSequencer
             return;
         }
 
+        if (step == 0 && XRSound::soundNeedsReinit[track]) {
+            if (track == 0) {
+                Serial.println("FIRST TRACK FIRST STEP!");
+            }
+
+            for (int d = 0; d < 4; d++)
+            {
+                if (XRSound::activePatternSounds[d].type == XRSound::T_DEXED_SYNTH) {
+                    XRSound::reinitSoundForTrack(track);
+
+                    auto a = XRDexedManager::getActiveInstanceForTrack(d);
+                    auto in = XRDexedManager::getInactiveInstanceForTrack(d);
+
+                    // enable active instance, mute inactive instance
+                    // TODO: fade out quick instead?
+                    AudioNoInterrupts();
+                    XRSound::dexedInstances[a].amp.gain(1);
+                    XRSound::dexedInstances[in].amp.gain(0);
+                    XRSound::dexedInstances[in].dexed.notesOff();
+                    AudioInterrupts();
+                }
+            }
+
+
+            Serial.printf("reinit sounds for track: %d\n", track);
+
+            XRSound::reinitSoundForTrack(track);
+            // TODO: apply specific track choke instead of reapplying all chokes here
+            XRSound::applyTrackChokes();
+        }
+
         if (XRSound::soundNeedsReinit[track])
         {
             Serial.printf("reinit sounds for track: %d\n", track);
@@ -866,7 +902,7 @@ namespace XRSequencer
 
                 ++_seqState.currentStep; // advance current step for sequencer
             }
-            else
+            else if (_seqState.currentStep == currPatternLastStep)
             {
                 _seqState.currentStep = 1; // reset current step
                 _seqState.currentBar = 1;  // reset current bar
@@ -1034,7 +1070,7 @@ namespace XRSequencer
         return fxParams;
     }
 
-    void handlePatternQueueActions()
+    void handlePatternDequeueActions()
     {
         if (_drawPatternQueueBlink > -1)
         {
@@ -1053,18 +1089,19 @@ namespace XRSequencer
             Serial.println("enter _dequeuePattern!");
 
             _dequeuePattern = false;
+
             if (_dequeueLoadNewPatternSamples)
                 XRAsyncPSRAMLoader::prePatternChange();
-
-            // IMPORTANT: must change sounds before changing sequencer data!
-            XRSound::saveSoundDataForPatternChange(); // make sure current sounds are saved first
-            XRSound::loadSoundDataForPatternChange(_queuedPatternState.bank, _queuedPatternState.number);
+        
+            XRDexedManager::swapInstances();
+            XRSound::prepareSoundDataForPatternChange(_queuedPatternState.bank, _queuedPatternState.number);
             swapSequencerMemoryForPattern(_queuedPatternState.bank, _queuedPatternState.number);
 
             if (_dequeueLoadNewPatternSamples) {
                 XRAsyncPSRAMLoader::postPatternChange();
                 _dequeueLoadNewPatternSamples = false;
             }
+            
             Serial.println("finished swapping seq mem!");
 
             // reset queue flags
@@ -1076,6 +1113,9 @@ namespace XRSequencer
             _currentStepPage = 1;
             _currentSelectedPage = 0;
             //_currentSelectedTrack = 0;
+
+            patternChecklist = 0;
+            patternBusy = false;
 
             auto currentUXMode = XRUX::getCurrentMode();
             if (currentUXMode == XRUX::PATTERN_CHANGE_QUEUED) {
@@ -1099,7 +1139,7 @@ namespace XRSequencer
         }
     }
 
-    void handleTrackLayerQueueActions()
+    void handleTrackLayerDequeueActions()
     {
         if (_drawTrackLayerQueueBlink > -1)
         {
@@ -1151,7 +1191,7 @@ namespace XRSequencer
 
     void swapSequencerMemoryForPattern(int newBank, int newPattern)
     {
-        XRSD::saveActivePatternToSdCard();
+        //XRSD::saveActivePatternToSdCard();
         // if (!XRSD::loadNextPattern(newBank, newPattern)){
         //     initNextPattern();
         // }
@@ -1165,15 +1205,15 @@ namespace XRSequencer
         XRSound::applyFxForActivePattern();
         XRSound::applyTrackChokes();
         
-        XRSD::saveActiveTrackLayerToSdCard();
+        //XRSD::saveActiveTrackLayerToSdCard();
         // if (!XRSD::loadNextTrackLayer(newBank, newPattern, 0)){
         //     initNextTrackLayer();
         // }
 
-        XRSD::saveActiveTrackStepModLayerToSdCard();
-        if (!XRSD::loadActiveTrackStepModLayerFromSdCard(newBank, newPattern, 0)) {
-            initActiveTrackStepModLayer();
-        }
+        //XRSD::saveActiveTrackStepModLayerToSdCard();
+        // if (!XRSD::loadActiveTrackStepModLayerFromSdCard(newBank, newPattern, 0)) {
+        //     initActiveTrackStepModLayer();
+        // }
 
         // if the new pattern has a groove, set it on the clock
         if (activePattern.groove.id > -1) {
@@ -1330,6 +1370,8 @@ namespace XRSequencer
 
                 XRClock::stop();
 
+                applyRecordingToSequencerWhenStopped();
+
                 // Stopped, so reset sequencer to FIRST step in pattern
                 _seqState.currentStep = 1;
                 _seqState.currentBar = 1;
@@ -1483,6 +1525,10 @@ namespace XRSequencer
 
     void queuePattern(int pattern, int bank)
     {
+        patternBusy = true;
+        patternBusyBank = bank;
+        patternBusyPattern = pattern;
+
         _queuedPatternState.bank = bank;
         _queuedPatternState.number = pattern;
     }
