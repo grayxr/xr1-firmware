@@ -50,6 +50,7 @@ namespace XRSound
         0,0,0,0,0,              // playstart, n/a, n/a, n/a, n/a
         0,100000,100,500000,0,  // a. attack, a. decay, a. sustain, a. release, n/a
         100,0,-100,0,0,         // level, pan, choke, delay send, n/a
+        0,0,0,0,0,               // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0               // n/a, n/a, n/a, n/a, n/a
     };
 
@@ -67,7 +68,8 @@ namespace XRSound
         0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
         100,0,-100,0,0, // level, pan, choke, delay send, n/a
-        0,0,0,0,0       // poly note b, poly note c, poly note d, note mode, n/a
+        0,0,0,0,0,       // poly note b, poly note c, poly note d, note mode, n/a
+        0,0,0,0,0               // n/a, n/a, n/a, n/a, n/a
     };
 
     const uint8_t dexedInitVoice[MAXIMUM_DEXED_SOUND_PARAMS] = {
@@ -89,6 +91,7 @@ namespace XRSound
         0,0,0,0,0,      // coarse, fine, n/a, n/a, n/a
         0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
         100,0,-100,0,0,    // level, pan, choke, delay send, n/a
+        0,0,0,0,0,       // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0       // n/a, n/a, n/a, n/a, n/a
     };
 
@@ -97,11 +100,13 @@ namespace XRSound
         0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
         100,0,-100,0,0, // level, pan, choke, delay send, n/a
-        0,0,0,0,0       // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0,       // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0        // n/a, n/a, n/a, n/a, n/a
     };
 
     int32_t midiInitParams[MAXIMUM_SOUND_PARAMS] = {
         100,0,0,0,0, // channel, n/a, n/a, n/a, n/a
+        0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0, // n/a, n/a, n/a, n/a, n/a
@@ -113,11 +118,13 @@ namespace XRSound
         0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0       // n/a, n/a, n/a, n/a, n/a
     };
 
     int32_t cvTrigInitParams[MAXIMUM_SOUND_PARAMS] = {
         100,0,0,0,0,    // port, n/a, n/a, n/a, n/a
+        0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
         0,0,0,0,0,      // n/a, n/a, n/a, n/a, n/a
@@ -220,6 +227,10 @@ namespace XRSound
         DexedInstance(dexed2, dexedAmpAccent2, dexedAmp2, dexedAmpDelaySend2, dexedLeft2, dexedRight2),
         DexedInstance(dexed3, dexedAmpAccent3, dexedAmp3, dexedAmpDelaySend3, dexedLeft3, dexedRight3),
         DexedInstance(dexed4, dexedAmpAccent4, dexedAmp4, dexedAmpDelaySend4, dexedLeft4, dexedRight4),
+        DexedInstance(dexed5, dexedAmpAccent5, dexedAmp5, dexedAmpDelaySend5, dexedLeft5, dexedRight5),
+        DexedInstance(dexed6, dexedAmpAccent6, dexedAmp6, dexedAmpDelaySend6, dexedLeft6, dexedRight6),
+        DexedInstance(dexed7, dexedAmpAccent7, dexedAmp7, dexedAmpDelaySend7, dexedLeft7, dexedRight7),
+        DexedInstance(dexed8, dexedAmpAccent8, dexedAmp8, dexedAmpDelaySend8, dexedLeft8, dexedRight8),
     };
 
     FmDrumInstance fmDrumInstances[MAXIMUM_FM_DRUM_SOUNDS] = {
@@ -664,6 +675,10 @@ namespace XRSound
         delaySubMix7.gain(1, 1);
         delaySubMix7.gain(2, 1);
         delaySubMix7.gain(3, 1);
+        delaySubMix8.gain(0, 1);
+        delaySubMix8.gain(1, 1);
+        delaySubMix8.gain(2, 1);
+        delaySubMix8.gain(3, 1);
 
         // Delay mixers
         delayMix1.gain(0, 1);
@@ -673,7 +688,7 @@ namespace XRSound
         delayMix2.gain(0, 1);
         delayMix2.gain(1, 1);
         delayMix2.gain(2, 1);
-        delayMix2.gain(3, 0); // unused
+        delayMix2.gain(3, 1);
 
         // Delay instance
         delayInstances[0].delayEffect.delay(0, 300); // TODO: init from pattern
@@ -761,6 +776,8 @@ namespace XRSound
         voiceMixRight1.gain(1, 1);
         voiceMixLeft1.gain(2, 1);
         voiceMixRight1.gain(2, 1);
+        voiceMixLeft1.gain(3, 1);
+        voiceMixRight1.gain(3, 1);
 
         voiceMixLeft2.gain(0, 1);
         voiceMixRight2.gain(0, 1);
@@ -2121,6 +2138,7 @@ namespace XRSound
         monoSynthInstances[track].ampEnv.noteOn();
         monoSynthInstances[track].filterEnv.noteOn();
     }
+
     void handleDexedSynthNoteOnForTrack(int track)
     {
         if (track > 3) return;
@@ -2153,6 +2171,7 @@ namespace XRSound
 
         // braidsInstances[track].braids.set_braids_pitch(midiNote << 7);
     }
+
     void handleFmDrumNoteOnForTrack(int track)
     {
         if (track > 2) return;
