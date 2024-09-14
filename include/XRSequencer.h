@@ -9,6 +9,17 @@
 
 namespace XRSequencer
 {
+    enum QUEUE_ACTION : uint8_t
+    {
+        NONE = 0,
+        MANAGE_SOUNDS,
+        MANAGE_SOUND_STEP_MODS,
+        MANAGE_PATTERNS,
+        MANAGE_TRACK_LAYERS,
+        MANAGE_TRACK_LAYER_STEP_MODS,
+        DONE,
+    };
+
     enum STEP_STATE : uint8_t
     {
         STATE_OFF = 0,
@@ -252,8 +263,10 @@ namespace XRSequencer
     void updateCurrentPatternStepState();
     void displayAllTrackNoteOnLEDs(bool enable);
     void noteOffForAllSounds();
+
     void handlePatternQueueActions();
-    void handleTrackLayerQueueActions();
+    void handlePatternDequeueActions();
+    void handleTrackLayerDequeueActions();
     void queuePattern(int pattern, int bank);
 
     void setSelectedPattern(int8_t pattern);

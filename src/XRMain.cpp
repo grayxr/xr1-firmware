@@ -77,6 +77,7 @@ namespace XRMain
         XREncoder::handleStates();
 
         XRSequencer::handlePatternQueueActions();
-        XRSequencer::handleTrackLayerQueueActions();
+        XRSequencer::handlePatternDequeueActions();
+        XRSequencer::handleTrackLayerDequeueActions();
     }
 }

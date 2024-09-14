@@ -478,7 +478,7 @@ namespace XRSound
     void loadNextDexedInstances();
     
     void saveSoundDataForPatternChange();
-    void loadSoundDataForPatternChange(int nextBank, int nextPattern);
+    void prepareSoundDataForPatternChange(int nextBank, int nextPattern);
 
     void assignSampleToTrackSound();
 

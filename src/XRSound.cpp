@@ -1008,16 +1008,16 @@ namespace XRSound
         }
     }
 
-    void loadSoundDataForPatternChange(int nextBank, int nextPattern)
+    void prepareSoundDataForPatternChange(int nextBank, int nextPattern)
     {
         // if (!XRSD::loadNextPatternSounds(nextBank, nextPattern))
         // {
         //     initNextPatternSounds();
         // }
 
-        if (!XRSD::loadPatternSoundStepModLayerFromSdCard(nextBank, nextPattern, 0)) {
-            initPatternSoundStepMods();
-        }
+        // if (!XRSD::loadPatternSoundStepModLayerFromSdCard(nextBank, nextPattern, 0)) {
+        //     initPatternSoundStepMods();
+        // }
 
         auto &seqState = XRSequencer::getSeqState();
 
@@ -1029,8 +1029,6 @@ namespace XRSound
                 if (tracks[t].initialized) {
                     setSoundNeedsReinit(t, true); // reinit sound asynchronously since the upcoming track is active
                 } else {
-                    // TODO: try having 8 total dexed instances, and have 4 of them be used for pattern changes
-                    // so that loading voices doesn't cut out the sound
                     reinitSoundForTrack(t); // reinit sound synchronously since the upcoming track is inactive?
                 }
             }

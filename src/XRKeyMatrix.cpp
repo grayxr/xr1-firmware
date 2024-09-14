@@ -313,22 +313,6 @@ namespace XRKeyMatrix
                 XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_CHANGE_QUEUED);
 
                 XRSequencer::queuePattern(nextPattern, nextBank);
-                if (!XRSD::loadNextPattern(nextBank, nextPattern)) 
-                {
-                    XRSequencer::initNextPattern();
-                }
-
-                if (!XRSD::loadNextPatternSounds(nextBank, nextPattern)) 
-                {
-                    XRSound::initNextPatternSounds();
-                }
-
-                if (!XRSD::loadNextTrackLayer(nextBank, nextPattern, 0)) 
-                {
-                    XRSequencer::initNextTrackLayer();
-                }
-
-                XRAsyncPSRAMLoader::startAsyncInitOfNextSamples();
 
                 XRLED::clearAllStepLEDs();
                 XRDisplay::drawSequencerScreen(false);
@@ -356,11 +340,11 @@ namespace XRKeyMatrix
 
                 // IMPORTANT: must change sound data before sequencer data!
                 XRSound::saveSoundDataForPatternChange(); // save current sound data first
-                XRSound::loadSoundDataForPatternChange(nextBank, nextPattern);
+                XRSound::prepareSoundDataForPatternChange(nextBank, nextPattern);
 
                 // save any track step mods for current pattern to SD
-                XRSD::saveCurrentSequencerData();
-                XRSequencer::swapSequencerMemoryForPattern(nextBank, nextPattern);
+                XRSD::saveCurrentSequencerData(); // save CURRENT ACTIVE data
+                XRSequencer::swapSequencerMemoryForPattern(nextBank, nextPattern); // SWAP and save NEXT ACTIVE data
                 XRAsyncPSRAMLoader::prePatternChange();
 
                 // swap dexed instances so inactive = active and vice versa
@@ -446,22 +430,22 @@ namespace XRKeyMatrix
 
                 XRSequencer::queuePattern(nextPattern, nextBank);
 
-                if (!XRSD::loadNextPattern(nextBank, nextPattern)) 
-                {
-                    XRSequencer::initNextPattern();
-                }
+                // if (!XRSD::loadNextPattern(nextBank, nextPattern)) 
+                // {
+                //     XRSequencer::initNextPattern();
+                // }
 
-                if (!XRSD::loadNextPatternSounds(nextBank, nextPattern)) 
-                {
-                    XRSound::initNextPatternSounds();
-                }
+                // if (!XRSD::loadNextPatternSounds(nextBank, nextPattern)) 
+                // {
+                //     XRSound::initNextPatternSounds();
+                // }
 
-                if (!XRSD::loadNextTrackLayer(nextBank, nextPattern, 0)) 
-                {
-                    XRSequencer::initNextTrackLayer();
-                }
+                // if (!XRSD::loadNextTrackLayer(nextBank, nextPattern, 0)) 
+                // {
+                //     XRSequencer::initNextTrackLayer();
+                // }
 
-                XRAsyncPSRAMLoader::startAsyncInitOfNextSamples();
+                // XRAsyncPSRAMLoader::startAsyncInitOfNextSamples();
 
                 XRLED::clearAllStepLEDs();
                 XRDisplay::drawSequencerScreen(false);
@@ -490,11 +474,11 @@ namespace XRKeyMatrix
                 // load next dexed instances
                 XRSound::loadNextDexedInstances();
 
-                XRSound::loadSoundDataForPatternChange(nextBank, nextPattern);
+                XRSound::prepareSoundDataForPatternChange(nextBank, nextPattern);
 
                 // save any track step mods for current pattern to SD
-                XRSD::saveCurrentSequencerData();
-                XRSequencer::swapSequencerMemoryForPattern(nextBank, nextPattern);
+                XRSD::saveCurrentSequencerData(); // save CURRENT ACTIVE data
+                XRSequencer::swapSequencerMemoryForPattern(nextBank, nextPattern); // SWAP and save NEXT ACTIVE data
                 XRAsyncPSRAMLoader::prePatternChange();
 
                 // swap dexed instances so inactive = active and vice versa
