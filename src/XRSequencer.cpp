@@ -809,8 +809,47 @@ namespace XRSequencer
             return;
         }
 
-        // hard reinit all tracks on first step
-        if (step == 0 && XRSound::soundNeedsReinit[track]) {
+        // hard dequeue and reinit all tracks on first step
+        if (step == 0 && _dequeuePattern) {
+            if (_dequeuePattern) // still have to dequeue
+            {
+                Serial.println("MANUALLY DEQUEUE PATTERN BEFORE FIRST STEP!!!");
+
+                if (queueAction != QUEUE_ACTION::DONE) {
+                    // cycle through all queue actions manually here
+                    forceQueueActions();
+                }
+
+                dequeuePattern();
+
+                if (step == 0 && XRSound::soundNeedsReinit[track]) {
+                    for (int d = 0; d < 4; d++)
+                    {
+                        if (XRSound::activePatternSounds[d].type == XRSound::T_DEXED_SYNTH) {
+                            XRSound::reinitSoundForTrack(d);
+
+                            auto a = XRDexedManager::getActiveInstanceForTrack(d);
+                            auto in = XRDexedManager::getInactiveInstanceForTrack(d);
+
+                            // enable active instance, mute inactive instance
+                            AudioNoInterrupts();
+                            XRSound::dexedInstances[a].amp.gain(1);
+                            XRSound::dexedInstances[in].amp.gain(0);
+                            XRSound::dexedInstances[in].dexed.notesOff();
+                            AudioInterrupts();
+                        }
+                    }
+
+                    if (track > 3) {
+                        Serial.printf("reinit sound for track: %d\n", track);
+
+                        XRSound::reinitSoundForTrack(track);
+                        // TODO: apply specific track choke instead of reapplying all chokes here
+                        XRSound::applyTrackChokes();
+                    }
+                }
+            }
+        } else if (step == 0 && XRSound::soundNeedsReinit[track]) {
             for (int d = 0; d < 4; d++)
             {
                 if (XRSound::activePatternSounds[d].type == XRSound::T_DEXED_SYNTH) {
@@ -820,7 +859,6 @@ namespace XRSequencer
                     auto in = XRDexedManager::getInactiveInstanceForTrack(d);
 
                     // enable active instance, mute inactive instance
-                    // TODO: fade out quick instead?
                     AudioNoInterrupts();
                     XRSound::dexedInstances[a].amp.gain(1);
                     XRSound::dexedInstances[in].amp.gain(0);
@@ -1069,7 +1107,7 @@ namespace XRSequencer
     void handlePatternQueueActions()
     {
         if (!queueErrorLogged && queueAction != QUEUE_ACTION::NONE && queueAction != QUEUE_ACTION::DONE && _queuedPatternState.bank == -1 && _queuedPatternState.number == -1) {
-            Serial.println("ERROR: QUEUE ACTIONS NOT DONE! NO QUEUED PATTERN ANYMORE!");
+            Serial.println("QUEUE ACTION: ERROR! QUEUE ACTIONS NOT DONE! NO QUEUED PATTERN ANYMORE!");
 
             queueErrorLogged = true;
 
@@ -1077,7 +1115,6 @@ namespace XRSequencer
         }
 
         if (_queuedPatternState.bank > -1 && _queuedPatternState.number > -1 && queueAction != QUEUE_ACTION::DONE) {
-
             delay(2);
 
             auto newBank = _queuedPatternState.bank;
@@ -1086,13 +1123,13 @@ namespace XRSequencer
             switch (queueAction) {
                 case QUEUE_ACTION::NONE:
                     // N/A
-                    Serial.println("INFO: starting queue actions!");
+                    Serial.println("QUEUE ACTION:: starting queue actions!");
 
                     queueAction = QUEUE_ACTION::MANAGE_SOUNDS;
 
                     break;
                 case QUEUE_ACTION::MANAGE_SOUNDS:
-                    Serial.println("INFO: manage sounds queue action!");
+                    Serial.println("QUEUE ACTION:: manage sounds queue action!");
 
                     // save, load
                     
@@ -1105,13 +1142,13 @@ namespace XRSequencer
                         XRSound::initNextPatternSounds();
                     }
 
-                    Serial.println("INFO: manage sound queue action DONE!");
+                    Serial.println("QUEUE ACTION:: manage sound queue action DONE!");
 
                     queueAction = QUEUE_ACTION::MANAGE_SOUND_STEP_MODS;
 
                     break;
                 case QUEUE_ACTION::MANAGE_SOUND_STEP_MODS:
-                    Serial.println("INFO: manage sound step mods queue action!");
+                    Serial.println("QUEUE ACTION:: manage sound step mods queue action!");
 
                     // save, load
                     if (XRSound::patternSoundStepModsDirty) {
@@ -1124,11 +1161,11 @@ namespace XRSequencer
 
                     queueAction = QUEUE_ACTION::MANAGE_PATTERNS;
 
-                    Serial.println("INFO: manage sound step mods queue action DONE!");
+                    Serial.println("QUEUE ACTION:: manage sound step mods queue action DONE!");
 
                     break;
                 case QUEUE_ACTION::MANAGE_PATTERNS:
-                    Serial.println("INFO: manage patterns queue action!");
+                    Serial.println("QUEUE ACTION:: manage patterns queue action!");
 
                     // save, load
                     XRSD::saveActivePatternToSdCard();
@@ -1139,11 +1176,11 @@ namespace XRSequencer
 
                     queueAction = QUEUE_ACTION::MANAGE_TRACK_LAYERS;
 
-                    Serial.println("INFO: manage patterns queue action DONE!");
+                    Serial.println("QUEUE ACTION:: manage patterns queue action DONE!");
 
                     break;
                 case QUEUE_ACTION::MANAGE_TRACK_LAYERS:
-                    Serial.println("INFO: manage track layers queue action!");
+                    Serial.println("QUEUE ACTION:: manage track layers queue action!");
 
                     // save, load
                     XRSD::saveActiveTrackLayerToSdCard();
@@ -1154,11 +1191,11 @@ namespace XRSequencer
 
                     queueAction = QUEUE_ACTION::MANAGE_TRACK_LAYER_STEP_MODS;
 
-                    Serial.println("INFO: manage track layers queue action DONE!");
+                    Serial.println("QUEUE ACTION:: manage track layers queue action DONE!");
 
                     break;
                 case QUEUE_ACTION::MANAGE_TRACK_LAYER_STEP_MODS:
-                    Serial.println("INFO: manage track layer step mods queue action!");
+                    Serial.println("QUEUE ACTION:: manage track layer step mods queue action!");
 
                     // save, load
                     XRSD::saveActiveTrackStepModLayerToSdCard();
@@ -1173,14 +1210,108 @@ namespace XRSequencer
 
                     queueAction = QUEUE_ACTION::DONE;
 
-                    Serial.println("INFO: manage track layer step mods queue action DONE!");
-                    Serial.println("INFO: queue actions ALL DONE!");
+                    Serial.println("QUEUE ACTION:: manage track layer step mods queue action DONE!");
+                    Serial.println("QUEUE ACTION:: queue actions ALL DONE!");
 
                     break;
                 default:
                     break;
             }
         }
+    }
+
+    void forceQueueActions()
+    {
+        auto newBank = _queuedPatternState.lastBank;
+        auto newPattern = _queuedPatternState.lastNumber;
+
+        if (newBank == -1 || newPattern == -1) {
+            Serial.println("ERROR! CANNOT FORCE QUEUE ACTIONS!");
+
+            return;
+        }
+
+        // N/A
+        Serial.println("QUEUE ACTION:: starting queue actions!");
+
+        queueAction = QUEUE_ACTION::MANAGE_SOUNDS;
+
+        Serial.println("QUEUE ACTION:: manage sounds queue action!");
+
+        // save, load
+        
+        if (XRSound::patternSoundsDirty) {
+            XRSD::saveActivePatternSounds();
+        }
+
+        if (!XRSD::loadNextPatternSounds(newBank, newPattern))
+        {
+            XRSound::initNextPatternSounds();
+        }
+
+        Serial.println("QUEUE ACTION:: manage sound queue action DONE!");
+
+        queueAction = QUEUE_ACTION::MANAGE_SOUND_STEP_MODS;
+
+        Serial.println("QUEUE ACTION:: manage sound step mods queue action!");
+
+        // save, load
+        if (XRSound::patternSoundStepModsDirty) {
+            XRSD::saveActiveSoundStepModLayerToSdCard();
+        }
+
+        if (!XRSD::loadPatternSoundStepModLayerFromSdCard(newBank, newPattern, 0)) {
+            XRSound::initPatternSoundStepMods();
+        }
+
+        queueAction = QUEUE_ACTION::MANAGE_PATTERNS;
+
+        Serial.println("QUEUE ACTION:: manage sound step mods queue action DONE!");
+
+        Serial.println("QUEUE ACTION:: manage patterns queue action!");
+
+        // save, load
+        XRSD::saveActivePatternToSdCard();
+
+        if (!XRSD::loadNextPattern(newBank, newPattern)){
+            XRSequencer::initNextPattern();
+        }
+
+        queueAction = QUEUE_ACTION::MANAGE_TRACK_LAYERS;
+
+        Serial.println("QUEUE ACTION:: manage patterns queue action DONE!");
+
+        Serial.println("QUEUE ACTION:: manage track layers queue action!");
+
+        // save, load
+        XRSD::saveActiveTrackLayerToSdCard();
+
+        if (!XRSD::loadNextTrackLayer(newBank, newPattern, 0)){
+            XRSequencer::initNextTrackLayer();
+        }
+
+        queueAction = QUEUE_ACTION::MANAGE_TRACK_LAYER_STEP_MODS;
+
+        Serial.println("QUEUE ACTION:: manage track layers queue action DONE!");
+
+        Serial.println("QUEUE ACTION:: manage track layer step mods queue action!");
+
+        // save, load
+        XRSD::saveActiveTrackStepModLayerToSdCard();
+        
+        if (!XRSD::loadActiveTrackStepModLayerFromSdCard(newBank, newPattern, 0)) {
+            XRSequencer::initActiveTrackStepModLayer();
+        }
+
+        // load next dexed instances
+        XRSound::loadNextDexedInstances();
+        XRAsyncPSRAMLoader::startAsyncInitOfNextSamples();
+
+        queueAction = QUEUE_ACTION::DONE;
+
+        Serial.println("QUEUE ACTION:: manage track layer step mods queue action DONE!");
+        Serial.println("QUEUE ACTION:: queue actions ALL DONE!");
+
     }
 
     void handlePatternDequeueActions()
@@ -1201,7 +1332,19 @@ namespace XRSequencer
         {
             Serial.println("enter _dequeuePattern!");
 
-            _dequeuePattern = false;
+            if (queueAction != QUEUE_ACTION::DONE) {
+                Serial.println("ERROR! CANNOT DEQUEUE PATTERN!");
+
+                return;
+            }
+
+            dequeuePattern();
+        }
+    }
+
+    void dequeuePattern()
+    {
+        _dequeuePattern = false;
             if (_dequeueLoadNewPatternSamples)
                 XRAsyncPSRAMLoader::prePatternChange();
 
@@ -1219,6 +1362,8 @@ namespace XRSequencer
             Serial.println("finished swapping seq mem!");
 
             // reset queue flags
+            _queuedPatternState.lastBank = _queuedPatternState.bank;
+            _queuedPatternState.lastNumber = _queuedPatternState.number;
             _queuedPatternState.bank = -1;
             _queuedPatternState.number = -1;
             _drawPatternQueueBlink = -1;
@@ -1247,7 +1392,6 @@ namespace XRSequencer
             }
 
             XRDisplay::drawSequencerScreen(false);
-        }
     }
 
     void handleTrackLayerDequeueActions()

@@ -103,6 +103,8 @@ namespace XRSequencer
     {
         int8_t bank = -1;
         int8_t number = -1;
+        int8_t lastBank = -1;
+        int8_t lastNumber = -1;
     } QUEUED_PATTERN_STATE;
 
     enum SEQUENCER_PLAYBACK_STATE : uint8_t
@@ -268,6 +270,8 @@ namespace XRSequencer
     void handlePatternDequeueActions();
     void handleTrackLayerDequeueActions();
     void queuePattern(int pattern, int bank);
+    void dequeuePattern();
+    void forceQueueActions();
 
     void setSelectedPattern(int8_t pattern);
     void setSelectedTrack(int8_t track);
