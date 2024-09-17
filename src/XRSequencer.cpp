@@ -8,7 +8,6 @@
 #include <XRClock.h>
 #include <XRAudio.h>
 #include <map>
-#include <XRAsyncPSRAMLoader.h>
 
 namespace XRSequencer
 {
@@ -37,7 +36,6 @@ namespace XRSequencer
 
     bool _recording = false;
     bool _dequeuePattern = false;
-    bool _dequeueLoadNewPatternSamples = false;
     bool _patternQueueBlinked = false;
     bool _dequeueTrackLayer = false;
     bool _trackLayerBlinked = false;
@@ -907,9 +905,6 @@ namespace XRSequencer
                 if (_queuedPatternState.bank > -1 && _queuedPatternState.number > -1)
                 {
                     _dequeuePattern = true;
-                    if (!_dequeueLoadNewPatternSamples) {
-                        _dequeueLoadNewPatternSamples = true;
-                    }
                 } else if (_queuedTrackLayer > -1)
                 {
                     _dequeueTrackLayer = true;
@@ -1086,8 +1081,6 @@ namespace XRSequencer
             Serial.println("enter _dequeuePattern!");
 
             _dequeuePattern = false;
-            if (_dequeueLoadNewPatternSamples)
-                XRAsyncPSRAMLoader::prePatternChange();
 
             // IMPORTANT: must change sounds before changing sequencer data!
             XRSound::saveSoundDataForPatternChange(); // make sure current sounds are saved first
@@ -1096,10 +1089,6 @@ namespace XRSequencer
 
             XRDexedManager::swapInstances();
 
-            if (_dequeueLoadNewPatternSamples) {
-                XRAsyncPSRAMLoader::postPatternChange();
-                _dequeueLoadNewPatternSamples = false;
-            }
             Serial.println("finished swapping seq mem!");
 
             // reset queue flags

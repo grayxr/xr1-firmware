@@ -4,7 +4,6 @@
 #include <Arduino.h>
 #include <XRConfig.h>
 #include <XRSound.h>
-#include <TeensyVariablePlayback.h>
 #include <Entropy.h>
 
 namespace XRSequencer

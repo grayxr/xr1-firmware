@@ -9,23 +9,10 @@
 #include <XRHelpers.h>
 #include <string>
 #include <map>
-#ifdef BUILD_FOR_LINUX
-#include "u8g2_opengl.h"
-#include "u8g2_opengl_main.h"
-#include <Wire.h>
-#include <Keypad.h>
-#include "XRKeyMatrix.h"
-#include "XRVersa.h"
-#include "XRLED.h"
-#endif
+
 namespace XRDisplay
 {
-#ifdef BUILD_FOR_LINUX
-    XR1Model xr1(XRKeyMatrix::kpd, XRLED::tlc);
-    U8G2_128X64_OPENGL<TwoWire, Keypad, Adafruit_MPR121> u8g2(&xr1,U8G2_R0, /* clock=*/ 13, /* data=*/ 11, /* cs=*/ 10, /* dc=*/ 14, /* reset=*/ 15, &Wire1, &XRKeyMatrix::kpd, &XRVersa::mpr121_a);
-#else
     U8G2_SSD1309_128X64_NONAME0_F_4W_SW_SPI u8g2(U8G2_R0, /* clock=*/13, /* data=*/11, /* cs=*/10, /* dc=*/14, /* reset=*/15);
-#endif
 
     void init()
     {

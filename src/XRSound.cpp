@@ -6,16 +6,12 @@
 #include <XRCV.h>
 #include <XRSD.h>
 #include <XRKeyMatrix.h>
-#include <dualheapasyncflashloader.h>
 #include <map>
-#include <XRAsyncPSRAMLoader.h>
 
 namespace XRSound
 {
     // private variables
 
-    // 8MB max of samples per pattern in external PSRAM, 1 sample allowed per track for now    
-    newdigate::dualheapasyncflashloader _loader;
     uint8_t _numChannels = 1;
 
     bool patternSoundsDirty = false;
@@ -523,6 +519,7 @@ namespace XRSound
         {
             monoSampleInstances[i].sample.setPlaybackRate(msmpSamplePlayRate);
             monoSampleInstances[i].sample.enableInterpolation(true);
+            monoSampleInstances[i].sample.setBufferInPSRAM(true);
 
             monoSampleInstances[i].ampEnv.attack(msmpAatt);
             monoSampleInstances[i].ampEnv.decay(msmpAdec);
@@ -732,8 +729,8 @@ namespace XRSound
         voiceSubMixRight3.gain(1, 1);
         voiceSubMixLeft3.gain(2, 1);
         voiceSubMixRight3.gain(2, 1);
-        voiceSubMixLeft3.gain(3, 0); // BRAIDS DOES NOT WORK
-        voiceSubMixRight3.gain(3, 0); // BRAIDS DOES NOT WORK
+        voiceSubMixLeft3.gain(3, 1);
+        voiceSubMixRight3.gain(3, 1);
 
         voiceSubMixLeft4.gain(0, 1);
         voiceSubMixRight4.gain(0, 1);
@@ -1010,11 +1007,6 @@ namespace XRSound
 
     void loadSoundDataForPatternChange(int nextBank, int nextPattern)
     {
-        // if (!XRSD::loadNextPatternSounds(nextBank, nextPattern))
-        // {
-        //     initNextPatternSounds();
-        // }
-
         if (!XRSD::loadPatternSoundStepModLayerFromSdCard(nextBank, nextPattern, 0)) {
             initPatternSoundStepMods();
         }
@@ -1029,14 +1021,10 @@ namespace XRSound
                 if (tracks[t].initialized) {
                     setSoundNeedsReinit(t, true); // reinit sound asynchronously since the upcoming track is active
                 } else {
-                    // TODO: try having 8 total dexed instances, and have 4 of them be used for pattern changes
-                    // so that loading voices doesn't cut out the sound
                     reinitSoundForTrack(t); // reinit sound synchronously since the upcoming track is inactive?
                 }
             }
         } else {
-            XRAsyncPSRAMLoader::startAsyncInitOfNextSamples();
-
             for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
             {
                 reinitSoundForTrack(t); // reinit all sounds synchronously since the sequencer isn't running
@@ -2066,19 +2054,12 @@ namespace XRSound
 
         std::string trackSampleName(activePatternSounds[track].sampleName);
 
-        // if sample has valid name, assume it is loaded in PSRAM and can be played
         if (trackSampleName.length() > 0) {
-            const auto &sampleName = std::string("/audio enjoyer/xr-1/samples/") + std::string(trackSampleName);
+            const auto sampleName = std::string("/audio enjoyer/xr-1/samples/") + std::string(trackSampleName);
 
-            newdigate::audiosample *sample = XRAsyncPSRAMLoader::getReadSample(&sampleName);
-            if (sample != nullptr) {
-                monoSampleInstances[track].sample.playRaw(
-                    sample->sampledata,
-                    sample->samplesize / 2,
-                    _numChannels
-                );
-            }
+            monoSampleInstances[track].sample.playWav(sampleName.c_str());
         }
+
         AudioNoInterrupts();
 
         // always re-initialize loop type
@@ -2387,7 +2368,6 @@ namespace XRSound
         
         AudioInterrupts();
 
-        // if sample has valid name, assume it is loaded in PSRAM and can be played
         std::string sampleToUse = hasFirstSample ? trackSampleName : "";
         if (hasSecondSample && stepToUse.state == XRSequencer::STATE_ACCENTED) 
         {
@@ -2397,16 +2377,9 @@ namespace XRSound
         monoSampleInstances[track].ampEnv.noteOn();
 
         if (sampleToUse.length() > 0) {
-            const auto &sampleName = std::string("/audio enjoyer/xr-1/samples/") + std::string(sampleToUse);
+            const auto sampleName = std::string("/audio enjoyer/xr-1/samples/") + std::string(sampleToUse);
 
-            newdigate::audiosample *sample = XRAsyncPSRAMLoader::getReadSample(&sampleName);
-            if (sample != nullptr) {
-                monoSampleInstances[track].sample.playRaw(
-                    sample->sampledata,
-                    sample->samplesize / 2,
-                    _numChannels
-                );
-            }
+            monoSampleInstances[track].sample.playWav(sampleName.c_str());
         }
 
         AudioNoInterrupts();
@@ -2963,9 +2936,6 @@ namespace XRSound
 
     void assignSampleToTrackSound()
     {
-        // TODO: impl async loading so there's no audible SPI noise from reading the SD card
-        // also, impl freeing any existing sample from the track and loading the new sample (if changing sample)
-
         auto track = XRSequencer::getCurrentSelectedTrackNum();
         auto activeSampleSlot = XRSD::getActiveSampleSlot();
         std::string selected = XRSD::getCurrSampleFileHighlighted();
@@ -2977,8 +2947,6 @@ namespace XRSound
             } else {
                 strcpy(activePatternSounds[track].sampleNameB, "");
             }
-
-            // TODO: remove any samples in current slot from PSRAM
 
             patternSoundsDirty = true;
 
@@ -2992,13 +2960,6 @@ namespace XRSound
             strcpy(activePatternSounds[track].sampleName, selected.c_str());
         } else {
             strcpy(activePatternSounds[track].sampleNameB, selected.c_str());
-        }
-
-        // TODO: Nic: when playing, we want to do it async - code below is fine when sequencer is not playing
-        if (XRSequencer::getSeqState().playbackState == XRSequencer::RUNNING) {
-            XRAsyncPSRAMLoader::addSampleFileNameForCurrentReadHeap(sampleNameStr);
-        } else {
-            XRAsyncPSRAMLoader::loadSampleSync(&sampleNameStr);
         }
 
         patternSoundsDirty = true;
@@ -3098,7 +3059,6 @@ namespace XRSound
 
         AudioInterrupts();
 
-        // if sample has valid name, assume it is loaded in PSRAM and can be played
         std::string sampleToUse = hasFirstSample ? trackSampleName : "";
         if (hasSecondSample && accented) 
         {
@@ -3108,16 +3068,9 @@ namespace XRSound
         monoSampleInstances[t].ampEnv.noteOn();
 
         if (sampleToUse.length() > 0) {
-            const auto &sampleName = std::string("/audio enjoyer/xr-1/samples/") + std::string(sampleToUse);
+            const auto sampleName = std::string("/audio enjoyer/xr-1/samples/") + std::string(sampleToUse);
 
-            newdigate::audiosample *sample = XRAsyncPSRAMLoader::getReadSample(&sampleName);
-            if (sample != nullptr) {
-                monoSampleInstances[t].sample.playRaw(
-                    sample->sampledata,
-                    sample->samplesize / 2,
-                    _numChannels
-                );
-            }
+            monoSampleInstances[t].sample.playWav(sampleName.c_str());
         }
 
         AudioNoInterrupts();

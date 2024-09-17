@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <XRSD.h>
 #include <string>
-#include <XRAsyncPSRAMLoader.h>
 #include <XRHelpers.h>
 #include <XRDisplay.h>
 #include <XRKeyInput.h>
@@ -374,8 +373,6 @@ namespace XRSD
 
         loadActivePatternSounds();
         XRSound::applyActivePatternSounds();
-
-        XRAsyncPSRAMLoader::startAsyncInitOfCurrentSamples();
 
         loadPatternSoundStepModLayerFromSdCard(
             XRSequencer::getCurrentSelectedBankNum(),

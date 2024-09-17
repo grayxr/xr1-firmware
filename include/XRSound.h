@@ -158,7 +158,7 @@ namespace XRSound
     class MonoSampleInstance
     {
     public:
-        AudioPlayArrayResmp &sample;
+        AudioPlaySdResmp &sample;
         AudioEffectEnvelope &ampEnv;
         AudioAmplifier &ampAccent;
         AudioAmplifier &amp;
@@ -167,7 +167,7 @@ namespace XRSound
         AudioAmplifier &right;
 
         MonoSampleInstance(
-            AudioPlayArrayResmp &sample,
+            AudioPlaySdResmp &sample,
             AudioEffectEnvelope &ampEnv,
             AudioAmplifier &ampAccent,
             AudioAmplifier &amp,

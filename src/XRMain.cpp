@@ -1,4 +1,3 @@
-#include <XRAsyncPSRAMLoader.h>
 #include <XRMain.h>
 #include <XRHelpers.h>
 #include <XRSequencer.h>
@@ -70,7 +69,6 @@ namespace XRMain
 
     void update()
     {
-        XRAsyncPSRAMLoader::handleAsyncPSRAMLoading();
         XRAudio::handleHeadphones();
         XRKeyMatrix::handleStates(false);
         XRVersa::handleStates();

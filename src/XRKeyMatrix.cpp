@@ -8,7 +8,6 @@
 #include <XRMenu.h>
 #include <XRClock.h>
 #include <map>
-#include <XRAsyncPSRAMLoader.h>
 
 namespace XRKeyMatrix
 {
@@ -328,8 +327,6 @@ namespace XRKeyMatrix
                     XRSequencer::initNextTrackLayer();
                 }
 
-                XRAsyncPSRAMLoader::startAsyncInitOfNextSamples();
-
                 XRLED::clearAllStepLEDs();
                 XRDisplay::drawSequencerScreen(false);
             } else {
@@ -361,7 +358,6 @@ namespace XRKeyMatrix
                 // save any track step mods for current pattern to SD
                 XRSD::saveCurrentSequencerData();
                 XRSequencer::swapSequencerMemoryForPattern(nextBank, nextPattern);
-                XRAsyncPSRAMLoader::prePatternChange();
 
                 // swap dexed instances so inactive = active and vice versa
                 XRDexedManager::swapInstances();
@@ -461,8 +457,6 @@ namespace XRKeyMatrix
                     XRSequencer::initNextTrackLayer();
                 }
 
-                XRAsyncPSRAMLoader::startAsyncInitOfNextSamples();
-
                 XRLED::clearAllStepLEDs();
                 XRDisplay::drawSequencerScreen(false);
             } else {
@@ -495,7 +489,6 @@ namespace XRKeyMatrix
                 // save any track step mods for current pattern to SD
                 XRSD::saveCurrentSequencerData();
                 XRSequencer::swapSequencerMemoryForPattern(nextBank, nextPattern);
-                XRAsyncPSRAMLoader::prePatternChange();
 
                 // swap dexed instances so inactive = active and vice versa
                 XRDexedManager::swapInstances();
