@@ -408,7 +408,7 @@ namespace XRSound
 
     extern MonoSampleInstance monoSampleInstances[MAXIMUM_MONO_SAMPLE_SOUNDS];
     extern MonoSynthInstance monoSynthInstances[MAXIMUM_MONO_SYNTH_SOUNDS];
-    extern DexedInstance dexedInstances[MAXIMUM_DEXED_SYNTH_SOUNDS];
+    extern DexedInstance dexedInstances[MAXIMUM_DEXED_INSTANCES];
     // extern BraidsInstance braidsInstances[MAXIMUM_BRAIDS_SYNTH_SOUNDS];
     extern FmDrumInstance fmDrumInstances[MAXIMUM_FM_DRUM_SOUNDS];
 

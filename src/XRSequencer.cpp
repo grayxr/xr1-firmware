@@ -862,8 +862,8 @@ namespace XRSequencer
                     AudioNoInterrupts();
                     XRSound::dexedInstances[a].amp.gain(1);
                     XRSound::dexedInstances[in].amp.gain(0);
-                    XRSound::dexedInstances[in].dexed.notesOff();
                     AudioInterrupts();
+                    XRSound::dexedInstances[in].dexed.notesOff();
                 }
             }
 
@@ -1115,8 +1115,6 @@ namespace XRSequencer
         }
 
         if (_queuedPatternState.bank > -1 && _queuedPatternState.number > -1 && queueAction != QUEUE_ACTION::DONE) {
-            delay(2);
-
             auto newBank = _queuedPatternState.bank;
             auto newPattern = _queuedPatternState.number;
 
@@ -1345,53 +1343,54 @@ namespace XRSequencer
     void dequeuePattern()
     {
         _dequeuePattern = false;
-            if (_dequeueLoadNewPatternSamples)
-                XRAsyncPSRAMLoader::prePatternChange();
 
-            // IMPORTANT: must change sounds before changing sequencer data!
-            //XRSound::saveSoundDataForPatternChange(); // make sure current sounds are saved first
-            XRSound::prepareSoundDataForPatternChange(_queuedPatternState.bank, _queuedPatternState.number);
-            swapSequencerMemoryForPattern(_queuedPatternState.bank, _queuedPatternState.number);
+        if (_dequeueLoadNewPatternSamples)
+            XRAsyncPSRAMLoader::prePatternChange();
 
-            XRDexedManager::swapInstances();
+        // IMPORTANT: must change sounds before changing sequencer data!
+        //XRSound::saveSoundDataForPatternChange(); // make sure current sounds are saved first
+        XRSound::prepareSoundDataForPatternChange(_queuedPatternState.bank, _queuedPatternState.number);
+        swapSequencerMemoryForPattern(_queuedPatternState.bank, _queuedPatternState.number);
 
-            if (_dequeueLoadNewPatternSamples) {
-                XRAsyncPSRAMLoader::postPatternChange();
-                _dequeueLoadNewPatternSamples = false;
-            }
-            Serial.println("finished swapping seq mem!");
+        XRDexedManager::swapInstances();
 
-            // reset queue flags
-            _queuedPatternState.lastBank = _queuedPatternState.bank;
-            _queuedPatternState.lastNumber = _queuedPatternState.number;
-            _queuedPatternState.bank = -1;
-            _queuedPatternState.number = -1;
-            _drawPatternQueueBlink = -1;
-            //_patternQueueBlinked = false;
+        if (_dequeueLoadNewPatternSamples) {
+            XRAsyncPSRAMLoader::postPatternChange();
+            _dequeueLoadNewPatternSamples = false;
+        }
+        Serial.println("finished swapping seq mem!");
 
-            _currentStepPage = 1;
-            _currentSelectedPage = 0;
-            //_currentSelectedTrack = 0;
+        // reset queue flags
+        _queuedPatternState.lastBank = _queuedPatternState.bank;
+        _queuedPatternState.lastNumber = _queuedPatternState.number;
+        _queuedPatternState.bank = -1;
+        _queuedPatternState.number = -1;
+        _drawPatternQueueBlink = -1;
+        //_patternQueueBlinked = false;
 
-            auto currentUXMode = XRUX::getCurrentMode();
-            if (currentUXMode == XRUX::PATTERN_CHANGE_QUEUED) {
-                XRLED::clearAllStepLEDs();
+        _currentStepPage = 1;
+        _currentSelectedPage = 0;
+        //_currentSelectedTrack = 0;
 
-                XRUX::setCurrentMode(XRUX::PATTERN_WRITE);
-            }
-            else if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE)
-            {
-                int lastStep = activeTrackLayer.tracks[_currentSelectedTrack].lstep;
+        auto currentUXMode = XRUX::getCurrentMode();
+        if (currentUXMode == XRUX::PATTERN_CHANGE_QUEUED) {
+            XRLED::clearAllStepLEDs();
 
-                XRLED::displayPageLEDs(
-                    1,
-                    (_seqState.playbackState == RUNNING),
-                    _currentStepPage,
-                    lastStep // TODO need?
-                );
-            }
+            XRUX::setCurrentMode(XRUX::PATTERN_WRITE);
+        }
+        else if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE)
+        {
+            int lastStep = activeTrackLayer.tracks[_currentSelectedTrack].lstep;
 
-            XRDisplay::drawSequencerScreen(false);
+            XRLED::displayPageLEDs(
+                1,
+                (_seqState.playbackState == RUNNING),
+                _currentStepPage,
+                lastStep // TODO need?
+            );
+        }
+
+        XRDisplay::drawSequencerScreen(false);
     }
 
     void handleTrackLayerDequeueActions()

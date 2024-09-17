@@ -14,7 +14,7 @@ namespace XRSound
 {
     // private variables
 
-    // 8MB max of samples per pattern in external PSRAM, 1 sample allowed per track for now    
+    // 8MB max of samples per pattern in external PSRAM, 2 samples allowed per track for now    
     newdigate::dualheapasyncflashloader _loader;
     uint8_t _numChannels = 1;
 
@@ -222,7 +222,7 @@ namespace XRSound
         ),
     };
 
-    DexedInstance dexedInstances[MAXIMUM_DEXED_SYNTH_SOUNDS] = {
+    DexedInstance dexedInstances[MAXIMUM_DEXED_INSTANCES] = {
         DexedInstance(dexed1, dexedAmpAccent1, dexedAmp1, dexedAmpDelaySend1, dexedLeft1, dexedRight1),
         DexedInstance(dexed2, dexedAmpAccent2, dexedAmp2, dexedAmpDelaySend2, dexedLeft2, dexedRight2),
         DexedInstance(dexed3, dexedAmpAccent3, dexedAmp3, dexedAmpDelaySend3, dexedLeft3, dexedRight3),
@@ -346,7 +346,7 @@ namespace XRSound
         {T_EMPTY, MAXIMUM_SEQUENCER_TRACKS},
         {T_MONO_SAMPLE, MAXIMUM_MONO_SAMPLE_SOUNDS},
         {T_MONO_SYNTH, MAXIMUM_MONO_SYNTH_SOUNDS},
-        {T_DEXED_SYNTH, MAXIMUM_DEXED_SYNTH_SOUNDS},
+        {T_DEXED_SYNTH, MAXIMUM_DEXED_INSTANCES},
         {T_BRAIDS_SYNTH, MAXIMUM_BRAIDS_SYNTH_SOUNDS},
         {T_FM_DRUM, MAXIMUM_FM_DRUM_SOUNDS},
         {T_MIDI, MAXIMUM_SEQUENCER_TRACKS},
@@ -601,7 +601,7 @@ namespace XRSound
         auto dexePan = getValueNormalizedAsFloat(dexedSynthInitParams[DEXE_PAN]);
         auto dexeDly = getValueNormalizedAsFloat(dexedSynthInitParams[DEXE_DELAY]);
 
-        for (int d=0; d<MAXIMUM_DEXED_SYNTH_SOUNDS; d++)
+        for (int d=0; d<MAXIMUM_DEXED_INSTANCES; d++)
         {
             dexedInstances[d].dexed.loadInitVoice();
 
@@ -1010,15 +1010,6 @@ namespace XRSound
 
     void prepareSoundDataForPatternChange(int nextBank, int nextPattern)
     {
-        // if (!XRSD::loadNextPatternSounds(nextBank, nextPattern))
-        // {
-        //     initNextPatternSounds();
-        // }
-
-        // if (!XRSD::loadPatternSoundStepModLayerFromSdCard(nextBank, nextPattern, 0)) {
-        //     initPatternSoundStepMods();
-        // }
-
         auto &seqState = XRSequencer::getSeqState();
 
         if (seqState.playbackState == XRSequencer::SEQUENCER_PLAYBACK_STATE::RUNNING) {
@@ -2745,7 +2736,7 @@ namespace XRSound
 
     void turnOffAllSounds()
     {
-        for (size_t d = 0; d < MAXIMUM_DEXED_SYNTH_SOUNDS; d++) {
+        for (size_t d = 0; d < MAXIMUM_DEXED_INSTANCES; d++) {
             dexedInstances[d].dexed.notesOff();
         }
 
