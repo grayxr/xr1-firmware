@@ -52,14 +52,14 @@ namespace XRSD
     bool loadActiveTrackStepModLayerFromSdCard(int bank, int pattern, int layer);
     void saveActiveTrackStepModLayerToSdCard();
 
-    bool loadActivePatternSounds();
-    void saveActivePatternSounds();
+    bool loadActiveSounds();
+    void saveActiveSounds();
 
     void applyActivePatternGroove();
 
     bool loadNextPatternSounds(int bank, int pattern);
-    bool loadPatternSoundStepModLayerFromSdCard(int bank, int pattern, int layer);
-    void saveActiveSoundStepModLayerToSdCard();
+    bool loadSoundModLayerFromSdCard(int bank, int pattern, int layer);
+    void saveActiveSoundModLayerToSdCard();
 
     void loadDexedVoiceToCurrentTrack(int t = -1);
 

@@ -413,9 +413,11 @@ namespace XRLED
 
     void displayInitializedTrackLEDs()
     {
+        auto &currLayer = XRSequencer::getCurrentSelectedTrackLayer();
+
         for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
         {
-            if (XRSequencer::activeTrackLayer.tracks[t].initialized)
+            if (currLayer.tracks[t].initialized)
             {
                 setPWM(_stepLEDPins[t], 4095);
             }

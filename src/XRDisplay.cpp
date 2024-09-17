@@ -495,7 +495,7 @@ namespace XRDisplay
             currentUXMode == XRUX::SUBMITTING_STEP_VALUE)
         {
             auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-            auto currSoundForTrack = XRSound::activePatternSounds[currTrackNum];
+            auto currSoundForTrack = XRSound::activeSounds[currTrackNum];
 
             // draw track meta type box
             int trackMetaStrX = 3;
@@ -759,7 +759,7 @@ namespace XRDisplay
     {
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currPageSelected = XRSequencer::getCurrentSelectedPage();
-        auto currSoundForTrack = XRSound::activePatternSounds[currTrackNum];
+        auto currSoundForTrack = XRSound::activeSounds[currTrackNum];
 
         if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 4)
         {
@@ -1116,7 +1116,7 @@ namespace XRDisplay
         cValuePos -= (mods.cValue.length() > 0 ? u8g2.getStrWidth(mods.cValue.c_str()) / 2 : 0);
 
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currSoundForTrack = XRSound::activePatternSounds[currTrackNum];
+        auto currSoundForTrack = XRSound::activeSounds[currTrackNum];
 
         std::string sampleName(currSoundForTrack.sampleName);
         std::string sampleNameB(currSoundForTrack.sampleNameB);
@@ -1198,13 +1198,15 @@ namespace XRDisplay
 
         auto currentSelectedStep = XRSequencer::getCurrentSelectedStepNum();
         auto currentTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+        auto currentLayerNum = XRSequencer::getCurrentSelectedTrackLayerNum();
+        auto &currStep = XRSequencer::activePattern.layers[currentLayerNum].tracks[currentTrackNum].steps[currentSelectedStep];
 
         if (
             XRUX::getCurrentMode() == XRUX::SUBMITTING_STEP_VALUE && currentSelectedStep > -1 &&
-            XRSequencer::activeTrackStepModLayer.tracks[currentTrackNum].steps[currentSelectedStep].flags[XRSequencer::NOTE]
+            currStep.flags[XRSequencer::NOTE]
         ) {
-            auto noteMod = XRSequencer::activeTrackStepModLayer.tracks[currentTrackNum].steps[currentSelectedStep].mods[XRSequencer::NOTE];
-            auto octaveMod = XRSequencer::activeTrackStepModLayer.tracks[currentTrackNum].steps[currentSelectedStep].mods[XRSequencer::OCTAVE];
+            auto noteMod = currStep.mods[XRSequencer::NOTE];
+            auto octaveMod = currStep.mods[XRSequencer::OCTAVE];
 
             outputStr += XRHelpers::getNoteStringForBaseNoteNum(noteMod);
             outputStr += std::to_string(octaveMod);
@@ -1315,7 +1317,7 @@ namespace XRDisplay
 
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
 
-        if (XRSound::activePatternSounds[currTrackNum].type == XRSound::T_DEXED_SYNTH) {
+        if (XRSound::activeSounds[currTrackNum].type == XRSound::T_DEXED_SYNTH) {
             menuItems = XRMenu::getDexedSoundMenuItems();
             menuItemMax = DEXED_SOUND_MENU_ITEM_MAX;
         }

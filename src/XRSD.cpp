@@ -238,8 +238,8 @@ namespace XRSD
         currProjectFile.close();
 
         saveCurrentSequencerData();
-        saveActivePatternSounds();
-        saveActiveSoundStepModLayerToSdCard();
+        saveActiveSounds();
+        saveActiveSoundModLayerToSdCard();
 
         Serial.println("done saving project!");
     }
@@ -289,28 +289,28 @@ namespace XRSD
         patternFileW.write((byte *)&XRSequencer::activePattern, sizeof(XRSequencer::activePattern));
         patternFileW.close();
 
-        std::string trackLayerFilePath = activePatternDir;
-        trackLayerFilePath += "/layers/";
-        trackLayerFilePath += std::to_string(XRSequencer::getCurrentSelectedTrackLayerNum());
+        // std::string trackLayerFilePath = activePatternDir;
+        // trackLayerFilePath += "/layers/";
+        // trackLayerFilePath += std::to_string(XRSequencer::getCurrentSelectedTrackLayerNum());
 
-        // verify lyr dir exists first
-        if (!SD.exists(trackLayerFilePath.c_str()))
-        {
-            if (!SD.mkdir(trackLayerFilePath.c_str()))
-            {
-                XRDisplay::drawError("SD MKDIR ERR!");
-                return;
-            }
-        }
+        // // verify lyr dir exists first
+        // if (!SD.exists(trackLayerFilePath.c_str()))
+        // {
+        //     if (!SD.mkdir(trackLayerFilePath.c_str()))
+        //     {
+        //         XRDisplay::drawError("SD MKDIR ERR!");
+        //         return;
+        //     }
+        // }
 
-        trackLayerFilePath += "/track.bin";
+        // trackLayerFilePath += "/track.bin";
 
-        //Serial.println("Write active pattern track layer binary file to SD card!");
+        // //Serial.println("Write active pattern track layer binary file to SD card!");
 
-        File trackLayerFileW = SD.open(trackLayerFilePath.c_str(), FILE_WRITE);
-        trackLayerFileW.truncate();
-        trackLayerFileW.write((byte *)&XRSequencer::activeTrackLayer, sizeof(XRSequencer::activeTrackLayer));
-        trackLayerFileW.close();
+        // File trackLayerFileW = SD.open(trackLayerFilePath.c_str(), FILE_WRITE);
+        // trackLayerFileW.truncate();
+        // trackLayerFileW.write((byte *)&XRSequencer::activeTrackLayer, sizeof(XRSequencer::activeTrackLayer));
+        // trackLayerFileW.close();
 
         saveActiveTrackStepModLayerToSdCard();
     }
@@ -355,26 +355,14 @@ namespace XRSD
             return false;
         }
 
-        if (!loadActiveTrackLayer()) {
-            XRDisplay::drawError("FAILED TO LOAD TRACK LAYER DATA!");
-            delay(1000);
-            return false;
-        }
-
-        loadActiveTrackStepModLayerFromSdCard(
-            XRSequencer::getCurrentSelectedBankNum(),
-            XRSequencer::getCurrentSelectedPatternNum(),
-            XRSequencer::getCurrentSelectedTrackLayerNum()
-        );
-
         applyActivePatternGroove();
 
         XRSound::init();
 
-        loadActivePatternSounds();
-        XRSound::applyActivePatternSounds();
+        loadActiveSounds();
+        XRSound::applyActiveSounds();
 
-        loadPatternSoundStepModLayerFromSdCard(
+        loadSoundModLayerFromSdCard(
             XRSequencer::getCurrentSelectedBankNum(),
             XRSequencer::getCurrentSelectedPatternNum(),
             XRSequencer::getCurrentSelectedTrackLayerNum()
@@ -448,192 +436,206 @@ namespace XRSD
 
     bool loadActiveTrackLayer()
     {
-        // get project path
-        char sProjectsPathPrefixBuf[50];
-        XRHelpers::getProjectsDir(sProjectsPathPrefixBuf);
-        std::string sProjectPath(sProjectsPathPrefixBuf); // read char array into string
-
-        // track layer file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/layers/{layer}/track.bin
-        std::string baseDir = sProjectPath;
-        baseDir += "/";
-        baseDir += _current_project.name;
-        baseDir += "/.data/sequencer/banks/0/patterns/0/layers/0/track.bin";
-
-        Serial.print("attempt to read active track layer file from path: ");
-        Serial.println(baseDir.c_str());
-
-        // verify active pattern file path exists first
-        if (!SD.exists(baseDir.c_str()))
-        {
-            Serial.println("active track layer file does not exist!");
-
-            return false;
-        }
-
-        File trackLayerFileR = SD.open(baseDir.c_str(), FILE_READ);
-        trackLayerFileR.read((byte *)&XRSequencer::activeTrackLayer, sizeof(XRSequencer::activeTrackLayer));
-        trackLayerFileR.close();
-
-        //Serial.printf("sizeof(activeTrackLayer): %d\n", sizeof(XRSequencer::activeTrackLayer));
+        Serial.println("loadActiveTrackLayer not needed?");
 
         return true;
+
+        // // get project path
+        // char sProjectsPathPrefixBuf[50];
+        // XRHelpers::getProjectsDir(sProjectsPathPrefixBuf);
+        // std::string sProjectPath(sProjectsPathPrefixBuf); // read char array into string
+
+        // // track layer file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/layers/{layer}/track.bin
+        // std::string baseDir = sProjectPath;
+        // baseDir += "/";
+        // baseDir += _current_project.name;
+        // baseDir += "/.data/sequencer/banks/0/patterns/0/layers/0/track.bin";
+
+        // Serial.print("attempt to read active track layer file from path: ");
+        // Serial.println(baseDir.c_str());
+
+        // // verify active pattern file path exists first
+        // if (!SD.exists(baseDir.c_str()))
+        // {
+        //     Serial.println("active track layer file does not exist!");
+
+        //     return false;
+        // }
+
+        // File trackLayerFileR = SD.open(baseDir.c_str(), FILE_READ);
+        // trackLayerFileR.read((byte *)&XRSequencer::activeTrackLayer, sizeof(XRSequencer::activeTrackLayer));
+        // trackLayerFileR.close();
+
+        // //Serial.printf("sizeof(activeTrackLayer): %d\n", sizeof(XRSequencer::activeTrackLayer));
+
+        // return true;
     }
 
     void saveActiveTrackLayerToSdCard()
     {
-        // get project path
-        char projectsPathPrefixBuf[50];
-        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
-        std::string projectPath(projectsPathPrefixBuf); // read char array into string
+        Serial.println("saveActiveTrackLayerToSdCard not needed?");
 
-        // track layer file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/layers/{layer}/track.bin
-        std::string baseDir = projectPath;
-        baseDir += "/";
-        baseDir += _current_project.name;
-        baseDir += "/.data/sequencer/banks/";
-        baseDir += std::to_string(XRSequencer::getCurrentSelectedBankNum());
+        return;
+        
+        // // get project path
+        // char projectsPathPrefixBuf[50];
+        // XRHelpers::getProjectsDir(projectsPathPrefixBuf);
+        // std::string projectPath(projectsPathPrefixBuf); // read char array into string
 
-        // verify bnk dir exists first
-        if (!SD.exists(baseDir.c_str()))
-        {
-            if (!SD.mkdir(baseDir.c_str()))
-            {
-                XRDisplay::drawError("SD MKDIR ERR!");
-                return;
-            }
-        }
+        // // track layer file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/layers/{layer}/track.bin
+        // std::string baseDir = projectPath;
+        // baseDir += "/";
+        // baseDir += _current_project.name;
+        // baseDir += "/.data/sequencer/banks/";
+        // baseDir += std::to_string(XRSequencer::getCurrentSelectedBankNum());
 
-        baseDir += "/patterns/";
-        baseDir += std::to_string(XRSequencer::getCurrentSelectedPatternNum());
+        // // verify bnk dir exists first
+        // if (!SD.exists(baseDir.c_str()))
+        // {
+        //     if (!SD.mkdir(baseDir.c_str()))
+        //     {
+        //         XRDisplay::drawError("SD MKDIR ERR!");
+        //         return;
+        //     }
+        // }
 
-        // verify ptn dir exists first
-        if (!SD.exists(baseDir.c_str()))
-        {
-            if (!SD.mkdir(baseDir.c_str()))
-            {
-                XRDisplay::drawError("SD MKDIR ERR!");
-                return;
-            }
-        }
+        // baseDir += "/patterns/";
+        // baseDir += std::to_string(XRSequencer::getCurrentSelectedPatternNum());
 
-        baseDir += "/layers/";
-        baseDir += std::to_string(XRSequencer::getCurrentSelectedTrackLayerNum());
+        // // verify ptn dir exists first
+        // if (!SD.exists(baseDir.c_str()))
+        // {
+        //     if (!SD.mkdir(baseDir.c_str()))
+        //     {
+        //         XRDisplay::drawError("SD MKDIR ERR!");
+        //         return;
+        //     }
+        // }
 
-        // verify lyr dir exists first
-        if (!SD.exists(baseDir.c_str()))
-        {
-            if (!SD.mkdir(baseDir.c_str()))
-            {
-                XRDisplay::drawError("SD MKDIR ERR!");
-                return;
-            }
-        }
+        // baseDir += "/layers/";
+        // baseDir += std::to_string(XRSequencer::getCurrentSelectedTrackLayerNum());
 
-        baseDir += "/track.bin";
+        // // verify lyr dir exists first
+        // if (!SD.exists(baseDir.c_str()))
+        // {
+        //     if (!SD.mkdir(baseDir.c_str()))
+        //     {
+        //         XRDisplay::drawError("SD MKDIR ERR!");
+        //         return;
+        //     }
+        // }
 
-        //Serial.print("attempt to write active track layer file to path: ");
-        //Serial.println(baseDir.c_str());
+        // baseDir += "/track.bin";
 
-        File lFile = SD.open(baseDir.c_str(), FILE_WRITE);
-        lFile.truncate();
-        lFile.write((byte *)&XRSequencer::activeTrackLayer, sizeof(XRSequencer::activeTrackLayer));
-        lFile.close();
+        // //Serial.print("attempt to write active track layer file to path: ");
+        // //Serial.println(baseDir.c_str());
 
-        //Serial.printf("sizeof(activeTrackLayer): %d\n", sizeof(XRSequencer::activeTrackLayer));
+        // File lFile = SD.open(baseDir.c_str(), FILE_WRITE);
+        // lFile.truncate();
+        // lFile.write((byte *)&XRSequencer::activeTrackLayer, sizeof(XRSequencer::activeTrackLayer));
+        // lFile.close();
+
+        // //Serial.printf("sizeof(activeTrackLayer): %d\n", sizeof(XRSequencer::activeTrackLayer));
     }
 
     bool loadActiveTrackStepModLayerFromSdCard(int bank, int pattern, int layer)
     {
-        // get project path
-        char mProjectsPathPrefixBuf[50];
-        XRHelpers::getProjectsDir(mProjectsPathPrefixBuf);
-        std::string mProjectPath(mProjectsPathPrefixBuf); // read char array into string
-
-        // track step mod file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/layers/{layer}/track_step_mod.bin
-        std::string baseDir = mProjectPath;
-        baseDir += "/";
-        baseDir += _current_project.name;
-        baseDir += "/.data/sequencer/banks/";
-        baseDir += std::to_string(bank);
-        baseDir += "/patterns/";
-        baseDir += std::to_string(pattern);
-        baseDir += "/layers/";
-        baseDir += std::to_string(layer);
-        baseDir += "/track_step_mod.bin";
-
-        File mFile = SD.open(baseDir.c_str(), FILE_READ);
-        if (!mFile.available()) {
-            Serial.println("no track step mod layer available to load!");
-
-            return false;
-        }
-
-        mFile.read((byte *)&XRSequencer::activeTrackStepModLayer, sizeof(XRSequencer::activeTrackStepModLayer));
-        mFile.close();
-
-        //Serial.printf("sizeof(activeTrackStepModLayer): %d\n", sizeof(XRSequencer::activeTrackStepModLayer));
-        
         return true;
+
+        // // get project path
+        // char mProjectsPathPrefixBuf[50];
+        // XRHelpers::getProjectsDir(mProjectsPathPrefixBuf);
+        // std::string mProjectPath(mProjectsPathPrefixBuf); // read char array into string
+
+        // // track step mod file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/layers/{layer}/track_step_mod.bin
+        // std::string baseDir = mProjectPath;
+        // baseDir += "/";
+        // baseDir += _current_project.name;
+        // baseDir += "/.data/sequencer/banks/";
+        // baseDir += std::to_string(bank);
+        // baseDir += "/patterns/";
+        // baseDir += std::to_string(pattern);
+        // baseDir += "/layers/";
+        // baseDir += std::to_string(layer);
+        // baseDir += "/track_step_mod.bin";
+
+        // File mFile = SD.open(baseDir.c_str(), FILE_READ);
+        // if (!mFile.available()) {
+        //     Serial.println("no track step mod layer available to load!");
+
+        //     return false;
+        // }
+
+        // mFile.read((byte *)&XRSequencer::activeTrackStepModLayer, sizeof(XRSequencer::activeTrackStepModLayer));
+        // mFile.close();
+
+        // //Serial.printf("sizeof(activeTrackStepModLayer): %d\n", sizeof(XRSequencer::activeTrackStepModLayer));
+        
+        // return true;
     }
 
     void saveActiveTrackStepModLayerToSdCard()
     {
-        // get project path
-        char mProjectsPathPrefixBuf[50];
-        XRHelpers::getProjectsDir(mProjectsPathPrefixBuf);
-        std::string mProjectPath(mProjectsPathPrefixBuf); // read char array into string
+        Serial.println("saveActiveTrackStepModLayerToSdCard not needed?");
 
-        // track step mod file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/layers/{layer}/track_step_mod.bin
-        std::string baseDir = mProjectPath;
-        baseDir += "/";
-        baseDir += _current_project.name;
-        baseDir += "/.data/sequencer/banks/";
-        baseDir += std::to_string(XRSequencer::getCurrentSelectedBankNum());
+        return;
 
-        // verify bnk dir exists first
-        if (!SD.exists(baseDir.c_str()))
-        {
-            if (!SD.mkdir(baseDir.c_str()))
-            {
-                XRDisplay::drawError("SD MKDIR ERR!");
-                return;
-            }
-        }
+        // // get project path
+        // char mProjectsPathPrefixBuf[50];
+        // XRHelpers::getProjectsDir(mProjectsPathPrefixBuf);
+        // std::string mProjectPath(mProjectsPathPrefixBuf); // read char array into string
 
-        baseDir += "/patterns/";
-        baseDir += std::to_string(XRSequencer::getCurrentSelectedPatternNum());
+        // // track step mod file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/layers/{layer}/track_step_mod.bin
+        // std::string baseDir = mProjectPath;
+        // baseDir += "/";
+        // baseDir += _current_project.name;
+        // baseDir += "/.data/sequencer/banks/";
+        // baseDir += std::to_string(XRSequencer::getCurrentSelectedBankNum());
 
-        // verify ptn dir exists first
-        if (!SD.exists(baseDir.c_str()))
-        {
-            if (!SD.mkdir(baseDir.c_str()))
-            {
-                XRDisplay::drawError("SD MKDIR ERR!");
-                return;
-            }
-        }
+        // // verify bnk dir exists first
+        // if (!SD.exists(baseDir.c_str()))
+        // {
+        //     if (!SD.mkdir(baseDir.c_str()))
+        //     {
+        //         XRDisplay::drawError("SD MKDIR ERR!");
+        //         return;
+        //     }
+        // }
 
-        baseDir += "/layers/";
-        baseDir += std::to_string(XRSequencer::getCurrentSelectedTrackLayerNum());
+        // baseDir += "/patterns/";
+        // baseDir += std::to_string(XRSequencer::getCurrentSelectedPatternNum());
 
-        // verify lyr dir exists first
-        if (!SD.exists(baseDir.c_str()))
-        {
-            if (!SD.mkdir(baseDir.c_str()))
-            {
-                XRDisplay::drawError("SD MKDIR ERR!");
-                return;
-            }
-        }
+        // // verify ptn dir exists first
+        // if (!SD.exists(baseDir.c_str()))
+        // {
+        //     if (!SD.mkdir(baseDir.c_str()))
+        //     {
+        //         XRDisplay::drawError("SD MKDIR ERR!");
+        //         return;
+        //     }
+        // }
 
-        baseDir += "/track_step_mod.bin";
+        // baseDir += "/layers/";
+        // baseDir += std::to_string(XRSequencer::getCurrentSelectedTrackLayerNum());
 
-        File mFile = SD.open(baseDir.c_str(), FILE_WRITE);
-        mFile.truncate();
-        mFile.write((byte *)&XRSequencer::activeTrackStepModLayer, sizeof(XRSequencer::activeTrackStepModLayer));
-        mFile.close();
+        // // verify lyr dir exists first
+        // if (!SD.exists(baseDir.c_str()))
+        // {
+        //     if (!SD.mkdir(baseDir.c_str()))
+        //     {
+        //         XRDisplay::drawError("SD MKDIR ERR!");
+        //         return;
+        //     }
+        // }
 
-        //Serial.printf("sizeof(activeTrackStepModLayer): %d\n", sizeof(XRSequencer::activeTrackStepModLayer));
+        // baseDir += "/track_step_mod.bin";
+
+        // File mFile = SD.open(baseDir.c_str(), FILE_WRITE);
+        // mFile.truncate();
+        // mFile.write((byte *)&XRSequencer::activeTrackStepModLayer, sizeof(XRSequencer::activeTrackStepModLayer));
+        // mFile.close();
+
+        // //Serial.printf("sizeof(activeTrackStepModLayer): %d\n", sizeof(XRSequencer::activeTrackStepModLayer));
     }
 
     bool loadNextPattern(int bank, int pattern)
@@ -643,7 +645,7 @@ namespace XRSD
         XRHelpers::getProjectsDir(projectsPathPrefixBuf);
         std::string projectPath(projectsPathPrefixBuf); // read char array into string
 
-        // pattern sounds file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/sounds.bin
+        // pattern file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/pattern.bin
         std::string baseDir = projectPath;
         baseDir += "/";
         baseDir += _current_project.name;
@@ -660,54 +662,58 @@ namespace XRSD
             return false;
         }
 
-        patternFile.read((byte *)&XRSequencer::nextPattern, sizeof(XRSequencer::nextPattern));
+        patternFile.read((byte *)&XRSequencer::idlePattern, sizeof(XRSequencer::idlePattern));
         patternFile.close();
 
-        //Serial.printf("sizeof(nextPattern): %d\n", sizeof(XRSequencer::nextPattern));
+        //Serial.printf("sizeof(idlePattern): %d\n", sizeof(XRSequencer::idlePattern));
 
         return true;
     }
 
     bool loadNextTrackLayer(int bank, int pattern, int layer)
     {
-        // get project path
-        char projectsPathPrefixBuf[50];
-        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
-        std::string projectPath(projectsPathPrefixBuf); // read char array into string
-
-        // track layer file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/layers/{layer}/track.bin
-        std::string baseDir = projectPath;
-        baseDir += "/";
-        baseDir += _current_project.name;
-        baseDir += "/.data/sequencer/banks/";
-        baseDir += std::to_string(bank);
-        baseDir += "/patterns/";
-        baseDir += std::to_string(pattern);
-        baseDir += "/layers/";
-        baseDir += std::to_string(layer);
-
-        std::string trackLayerDir = baseDir;
-        trackLayerDir += "/track.bin";
-
-        //Serial.print("attempt to read next track layer file from path: ");
-        //Serial.println(trackLayerDir.c_str());
-
-        File trackLayerFile = SD.open(trackLayerDir.c_str(), FILE_READ);
-        if (!trackLayerFile.available()) {
-            Serial.println("Next track layer not available!");
-
-            return false;
-        }
-
-        trackLayerFile.read((byte *)&XRSequencer::nextTrackLayer, sizeof(XRSequencer::nextTrackLayer));
-        trackLayerFile.close();
-
-        //Serial.printf("sizeof(nextTrackLayer): %d\n", sizeof(XRSequencer::nextTrackLayer));
+        Serial.println("loadNextTrackLayer not needed?");
 
         return true;
+
+        // // get project path
+        // char projectsPathPrefixBuf[50];
+        // XRHelpers::getProjectsDir(projectsPathPrefixBuf);
+        // std::string projectPath(projectsPathPrefixBuf); // read char array into string
+
+        // // track layer file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/layers/{layer}/track.bin
+        // std::string baseDir = projectPath;
+        // baseDir += "/";
+        // baseDir += _current_project.name;
+        // baseDir += "/.data/sequencer/banks/";
+        // baseDir += std::to_string(bank);
+        // baseDir += "/patterns/";
+        // baseDir += std::to_string(pattern);
+        // baseDir += "/layers/";
+        // baseDir += std::to_string(layer);
+
+        // std::string trackLayerDir = baseDir;
+        // trackLayerDir += "/track.bin";
+
+        // //Serial.print("attempt to read next track layer file from path: ");
+        // //Serial.println(trackLayerDir.c_str());
+
+        // File trackLayerFile = SD.open(trackLayerDir.c_str(), FILE_READ);
+        // if (!trackLayerFile.available()) {
+        //     Serial.println("Next track layer not available!");
+
+        //     return false;
+        // }
+
+        // trackLayerFile.read((byte *)&XRSequencer::nextTrackLayer, sizeof(XRSequencer::nextTrackLayer));
+        // trackLayerFile.close();
+
+        // //Serial.printf("sizeof(nextTrackLayer): %d\n", sizeof(XRSequencer::nextTrackLayer));
+
+        // return true;
     }
 
-    bool loadActivePatternSounds()
+    bool loadActiveSounds()
     {
         // get project path
         char projectsPathPrefixBuf[50];
@@ -726,15 +732,15 @@ namespace XRSD
 
         File soundsFile = SD.open(baseDir.c_str(), FILE_READ);
         if (!soundsFile.available()) {
-            Serial.println("Active pattern sounds not available!");
+            Serial.println("Active sounds not available!");
 
             return false;
         }
 
-        soundsFile.read((byte *)&XRSound::activePatternSounds, sizeof(XRSound::activePatternSounds));
+        soundsFile.read((byte *)&XRSound::activeSounds, sizeof(XRSound::activeSounds));
         soundsFile.close();
 
-        //Serial.printf("sizeof(activePatternSounds): %d\n", sizeof(XRSound::activePatternSounds));
+        //Serial.printf("sizeof(activeSounds): %d\n", sizeof(XRSound::activeSounds));
 
         return true;
     }
@@ -763,10 +769,10 @@ namespace XRSD
             return false;
         }
 
-        soundsFile.read((byte *)&XRSound::nextPatternSounds, sizeof(XRSound::nextPatternSounds));
+        soundsFile.read((byte *)&XRSound::idleSounds, sizeof(XRSound::idleSounds));
         soundsFile.close();
 
-        //Serial.printf("sizeof(nextPatternSounds): %d\n", sizeof(XRSound::nextPatternSounds));
+        //Serial.printf("sizeof(idleSounds): %d\n", sizeof(XRSound::idleSounds));
 
         return true;
     }
@@ -818,7 +824,7 @@ namespace XRSD
         //Serial.printf("sizeof(activePattern): %d\n", sizeof(XRSequencer::activePattern));
     }
 
-    void saveActivePatternSounds()
+    void saveActiveSounds()
     {
         // get project path
         char projectsPathPrefixBuf[50];
@@ -859,20 +865,20 @@ namespace XRSD
 
         File soundsFile = SD.open(baseDir.c_str(), FILE_WRITE);
         soundsFile.truncate();
-        soundsFile.write((byte *)&XRSound::activePatternSounds, sizeof(XRSound::activePatternSounds));
+        soundsFile.write((byte *)&XRSound::activeSounds, sizeof(XRSound::activeSounds));
         soundsFile.close();
 
         //Serial.printf("sizeof(activePatternSounds): %d\n", sizeof(XRSound::activePatternSounds));
     }
 
-    bool loadPatternSoundStepModLayerFromSdCard(int bank, int pattern, int layer)
+    bool loadSoundModLayerFromSdCard(int bank, int pattern, int layer)
     {
         // get project path
         char projectsPathPrefixBuf[50];
         XRHelpers::getProjectsDir(projectsPathPrefixBuf);
         std::string projectPath(projectsPathPrefixBuf); // read char array into string
 
-        // sound step mod file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/layers/{layer}/sound_step_mod.bin
+        // sound mod layer file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/layers/{layer}/sound_mod.bin
         std::string baseDir = projectPath;
         baseDir += "/";
         baseDir += _current_project.name;
@@ -882,31 +888,31 @@ namespace XRSD
         baseDir += std::to_string(pattern);
         baseDir += "/layers/";
         baseDir += std::to_string(layer);
-        baseDir += "/sound_step_mod.bin";
+        baseDir += "/sound_mod.bin";
 
         File mFile = SD.open(baseDir.c_str(), FILE_READ);
         if (!mFile.available()) {
-            Serial.println("no sound step mods available to load!");
+            Serial.println("no sound mods available to load!");
 
             return false;
         }
 
-        mFile.read((byte *)&XRSound::activePatternSoundStepModLayer, sizeof(XRSound::activePatternSoundStepModLayer));
+        mFile.read((byte *)&XRSound::activeSoundModLayer, sizeof(XRSound::activeSoundModLayer));
         mFile.close();
 
-        //Serial.printf("sizeof(activePatternSoundStepModLayer): %d\n", sizeof(XRSound::activePatternSoundStepModLayer));
+        //Serial.printf("sizeof(activeSoundModLayer): %d\n", sizeof(XRSound::activeSoundModLayer));
         
         return true;
     }
 
-    void saveActiveSoundStepModLayerToSdCard()
+    void saveActiveSoundModLayerToSdCard()
     {
         // get project path
         char projectsPathPrefixBuf[50];
         XRHelpers::getProjectsDir(projectsPathPrefixBuf);
         std::string projectPath(projectsPathPrefixBuf); // read char array into string
 
-        // sound step mod file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/layers/{layer}/sound_step_mod.bin
+        // sound step mod file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/layers/{layer}/sound_mod.bin
         std::string baseDir = projectPath;
         baseDir += "/";
         baseDir += _current_project.name;
@@ -949,224 +955,224 @@ namespace XRSD
             }
         }
 
-        baseDir += "/sound_step_mod.bin";
+        baseDir += "/sound_mod.bin";
 
         File sFile = SD.open(baseDir.c_str(), FILE_WRITE);
         sFile.truncate();
-        sFile.write((byte *)&XRSound::activePatternSoundStepModLayer, sizeof(XRSound::activePatternSoundStepModLayer));
+        sFile.write((byte *)&XRSound::activeSoundModLayer, sizeof(XRSound::activeSoundModLayer));
         sFile.close();
 
-        //Serial.printf("sizeof(activePatternSoundStepModLayer): %d\n", sizeof(XRSound::activePatternSoundStepModLayer));
+        //Serial.printf("sizeof(activeSoundModLayer): %d\n", sizeof(XRSound::activeSoundModLayer));
     }
 
     void saveCopiedStep(int track, int sourceStep, int destStep)
     {
-        XRSequencer::activeTrackLayer.tracks[track].steps[destStep] = XRSequencer::activeTrackLayer.tracks[track].steps[sourceStep];
-        XRSequencer::activeTrackStepModLayer.tracks[track].steps[destStep] = XRSequencer::activeTrackStepModLayer.tracks[track].steps[sourceStep];
-        XRSound::activePatternSoundStepModLayer.sounds[track].steps[destStep] = XRSound::activePatternSoundStepModLayer.sounds[track].steps[sourceStep];
+        // XRSequencer::activeTrackLayer.tracks[track].steps[destStep] = XRSequencer::activeTrackLayer.tracks[track].steps[sourceStep];
+        // XRSequencer::activeTrackStepModLayer.tracks[track].steps[destStep] = XRSequencer::activeTrackStepModLayer.tracks[track].steps[sourceStep];
+        // XRSound::activePatternSoundStepModLayer.sounds[track].steps[destStep] = XRSound::activePatternSoundStepModLayer.sounds[track].steps[sourceStep];
 
-        // TODO: save above to SD card as well ?
+        // // TODO: save above to SD card as well ?
     }
 
     void saveCopiedTrackToSamePattern(int sourceTrack, int destTrack)
     {
-        // -- BEGIN COPY TRACK SOUND
+        // // -- BEGIN COPY TRACK SOUND
 
-        // Serial.printf("COPY TRACK: BEGIN COPY SOUND! \n");
+        // // Serial.printf("COPY TRACK: BEGIN COPY SOUND! \n");
 
-        // get project path
-        char projectsPathPrefixBuf[50];
-        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
-        std::string projectPath(projectsPathPrefixBuf); // read char array into string
+        // // get project path
+        // char projectsPathPrefixBuf[50];
+        // XRHelpers::getProjectsDir(projectsPathPrefixBuf);
+        // std::string projectPath(projectsPathPrefixBuf); // read char array into string
 
-        std::string baseDir = projectPath;
-        baseDir += "/";
-        baseDir += _current_project.name;
-        baseDir += "/.data/sequencer/banks/";
-        baseDir += std::to_string(XRSequencer::getCurrentSelectedBankNum());
+        // std::string baseDir = projectPath;
+        // baseDir += "/";
+        // baseDir += _current_project.name;
+        // baseDir += "/.data/sequencer/banks/";
+        // baseDir += std::to_string(XRSequencer::getCurrentSelectedBankNum());
 
-        // verify bnk dir exists first
-        if (!SD.exists(baseDir.c_str()))
-        {
-            if (!SD.mkdir(baseDir.c_str()))
-            {
-                XRDisplay::drawError("SD MKDIR ERR!");
-                return;
-            }
-        }
+        // // verify bnk dir exists first
+        // if (!SD.exists(baseDir.c_str()))
+        // {
+        //     if (!SD.mkdir(baseDir.c_str()))
+        //     {
+        //         XRDisplay::drawError("SD MKDIR ERR!");
+        //         return;
+        //     }
+        // }
 
-        // IMPORTANT: FOR NOW ONLY ALLOW COPYING TRACKS WITHIN SAME PATTERN
-        // LATER ALLOW COPYING TRACKS ACROSS PATTERNS
+        // // IMPORTANT: FOR NOW ONLY ALLOW COPYING TRACKS WITHIN SAME PATTERN
+        // // LATER ALLOW COPYING TRACKS ACROSS PATTERNS
 
-        baseDir += "/patterns/";
-        baseDir += std::to_string(XRSequencer::getCurrentSelectedPatternNum());
+        // baseDir += "/patterns/";
+        // baseDir += std::to_string(XRSequencer::getCurrentSelectedPatternNum());
 
-        // verify ptn dir exists first
-        if (!SD.exists(baseDir.c_str()))
-        {
-            if (!SD.mkdir(baseDir.c_str()))
-            {
-                XRDisplay::drawError("SD MKDIR ERR!");
-                return;
-            }
-        }
+        // // verify ptn dir exists first
+        // if (!SD.exists(baseDir.c_str()))
+        // {
+        //     if (!SD.mkdir(baseDir.c_str()))
+        //     {
+        //         XRDisplay::drawError("SD MKDIR ERR!");
+        //         return;
+        //     }
+        // }
         
-        std::string sFileDir = baseDir;
-        sFileDir += "/sounds.bin";
+        // std::string sFileDir = baseDir;
+        // sFileDir += "/sounds.bin";
 
-        // File sFileR = SD.open(baseDir.c_str(), FILE_READ);
-        // sFileR.read((byte *)&XRSound::patternSoundsCopyBuffer, sizeof(XRSound::patternSoundsCopyBuffer));
-        // sFileR.close();
+        // // File sFileR = SD.open(baseDir.c_str(), FILE_READ);
+        // // sFileR.read((byte *)&XRSound::patternSoundsCopyBuffer, sizeof(XRSound::patternSoundsCopyBuffer));
+        // // sFileR.close();
 
-        // put sound from source track into copy buffer destination track sound
-        XRSound::activePatternSounds[destTrack] = XRSound::activePatternSounds[sourceTrack];
+        // // put sound from source track into copy buffer destination track sound
+        // XRSound::activePatternSounds[destTrack] = XRSound::activePatternSounds[sourceTrack];
 
-        // save the sounds file
+        // // save the sounds file
 
-        File sFileW = SD.open(sFileDir.c_str(), FILE_WRITE);
-        sFileW.truncate();
-        sFileW.write((byte *)&XRSound::activePatternSounds, sizeof(XRSound::activePatternSounds));
-        sFileW.close();
+        // File sFileW = SD.open(sFileDir.c_str(), FILE_WRITE);
+        // sFileW.truncate();
+        // sFileW.write((byte *)&XRSound::activePatternSounds, sizeof(XRSound::activePatternSounds));
+        // sFileW.close();
 
-        // Serial.printf("COPY TRACK: DONE COPY SOUND! \n");
+        // // Serial.printf("COPY TRACK: DONE COPY SOUND! \n");
 
-        // --- END COPY TRACK SOUND
+        // // --- END COPY TRACK SOUND
 
-        std::string baseLayerDir = baseDir;
-        baseLayerDir += "/layers";
+        // std::string baseLayerDir = baseDir;
+        // baseLayerDir += "/layers";
 
-        // verify layer dir exists first
-        if (!SD.exists(baseLayerDir.c_str()))
-        {
-            if (!SD.mkdir(baseLayerDir.c_str()))
-            {
-                XRDisplay::drawError("SD MKDIR ERR!");
-                return;
-            }
-        }
+        // // verify layer dir exists first
+        // if (!SD.exists(baseLayerDir.c_str()))
+        // {
+        //     if (!SD.mkdir(baseLayerDir.c_str()))
+        //     {
+        //         XRDisplay::drawError("SD MKDIR ERR!");
+        //         return;
+        //     }
+        // }
 
-        // -- BEGIN LAYER LOOP
+        // // -- BEGIN LAYER LOOP
 
-        auto baseLayerDirObj = SD.open(baseLayerDir.c_str(), FILE_READ);
-        if (!baseLayerDirObj.isDirectory())
-        {
-            XRDisplay::drawError("SD ERR!");
-            baseLayerDirObj.close();
-            return;
-        }
+        // auto baseLayerDirObj = SD.open(baseLayerDir.c_str(), FILE_READ);
+        // if (!baseLayerDirObj.isDirectory())
+        // {
+        //     XRDisplay::drawError("SD ERR!");
+        //     baseLayerDirObj.close();
+        //     return;
+        // }
 
-        // Serial.printf("COPY TRACK: BEGIN COPY LAYERS! \n");
+        // // Serial.printf("COPY TRACK: BEGIN COPY LAYERS! \n");
 
-        // search all potential track layer folders
-        for (int l=0; l < MAXIMUM_SEQUENCER_TRACK_LAYERS; l++)
-        {
-            std::string layerDir = baseLayerDir;
-            layerDir += "/";
-            layerDir += std::to_string(l);
+        // // search all potential track layer folders
+        // for (int l=0; l < MAXIMUM_SEQUENCER_TRACK_LAYERS; l++)
+        // {
+        //     std::string layerDir = baseLayerDir;
+        //     layerDir += "/";
+        //     layerDir += std::to_string(l);
 
-            auto layerDirObj = SD.open(layerDir.c_str(), FILE_READ);
+        //     auto layerDirObj = SD.open(layerDir.c_str(), FILE_READ);
             
-            // Serial.print("COPY TRACK: LAYER DIR: ");
-            // Serial.println(layerDir.c_str());
+        //     // Serial.print("COPY TRACK: LAYER DIR: ");
+        //     // Serial.println(layerDir.c_str());
 
-            // Serial.printf("layerDirObj.isDirectory: %d \n", layerDirObj.isDirectory());
+        //     // Serial.printf("layerDirObj.isDirectory: %d \n", layerDirObj.isDirectory());
 
-            if (layerDirObj && layerDirObj.isDirectory()) 
-            {
-                // copy track data
-                std::string lTrackDir = layerDir;
-                lTrackDir += "/track.bin";
+        //     if (layerDirObj && layerDirObj.isDirectory()) 
+        //     {
+        //         // copy track data
+        //         std::string lTrackDir = layerDir;
+        //         lTrackDir += "/track.bin";
                 
-                File lTrackFileR = SD.open(lTrackDir.c_str(), FILE_READ);
-                if (lTrackFileR.available())
-                {
-                    // Serial.printf("COPY TRACK: BEGIN COPY TRACK DATA FOR LAYER %d! \n", l);
-                    // XRSequencer::initTrackLayerCopyBuffer();
+        //         File lTrackFileR = SD.open(lTrackDir.c_str(), FILE_READ);
+        //         if (lTrackFileR.available())
+        //         {
+        //             // Serial.printf("COPY TRACK: BEGIN COPY TRACK DATA FOR LAYER %d! \n", l);
+        //             // XRSequencer::initTrackLayerCopyBuffer();
 
-                    // lTrackFileR.read((byte *)&XRSequencer::trackLayerCopyBuffer, sizeof(XRSequencer::trackLayerCopyBuffer));
-                    // lTrackFileR.close();
+        //             // lTrackFileR.read((byte *)&XRSequencer::trackLayerCopyBuffer, sizeof(XRSequencer::trackLayerCopyBuffer));
+        //             // lTrackFileR.close();
 
-                    // XRSequencer::trackLayerCopyBuffer.tracks[destTrack] = XRSequencer::activeTrackLayer.tracks[sourceTrack];
-                    XRSequencer::activeTrackLayer.tracks[destTrack] = XRSequencer::activeTrackLayer.tracks[sourceTrack];
+        //             // XRSequencer::trackLayerCopyBuffer.tracks[destTrack] = XRSequencer::activeTrackLayer.tracks[sourceTrack];
+        //             XRSequencer::activeTrackLayer.tracks[destTrack] = XRSequencer::activeTrackLayer.tracks[sourceTrack];
 
-                    File lTrackFileW = SD.open(lTrackDir.c_str(), FILE_WRITE);
-                    lTrackFileW.truncate();
-                    lTrackFileW.write((byte *)&XRSequencer::activeTrackLayer, sizeof(XRSequencer::activeTrackLayer));
-                    lTrackFileW.close();
-                    lTrackFileR.close();
+        //             File lTrackFileW = SD.open(lTrackDir.c_str(), FILE_WRITE);
+        //             lTrackFileW.truncate();
+        //             lTrackFileW.write((byte *)&XRSequencer::activeTrackLayer, sizeof(XRSequencer::activeTrackLayer));
+        //             lTrackFileW.close();
+        //             lTrackFileR.close();
 
-                    // Serial.printf("COPY TRACK: DONE COPY TRACK DATA FOR LAYER %d! \n", l);
-                } else {
-                    lTrackFileR.close();
-                }
+        //             // Serial.printf("COPY TRACK: DONE COPY TRACK DATA FOR LAYER %d! \n", l);
+        //         } else {
+        //             lTrackFileR.close();
+        //         }
 
-                // copy step mod data
-                std::string lTrackStepModDir = layerDir;
-                lTrackStepModDir += "/track_step_mod.bin";
+        //         // copy step mod data
+        //         std::string lTrackStepModDir = layerDir;
+        //         lTrackStepModDir += "/track_step_mod.bin";
 
-                File lTrackStepModR = SD.open(lTrackStepModDir.c_str(), FILE_READ);
-                if (lTrackStepModR.available())
-                {
-                    // Serial.printf("COPY TRACK: BEGIN COPY TRACK STEP MOD DATA FOR LAYER %d! \n", l);
+        //         File lTrackStepModR = SD.open(lTrackStepModDir.c_str(), FILE_READ);
+        //         if (lTrackStepModR.available())
+        //         {
+        //             // Serial.printf("COPY TRACK: BEGIN COPY TRACK STEP MOD DATA FOR LAYER %d! \n", l);
 
-                    // TODO: impl this?
-                    // XRSequencer::initTrackStepModLayerCopyBuffer(); 
+        //             // TODO: impl this?
+        //             // XRSequencer::initTrackStepModLayerCopyBuffer(); 
 
-                    // lTrackStepModR.read((byte *)&XRSequencer::trackStepModLayerCopyBuffer, sizeof(XRSequencer::trackStepModLayerCopyBuffer));
-                    // lTrackStepModR.close();
+        //             // lTrackStepModR.read((byte *)&XRSequencer::trackStepModLayerCopyBuffer, sizeof(XRSequencer::trackStepModLayerCopyBuffer));
+        //             // lTrackStepModR.close();
 
-                    // XRSequencer::trackStepModLayerCopyBuffer.tracks[destTrack] = XRSequencer::activeTrackStepModLayer.tracks[sourceTrack];
-                    XRSequencer::activeTrackStepModLayer.tracks[destTrack] = XRSequencer::activeTrackStepModLayer.tracks[sourceTrack];
+        //             // XRSequencer::trackStepModLayerCopyBuffer.tracks[destTrack] = XRSequencer::activeTrackStepModLayer.tracks[sourceTrack];
+        //             XRSequencer::activeTrackStepModLayer.tracks[destTrack] = XRSequencer::activeTrackStepModLayer.tracks[sourceTrack];
 
-                    File lTrackStepModW = SD.open(lTrackStepModDir.c_str(), FILE_WRITE);
-                    lTrackStepModW.truncate();
-                    lTrackStepModW.write((byte *)&XRSequencer::activeTrackStepModLayer, sizeof(XRSequencer::activeTrackStepModLayer));
-                    lTrackStepModW.close();
-                    lTrackStepModR.close();
+        //             File lTrackStepModW = SD.open(lTrackStepModDir.c_str(), FILE_WRITE);
+        //             lTrackStepModW.truncate();
+        //             lTrackStepModW.write((byte *)&XRSequencer::activeTrackStepModLayer, sizeof(XRSequencer::activeTrackStepModLayer));
+        //             lTrackStepModW.close();
+        //             lTrackStepModR.close();
 
-                    // Serial.printf("COPY TRACK: DONE COPY TRACK STEP MOD DATA FOR LAYER %d! \n", l);
-                } else {
-                    lTrackStepModR.close();
-                }
+        //             // Serial.printf("COPY TRACK: DONE COPY TRACK STEP MOD DATA FOR LAYER %d! \n", l);
+        //         } else {
+        //             lTrackStepModR.close();
+        //         }
 
-                // copy sound step mod data
-                std::string lSoundStepModDir = layerDir;
-                lSoundStepModDir += "/sound_step_mod.bin";
+        //         // copy sound step mod data
+        //         std::string lSoundStepModDir = layerDir;
+        //         lSoundStepModDir += "/sound_step_mod.bin";
 
-                File lSoundStepModR = SD.open(lSoundStepModDir.c_str(), FILE_READ);
-                if (lSoundStepModR.available())
-                {
-                    // Serial.printf("COPY TRACK: BEGIN COPY SOUND STEP MOD DATA FOR LAYER %d! \n", l);
+        //         File lSoundStepModR = SD.open(lSoundStepModDir.c_str(), FILE_READ);
+        //         if (lSoundStepModR.available())
+        //         {
+        //             // Serial.printf("COPY TRACK: BEGIN COPY SOUND STEP MOD DATA FOR LAYER %d! \n", l);
 
-                    // TODO: impl this?
-                    // XRSound::initPatternSoundStepModLayerCopyBuffer(); 
+        //             // TODO: impl this?
+        //             // XRSound::initPatternSoundStepModLayerCopyBuffer(); 
 
-                    // lSoundStepModR.read((byte *)&XRSound::patternSoundStepModLayerCopyBuffer, sizeof(XRSound::patternSoundStepModLayerCopyBuffer));
-                    // lSoundStepModR.close();
+        //             // lSoundStepModR.read((byte *)&XRSound::patternSoundStepModLayerCopyBuffer, sizeof(XRSound::patternSoundStepModLayerCopyBuffer));
+        //             // lSoundStepModR.close();
 
-                    //XRSound::patternSoundStepModLayerCopyBuffer.sounds[destTrack] = XRSound::activePatternSoundStepModLayer.sounds[sourceTrack];
-                    XRSound::activePatternSoundStepModLayer.sounds[destTrack] = XRSound::activePatternSoundStepModLayer.sounds[sourceTrack];
+        //             //XRSound::patternSoundStepModLayerCopyBuffer.sounds[destTrack] = XRSound::activePatternSoundStepModLayer.sounds[sourceTrack];
+        //             XRSound::activePatternSoundStepModLayer.sounds[destTrack] = XRSound::activePatternSoundStepModLayer.sounds[sourceTrack];
 
-                    File lSoundStepModW = SD.open(lTrackStepModDir.c_str(), FILE_WRITE);
-                    lSoundStepModW.truncate();
-                    lSoundStepModW.write((byte *)&XRSound::activePatternSoundStepModLayer, sizeof(XRSound::activePatternSoundStepModLayer));
-                    lSoundStepModW.close();
-                    lSoundStepModR.close();
+        //             File lSoundStepModW = SD.open(lTrackStepModDir.c_str(), FILE_WRITE);
+        //             lSoundStepModW.truncate();
+        //             lSoundStepModW.write((byte *)&XRSound::activePatternSoundStepModLayer, sizeof(XRSound::activePatternSoundStepModLayer));
+        //             lSoundStepModW.close();
+        //             lSoundStepModR.close();
 
-                    // Serial.printf("COPY TRACK: DONE COPY SOUND STEP MOD DATA FOR LAYER %d! \n", l);
-                } else {
-                    lSoundStepModR.close();
-                }
-            }
+        //             // Serial.printf("COPY TRACK: DONE COPY SOUND STEP MOD DATA FOR LAYER %d! \n", l);
+        //         } else {
+        //             lSoundStepModR.close();
+        //         }
+        //     }
 
-            layerDirObj.close();
-        }
+        //     layerDirObj.close();
+        // }
 
-        // Serial.printf("COPY TRACK: DONE COPY LAYERS! \n");
+        // // Serial.printf("COPY TRACK: DONE COPY LAYERS! \n");
 
-        baseLayerDirObj.close();
+        // baseLayerDirObj.close();
 
-        // -- END LAYER LOOP
+        // // -- END LAYER LOOP
     }
 
     std::string *getSampleList(int16_t cursor)
@@ -1326,8 +1332,8 @@ namespace XRSD
                 std::string tempDexedPatchName(dexedTempNameBuf);
                 dexedPatchName = tempDexedPatchName;
 
-                std::string currTrackName(XRSound::activePatternSounds[trackNum].name);
-                strcpy(XRSound::activePatternSounds[trackNum].name, tempDexedPatchName.c_str());
+                std::string currTrackName(XRSound::activeSounds[trackNum].name);
+                strcpy(XRSound::activeSounds[trackNum].name, tempDexedPatchName.c_str());
             }
         }
 

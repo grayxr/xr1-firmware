@@ -130,26 +130,21 @@ namespace XRSound
 
     /*** BEGIN SOUND MODS ***/
 
-    /**
-     * All sound step mods for all other banks, patterns, layers are stored in SD card,
-     * they are fetched when changing patterns or layers, stored in RAM2 / DMAMEM
-    */
-
     typedef struct
     {
         int32_t mods[MAXIMUM_SOUND_PARAMS]; // divide by 100 to get real param mod values
         bool flags[MAXIMUM_SOUND_PARAMS]; // whether the param mod should apply or not
-    } SOUND_STEP_MOD;
+    } SOUND_MOD_STEP;
 
     typedef struct
     {
-        SOUND_STEP_MOD steps[MAXIMUM_SEQUENCER_STEPS];
+        SOUND_MOD_STEP steps[MAXIMUM_SEQUENCER_STEPS];
     } SOUND_MOD;
     
     typedef struct
     {
         SOUND_MOD sounds[MAXIMUM_SEQUENCER_TRACKS];
-    } PATTERN_SOUND_MOD_LAYER;
+    } SOUND_MOD_LAYER;
 
     /*** END SOUND MODS ***/
 
@@ -237,7 +232,6 @@ namespace XRSound
             //
         }
     };
-
 
     class DexedInstance
     {
@@ -397,27 +391,20 @@ namespace XRSound
     } PANNED_AMOUNTS;
 
     // extern globals
-    extern DMAMEM SOUND activePatternSounds[MAXIMUM_SEQUENCER_TRACKS];
-    extern DMAMEM SOUND nextPatternSounds[MAXIMUM_SEQUENCER_TRACKS];
-    extern DMAMEM PATTERN_SOUND_MOD_LAYER activePatternSoundStepModLayer;
 
-    extern DMAMEM SOUND patternSoundsCopyBuffer[MAXIMUM_SEQUENCER_TRACKS];
-    extern DMAMEM PATTERN_SOUND_MOD_LAYER patternSoundStepModLayerCopyBuffer;
-    
-    extern bool soundNeedsReinit[MAXIMUM_SEQUENCER_TRACKS];
+    extern EXTMEM SOUND activeSounds[MAXIMUM_SEQUENCER_TRACKS];
+    extern EXTMEM SOUND idleSounds[MAXIMUM_SEQUENCER_TRACKS];
+    extern EXTMEM SOUND_MOD_LAYER activeSoundModLayer;
 
     extern MonoSampleInstance monoSampleInstances[MAXIMUM_MONO_SAMPLE_SOUNDS];
     extern MonoSynthInstance monoSynthInstances[MAXIMUM_MONO_SYNTH_SOUNDS];
     extern DexedInstance dexedInstances[MAXIMUM_DEXED_SYNTH_SOUNDS];
     // extern BraidsInstance braidsInstances[MAXIMUM_BRAIDS_SYNTH_SOUNDS];
     extern FmDrumInstance fmDrumInstances[MAXIMUM_FM_DRUM_SOUNDS];
-
-    extern StereoDelayInstance delayInstances[1];
+    extern StereoDelayInstance delayInstances[MAXIMUM_DELAY_INSTANCES];
 
     extern std::string patternPageNames[MAXIMUM_PATTERN_PAGES];
-
     extern std::map<SOUND_TYPE, int8_t> soundTypeInstanceLimitMap;
-    
     extern std::map<int, loop_type> loopTypeSelMap;
     extern std::map<loop_type, int> loopTypeFindMap;
     extern std::map<int, play_start> playStartSelMap;
@@ -426,10 +413,10 @@ namespace XRSound
     extern std::map<SOUND_TYPE, int> soundPageNumMap;
     extern std::map<SOUND_TYPE, std::map<int, std::string>> soundCurrPageNameMap;
 
-    extern bool chokeSourcesEnabled[MAXIMUM_SEQUENCER_TRACKS];
     extern int chokeSourceDest[MAXIMUM_SEQUENCER_TRACKS];
     extern int chokeDestSource[MAXIMUM_SEQUENCER_TRACKS];
-
+    extern bool chokeSourcesEnabled[MAXIMUM_SEQUENCER_TRACKS];
+    extern bool soundNeedsReinit[MAXIMUM_SEQUENCER_TRACKS];
     extern bool patternSoundsDirty;
     extern bool patternSoundStepModsDirty;
 
@@ -449,44 +436,38 @@ namespace XRSound
 
     int getWaveformNumber(uint8_t waveformType);
     int getWaveformTypeSelection(uint8_t waveformNumber);
+
     float getOscFreqA(uint8_t note, int8_t fine);
     float getDetunedOscFreqB(uint8_t note, float detuneAmount);
 
     std::string getSoundMetaStr(XRSound::SOUND_TYPE type);
     std::string getSoundTypeNameStr(XRSound::SOUND_TYPE type);
     std::string getPageNameForCurrentTrack();
-    uint8_t getPageCountForCurrentTrack();
-    uint8_t getPageCountForTrack(int track);
-
     std::string getWaveformName(uint8_t waveform);
     std::string getPlaybackSpeedStr(float rate);
     std::string getLoopTypeName();
 
-    void muteAllOutput();
+    uint8_t getPageCountForCurrentTrack();
+    uint8_t getPageCountForTrack(int track);
 
     void init();
-    void initActivePatternSounds();
-    void initNextPatternSounds();
-    void initPatternSoundStepMods();
+    void initActiveSounds();
+    void initIdleSounds();
+    void initSoundStepMods();
     void initVoices();
     void setSoundNeedsReinit(int sound, bool reinit);
     void reinitSoundForTrack(int track);
-    void applyActivePatternSounds();
+    void applyActiveSounds();
     void applyFxForActivePattern();
     void applyTrackChokes();
-
     void loadNextDexedInstances();
-    
     void saveSoundDataForPatternChange();
     void loadSoundDataForPatternChange(int nextBank, int nextPattern);
-
     void assignSampleToTrackSound();
-
     void changeTrackSoundType(uint8_t t, SOUND_TYPE newType);
     void initTrackSound(int8_t t);
-
+    void muteAllOutput();
     void turnOffAllSounds();
-
     void handleMonoSampleNoteOnForTrack(int track);
     void handleMonoSynthNoteOnForTrack(int track);
     void handleDexedSynthNoteOnForTrack(int track);
@@ -494,11 +475,9 @@ namespace XRSound
     void handleFmDrumNoteOnForTrack(int track);
     void handleMIDINoteOnForTrack(int track);
     void handleCvGateNoteOnForTrack(int track);
-
     void handleNoteOffForTrack(int track);
     void handleNoteOffForTrackStep(int track, int step);
     void noteOffTrackManually(int noteOnKeyboard, uint8_t octave);
-
     void handleMonoSampleNoteOnForTrackStep(int track, int step);
     void handleMonoSynthNoteOnForTrackStep(int track, int step);
     void handleDexedSynthNoteOnForTrackStep(int track, int step);
@@ -506,7 +485,6 @@ namespace XRSound
     void handleFmDrumNoteOnForTrackStep(int track, int step);
     void handleMIDINoteOnForTrackStep(int track, int step);
     void handleCvGateNoteOnForTrackStep(int track, int step);
-
     void triggerTrackManually(uint8_t t, uint8_t note, uint8_t octave, bool accented);
     void triggerMonoSampleNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented);
     void triggerMonoSynthNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented);
@@ -514,13 +492,11 @@ namespace XRSound
     void triggerBraidsNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented);
     void triggerFmDrumNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented);
     void triggerCvGateNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented);
-
-    void applyCurrentDexedPatchToSound();
-
     int getChokeSourcesEnabledCount();
     bool isTrackAnActiveChokeDestination(int track);
     void applyChokeForSourceTrack(int track);
     bool applyChokeForDestinationTrackStep(int track, int step);
+    void applyCurrentDexedPatchToSound();
 
     int8_t getValueNormalizedAsInt8(int32_t param);
     uint8_t getValueNormalizedAsUInt8(int32_t param);
@@ -528,7 +504,6 @@ namespace XRSound
     uint32_t getValueNormalizedAsUInt32(int32_t param);
     float getValueNormalizedAsFloat(int32_t param);
     bool getValueNormalizedAsBool(int32_t param);
-
     int32_t getInt32ValuePaddedAsInt32(int32_t value);
     int32_t getUInt32ValuePaddedAsInt32(uint32_t value);
     int32_t getFloatValuePaddedAsInt32(float value);

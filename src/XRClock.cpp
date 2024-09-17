@@ -117,11 +117,14 @@ namespace XRClock
 
     void setShuffleForAllTracks(bool active)
     {
+        auto layer = XRSequencer::getCurrentSelectedTrackLayerNum();
+        auto &activeLayer = XRSequencer::activePattern.layers[layer];
+
         for (size_t t=0; t < MAXIMUM_SEQUENCER_TRACKS; t++) {
             // if a track has any step with microtiming, we leave the shuffle active on the track
             for (size_t s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
             {
-                if (XRSequencer::activeTrackStepModLayer.tracks[t].steps[s].flags[XRSequencer::MICROTIMING]) {
+                if (activeLayer.tracks[t].steps[s].flags[XRSequencer::MICROTIMING]) {
                     // make sure microtiming based shuffle is always enabled
                     active = true;
                     break;
@@ -145,6 +148,9 @@ namespace XRClock
         auto baseTemplate = _grooves.configs[grooveId].templates[grooveAmount];
         auto baseSize = _grooves.configs[grooveId].templateSize;
 
+        auto layer = XRSequencer::getCurrentSelectedTrackLayerNum();
+        auto &activeLayer = XRSequencer::activePattern.layers[layer];
+
         for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
         {
             auto &currTrack = XRSequencer::getTrack(t);
@@ -158,8 +164,8 @@ namespace XRClock
             {
                 auto val = baseTemplate[s % baseSize];
 
-                if (XRSequencer::activeTrackStepModLayer.tracks[t].steps[s].flags[XRSequencer::MICROTIMING]) {
-                    val = XRSequencer::activeTrackStepModLayer.tracks[t].steps[s].mods[XRSequencer::MICROTIMING];
+                if (activeLayer.tracks[t].steps[s].flags[XRSequencer::MICROTIMING]) {
+                    val = activeLayer.tracks[t].steps[s].mods[XRSequencer::MICROTIMING];
                 }
 
                 //if (t == 0) Serial.printf("track 1 step: %d baseSize: %d, orig: %d, val: %d\n", s, baseSize, baseTemplate[s % baseSize], val);
@@ -183,6 +189,9 @@ namespace XRClock
 
     void initializeShuffleForAllTrackMods()
     {
+        auto layer = XRSequencer::getCurrentSelectedTrackLayerNum();
+        auto &activeLayer = XRSequencer::activePattern.layers[layer];
+
         for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
         {
             auto &currTrack = XRSequencer::getTrack(t);
@@ -193,10 +202,10 @@ namespace XRClock
 
             for (size_t s = 0; s < currTrack.lstep; s++)
             {
-                if (XRSequencer::activeTrackStepModLayer.tracks[t].steps[s].flags[XRSequencer::MICROTIMING]) {
+                if (activeLayer.tracks[t].steps[s].flags[XRSequencer::MICROTIMING]) {
                     shuffleEnabled = true;
 
-                    tmpl[s] = XRSequencer::activeTrackStepModLayer.tracks[t].steps[s].mods[XRSequencer::MICROTIMING];
+                    tmpl[s] = activeLayer.tracks[t].steps[s].mods[XRSequencer::MICROTIMING];
                 }
             }
 
