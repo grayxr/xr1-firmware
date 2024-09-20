@@ -119,6 +119,19 @@ namespace XRSequencer
         int8_t currentBar = 1;
     } TRACK_CURRENT_STEP_STATE;
 
+    typedef struct {
+        XRSound::SOUND_TYPE soundType;
+        int8_t pattern = -1;
+        int8_t layer = -1;
+        int8_t step = -1;
+        uint8_t lastState = 0; // 0 = not triggered, 1 = triggered
+        uint8_t currentState = 0; // 0 = trigger reset, 1 = trigger init, 2 = trigger on
+    } TRACK_TRIGGER;
+
+    typedef struct {
+        TRACK_TRIGGER trackTriggers[MAXIMUM_SEQUENCER_TRACKS];
+    } TRACK_TRIGGER_STATE;
+
     typedef struct
     {
         SEQUENCER_PLAYBACK_STATE playbackState = STOPPED;
@@ -170,6 +183,9 @@ namespace XRSequencer
     extern DMAMEM PATTERN_FX_PAGE_INDEXES patternFxPages[MAXIMUM_PATTERN_FX_PARAM_PAGES];
     extern DMAMEM TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
     extern DMAMEM RECORDING_STATE recordingState;
+    extern TRACK_TRIGGER_STATE trackTriggerState;
+
+    extern bool metronomeEnabled;
 
     bool init();
 
@@ -217,9 +233,11 @@ namespace XRSequencer
     void handleRemoveFromIgnoredStepStack(uint32_t tick);
     bool isTrackStepBeingIgnored(int track, int step);
 
-    void handleNoteOnForTrack(int track);
+    void handleTriggerStates();
+
+    void handleNoteOnForTrack(int track, TRACK_TRIGGER trigger);
     void handleNoteOffForTrack(int track);
-    void handleNoteOnForTrackStep(int track, int step);
+    void handleNoteOnForTrackStep(int track, int step, TRACK_TRIGGER trigger);
     void handleNoteOffForTrackStep(int track, int step);
     
     void handleCurrentTrackStepLEDs(uint8_t t);

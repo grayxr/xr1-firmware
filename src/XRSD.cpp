@@ -1191,11 +1191,11 @@ namespace XRSD
             return _sampleFileListPaged.list;
         }
 
-        std::string samplePath = "/audio enjoyer/xr-1/samples";
+        std::string samplePath = "/samples";
 
         bool samplePathExsts = SD.exists(samplePath.c_str());
         if (!samplePathExsts) {
-            SD.mkdir("/audio enjoyer/xr-1/samples");
+            SD.mkdir("/samples");
 
             return _sampleFileListPaged.list;
         }
@@ -1236,7 +1236,7 @@ namespace XRSD
 
     void rewindSampleDir()
     { 
-        std::string samplePath = "/audio enjoyer/xr-1/samples";
+        std::string samplePath = "/samples";
 
         bool samplePathExsts = SD.exists(samplePath.c_str());
         if (!samplePathExsts) {

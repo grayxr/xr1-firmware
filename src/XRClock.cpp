@@ -1,5 +1,6 @@
 #include <XRClock.h>
 #include <XRSequencer.h>
+#include <XRHelpers.h>
 
 namespace XRClock
 {
@@ -63,6 +64,23 @@ namespace XRClock
     float getTempo()
     {
         return uClock.getTempo();
+    }
+
+    std::string getClockTimeString()
+    {
+        auto start = uClock.getPlayTime();
+
+        auto hrs = uClock.getNumberOfHours(start);
+        auto mins = uClock.getNumberOfMinutes(start);
+        auto secs = uClock.getNumberOfSeconds(start);
+
+        auto hrsStr = XRHelpers::strldz(std::to_string(hrs), 2);
+        auto minStr = XRHelpers::strldz(std::to_string(mins), 2);
+        auto secStr = XRHelpers::strldz(std::to_string(secs), 2);
+
+        std::string time = hrsStr + ":" + minStr + ":" + secStr;
+
+        return time;
     }
 
     std::string getGrooveString(int8_t id)

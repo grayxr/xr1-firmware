@@ -1,11 +1,13 @@
 #include <XRMain.h>
 #include <XRHelpers.h>
 #include <XRSequencer.h>
+#include <XRUX.h>
 #include <XRSound.h>
 
 namespace XRMain
 {
     elapsedMillis elapsedMs;
+    bool ticked = false;
 
     void boot()
     {
@@ -69,12 +71,23 @@ namespace XRMain
 
     void update()
     {
-        XRAudio::handleHeadphones();
+        static elapsedMillis timeMs;
+
+        XRAudio::handleHeadphones();    
         XRKeyMatrix::handleStates(false);
         XRVersa::handleStates();
         XREncoder::handleStates();
 
-        XRSequencer::handlePatternQueueActions();
-        XRSequencer::handleTrackLayerQueueActions();
+        XRSequencer::handleTriggerStates();
+
+        if (XRSequencer::getSeqState().playbackState == XRSequencer::RUNNING && XRUX::getCurrentMode() == XRUX::PATTERN_WRITE && timeMs >= 250)
+        {
+            timeMs -= 250;
+
+            XRDisplay::drawSequencerScreen();
+        }
+
+        //XRSequencer::handlePatternQueueActions();
+        //XRSequencer::handleTrackLayerQueueActions();
     }
 }

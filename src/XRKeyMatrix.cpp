@@ -1690,6 +1690,13 @@ namespace XRKeyMatrix
             return true;
         }
 
+        // metronome toggle
+        if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE && key == DATA_BTN_CHAR) {
+            XRSequencer::metronomeEnabled = (XRSequencer::metronomeEnabled) ? false : true;
+
+            return true;
+        }
+
         bool allowedModeToLaunchMenuFrom = (
             currentUXMode == XRUX::UX_MODE::PATTERN_WRITE || 
             currentUXMode == XRUX::UX_MODE::TRACK_WRITE || 

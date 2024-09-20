@@ -12,7 +12,7 @@
 #define MACHINE_STATE_FILENAME_PREFIX "machine_state"
 #define PROJECTS_FOLDER_NAME "projects"
 
-#define LOG_METRICS_ENABLED false
+#define LOG_METRICS_ENABLED true
 #define DISPLAY_MAX_WIDTH 128
 #define DISPLAY_MAX_HEIGHT 64
 #define MAX_PROJECT_RAW_SAMPLES 40
@@ -78,6 +78,7 @@
 #define PERFORM_BTN_CHAR 'a'
 #define MOD_A_BTN_CHAR 'e'
 #define MOD_D_BTN_CHAR 'h'
+#define DATA_BTN_CHAR 'd'
 // Encoders
 #define MAIN_ENCODER_ADDRESS 0
 #define MOD1_ENCODER_ADDRESS 1

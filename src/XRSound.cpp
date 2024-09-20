@@ -8,6 +8,8 @@
 #include <XRKeyMatrix.h>
 #include <map>
 
+#define USE_WAV true
+
 namespace XRSound
 {
     // private variables
@@ -293,41 +295,41 @@ namespace XRSound
 
     std::map<SOUND_TYPE, std::map<int, std::string>> soundCurrPageNameMap = {
         {T_MONO_SAMPLE, {
-                        {0, "STEP"},
-                        {1, "FILE"},
-                        {2, "PITCH"},
-                        {3, "LOOP"},
-                        {4, "AMP ENV"},
-                        {5, "OUTPUT"},
+                        {0, "step"},
+                        {1, "file"},
+                        {2, "pitch"},
+                        {3, "loop"},
+                        {4, "amp env"},
+                        {5, "output"},
                     }},
         {T_MONO_SYNTH, {
-                        {0, "STEP"},
-                        {1, "OSC"},
-                        {2, "FILTER"},
-                        {3, "FILTER ENV"},
-                        {4, "AMP ENV"},
-                        {5, "OUTPUT"},
+                        {0, "step"},
+                        {1, "osc"},
+                        {2, "filter"},
+                        {3, "filter env"},
+                        {4, "amp env"},
+                        {5, "output"},
                     }},
         {T_DEXED_SYNTH, {
-                        {0, "STEP"},
-                        {1, "FM1"},
-                        {2, "FM2"},
-                        {3, "POLY"},
-                        {4, "OUTPUT"},
+                        {0, "step"},
+                        {1, "fm1"},
+                        {2, "fm2"},
+                        {3, "poly"},
+                        {4, "output"},
                     }},
         {T_FM_DRUM, {
-                        {0, "STEP"},
-                        {1, "DRUM"},
-                        {2, "OUTPUT"},
+                        {0, "step"},
+                        {1, "drum"},
+                        {2, "output"},
                     }},
         {T_MIDI, {
-                    {0, "STEP"},
+                    {0, "step"},
                 }},
         {T_CV_GATE, {
-                    {0, "STEP"},
+                    {0, "step"},
                 }},
         {T_CV_TRIG, {
-                    {0, "STEP"},
+                    {0, "step"},
                 }},
         {T_EMPTY, {
                     {0, ""},
@@ -335,8 +337,8 @@ namespace XRSound
     };
 
     std::string patternPageNames[MAXIMUM_PATTERN_PAGES] = {
-        "MAIN",
-        "FX: STEREO DELAY"
+        "main",
+        "fx: stereo delay"
     };
 
     std::map<SOUND_TYPE, int8_t> soundTypeInstanceLimitMap = {
@@ -439,6 +441,9 @@ namespace XRSound
         mainMixerRight.gain(0, 0);
         mainMixerLeft.gain(1, 0);
         mainMixerRight.gain(1, 0);
+        // todo need delay chans here?
+        mainMixerLeft.gain(3, 0);
+        mainMixerRight.gain(3, 0);
 
         // L&R input mixer
         inputMixerLeft.gain(0, 0);
@@ -795,8 +800,8 @@ namespace XRSound
         mainMixerRight.gain(1, 1); // voice mix 2 R 
         mainMixerLeft.gain(2, 1); // delay L
         mainMixerRight.gain(2, 1); // delay R
-        mainMixerLeft.gain(3, 0);
-        mainMixerRight.gain(3, 0);
+        mainMixerLeft.gain(3, 0.15); // metronome L
+        mainMixerRight.gain(3, 0.15); // metronome R
 
         // L&R input mixer
         inputMixerLeft.gain(0, 0);
@@ -996,6 +1001,14 @@ namespace XRSound
         }
     }
 
+    void handleNoteOnForMetronome(bool accented)
+    {
+        metronome.length(25);
+        metronome.frequency(accented ? 1500 : 1000);
+        metronome.pitchMod(0.5);
+        metronome.noteOn();
+    }
+
     void saveSoundDataForPatternChange()
     {
         if (patternSoundsDirty) {
@@ -1049,13 +1062,13 @@ namespace XRSound
                 std::string grooveForPattern = pattern.groove.id > -1 ? XRClock::getGrooveString(pattern.groove.id) : "";
                 std::string grooveAmountForPattern = XRClock::getGrooveAmountString(pattern.groove.id, pattern.groove.amount);
 
-                mods.aName = "L.STEP";
-                mods.bName = "GROOVE";
-                mods.cName = "GR.AMT";
-                mods.dName = "ACCENT";
+                mods.aName = "lstep";
+                mods.bName = "groove";
+                mods.cName = "gr.amt";
+                mods.dName = "accent";
 
                 mods.aValue = std::to_string(pattern.lstep);
-                mods.bValue = pattern.groove.id > -1 ? grooveForPattern : "OFF";
+                mods.bValue = pattern.groove.id > -1 ? grooveForPattern : "off";
                 mods.cValue = pattern.groove.id > -1 ? grooveAmountForPattern : "--";
                 mods.dValue = std::to_string(pattern.accent);
             }
@@ -1065,9 +1078,9 @@ namespace XRSound
             {
                 auto delayParams = pattern.fx.pages[XRSequencer::PATTERN_FX_PAGE_INDEXES::DELAY]; 
 
-                mods.aName = "TIME"; // delay time
-                mods.bName = "FDBK"; // delay feedback
-                mods.cName = "PAN";
+                mods.aName = "time"; // delay time
+                mods.bName = "fdbk"; // delay feedback
+                mods.cName = "pan";
                 mods.dName = "--";
 
                 mods.aValue = std::to_string(round(delayParams.params[XRSequencer::PATTERN_FX_DELAY_PARAMS::TIME] * 100) / 100);
@@ -1166,10 +1179,10 @@ namespace XRSound
                     }
                 }
 
-                mods.aName = "L.STEP";
+                mods.aName = "lstep";
                 mods.bName = "--";
-                mods.cName = "VELO";
-                mods.dName = "PROB";
+                mods.cName = "velo";
+                mods.dName = "prob";
 
                 mods.aValue = std::to_string(currentSelectedTrack.lstep);
                 mods.bValue = "--";
@@ -1182,8 +1195,8 @@ namespace XRSound
             {
                 mods.isAbleToStepModB = true;
 
-                mods.aName = "FILE 1";
-                mods.bName = "FILE 2";
+                mods.aName = "file 1";
+                mods.bName = "file 2";
                 mods.cName = "--";
                 mods.dName = "--";
 
@@ -1198,7 +1211,7 @@ namespace XRSound
             {
                 mods.isAbleToStepModB = true;
 
-                mods.aName = "SPEED";
+                mods.aName = "speed";
                 mods.bName = "--";
                 mods.cName = "--";
                 mods.dName = "--";
@@ -1227,10 +1240,10 @@ namespace XRSound
                     }
                 }
 
-                mods.aName = "TYPE";
-                mods.bName = "START";
-                mods.cName = "FINISH";
-                mods.dName = "PLAYST";
+                mods.aName = "type";
+                mods.bName = "start";
+                mods.cName = "finish";
+                mods.dName = "plyst";
 
                 mods.aValue = getLoopTypeName();
 
@@ -1266,16 +1279,16 @@ namespace XRSound
                 //     playstartToUse = modsForCurrentTrackStep.playstart;
                 // }
 
-                mods.dValue = playstartToUse == play_start::play_start_loop ? "LOOP" : "SAMPLE";
+                mods.dValue = playstartToUse == play_start::play_start_loop ? "loop" : "sample";
             }
 
             break;
         case 4: // AMP ENV
             {
-                mods.aName = "ATT";
-                mods.bName = "DEC";
-                mods.cName = "SUS";
-                mods.dName = "REL";
+                mods.aName = "att";
+                mods.bName = "dec";
+                mods.cName = "sus";
+                mods.dName = "rel";
 
                 auto aatt = getValueNormalizedAsFloat(activeSounds[currentSelectedTrackNum].params[MSMP_AMP_ATTACK]);
                 auto adec = getValueNormalizedAsFloat(activeSounds[currentSelectedTrackNum].params[MSMP_AMP_DECAY]);
@@ -1299,10 +1312,10 @@ namespace XRSound
                 mods.isAbleToStepModB = true;
                 mods.isAbleToStepModD = true;
                 
-                mods.aName = "LEVEL";
-                mods.bName = "PAN";
-                mods.cName = "CHOKE";
-                mods.dName = "DELAY"; // fx send?
+                mods.aName = "level";
+                mods.bName = "pan";
+                mods.cName = "choke";
+                mods.dName = "delay"; // fx send?
 
                 auto lvl = getValueNormalizedAsFloat(activeSounds[currentSelectedTrackNum].params[MSMP_LEVEL]);
                 auto pan = getValueNormalizedAsFloat(activeSounds[currentSelectedTrackNum].params[MSMP_PAN]);
@@ -1359,10 +1372,10 @@ namespace XRSound
                 mods.isAbleToStepModC = true;
                 mods.isAbleToStepModD = true;
 
-                mods.aName = "LSTP";
-                mods.bName = "LEN";
-                mods.cName = "VELO";
-                mods.dName = "PROB";
+                mods.aName = "lstep";
+                mods.bName = "len";
+                mods.cName = "velo";
+                mods.dName = "prob";
 
                 auto len = currentSelectedTrack.length;
                 auto prob = currentSelectedTrack.probability;
@@ -1393,10 +1406,10 @@ namespace XRSound
                 mods.isAbleToStepModC = true;
                 mods.isAbleToStepModD = true;
 
-                mods.aName = "WAVE";
-                mods.bName = "DET";
-                mods.cName = "FINE";
-                mods.dName = "WID";
+                mods.aName = "wave";
+                mods.bName = "det";
+                mods.cName = "fine";
+                mods.dName = "wid";
 
                 auto waveform = getValueNormalizedAsUInt8(currentSoundForTrack.params[MSYN_WAVE]);
                 auto detune = getValueNormalizedAsInt8(currentSoundForTrack.params[MSYN_DETUNE]);
@@ -1430,10 +1443,10 @@ namespace XRSound
                 mods.isAbleToStepModC = true;
                 mods.isAbleToStepModD = true;
 
-                mods.aName = "NOIS";
-                mods.bName = "FREQ";
-                mods.cName = "RESO";
-                mods.dName = "AMT";
+                mods.aName = "noise";
+                mods.bName = "freq";
+                mods.cName = "reso";
+                mods.dName = "amt";
 
                 auto noise = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_NOISE]);
                 auto cutoff = getValueNormalizedAsInt32(currentSoundForTrack.params[MSYN_CUTOFF]);
@@ -1457,10 +1470,10 @@ namespace XRSound
 
         case 3: // FILTER ENV
             {
-                mods.aName = "ATT";
-                mods.bName = "DEC";
-                mods.cName = "SUS";
-                mods.dName = "REL";
+                mods.aName = "att";
+                mods.bName = "dec";
+                mods.cName = "sus";
+                mods.dName = "rel";
 
                 auto fatt = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_FILTER_ATTACK]);
                 auto fdec = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_FILTER_DECAY]);
@@ -1484,10 +1497,10 @@ namespace XRSound
 
         case 4: // AMP ENV
             {
-                mods.aName = "ATT";
-                mods.bName = "DEC";
-                mods.cName = "SUS";
-                mods.dName = "REL";
+                mods.aName = "att";
+                mods.bName = "dec";
+                mods.cName = "sus";
+                mods.dName = "rel";
 
                 auto aatt = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_AMP_ATTACK]);
                 auto adec = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_AMP_DECAY]);
@@ -1514,10 +1527,10 @@ namespace XRSound
                 mods.isAbleToStepModB = true;
                 mods.isAbleToStepModD = true;
 
-                mods.aName = "LVL";
-                mods.bName = "PAN";
+                mods.aName = "lvl";
+                mods.bName = "pan";
                 mods.cName = "--"; // choke is unused on synth tracks
-                mods.dName = "DLY";
+                mods.dName = "dly";
 
                 auto lvl = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_LEVEL]);
                 auto pan = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_PAN]);
@@ -1571,10 +1584,10 @@ namespace XRSound
                 mods.isAbleToStepModC = true;
                 mods.isAbleToStepModD = true;
 
-                mods.aName = "LSTP";
-                mods.bName = "LEN";
-                mods.cName = "VELO";
-                mods.dName = "PROB";
+                mods.aName = "lstep";
+                mods.bName = "len";
+                mods.cName = "velo";
+                mods.dName = "prob";
 
                 auto len = currentSelectedTrack.length;
                 auto prob = currentSelectedTrack.probability;
@@ -1628,8 +1641,8 @@ namespace XRSound
                 // dexedInstances[0].dexed.setOPRate(0,2,99); // increase all OP EG rates (R1-R4) at once?
                 // dexedInstances[0].dexed.setOPRate(0,3,99); // increase all OP EG rates (R1-R4) at once?
 
-                mods.aName = "TRNS";
-                mods.bName = "ALGO";
+                mods.aName = "trns";
+                mods.bName = "algo";
                 mods.cName = "--";
                 mods.dName = "--";
 
@@ -1662,10 +1675,10 @@ namespace XRSound
                 mods.isAbleToStepModC = true;
                 mods.isAbleToStepModD = true;
 
-                mods.aName = "MODE";
-                mods.bName = "NOTE2";
-                mods.cName = "NOTE3";
-                mods.dName = "NOTE4";
+                mods.aName = "mode";
+                mods.bName = "note2";
+                mods.cName = "note3";
+                mods.dName = "note4";
 
                 auto noteMode = getValueNormalizedAsInt8(activeSounds[currentSelectedTrackNum].params[DEXE_NOTE_MODE]);
 
@@ -1694,7 +1707,7 @@ namespace XRSound
                     }
                 }
 
-                mods.aValue = (noteMode > 0) ? "POLY" : "MONO";
+                mods.aValue = (noteMode > 0) ? "poly" : "mono";
                 mods.bValue = (noteB != 0) ? std::to_string(noteB) : "--";
                 mods.cValue = (noteC != 0) ? std::to_string(noteC) : "--";
                 mods.dValue = (noteD != 0) ? std::to_string(noteD) : "--";
@@ -1707,10 +1720,10 @@ namespace XRSound
                 mods.isAbleToStepModB = true;
                 mods.isAbleToStepModD = true;
 
-                mods.aName = "LEVEL";
-                mods.bName = "PAN";
+                mods.aName = "level";
+                mods.bName = "pan";
                 mods.cName = "--"; // choke is unused on synth tracks
-                mods.dName = "DLY";
+                mods.dName = "dly";
 
                 auto lvl = getValueNormalizedAsFloat(activeSounds[currentSelectedTrackNum].params[DEXE_LEVEL]);
                 auto pan = getValueNormalizedAsFloat(activeSounds[currentSelectedTrackNum].params[DEXE_PAN]);
@@ -1768,10 +1781,10 @@ namespace XRSound
                 mods.isAbleToStepModC = true;
                 mods.isAbleToStepModD = true;
 
-                mods.aName = "LSTP";
+                mods.aName = "lstep";
                 mods.bName = "--";
-                mods.cName = "VELO";
-                mods.dName = "PROB";
+                mods.cName = "velo";
+                mods.dName = "prob";
 
                 auto prob = currentSelectedTrack.probability;
 
@@ -1797,10 +1810,10 @@ namespace XRSound
                 mods.isAbleToStepModC = true;
                 mods.isAbleToStepModD = true;
 
-                mods.aName = "TUNE";
-                mods.bName = "FM";
-                mods.cName = "DECAY";
-                mods.dName = "NOISE";
+                mods.aName = "tune";
+                mods.bName = "fm";
+                mods.cName = "decay";
+                mods.dName = "noise";
 
                 mods.aValue = std::to_string(freq);
                 mods.aValue += "hz";
@@ -1819,10 +1832,10 @@ namespace XRSound
                 mods.isAbleToStepModB = true;
                 mods.isAbleToStepModD = true;
 
-                mods.aName = "LEVEL";
-                mods.bName = "PAN";
-                mods.cName = "CHOKE";
-                mods.dName = "DELAY";
+                mods.aName = "level";
+                mods.bName = "pan";
+                mods.cName = "choke";
+                mods.dName = "delay";
 
                 auto lvl = getValueNormalizedAsFloat(activeSounds[currentSelectedTrackNum].params[FMD_LEVEL]);
                 auto pan = getValueNormalizedAsFloat(activeSounds[currentSelectedTrackNum].params[FMD_PAN]);
@@ -1871,10 +1884,10 @@ namespace XRSound
         {
         case 0: // MAIN
             {
-                mods.aName = "LSTP";
-                mods.bName = "LEN";
-                mods.cName = "CHAN";
-                mods.dName = "VELO";
+                mods.aName = "lstep";
+                mods.bName = "len";
+                mods.cName = "chan";
+                mods.dName = "velo";
 
                 auto chan = getValueNormalizedAsInt8(currentSoundForTrack.params[0]); // TODO make enum
 
@@ -1916,10 +1929,10 @@ namespace XRSound
         {
         case 0: // MAIN
         {
-            mods.aName = "LSTP";
-            mods.bName = "LEN";
-            mods.cName = "OUT";
-            mods.dName = "PROB";
+            mods.aName = "lstep";
+            mods.bName = "len";
+            mods.cName = "out";
+            mods.dName = "prob";
 
             mods.aValue = std::to_string(currentSelectedTrack.lstep);
             mods.bValue = std::to_string(currentSelectedTrack.length);
@@ -1927,7 +1940,7 @@ namespace XRSound
             auto port = getValueNormalizedAsInt8(currentSoundForTrack.params[0]); // TODO make enum
 
             std::string outputPortStr = std::to_string(port);
-            outputPortStr += "AB";
+            outputPortStr += "ab";
 
             mods.cValue = outputPortStr;
             mods.dValue = "100%";
@@ -1962,13 +1975,13 @@ namespace XRSound
         {
         case 0: // MAIN
             {
-                mods.aName = "LSTP";
-                mods.bName = "OUT";
-                mods.cName = "PROB";
+                mods.aName = "lstep";
+                mods.bName = "out";
+                mods.cName = "prob";
                 mods.dName = "--";
 
                 mods.aValue = std::to_string(currentSelectedTrack.lstep);
-                mods.bValue = "1AB";  // TODO: impl
+                mods.bValue = "1ab";  // TODO: impl
                 mods.cValue = "100%"; // TODO: impl
                 mods.dValue = "--";   // TODO: impl
             }
@@ -2055,6 +2068,10 @@ namespace XRSound
         monoSampleInstances[track].left.gain(getStereoPanValues(msmpPan).left);
         monoSampleInstances[track].right.gain(getStereoPanValues(msmpPan).right);
 
+        const float semi = powf(2.0f, 1.0f/12);
+        float freq = powf(semi, 12*(trackToUse.octave - 4) + trackToUse.note);
+        monoSampleInstances[track].sample.setPlaybackRate(freq);
+
         AudioInterrupts();
 
         monoSampleInstances[track].ampEnv.noteOn();
@@ -2062,9 +2079,13 @@ namespace XRSound
         std::string trackSampleName(activeSounds[track].sampleName);
 
         if (trackSampleName.length() > 0) {
-            const auto sampleName = std::string("/audio enjoyer/xr-1/samples/") + std::string(trackSampleName);
+            const auto sampleName = std::string("/samples/") + std::string(trackSampleName);
 
+#ifdef USE_WAV
             monoSampleInstances[track].sample.playWav(sampleName.c_str());
+#else
+            monoSampleInstances[track].sample.playRaw(sampleName.c_str(), 1);
+#endif
         }
 
         AudioNoInterrupts();
@@ -2286,6 +2307,8 @@ namespace XRSound
     {
         if (applyChokeForDestinationTrackStep(track, step)) return;
 
+        // Serial.println("Mono Sample Note On");
+
         applyChokeForSourceTrack(track);
 
         auto &trackToUse = XRSequencer::getTrack(track);
@@ -2373,7 +2396,11 @@ namespace XRSound
         monoSampleInstances[track].left.gain(getStereoPanValues(msmpPan).left);
         monoSampleInstances[track].right.gain(getStereoPanValues(msmpPan).right);
 
-        monoSampleInstances[track].sample.setPlaybackRate(speedToUse);
+        const float semi = powf(2.0f, 1.0f/12);
+        float freq = powf(semi, 12*(trackToUse.octave - 4) + trackToUse.note);
+        monoSampleInstances[track].sample.setPlaybackRate(freq * speedToUse);
+
+        //monoSampleInstances[track].sample.setPlaybackRate(speedToUse);
         
         AudioInterrupts();
 
@@ -2386,9 +2413,29 @@ namespace XRSound
         monoSampleInstances[track].ampEnv.noteOn();
 
         if (sampleToUse.length() > 0) {
-            const auto sampleName = std::string("/audio enjoyer/xr-1/samples/") + std::string(sampleToUse);
+            const auto sampleName = std::string("/samples/") + std::string(sampleToUse);
 
+            // if (track == 4) Serial.printf("Sample: %s\n", sampleName.c_str());
+            // if (track == 4) Serial.printf("Velocity: %d\n", velocityToUse);
+            // if (track == 4) Serial.printf("LoopType: %d\n", looptypeToUse);
+            // if (track == 4) Serial.printf("LoopStart: %d\n", loopstartToUse);
+            // if (track == 4) Serial.printf("LoopFinish: %d\n", loopfinishToUse);
+            // if (track == 4) Serial.printf("PlayStart: %d\n", playstartToUse);
+            // if (track == 4) Serial.printf("Speed: %f\n", speedToUse);
+            // if (track == 4) Serial.printf("Pan L: %f\n", getStereoPanValues(msmpPan).left);
+            // if (track == 4) Serial.printf("Pan R: %f\n", getStereoPanValues(msmpPan).right);
+            // if (track == 4) Serial.printf("Level: %f\n", msmpLvl);
+            // if (track == 4) Serial.printf("Delay: %f\n", msmpDly);
+            // if (track == 4) Serial.printf("Attack: %f\n", msmpAatt);
+            // if (track == 4) Serial.printf("Decay: %f\n", msmpAdec);
+            // if (track == 4) Serial.printf("Sustain: %f\n", msmpAsus);
+            // if (track == 4) Serial.printf("Release: %f\n", msmpArel);
+
+#ifdef USE_WAV
             monoSampleInstances[track].sample.playWav(sampleName.c_str());
+#else
+            monoSampleInstances[track].sample.playRaw(sampleName.c_str(), 1);
+#endif
         }
 
         AudioNoInterrupts();
@@ -2963,7 +3010,7 @@ namespace XRSound
             return;
         }
 
-        std::string sampleNameStr = "/audio enjoyer/xr-1/samples/";
+        std::string sampleNameStr = "/samples/";
         sampleNameStr += selected;
 
         if (activeSampleSlot == 0) {
@@ -3067,6 +3114,10 @@ namespace XRSound
         monoSampleInstances[t].left.gain(getStereoPanValues(msmpPan).left);
         monoSampleInstances[t].right.gain(getStereoPanValues(msmpPan).right);
 
+        const float semi = powf(2.0f, 1.0f/12);
+        float freq = powf(semi, 12*(octave - 4) + note);
+        monoSampleInstances[t].sample.setPlaybackRate(freq);
+
         AudioInterrupts();
 
         std::string sampleToUse = hasFirstSample ? trackSampleName : "";
@@ -3078,9 +3129,13 @@ namespace XRSound
         monoSampleInstances[t].ampEnv.noteOn();
 
         if (sampleToUse.length() > 0) {
-            const auto sampleName = std::string("/audio enjoyer/xr-1/samples/") + std::string(sampleToUse);
+            const auto sampleName = std::string("/samples/") + std::string(sampleToUse);
 
+#ifdef USE_WAV
             monoSampleInstances[t].sample.playWav(sampleName.c_str());
+#else
+            monoSampleInstances[t].sample.playRaw(sampleName.c_str(), 1);
+#endif
         }
 
         AudioNoInterrupts();
@@ -3341,35 +3396,35 @@ namespace XRSound
         {
 
         case T_EMPTY:
-            outputStr = "EMPTY";
+            outputStr = "nil";
             break;
 
         case T_MONO_SAMPLE:
-            outputStr = "SAMPLE";
+            outputStr = "smp";
             break;
 
         case T_MONO_SYNTH:
-            outputStr = "MS1";
+            outputStr = "ms1";
             break;
         case T_DEXED_SYNTH:
-            outputStr = "FM1";
+            outputStr = "dex";
             break;
         case T_BRAIDS_SYNTH:
-            outputStr = "BRAIDS";
+            outputStr = "brd";
             break;
         case T_FM_DRUM:
-            outputStr = "FMDRUM";
+            outputStr = "fmd";
             break;
         case T_MIDI:
-            outputStr = "MIDI";
+            outputStr = "mid";
             break;
 
         case T_CV_GATE:
-            outputStr = "CVGATE";
+            outputStr = "cvg";
             break;
 
         case T_CV_TRIG:
-            outputStr = "CVTRIG";
+            outputStr = "cvt";
             break;
 
         default:
@@ -3381,33 +3436,33 @@ namespace XRSound
 
     std::string getSoundTypeNameStr(SOUND_TYPE type)
     {
-        std::string str = "EMPTY"; // default
+        std::string str = "empty"; // default
 
         switch (type)
         {
         case T_MONO_SAMPLE:
-            str = "INIT";
+            str = "init";
 
             break;
 
         case T_MONO_SYNTH:
-            str = "INIT";
+            str = "init";
 
             break;
         case T_DEXED_SYNTH:
-            str = "INIT";
+            str = "init";
 
             break;
         case T_BRAIDS_SYNTH:
-            str = "INIT";
+            str = "init";
 
             break;
         case T_FM_DRUM:
-            str = "INIT";
+            str = "init";
 
             break;
         case T_MIDI:
-            str = "MIDI";
+            str = "init";
 
             break;
 
@@ -3548,7 +3603,7 @@ namespace XRSound
 
     std::string getSampleName(const char* name)
     {
-        std::string sampleName = "/audio enjoyer/xr-1/samples/";
+        std::string sampleName = "/samples/";
         sampleName += name;
 
         return sampleName;

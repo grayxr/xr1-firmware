@@ -497,6 +497,7 @@ namespace XRSound
     void applyChokeForSourceTrack(int track);
     bool applyChokeForDestinationTrackStep(int track, int step);
     void applyCurrentDexedPatchToSound();
+    void handleNoteOnForMetronome(bool accented);
 
     int8_t getValueNormalizedAsInt8(int32_t param);
     uint8_t getValueNormalizedAsUInt8(int32_t param);

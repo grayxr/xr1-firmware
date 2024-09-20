@@ -37,18 +37,18 @@ AudioAmplifier           monoSampleAmp4; //xy=589.1666488647461,3320.00002956390
 AudioAmplifier           monoSampleAmp3; //xy=591.1666488647461,3160.000029563904
 AudioAmplifier           monoSampleAmp2; //xy=593.1666488647461,2997.000029563904
 AudioAmplifier           monoSampleAmp1; //xy=594.1666488647461,2832.000029563904
-AudioEffectEnvelope      monoSampleAmpEnv9; //xy=615.0000381469727,4370.000032424927
-AudioEffectEnvelope      monoSampleAmpEnv10; //xy=616.0000381469727,4210.000032424927
-AudioEffectEnvelope      monoSampleAmpEnv11; //xy=618.0000381469727,4047.0000324249268
-AudioEffectEnvelope      monoSampleAmpEnv12; //xy=619.0000381469727,3882.0000324249268
-AudioAmplifier           monoSampleAmpAccent9; //xy=625.0000381469727,4416.000032424927
-AudioAmplifier           monoSampleAmpAccent10; //xy=627.0000381469727,4256.000032424927
-AudioAmplifier           monoSampleAmpAccent11; //xy=629.0000381469727,4093.0000324249268
-AudioAmplifier           monoSampleAmpAccent12; //xy=630.0000381469727,3928.0000324249268
-AudioAmplifier           monoSampleAmp9; //xy=630.0000381469727,4463.000032424927
-AudioAmplifier           monoSampleAmp10; //xy=632.0000381469727,4303.000032424927
-AudioAmplifier           monoSampleAmp11; //xy=634.0000381469727,4140.000032424927
-AudioAmplifier           monoSampleAmp12; //xy=635.0000381469727,3975.0000324249268
+AudioEffectEnvelope      monoSampleAmpEnv12; //xy=615.0000381469727,4370.000032424927
+AudioEffectEnvelope      monoSampleAmpEnv11; //xy=616.0000381469727,4210.000032424927
+AudioEffectEnvelope      monoSampleAmpEnv10; //xy=618.0000381469727,4047.0000324249268
+AudioEffectEnvelope      monoSampleAmpEnv9; //xy=619.0000381469727,3882.0000324249268
+AudioAmplifier           monoSampleAmpAccent12; //xy=625.0000381469727,4416.000032424927
+AudioAmplifier           monoSampleAmpAccent11; //xy=627.0000381469727,4256.000032424927
+AudioAmplifier           monoSampleAmpAccent10; //xy=629.0000381469727,4093.0000324249268
+AudioAmplifier           monoSampleAmpAccent9; //xy=630.0000381469727,3928.0000324249268
+AudioAmplifier           monoSampleAmp12; //xy=630.0000381469727,4463.000032424927
+AudioAmplifier           monoSampleAmp11; //xy=632.0000381469727,4303.000032424927
+AudioAmplifier           monoSampleAmp10; //xy=634.0000381469727,4140.000032424927
+AudioAmplifier           monoSampleAmp9; //xy=635.0000381469727,3975.0000324249268
 AudioMixer4              monoSynthMix2;  //xy=683.0000686645508,284.0000114440918
 AudioMixer4              monoSynthMix1;  //xy=685.0000686645508,88.0000114440918
 AudioMixer4              monoSynthMix3;  //xy=685.0000686645508,482.0000114440918
@@ -69,14 +69,14 @@ AudioAmplifier           monoSampleRight4; //xy=821.1666488647461,3336.000029563
 AudioAmplifier           monoSampleRight3; //xy=822.1666488647461,3176.000029563904
 AudioAmplifier           monoSampleRight2; //xy=824.1666488647461,3013.000029563904
 AudioAmplifier           monoSampleRight1; //xy=825.1666488647461,2848.000029563904
-AudioAmplifier           monoSampleLeft9; //xy=858.0000381469727,4440.000032424927
-AudioAmplifier           monoSampleLeft10; //xy=860.0000381469727,4280.000032424927
-AudioAmplifier           monoSampleLeft11; //xy=861.0000381469727,4117.000032424927
-AudioAmplifier           monoSampleLeft12; //xy=863.0000381469727,3952.0000324249268
-AudioAmplifier           monoSampleRight9; //xy=862.0000381469727,4479.000032424927
-AudioAmplifier           monoSampleRight10; //xy=863.0000381469727,4319.000032424927
-AudioAmplifier           monoSampleRight11; //xy=865.0000381469727,4156.000032424927
-AudioAmplifier           monoSampleRight12; //xy=866.0000381469727,3991.0000324249268
+AudioAmplifier           monoSampleLeft12; //xy=858.0000381469727,4440.000032424927
+AudioAmplifier           monoSampleLeft11; //xy=860.0000381469727,4280.000032424927
+AudioAmplifier           monoSampleLeft10; //xy=861.0000381469727,4117.000032424927
+AudioAmplifier           monoSampleLeft9; //xy=863.0000381469727,3952.0000324249268
+AudioAmplifier           monoSampleRight12; //xy=862.0000381469727,4479.000032424927
+AudioAmplifier           monoSampleRight11; //xy=863.0000381469727,4319.000032424927
+AudioAmplifier           monoSampleRight10; //xy=865.0000381469727,4156.000032424927
+AudioAmplifier           monoSampleRight9; //xy=866.0000381469727,3991.0000324249268
 AudioFilterLadder        monoSynthFilter2; //xy=963.0000686645508,336.0000114440918
 AudioFilterLadder        monoSynthFilter1; //xy=965.0000686645508,140.0000114440918
 AudioFilterLadder        monoSynthFilter3; //xy=965.0000686645508,535.0000114440918
@@ -174,53 +174,53 @@ AudioAmplifier           dexedRight6;    //xy=1671.8333587646484,1642.0000743865
 AudioAmplifier           dexedRight5;    //xy=1672.8333587646484,1511.0000743865967
 AudioAmplifier           dexedLeft2;     //xy=1675.0000228881836,1052.000023841858
 AudioAmplifier           dexedRight8;    //xy=1671.8333587646484,1899.0000743865967
-AudioEffectEnvelope      monoSampleAmpEnv5; //xy=1665.0000228881836,3654.9999713897705
+AudioEffectEnvelope      monoSampleAmpEnv8; //xy=1665.0000228881836,3654.9999713897705
 AudioAmplifier           dexedLeft1;     //xy=1676.0000228881836,922.0000238418579
-AudioEffectEnvelope      monoSampleAmpEnv6; //xy=1666.0000228881836,3494.9999713897705
+AudioEffectEnvelope      monoSampleAmpEnv7; //xy=1666.0000228881836,3494.9999713897705
 AudioAmplifier           fmDrumRight4;   //xy=1670.0000228881836,2501.333291053772
 AudioAmplifier           dexedLeft4;     //xy=1675.0000228881836,1309.000023841858
-AudioEffectEnvelope      monoSampleAmpEnv7; //xy=1668.0000228881836,3331.9999713897705
-AudioEffectEnvelope      monoSampleAmpEnv8; //xy=1669.0000228881836,3166.9999713897705
+AudioEffectEnvelope      monoSampleAmpEnv6; //xy=1668.0000228881836,3331.9999713897705
+AudioEffectEnvelope      monoSampleAmpEnv5; //xy=1669.0000228881836,3166.9999713897705
 AudioAmplifier           dexedRight3;    //xy=1677.0000228881836,1217.000023841858
 AudioAmplifier           dexedRight2;    //xy=1680.0000228881836,1090.000023841858
 AudioAmplifier           dexedRight1;    //xy=1681.0000228881836,959.0000238418579
 AudioAmplifier           dexedRight4;    //xy=1680.0000228881836,1347.000023841858
-AudioAmplifier           monoSampleAmpAccent5; //xy=1675.0000228881836,3700.9999713897705
-AudioEffectEnvelope      monoSampleAmpEnv13; //xy=1670.8335647583008,4748.000038146973
-AudioEffectEnvelope      monoSampleAmpEnv14; //xy=1671.8335647583008,4588.000038146973
-AudioAmplifier           monoSampleAmpAccent6; //xy=1677.0000228881836,3540.9999713897705
-AudioEffectEnvelope      monoSampleAmpEnv15; //xy=1673.8335647583008,4425.000038146973
-AudioEffectEnvelope      monoSampleAmpEnv16; //xy=1674.8335647583008,4260.000038146973
-AudioAmplifier           monoSampleAmpAccent7; //xy=1679.0000228881836,3377.9999713897705
-AudioAmplifier           monoSampleAmpAccent8; //xy=1680.0000228881836,3212.9999713897705
-AudioAmplifier           monoSampleAmp5; //xy=1680.0000228881836,3747.9999713897705
-AudioAmplifier           monoSampleAmp6; //xy=1682.0000228881836,3587.9999713897705
-AudioAmplifier           monoSampleAmp7; //xy=1684.0000228881836,3424.9999713897705
-AudioAmplifier           monoSampleAmp8; //xy=1685.0000228881836,3259.9999713897705
-AudioAmplifier           monoSampleAmpAccent13; //xy=1680.8335647583008,4794.000038146973
-AudioAmplifier           monoSampleAmpAccent14; //xy=1682.8335647583008,4634.000038146973
-AudioAmplifier           monoSampleAmpAccent15; //xy=1684.8335647583008,4471.000038146973
-AudioAmplifier           monoSampleAmpAccent16; //xy=1685.8335647583008,4306.000038146973
-AudioAmplifier           monoSampleAmp13; //xy=1685.8335647583008,4841.000038146973
-AudioAmplifier           monoSampleAmp14; //xy=1687.8335647583008,4681.000038146973
-AudioAmplifier           monoSampleAmp15; //xy=1689.8335647583008,4518.000038146973
-AudioAmplifier           monoSampleAmp16; //xy=1690.8335647583008,4353.000038146973
-AudioAmplifier           monoSampleLeft5; //xy=1908.0000228881836,3724.9999713897705
-AudioAmplifier           monoSampleLeft6; //xy=1910.0000228881836,3564.9999713897705
-AudioAmplifier           monoSampleLeft7; //xy=1911.0000228881836,3401.9999713897705
-AudioAmplifier           monoSampleLeft8; //xy=1913.0000228881836,3236.9999713897705
-AudioAmplifier           monoSampleRight5; //xy=1912.0000228881836,3763.9999713897705
-AudioAmplifier           monoSampleRight6;  //xy=1913.0000228881836,3603.9999713897705
-AudioAmplifier           monoSampleRight7; //xy=1915.0000228881836,3440.9999713897705
-AudioAmplifier           monoSampleRight8; //xy=1916.0000228881836,3275.9999713897705
-AudioAmplifier           monoSampleLeft13; //xy=1913.8335647583008,4818.000038146973
-AudioAmplifier           monoSampleLeft14; //xy=1915.8335647583008,4658.000038146973
-AudioAmplifier           monoSampleLeft15; //xy=1916.8335647583008,4495.000038146973
-AudioAmplifier           monoSampleLeft16; //xy=1918.8335647583008,4330.000038146973
-AudioAmplifier           monoSampleRight13; //xy=1917.8335647583008,4857.000038146973
-AudioAmplifier           monoSampleRight14; //xy=1918.8335647583008,4697.000038146973
-AudioAmplifier           monoSampleRight15; //xy=1920.8335647583008,4534.000038146973
-AudioAmplifier           monoSampleRight16; //xy=1921.8335647583008,4369.000038146973
+AudioAmplifier           monoSampleAmpAccent8; //xy=1675.0000228881836,3700.9999713897705
+AudioEffectEnvelope      monoSampleAmpEnv16; //xy=1670.8335647583008,4748.000038146973
+AudioEffectEnvelope      monoSampleAmpEnv15; //xy=1671.8335647583008,4588.000038146973
+AudioAmplifier           monoSampleAmpAccent7; //xy=1677.0000228881836,3540.9999713897705
+AudioEffectEnvelope      monoSampleAmpEnv14; //xy=1673.8335647583008,4425.000038146973
+AudioEffectEnvelope      monoSampleAmpEnv13; //xy=1674.8335647583008,4260.000038146973
+AudioAmplifier           monoSampleAmpAccent6; //xy=1679.0000228881836,3377.9999713897705
+AudioAmplifier           monoSampleAmpAccent5; //xy=1680.0000228881836,3212.9999713897705
+AudioAmplifier           monoSampleAmp8; //xy=1680.0000228881836,3747.9999713897705
+AudioAmplifier           monoSampleAmp7; //xy=1682.0000228881836,3587.9999713897705
+AudioAmplifier           monoSampleAmp6; //xy=1684.0000228881836,3424.9999713897705
+AudioAmplifier           monoSampleAmp5; //xy=1685.0000228881836,3259.9999713897705
+AudioAmplifier           monoSampleAmpAccent16; //xy=1680.8335647583008,4794.000038146973
+AudioAmplifier           monoSampleAmpAccent15; //xy=1682.8335647583008,4634.000038146973
+AudioAmplifier           monoSampleAmpAccent14; //xy=1684.8335647583008,4471.000038146973
+AudioAmplifier           monoSampleAmpAccent13; //xy=1685.8335647583008,4306.000038146973
+AudioAmplifier           monoSampleAmp16; //xy=1685.8335647583008,4841.000038146973
+AudioAmplifier           monoSampleAmp15; //xy=1687.8335647583008,4681.000038146973
+AudioAmplifier           monoSampleAmp14; //xy=1689.8335647583008,4518.000038146973
+AudioAmplifier           monoSampleAmp13; //xy=1690.8335647583008,4353.000038146973
+AudioAmplifier           monoSampleLeft8; //xy=1908.0000228881836,3724.9999713897705
+AudioAmplifier           monoSampleLeft7; //xy=1910.0000228881836,3564.9999713897705
+AudioAmplifier           monoSampleLeft6; //xy=1911.0000228881836,3401.9999713897705
+AudioAmplifier           monoSampleLeft5; //xy=1913.0000228881836,3236.9999713897705
+AudioAmplifier           monoSampleRight8; //xy=1912.0000228881836,3763.9999713897705
+AudioAmplifier           monoSampleRight7;  //xy=1913.0000228881836,3603.9999713897705
+AudioAmplifier           monoSampleRight6; //xy=1915.0000228881836,3440.9999713897705
+AudioAmplifier           monoSampleRight5; //xy=1916.0000228881836,3275.9999713897705
+AudioAmplifier           monoSampleLeft16; //xy=1913.8335647583008,4818.000038146973
+AudioAmplifier           monoSampleLeft15; //xy=1915.8335647583008,4658.000038146973
+AudioAmplifier           monoSampleLeft14; //xy=1916.8335647583008,4495.000038146973
+AudioAmplifier           monoSampleLeft13; //xy=1918.8335647583008,4330.000038146973
+AudioAmplifier           monoSampleRight16; //xy=1917.8335647583008,4857.000038146973
+AudioAmplifier           monoSampleRight15; //xy=1918.8335647583008,4697.000038146973
+AudioAmplifier           monoSampleRight14; //xy=1920.8335647583008,4534.000038146973
+AudioAmplifier           monoSampleRight13; //xy=1921.8335647583008,4369.000038146973
 AudioAmplifier           dexedAmpDelaySend1; //xy=2084.000030517578,909.0000214576721
 AudioAmplifier           dexedAmpDelaySend2; //xy=2084.000030517578,948.0000214576721
 AudioAmplifier           dexedAmpDelaySend4; //xy=2084.000030517578,1028.0000214576721
@@ -275,6 +275,7 @@ AudioInputI2S            i2s2;           //xy=4032.0000381469727,2884.0000629425
 AudioAnalyzePeak         peak_left;      //xy=4038.0000381469727,2836.000062942505
 AudioAnalyzePeak         peak_right;     //xy=4042.0000381469727,2936.000062942505
 AudioEffectDelay         delay1;         //xy=4045.0000381469727,2204.000062942505
+AudioSynthSimpleDrum     metronome;          //xy=4054.7776947021484,2587.1267318725586
 AudioMixer4              mainMixerLeft;  //xy=4067.0000381469727,2459.000062942505
 AudioMixer4              mainMixerRight; //xy=4070.0000381469727,2531.000062942505
 AudioAmplifier           delayLeftAmp1;  //xy=4074.0000381469727,2296.000062942505
@@ -293,14 +294,14 @@ AudioConnection          patchCord4(monoSample1, 0, monoSampleAmpEnv1, 0);
 AudioConnection          patchCord5(monoSynthDc2, monoSynthFilterEnv2);
 AudioConnection          patchCord6(monoSynthDc1, monoSynthFilterEnv1);
 AudioConnection          patchCord7(monoSynthDc3, monoSynthFilterEnv3);
-AudioConnection          patchCord8(monoSample11, 0, monoSampleAmpEnv10, 0);
+AudioConnection          patchCord8(monoSample11, 0, monoSampleAmpEnv11, 0);
 AudioConnection          patchCord9(monoSynthDc4, monoSynthFilterEnv4);
-AudioConnection          patchCord10(monoSample10, 0, monoSampleAmpEnv11, 0);
+AudioConnection          patchCord10(monoSample10, 0, monoSampleAmpEnv10, 0);
 AudioConnection          patchCord11(monoSynthOscA4, 0, monoSynthMix4, 0);
-AudioConnection          patchCord12(monoSample12, 0, monoSampleAmpEnv9, 0);
+AudioConnection          patchCord12(monoSample12, 0, monoSampleAmpEnv12, 0);
 AudioConnection          patchCord13(monoSynthOscA2, 0, monoSynthMix2, 0);
 AudioConnection          patchCord14(monoSynthOscB2, 0, monoSynthMix2, 1);
-AudioConnection          patchCord15(monoSample9, 0, monoSampleAmpEnv12, 0);
+AudioConnection          patchCord15(monoSample9, 0, monoSampleAmpEnv9, 0);
 AudioConnection          patchCord16(monoSynthNoise2, 0, monoSynthMix2, 2);
 AudioConnection          patchCord17(monoSynthOscB4, 0, monoSynthMix4, 1);
 AudioConnection          patchCord18(monoSynthOscA1, 0, monoSynthMix1, 0);
@@ -330,26 +331,26 @@ AudioConnection          patchCord41(monoSampleAmp2, monoSampleAmpDelaySend2);
 AudioConnection          patchCord42(monoSampleAmp1, monoSampleLeft1);
 AudioConnection          patchCord43(monoSampleAmp1, monoSampleRight1);
 AudioConnection          patchCord44(monoSampleAmp1, monoSampleAmpDelaySend1);
-AudioConnection          patchCord45(monoSampleAmpEnv9, monoSampleAmpAccent9);
-AudioConnection          patchCord46(monoSampleAmpEnv10, monoSampleAmpAccent10);
-AudioConnection          patchCord47(monoSampleAmpEnv11, monoSampleAmpAccent11);
-AudioConnection          patchCord48(monoSampleAmpEnv12, monoSampleAmpAccent12);
-AudioConnection          patchCord49(monoSampleAmpAccent9, monoSampleAmp9);
-AudioConnection          patchCord50(monoSampleAmpAccent10, monoSampleAmp10);
-AudioConnection          patchCord51(monoSampleAmpAccent11, monoSampleAmp11);
-AudioConnection          patchCord52(monoSampleAmpAccent12, monoSampleAmp12);
-AudioConnection          patchCord53(monoSampleAmp9, monoSampleLeft9);
-AudioConnection          patchCord54(monoSampleAmp9, monoSampleRight9);
-AudioConnection          patchCord55(monoSampleAmp9, monoSampleAmpDelaySend12);
-AudioConnection          patchCord56(monoSampleAmp10, monoSampleLeft10);
-AudioConnection          patchCord57(monoSampleAmp10, monoSampleRight10);
-AudioConnection          patchCord58(monoSampleAmp10, monoSampleAmpDelaySend11);
-AudioConnection          patchCord59(monoSampleAmp11, monoSampleLeft11);
-AudioConnection          patchCord60(monoSampleAmp11, monoSampleRight11);
-AudioConnection          patchCord61(monoSampleAmp11, monoSampleAmpDelaySend10);
-AudioConnection          patchCord62(monoSampleAmp12, monoSampleLeft12);
-AudioConnection          patchCord63(monoSampleAmp12, monoSampleRight12);
-AudioConnection          patchCord64(monoSampleAmp12, monoSampleAmpDelaySend9);
+AudioConnection          patchCord45(monoSampleAmpEnv12, monoSampleAmpAccent12);
+AudioConnection          patchCord46(monoSampleAmpEnv11, monoSampleAmpAccent11);
+AudioConnection          patchCord47(monoSampleAmpEnv10, monoSampleAmpAccent10);
+AudioConnection          patchCord48(monoSampleAmpEnv9, monoSampleAmpAccent9);
+AudioConnection          patchCord49(monoSampleAmpAccent12, monoSampleAmp12);
+AudioConnection          patchCord50(monoSampleAmpAccent11, monoSampleAmp11);
+AudioConnection          patchCord51(monoSampleAmpAccent10, monoSampleAmp10);
+AudioConnection          patchCord52(monoSampleAmpAccent9, monoSampleAmp9);
+AudioConnection          patchCord53(monoSampleAmp12, monoSampleLeft12);
+AudioConnection          patchCord54(monoSampleAmp12, monoSampleRight12);
+AudioConnection          patchCord55(monoSampleAmp12, monoSampleAmpDelaySend12);
+AudioConnection          patchCord56(monoSampleAmp11, monoSampleLeft11);
+AudioConnection          patchCord57(monoSampleAmp11, monoSampleRight11);
+AudioConnection          patchCord58(monoSampleAmp11, monoSampleAmpDelaySend11);
+AudioConnection          patchCord59(monoSampleAmp10, monoSampleLeft10);
+AudioConnection          patchCord60(monoSampleAmp10, monoSampleRight10);
+AudioConnection          patchCord61(monoSampleAmp10, monoSampleAmpDelaySend10);
+AudioConnection          patchCord62(monoSampleAmp9, monoSampleLeft9);
+AudioConnection          patchCord63(monoSampleAmp9, monoSampleRight9);
+AudioConnection          patchCord64(monoSampleAmp9, monoSampleAmpDelaySend9);
 AudioConnection          patchCord65(monoSynthMix2, 0, monoSynthFilter2, 0);
 AudioConnection          patchCord66(monoSynthMix1, 0, monoSynthFilter1, 0);
 AudioConnection          patchCord67(monoSynthMix3, 0, monoSynthFilter3, 0);
@@ -374,14 +375,14 @@ AudioConnection          patchCord85(monoSampleRight4, 0, voiceSubMixRight5, 3);
 AudioConnection          patchCord86(monoSampleRight3, 0, voiceSubMixRight5, 2);
 AudioConnection          patchCord87(monoSampleRight2, 0, voiceSubMixRight5, 1);
 AudioConnection          patchCord88(monoSampleRight1, 0, voiceSubMixRight5, 0);
-AudioConnection          patchCord89(monoSampleLeft9, 0, voiceSubMixLeft7, 3);
-AudioConnection          patchCord90(monoSampleLeft10, 0, voiceSubMixLeft7, 2);
-AudioConnection          patchCord91(monoSampleLeft11, 0, voiceSubMixLeft7, 1);
-AudioConnection          patchCord92(monoSampleLeft12, 0, voiceSubMixLeft7, 0);
-AudioConnection          patchCord93(monoSampleRight9, 0, voiceSubMixRight7, 3);
-AudioConnection          patchCord94(monoSampleRight10, 0, voiceSubMixRight7, 2);
-AudioConnection          patchCord95(monoSampleRight11, 0, voiceSubMixRight7, 1);
-AudioConnection          patchCord96(monoSampleRight12, 0, voiceSubMixRight7, 0);
+AudioConnection          patchCord89(monoSampleLeft12, 0, voiceSubMixLeft7, 3);
+AudioConnection          patchCord90(monoSampleLeft11, 0, voiceSubMixLeft7, 2);
+AudioConnection          patchCord91(monoSampleLeft10, 0, voiceSubMixLeft7, 1);
+AudioConnection          patchCord92(monoSampleLeft9, 0, voiceSubMixLeft7, 0);
+AudioConnection          patchCord93(monoSampleRight12, 0, voiceSubMixRight7, 3);
+AudioConnection          patchCord94(monoSampleRight11, 0, voiceSubMixRight7, 2);
+AudioConnection          patchCord95(monoSampleRight10, 0, voiceSubMixRight7, 1);
+AudioConnection          patchCord96(monoSampleRight9, 0, voiceSubMixRight7, 0);
 AudioConnection          patchCord97(monoSynthFilter2, monoSynthAmpEnv2);
 AudioConnection          patchCord98(monoSynthFilter1, monoSynthAmpEnv1);
 AudioConnection          patchCord99(monoSynthFilter3, monoSynthAmpEnv3);
@@ -462,23 +463,23 @@ AudioConnection          patchCord173(dexedAmpAccent3, dexedAmp3);
 AudioConnection          patchCord174(dexedAmpAccent2, dexedAmp2);
 AudioConnection          patchCord175(dexedAmpAccent1, dexedAmp1);
 AudioConnection          patchCord176(dexedAmpAccent4, dexedAmp4);
-AudioConnection          patchCord177(monoSample7, 0, monoSampleAmpEnv6, 0);
-AudioConnection          patchCord178(monoSample6, 0, monoSampleAmpEnv7, 0);
-AudioConnection          patchCord179(monoSample8, 0, monoSampleAmpEnv5, 0);
-AudioConnection          patchCord180(monoSample5, 0, monoSampleAmpEnv8, 0);
+AudioConnection          patchCord177(monoSample7, 0, monoSampleAmpEnv7, 0);
+AudioConnection          patchCord178(monoSample6, 0, monoSampleAmpEnv6, 0);
+AudioConnection          patchCord179(monoSample8, 0, monoSampleAmpEnv8, 0);
+AudioConnection          patchCord180(monoSample5, 0, monoSampleAmpEnv5, 0);
 AudioConnection          patchCord181(fmDrumAmpAccent3, fmDrumAmp3);
 AudioConnection          patchCord182(fmDrumAmp3, fmDrumLeft3);
 AudioConnection          patchCord183(fmDrumAmp3, fmDrumRight3);
 AudioConnection          patchCord184(fmDrumAmp3, fmDrumAmpDelaySend3);
 AudioConnection          patchCord185(fmDrumAmpAccent2, fmDrumAmp2);
-AudioConnection          patchCord186(monoSample15, 0, monoSampleAmpEnv14, 0);
+AudioConnection          patchCord186(monoSample15, 0, monoSampleAmpEnv15, 0);
 AudioConnection          patchCord187(fmDrumAmp2, fmDrumLeft2);
 AudioConnection          patchCord188(fmDrumAmp2, fmDrumRight2);
 AudioConnection          patchCord189(fmDrumAmp2, fmDrumAmpDelaySend2);
-AudioConnection          patchCord190(monoSample14, 0, monoSampleAmpEnv15, 0);
+AudioConnection          patchCord190(monoSample14, 0, monoSampleAmpEnv14, 0);
 AudioConnection          patchCord191(fmDrumAmpAccent1, fmDrumAmp1);
-AudioConnection          patchCord192(monoSample16, 0, monoSampleAmpEnv13, 0);
-AudioConnection          patchCord193(monoSample13, 0, monoSampleAmpEnv16, 0);
+AudioConnection          patchCord192(monoSample16, 0, monoSampleAmpEnv16, 0);
+AudioConnection          patchCord193(monoSample13, 0, monoSampleAmpEnv13, 0);
 AudioConnection          patchCord194(fmDrumAmp1, fmDrumLeft1);
 AudioConnection          patchCord195(fmDrumAmp1, fmDrumRight1);
 AudioConnection          patchCord196(fmDrumAmp1, fmDrumAmpDelaySend1);
@@ -511,69 +512,69 @@ AudioConnection          patchCord222(dexedRight6, 0, voiceSubMixRight3, 1);
 AudioConnection          patchCord223(dexedRight5, 0, voiceSubMixRight3, 0);
 AudioConnection          patchCord224(dexedLeft2, 0, voiceSubMixLeft2, 1);
 AudioConnection          patchCord225(dexedRight8, 0, voiceSubMixRight3, 3);
-AudioConnection          patchCord226(monoSampleAmpEnv5, monoSampleAmpAccent5);
+AudioConnection          patchCord226(monoSampleAmpEnv8, monoSampleAmpAccent8);
 AudioConnection          patchCord227(dexedLeft1, 0, voiceSubMixLeft2, 0);
-AudioConnection          patchCord228(monoSampleAmpEnv6, monoSampleAmpAccent6);
+AudioConnection          patchCord228(monoSampleAmpEnv7, monoSampleAmpAccent7);
 AudioConnection          patchCord229(fmDrumRight4, 0, voiceSubMixRight4, 3);
 AudioConnection          patchCord230(dexedLeft4, 0, voiceSubMixLeft2, 3);
-AudioConnection          patchCord231(monoSampleAmpEnv7, monoSampleAmpAccent7);
-AudioConnection          patchCord232(monoSampleAmpEnv8, monoSampleAmpAccent8);
+AudioConnection          patchCord231(monoSampleAmpEnv6, monoSampleAmpAccent6);
+AudioConnection          patchCord232(monoSampleAmpEnv5, monoSampleAmpAccent5);
 AudioConnection          patchCord233(dexedRight3, 0, voiceSubMixRight2, 2);
 AudioConnection          patchCord234(dexedRight2, 0, voiceSubMixRight2, 1);
 AudioConnection          patchCord235(dexedRight1, 0, voiceSubMixRight2, 0);
 AudioConnection          patchCord236(dexedRight4, 0, voiceSubMixRight2, 3);
-AudioConnection          patchCord237(monoSampleAmpAccent5, monoSampleAmp5);
-AudioConnection          patchCord238(monoSampleAmpEnv13, monoSampleAmpAccent13);
-AudioConnection          patchCord239(monoSampleAmpEnv14, monoSampleAmpAccent14);
-AudioConnection          patchCord240(monoSampleAmpAccent6, monoSampleAmp6);
-AudioConnection          patchCord241(monoSampleAmpEnv15, monoSampleAmpAccent15);
-AudioConnection          patchCord242(monoSampleAmpEnv16, monoSampleAmpAccent16);
-AudioConnection          patchCord243(monoSampleAmpAccent7, monoSampleAmp7);
-AudioConnection          patchCord244(monoSampleAmpAccent8, monoSampleAmp8);
-AudioConnection          patchCord245(monoSampleAmp5, monoSampleLeft5);
-AudioConnection          patchCord246(monoSampleAmp5, monoSampleRight5);
-AudioConnection          patchCord247(monoSampleAmp5, monoSampleAmpDelaySend8);
-AudioConnection          patchCord248(monoSampleAmp6, monoSampleLeft6);
-AudioConnection          patchCord249(monoSampleAmp6, monoSampleRight6);
-AudioConnection          patchCord250(monoSampleAmp6, monoSampleAmpDelaySend7);
-AudioConnection          patchCord251(monoSampleAmp7, monoSampleLeft7);
-AudioConnection          patchCord252(monoSampleAmp7, monoSampleRight7);
-AudioConnection          patchCord253(monoSampleAmp7, monoSampleAmpDelaySend6);
-AudioConnection          patchCord254(monoSampleAmp8, monoSampleLeft8);
-AudioConnection          patchCord255(monoSampleAmp8, monoSampleRight8);
-AudioConnection          patchCord256(monoSampleAmp8, monoSampleAmpDelaySend5);
-AudioConnection          patchCord257(monoSampleAmpAccent13, monoSampleAmp13);
-AudioConnection          patchCord258(monoSampleAmpAccent14, monoSampleAmp14);
-AudioConnection          patchCord259(monoSampleAmpAccent15, monoSampleAmp15);
-AudioConnection          patchCord260(monoSampleAmpAccent16, monoSampleAmp16);
-AudioConnection          patchCord261(monoSampleAmp13, monoSampleLeft13);
-AudioConnection          patchCord262(monoSampleAmp13, monoSampleRight13);
-AudioConnection          patchCord263(monoSampleAmp13, monoSampleAmpDelaySend16);
-AudioConnection          patchCord264(monoSampleAmp14, monoSampleLeft14);
-AudioConnection          patchCord265(monoSampleAmp14, monoSampleRight14);
-AudioConnection          patchCord266(monoSampleAmp14, monoSampleAmpDelaySend15);
-AudioConnection          patchCord267(monoSampleAmp15, monoSampleLeft15);
-AudioConnection          patchCord268(monoSampleAmp15, monoSampleRight15);
-AudioConnection          patchCord269(monoSampleAmp15, monoSampleAmpDelaySend14);
-AudioConnection          patchCord270(monoSampleAmp16, monoSampleLeft16);
-AudioConnection          patchCord271(monoSampleAmp16, monoSampleRight16);
-AudioConnection          patchCord272(monoSampleAmp16, monoSampleAmpDelaySend13);
-AudioConnection          patchCord273(monoSampleLeft5, 0, voiceSubMixLeft6, 3);
-AudioConnection          patchCord274(monoSampleLeft6, 0, voiceSubMixLeft6, 2);
-AudioConnection          patchCord275(monoSampleLeft7, 0, voiceSubMixLeft6, 1);
-AudioConnection          patchCord276(monoSampleLeft8, 0, voiceSubMixLeft6, 0);
-AudioConnection          patchCord277(monoSampleRight5, 0, voiceSubMixRight6, 3);
-AudioConnection          patchCord278(monoSampleRight6, 0, voiceSubMixRight6, 2);
-AudioConnection          patchCord279(monoSampleRight7, 0, voiceSubMixRight6, 1);
-AudioConnection          patchCord280(monoSampleRight8, 0, voiceSubMixRight6, 0);
-AudioConnection          patchCord281(monoSampleLeft13, 0, voiceSubMixLeft8, 3);
-AudioConnection          patchCord282(monoSampleLeft14, 0, voiceSubMixLeft8, 2);
-AudioConnection          patchCord283(monoSampleLeft15, 0, voiceSubMixLeft8, 1);
-AudioConnection          patchCord284(monoSampleLeft16, 0, voiceSubMixLeft8, 0);
-AudioConnection          patchCord285(monoSampleRight13, 0, voiceSubMixRight8, 3);
-AudioConnection          patchCord286(monoSampleRight14, 0, voiceSubMixRight8, 2);
-AudioConnection          patchCord287(monoSampleRight15, 0, voiceSubMixRight8, 1);
-AudioConnection          patchCord288(monoSampleRight16, 0, voiceSubMixRight8, 0);
+AudioConnection          patchCord237(monoSampleAmpAccent8, monoSampleAmp8);
+AudioConnection          patchCord238(monoSampleAmpEnv16, monoSampleAmpAccent16);
+AudioConnection          patchCord239(monoSampleAmpEnv15, monoSampleAmpAccent15);
+AudioConnection          patchCord240(monoSampleAmpAccent7, monoSampleAmp7);
+AudioConnection          patchCord241(monoSampleAmpEnv14, monoSampleAmpAccent14);
+AudioConnection          patchCord242(monoSampleAmpEnv13, monoSampleAmpAccent13);
+AudioConnection          patchCord243(monoSampleAmpAccent6, monoSampleAmp6);
+AudioConnection          patchCord244(monoSampleAmpAccent5, monoSampleAmp5);
+AudioConnection          patchCord245(monoSampleAmp8, monoSampleLeft8);
+AudioConnection          patchCord246(monoSampleAmp8, monoSampleRight8);
+AudioConnection          patchCord247(monoSampleAmp8, monoSampleAmpDelaySend8);
+AudioConnection          patchCord248(monoSampleAmp7, monoSampleLeft7);
+AudioConnection          patchCord249(monoSampleAmp7, monoSampleRight7);
+AudioConnection          patchCord250(monoSampleAmp7, monoSampleAmpDelaySend7);
+AudioConnection          patchCord251(monoSampleAmp6, monoSampleLeft6);
+AudioConnection          patchCord252(monoSampleAmp6, monoSampleRight6);
+AudioConnection          patchCord253(monoSampleAmp6, monoSampleAmpDelaySend6);
+AudioConnection          patchCord254(monoSampleAmp5, monoSampleLeft5);
+AudioConnection          patchCord255(monoSampleAmp5, monoSampleRight5);
+AudioConnection          patchCord256(monoSampleAmp5, monoSampleAmpDelaySend5);
+AudioConnection          patchCord257(monoSampleAmpAccent16, monoSampleAmp16);
+AudioConnection          patchCord258(monoSampleAmpAccent15, monoSampleAmp15);
+AudioConnection          patchCord259(monoSampleAmpAccent14, monoSampleAmp14);
+AudioConnection          patchCord260(monoSampleAmpAccent13, monoSampleAmp13);
+AudioConnection          patchCord261(monoSampleAmp16, monoSampleLeft16);
+AudioConnection          patchCord262(monoSampleAmp16, monoSampleRight16);
+AudioConnection          patchCord263(monoSampleAmp16, monoSampleAmpDelaySend16);
+AudioConnection          patchCord264(monoSampleAmp15, monoSampleLeft15);
+AudioConnection          patchCord265(monoSampleAmp15, monoSampleRight15);
+AudioConnection          patchCord266(monoSampleAmp15, monoSampleAmpDelaySend15);
+AudioConnection          patchCord267(monoSampleAmp14, monoSampleLeft14);
+AudioConnection          patchCord268(monoSampleAmp14, monoSampleRight14);
+AudioConnection          patchCord269(monoSampleAmp14, monoSampleAmpDelaySend14);
+AudioConnection          patchCord270(monoSampleAmp13, monoSampleLeft13);
+AudioConnection          patchCord271(monoSampleAmp13, monoSampleRight13);
+AudioConnection          patchCord272(monoSampleAmp13, monoSampleAmpDelaySend13);
+AudioConnection          patchCord273(monoSampleLeft8, 0, voiceSubMixLeft6, 3);
+AudioConnection          patchCord274(monoSampleLeft7, 0, voiceSubMixLeft6, 2);
+AudioConnection          patchCord275(monoSampleLeft6, 0, voiceSubMixLeft6, 1);
+AudioConnection          patchCord276(monoSampleLeft5, 0, voiceSubMixLeft6, 0);
+AudioConnection          patchCord277(monoSampleRight8, 0, voiceSubMixRight6, 3);
+AudioConnection          patchCord278(monoSampleRight7, 0, voiceSubMixRight6, 2);
+AudioConnection          patchCord279(monoSampleRight6, 0, voiceSubMixRight6, 1);
+AudioConnection          patchCord280(monoSampleRight5, 0, voiceSubMixRight6, 0);
+AudioConnection          patchCord281(monoSampleLeft16, 0, voiceSubMixLeft8, 3);
+AudioConnection          patchCord282(monoSampleLeft15, 0, voiceSubMixLeft8, 2);
+AudioConnection          patchCord283(monoSampleLeft14, 0, voiceSubMixLeft8, 1);
+AudioConnection          patchCord284(monoSampleLeft13, 0, voiceSubMixLeft8, 0);
+AudioConnection          patchCord285(monoSampleRight16, 0, voiceSubMixRight8, 3);
+AudioConnection          patchCord286(monoSampleRight15, 0, voiceSubMixRight8, 2);
+AudioConnection          patchCord287(monoSampleRight14, 0, voiceSubMixRight8, 1);
+AudioConnection          patchCord288(monoSampleRight13, 0, voiceSubMixRight8, 0);
 AudioConnection          patchCord289(dexedAmpDelaySend1, 0, delaySubMix2, 0);
 AudioConnection          patchCord290(dexedAmpDelaySend2, 0, delaySubMix2, 1);
 AudioConnection          patchCord291(dexedAmpDelaySend4, 0, delaySubMix2, 3);
@@ -631,15 +632,17 @@ AudioConnection          patchCord342(i2s2, 1, peak_right, 0);
 AudioConnection          patchCord343(delay1, 0, delayFeedbackMixer1, 0);
 AudioConnection          patchCord344(delay1, 0, delayLeftAmp1, 0);
 AudioConnection          patchCord345(delay1, 0, delayRightAmp1, 0);
-AudioConnection          patchCord346(mainMixerLeft, 0, OutputMixerLeft, 0);
-AudioConnection          patchCord347(mainMixerRight, 0, OutputMixerRight, 0);
-AudioConnection          patchCord348(delayLeftAmp1, 0, mainMixerLeft, 2);
-AudioConnection          patchCord349(delayRightAmp1, 0, mainMixerRight, 2);
-AudioConnection          patchCord350(delayFeedbackMixer1, delay1);
-AudioConnection          patchCord351(inputMixerLeft, 0, OutputMixerLeft, 1);
-AudioConnection          patchCord352(inputMixerRight, 0, OutputMixerRight, 1);
-AudioConnection          patchCord353(OutputMixerLeft, 0, i2s1, 0);
-AudioConnection          patchCord354(OutputMixerRight, 0, i2s1, 1);
+AudioConnection          patchCord346(metronome, 0, mainMixerLeft, 3);
+AudioConnection          patchCord347(metronome, 0, mainMixerRight, 3);
+AudioConnection          patchCord348(mainMixerLeft, 0, OutputMixerLeft, 0);
+AudioConnection          patchCord349(mainMixerRight, 0, OutputMixerRight, 0);
+AudioConnection          patchCord350(delayLeftAmp1, 0, mainMixerLeft, 2);
+AudioConnection          patchCord351(delayRightAmp1, 0, mainMixerRight, 2);
+AudioConnection          patchCord352(delayFeedbackMixer1, delay1);
+AudioConnection          patchCord353(inputMixerLeft, 0, OutputMixerLeft, 1);
+AudioConnection          patchCord354(inputMixerRight, 0, OutputMixerRight, 1);
+AudioConnection          patchCord355(OutputMixerLeft, 0, i2s1, 0);
+AudioConnection          patchCord356(OutputMixerRight, 0, i2s1, 1);
 
 AudioControlSGTL5000     sgtl5000_1;     //xy=4701.000038146973,2797.000062942505
 // GUItool: end automatically generated code

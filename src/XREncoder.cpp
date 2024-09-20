@@ -782,13 +782,11 @@ namespace XREncoder
                 auto currSoundForTrack = XRSound::activeSounds[currTrackNum];    
                 
                 if (currSoundForTrack.type == XRSound::SOUND_TYPE::T_MONO_SAMPLE) {
-                    Serial.println("here 123");
                     XRUX::setCurrentMode(XRUX::UX_MODE::ASSIGN_SAMPLE_TO_TRACK_SOUND);
                     XRSD::setActiveSampleSlot(0); // browsing for first sample slot, based on this encoder
                     XRDisplay::drawSampleBrowser();
                 }
             } else if (currUXMode == XRUX::UX_MODE::ASSIGN_SAMPLE_TO_TRACK_SOUND) {
-                Serial.println("here 234");
                 handleMenuCursor(currUXMode, diff);
             }
         }

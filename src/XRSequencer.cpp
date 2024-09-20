@@ -30,6 +30,8 @@ namespace XRSequencer
     int8_t _ratchetTrack = -1;
     int8_t _ratchetDivision = -1;
 
+    bool metronomeEnabled = false;
+
     bool _initTracks[MAXIMUM_SEQUENCER_TRACKS];
 
     bool _recording = false;
@@ -53,6 +55,8 @@ namespace XRSequencer
     DMAMEM TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
     DMAMEM RECORDING_STATE recordingState;
 
+    TRACK_TRIGGER_STATE trackTriggerState;
+
     bool init()
     {
         _currentSelectedBank = 0;
@@ -60,20 +64,45 @@ namespace XRSequencer
         _currentSelectedTrack = 0;
         _currentSelectedTrackLayer = 0;
 
+        // init pattern fx pages
         patternFxPages[0] = PATTERN_FX_PAGE_INDEXES::DELAY;
         patternFxPages[1] = PATTERN_FX_PAGE_INDEXES::NA;
         patternFxPages[2] = PATTERN_FX_PAGE_INDEXES::NA;
         patternFxPages[3] = PATTERN_FX_PAGE_INDEXES::NA;
 
-        // init recording state
+        for (int s = 0; s < STEP_STACK_SIZE; s++)
+        {
+            _stepStack[s].length = -1;
+            _stepStack[s].trackNum = -1;
+            _stepStack[s].stepNum = -1;
+
+            _ignoredStepStack[s].length = -1;
+            _ignoredStepStack[s].trackNum = -1;
+            _ignoredStepStack[s].stepNum = -1;
+        }
+
+        for (int r = 0; r < RATCHET_STACK_SIZE; r++)
+        {
+            _ratchetStack[r].length = -1;
+            _ratchetStack[r].trackNum = -1;
+        }
+
+        // init perform state
         for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
         {
-            for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
+            trackPerformState[t].muted = false;
+            trackPerformState[t].soloing = false;
+        }
+
+        // init recording state
+        for (int rec = 0; rec < MAXIMUM_SEQUENCER_TRACKS; rec++)
+        {
+            for (int rs = 0; rs < MAXIMUM_SEQUENCER_STEPS; rs++)
             {
-                recordingState.tracks[t].steps[s].state = STEP_STATE::STATE_OFF;
-                recordingState.tracks[t].steps[s].length = 4;
-                recordingState.tracks[t].steps[s].note = 0;
-                recordingState.tracks[t].steps[s].queued = false;
+                recordingState.tracks[rec].steps[rs].state = STEP_STATE::STATE_OFF;
+                recordingState.tracks[rec].steps[rs].length = 4;
+                recordingState.tracks[rec].steps[rs].note = 0;
+                recordingState.tracks[rec].steps[rs].queued = false;
             }
         }
 
@@ -206,6 +235,12 @@ namespace XRSequencer
         if (isOnStraightQtrNote && !(tick % 4))
         {
             XRLED::setPWM(23, 4095); // when recording, each straight quarter note start button led FULL ON
+
+            if (metronomeEnabled) {
+                XRSound::handleNoteOnForMetronome((_seqState.currentBar == 1 && _seqState.currentStep == 1));
+                //XRDisplay::toggleMetronomeDirection();
+                //XRDisplay::drawSequencerScreen(false);
+            }
         }
         
         updateCurrentPatternStepState();
@@ -405,7 +440,7 @@ namespace XRSequencer
                 auto &currTrack = activePattern.layers[_currentSelectedTrackLayer].tracks[t];
                 auto currTrackStepData = currTrack.steps[currentSelectedTrackCurrentStep-1];
 
-                if (currTrackStepData.state == STEP_STATE::STATE_ACCENTED)
+                if (currTrackStepData.state != STEP_STATE::STATE_OFF)
                 {
                     XRLED::setPWM(keyLED, 0); // turn sixteenth led OFF
                 } else {
@@ -480,6 +515,7 @@ namespace XRSequencer
 
     void handleRemoveFromStepStack(uint32_t tick)
     {
+
         for (int i = 0; i < STEP_STACK_SIZE; i++)
         {
             if (_stepStack[i].length != -1)
@@ -488,7 +524,13 @@ namespace XRSequencer
 
                 if (_stepStack[i].length == 0)
                 {
-                    handleNoteOffForTrackStep(_stepStack[i].trackNum, _stepStack[i].stepNum);
+                    auto track = _stepStack[i].trackNum;
+
+                    // handleNoteOffForTrackStep(_stepStack[i].trackNum, _stepStack[i].stepNum);
+                    trackTriggerState.trackTriggers[track].currentState = 0;
+                    trackTriggerState.trackTriggers[track].pattern = _currentSelectedPattern;
+                    trackTriggerState.trackTriggers[track].layer = _currentSelectedTrackLayer;
+                    trackTriggerState.trackTriggers[track].step = _stepStack[i].stepNum;
 
                     // re-initialize stack entry
                     _stepStack[i].trackNum = -1;
@@ -543,7 +585,7 @@ namespace XRSequencer
         // clear track based notes
         for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
         {  
-            handleNoteOffForTrack(t);
+            XRSound::handleNoteOffForTrack(t);
         }
 
         // clear step based notes
@@ -551,7 +593,7 @@ namespace XRSequencer
         {
             if (_stepStack[i].length > 0)
             {
-                handleNoteOffForTrackStep(_stepStack[i].trackNum, _stepStack[i].stepNum);
+                // handleNoteOffForTrackStep(_stepStack[i].trackNum, _stepStack[i].stepNum);
 
                 // re-initialize stack entry
                 _stepStack[i].trackNum = -1;
@@ -741,6 +783,8 @@ namespace XRSequencer
         }
 
         if (prob < 100) {
+            Serial.println("step probability: " + String(prob));
+
             uint8_t r = random(99);
 
             if (prob == 0 || (r > prob)) {
@@ -753,6 +797,11 @@ namespace XRSequencer
 
     void handleAddToStepStack(uint32_t tick, int track, int step)
     {
+        if (_ratchetTrack == track && _ratchetDivision > -1)  // if ratcheting is enabled
+        {
+            return;
+        }
+
         auto &trackToUse = getTrack(track);
 
         int lenStepMod = trackToUse.steps[step].mods[LENGTH];
@@ -766,7 +815,16 @@ namespace XRSequencer
                 _stepStack[i].stepNum = step;
                 _stepStack[i].length = lenStepModEnabled ? lenStepMod : trackToUse.length;
 
-                handleNoteOnForTrackStep(_stepStack[i].trackNum, _stepStack[i].stepNum);
+                trackTriggerState.trackTriggers[track].lastState = 0;
+                trackTriggerState.trackTriggers[track].currentState = 1; // <-- this is important for triggering
+                trackTriggerState.trackTriggers[track].pattern = _currentSelectedPattern;
+                trackTriggerState.trackTriggers[track].layer = _currentSelectedTrackLayer;
+                trackTriggerState.trackTriggers[track].step = step;
+                trackTriggerState.trackTriggers[track].soundType = XRSound::activeSounds[track].type;
+
+                // Serial.printf("added to step stack: track: %d, step: %d, length: %d\n", track, step, _stepStack[i].length);
+
+                // handleNoteOnForTrackStep(_stepStack[i].trackNum, _stepStack[i].stepNum, trackTriggerState.trackTriggers[0]);
 
                 return;
             }
@@ -793,10 +851,24 @@ namespace XRSequencer
         }
     }
 
-    void handleNoteOnForTrackStep(int track, int step)
+    void handleNoteOnForTrackStep(int track, int step, TRACK_TRIGGER trigger)
     {
-        if (trackPerformState[track].muted)
-        {
+        // if (_currentSelectedPattern != trigger.pattern) {
+        //     Serial.println("FIX: DO NOT TRIGGER FOR WRONG PATTERN!");
+        //     return;
+        // }
+
+        // if (_currentSelectedTrackLayer != trigger.layer) {
+        //     Serial.println("FIX: DO NOT TRIGGER FOR WRONG TRACK LAYER!");
+        //     return;
+        // }
+
+        // if (XRSound::activeSounds[track].type != trigger.soundType) {
+        //     Serial.println("FIX: DO NOT TRIGGER FOR WRONG SOUND TYPE!");
+        //     return;
+        // }
+
+        if (trackPerformState[track].muted){
             return;
         }
 
@@ -1452,13 +1524,20 @@ namespace XRSequencer
     {
         for (size_t i = 0; i < RATCHET_STACK_SIZE; i++)
         {
+            auto trk = _ratchetStack[i].trackNum;
+
             if (_ratchetStack[i].length != -1)
             {
                 --_ratchetStack[i].length;
 
                 if (_ratchetStack[i].length == 0)
                 {
-                    handleNoteOffForTrack(_ratchetStack[i].trackNum);
+                    // handleNoteOffForTrack(_ratchetStack[i].trackNum);
+                    trackTriggerState.trackTriggers[trk].currentState = 0;
+                    trackTriggerState.trackTriggers[trk].pattern = _currentSelectedPattern;
+                    trackTriggerState.trackTriggers[trk].layer = _currentSelectedTrackLayer;
+                    trackTriggerState.trackTriggers[trk].step = -1;
+                    trackTriggerState.trackTriggers[trk].soundType = XRSound::activeSounds[trk].type;
 
                     // re-initialize stack entry
                     _ratchetStack[i].trackNum = -1;
@@ -1477,15 +1556,34 @@ namespace XRSequencer
                 _ratchetStack[i].trackNum = _ratchetTrack;
                 _ratchetStack[i].length = 2; // TODO: shorten?
 
-                handleNoteOnForTrack(_ratchetStack[i].trackNum);
+                // handleNoteOnForTrack(_ratchetStack[i].trackNum, trackTriggerState.trackTriggers[0]);
+                trackTriggerState.trackTriggers[_ratchetStack[i].trackNum].currentState = 1;
+                trackTriggerState.trackTriggers[_ratchetStack[i].trackNum].pattern = _currentSelectedPattern;
+                trackTriggerState.trackTriggers[_ratchetStack[i].trackNum].layer = _currentSelectedTrackLayer;
+                trackTriggerState.trackTriggers[_ratchetStack[i].trackNum].soundType = XRSound::activeSounds[_ratchetStack[i].trackNum].type;
 
                 return;
             }
         }
     }
 
-    void handleNoteOnForTrack(int track)
+    void handleNoteOnForTrack(int track, TRACK_TRIGGER trigger)
     {
+        // if (_currentSelectedPattern != trigger.pattern) {
+        //     Serial.println("FIX: DO NOT TRIGGER FOR WRONG PATTERN!");
+        //     return;
+        // }
+
+        // if (_currentSelectedTrackLayer != trigger.layer) {
+        //     Serial.println("FIX: DO NOT TRIGGER FOR WRONG TRACK LAYER!");
+        //     return;
+        // }
+
+        // if (XRSound::activeSounds[track].type != trigger.soundType) {
+        //     Serial.println("FIX: DO NOT TRIGGER FOR WRONG SOUND TYPE!");
+        //     return;
+        // }
+
         switch (XRSound::activeSounds[track].type)
         {
         case XRSound::T_MONO_SAMPLE:
@@ -1525,6 +1623,65 @@ namespace XRSequencer
     void handleNoteOffForTrack(int track)
     {
         XRSound::handleNoteOffForTrack(track);
+    }
+
+    void handleTriggerStates()
+    {
+        for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+        {
+            if (trackTriggerState.trackTriggers[t].currentState != trackTriggerState.trackTriggers[t].lastState)
+            {
+                //Serial.println("trigger state changed!");
+
+                if (trackTriggerState.trackTriggers[t].step > -1) {
+                    if (trackTriggerState.trackTriggers[t].currentState == 1)
+                    {
+                        //Serial.printf("triggering ON step %d for track %d\n", trackTriggerState.trackTriggers[t].step+1, t+1);
+
+                        handleNoteOnForTrackStep(t, trackTriggerState.trackTriggers[t].step, trackTriggerState.trackTriggers[t]);
+
+                        trackTriggerState.trackTriggers[t].lastState = trackTriggerState.trackTriggers[t].currentState;
+                        trackTriggerState.trackTriggers[t].currentState = 2;
+                    }
+                    else if (trackTriggerState.trackTriggers[t].currentState == 0)
+                    {
+                        //Serial.printf("triggering OFF step %d for track %d\n", trackTriggerState.trackTriggers[t].step+1, t+1);
+
+                        handleNoteOffForTrackStep(t, trackTriggerState.trackTriggers[t].step);
+
+                        trackTriggerState.trackTriggers[t].pattern = -1;
+                        trackTriggerState.trackTriggers[t].layer = -1;
+                        trackTriggerState.trackTriggers[t].step = -1;
+                        trackTriggerState.trackTriggers[t].soundType = XRSound::T_EMPTY;
+
+                        trackTriggerState.trackTriggers[t].lastState = trackTriggerState.trackTriggers[t].currentState;
+                    }
+                } else {
+                    if (trackTriggerState.trackTriggers[t].currentState == 1)
+                    {
+                        //Serial.printf("triggering ON track %d\n", t+1);
+
+                        handleNoteOnForTrack(t, trackTriggerState.trackTriggers[t]);
+
+                        trackTriggerState.trackTriggers[t].lastState = trackTriggerState.trackTriggers[t].currentState;
+                        trackTriggerState.trackTriggers[t].currentState = 2;
+                    }
+                    else if (trackTriggerState.trackTriggers[t].currentState == 0)
+                    {
+                        //Serial.printf("triggering OFF track %d\n", t+1);
+
+                        handleNoteOffForTrack(t);
+
+                        trackTriggerState.trackTriggers[t].pattern = -1;
+                        trackTriggerState.trackTriggers[t].layer = -1;
+                        trackTriggerState.trackTriggers[t].step = -1;
+                        trackTriggerState.trackTriggers[t].soundType = XRSound::T_EMPTY;
+
+                        trackTriggerState.trackTriggers[t].lastState = trackTriggerState.trackTriggers[t].currentState;
+                    }
+                }
+            }
+        }
     }
 
     void initializeCurrentSelectedTrack()

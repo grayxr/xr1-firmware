@@ -10,7 +10,7 @@ namespace XRAudio
     {
         // Audio connections require memory to work.  For more
         // detailed information, see the MemoryAndCpuUsage example
-        AudioMemory(300);
+        AudioMemory(400);
 
         // Comment these out if not using the audio adaptor board.
         // This may wait forever if the SDA & SCL pins lack
@@ -44,7 +44,7 @@ namespace XRAudio
 
     void logMetrics()
     {
-        if (LOG_METRICS_ENABLED) {
+        //if (LOG_METRICS_ENABLED) {
             Serial.printf(
                 "Memory: %d/%d CPU: %.2f/%.2f\n",
                 AudioMemoryUsage(),
@@ -53,7 +53,7 @@ namespace XRAudio
                 AudioProcessorUsageMax()
             );
             resetMetrics();
-        }
+        //}
     }
 
     void resetMetrics()

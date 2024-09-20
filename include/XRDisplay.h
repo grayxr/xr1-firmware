@@ -16,6 +16,7 @@ namespace XRDisplay
     void drawGenericOverlayFrame(void);
     void drawCreateProjectDialog();
     void drawSaveProject();
+    void drawModEncoderArea();
     void drawHatchedBackground();
     void drawError(std::string message);
     void drawSequencerScreen(bool queueBlink = false);
@@ -41,8 +42,10 @@ namespace XRDisplay
     void drawPasteConfirmOverlay(std::string type, uint8_t num);
     void drawStraightDashedLine(int startX, int endX, int yPos);
     void drawStepMicrotimingOverlay(std::string value);
+    void toggleMetronomeDirection();
 
     std::string getDisplayNote();
+    std::string getNumberBufferedStr(std::string inputStr, int8_t value, bool hideNum);
 }
 
 #endif /* XRDisplay_h */
