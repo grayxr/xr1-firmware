@@ -828,7 +828,8 @@ namespace XREncoder
                     // }
 
                     AudioNoInterrupts();
-                    monoSampleInstance.sample.setPlaybackRate(newSpeed);
+                    monoSampleInstance.sampleA.setPlaybackRate(newSpeed);
+                    monoSampleInstance.sampleB.setPlaybackRate(newSpeed);
                     AudioInterrupts();
 
                     XRDisplay::drawSequencerScreen(false);

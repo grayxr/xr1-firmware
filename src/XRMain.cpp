@@ -67,6 +67,8 @@ namespace XRMain
         }
 
         XRAudio::resetMetrics();
+
+        XRSound::cueSamplesForSteps();
     }
 
     void update()
@@ -78,7 +80,15 @@ namespace XRMain
         XRVersa::handleStates();
         XREncoder::handleStates();
 
-        XRSequencer::handleTriggerStates();
+        // only after we've already triggered the first step from uClock and the sequencer is running
+        // do we start cueing up samples in the main loop
+        if (XRSequencer::triggeredFirstStep && XRSequencer::getSeqState().playbackState == XRSequencer::RUNNING) {
+            XRSound::cueSamplesForSteps();
+        }
+
+        if (XRSequencer::getSeqState().playbackState == XRSequencer::RUNNING) {
+            XRSound::cueSamplesForTracks();
+        }
 
         if (XRSequencer::getSeqState().playbackState == XRSequencer::RUNNING && XRUX::getCurrentMode() == XRUX::PATTERN_WRITE && timeMs >= 250)
         {

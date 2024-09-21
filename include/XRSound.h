@@ -150,10 +150,17 @@ namespace XRSound
 
     /*** VOICES/INSTANCES */
 
+    enum CUED_SAMPLE {
+        A = 0,
+        B,
+    };
+
     class MonoSampleInstance
     {
     public:
-        AudioPlaySdResmp &sample;
+        AudioPlaySdResmp &sampleA;
+        AudioPlaySdResmp &sampleB;
+        AudioMixer4 &cueMix;
         AudioEffectEnvelope &ampEnv;
         AudioAmplifier &ampAccent;
         AudioAmplifier &amp;
@@ -162,14 +169,18 @@ namespace XRSound
         AudioAmplifier &right;
 
         MonoSampleInstance(
-            AudioPlaySdResmp &sample,
+            AudioPlaySdResmp &sampleA,
+            AudioPlaySdResmp &sampleB,
+            AudioMixer4 &cueMix,
             AudioEffectEnvelope &ampEnv,
             AudioAmplifier &ampAccent,
             AudioAmplifier &amp,
             AudioAmplifier &ampDelaySend,
             AudioAmplifier &left,
             AudioAmplifier &right
-        ) : sample{sample},
+        ) : sampleA{sampleA},
+            sampleB{sampleB},
+            cueMix{cueMix},
             ampEnv{ampEnv},
             ampAccent{ampAccent},
             amp{amp},
@@ -395,7 +406,8 @@ namespace XRSound
     extern EXTMEM SOUND activeSounds[MAXIMUM_SEQUENCER_TRACKS];
     extern EXTMEM SOUND idleSounds[MAXIMUM_SEQUENCER_TRACKS];
     extern EXTMEM SOUND_MOD_LAYER activeSoundModLayer;
-
+    extern EXTMEM CUED_SAMPLE _cued_samples[MAXIMUM_MONO_SAMPLE_SOUNDS];
+    
     extern MonoSampleInstance monoSampleInstances[MAXIMUM_MONO_SAMPLE_SOUNDS];
     extern MonoSynthInstance monoSynthInstances[MAXIMUM_MONO_SYNTH_SOUNDS];
     extern DexedInstance dexedInstances[MAXIMUM_DEXED_SYNTH_SOUNDS];
@@ -498,6 +510,8 @@ namespace XRSound
     bool applyChokeForDestinationTrackStep(int track, int step);
     void applyCurrentDexedPatchToSound();
     void handleNoteOnForMetronome(bool accented);
+    void cueSamplesForSteps();
+    void cueSamplesForTracks();
 
     int8_t getValueNormalizedAsInt8(int32_t param);
     uint8_t getValueNormalizedAsUInt8(int32_t param);

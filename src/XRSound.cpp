@@ -151,6 +151,8 @@ namespace XRSound
     EXTMEM SOUND idleSounds[MAXIMUM_SEQUENCER_TRACKS];
     EXTMEM SOUND_MOD_LAYER activeSoundModLayer;
 
+    EXTMEM CUED_SAMPLE _cued_samples[MAXIMUM_MONO_SAMPLE_SOUNDS];
+
     bool soundNeedsReinit[MAXIMUM_SEQUENCER_TRACKS] = {
         false, false, false, false,
         false, false, false, false,
@@ -180,22 +182,22 @@ namespace XRSound
     };
 
     MonoSampleInstance monoSampleInstances[MAXIMUM_MONO_SAMPLE_SOUNDS] = {
-        MonoSampleInstance(monoSample1, monoSampleAmpEnv1, monoSampleAmpAccent1, monoSampleAmp1, monoSampleAmpDelaySend1, monoSampleLeft1, monoSampleRight1),
-        MonoSampleInstance(monoSample2, monoSampleAmpEnv2, monoSampleAmpAccent2, monoSampleAmp2, monoSampleAmpDelaySend2, monoSampleLeft2, monoSampleRight2),
-        MonoSampleInstance(monoSample3, monoSampleAmpEnv3, monoSampleAmpAccent3, monoSampleAmp3, monoSampleAmpDelaySend3, monoSampleLeft3, monoSampleRight3),
-        MonoSampleInstance(monoSample4, monoSampleAmpEnv4, monoSampleAmpAccent4, monoSampleAmp4, monoSampleAmpDelaySend4, monoSampleLeft4, monoSampleRight4),
-        MonoSampleInstance(monoSample5, monoSampleAmpEnv5, monoSampleAmpAccent5, monoSampleAmp5, monoSampleAmpDelaySend5, monoSampleLeft5, monoSampleRight5),
-        MonoSampleInstance(monoSample6, monoSampleAmpEnv6, monoSampleAmpAccent6, monoSampleAmp6, monoSampleAmpDelaySend6, monoSampleLeft6, monoSampleRight6),
-        MonoSampleInstance(monoSample7, monoSampleAmpEnv7, monoSampleAmpAccent7, monoSampleAmp7, monoSampleAmpDelaySend7, monoSampleLeft7, monoSampleRight7),
-        MonoSampleInstance(monoSample8, monoSampleAmpEnv8, monoSampleAmpAccent8, monoSampleAmp8, monoSampleAmpDelaySend8, monoSampleLeft8, monoSampleRight8),
-        MonoSampleInstance(monoSample9, monoSampleAmpEnv9, monoSampleAmpAccent9, monoSampleAmp9, monoSampleAmpDelaySend9, monoSampleLeft9, monoSampleRight9),
-        MonoSampleInstance(monoSample10, monoSampleAmpEnv10, monoSampleAmpAccent10, monoSampleAmp10, monoSampleAmpDelaySend10, monoSampleLeft10, monoSampleRight10),
-        MonoSampleInstance(monoSample11, monoSampleAmpEnv11, monoSampleAmpAccent11, monoSampleAmp11, monoSampleAmpDelaySend11, monoSampleLeft11, monoSampleRight11),
-        MonoSampleInstance(monoSample12, monoSampleAmpEnv12, monoSampleAmpAccent12, monoSampleAmp12, monoSampleAmpDelaySend12, monoSampleLeft12, monoSampleRight12),
-        MonoSampleInstance(monoSample13, monoSampleAmpEnv13, monoSampleAmpAccent13, monoSampleAmp13, monoSampleAmpDelaySend13, monoSampleLeft13, monoSampleRight13),
-        MonoSampleInstance(monoSample14, monoSampleAmpEnv14, monoSampleAmpAccent14, monoSampleAmp14, monoSampleAmpDelaySend14, monoSampleLeft14, monoSampleRight14),
-        MonoSampleInstance(monoSample15, monoSampleAmpEnv15, monoSampleAmpAccent15, monoSampleAmp15, monoSampleAmpDelaySend15, monoSampleLeft15, monoSampleRight15),
-        MonoSampleInstance(monoSample16, monoSampleAmpEnv16, monoSampleAmpAccent16, monoSampleAmp16, monoSampleAmpDelaySend16, monoSampleLeft16, monoSampleRight16),
+        MonoSampleInstance(monoSampleA1, monoSampleB1, monoSampleMixer1, monoSampleAmpEnv1, monoSampleAmpAccent1, monoSampleAmp1, monoSampleAmpDelaySend1, monoSampleLeft1, monoSampleRight1),
+        MonoSampleInstance(monoSampleA2, monoSampleB2, monoSampleMixer2, monoSampleAmpEnv2, monoSampleAmpAccent2, monoSampleAmp2, monoSampleAmpDelaySend2, monoSampleLeft2, monoSampleRight2),
+        MonoSampleInstance(monoSampleA3, monoSampleB3, monoSampleMixer3, monoSampleAmpEnv3, monoSampleAmpAccent3, monoSampleAmp3, monoSampleAmpDelaySend3, monoSampleLeft3, monoSampleRight3),
+        MonoSampleInstance(monoSampleA4, monoSampleB4, monoSampleMixer4, monoSampleAmpEnv4, monoSampleAmpAccent4, monoSampleAmp4, monoSampleAmpDelaySend4, monoSampleLeft4, monoSampleRight4),
+        MonoSampleInstance(monoSampleA5, monoSampleB5, monoSampleMixer5, monoSampleAmpEnv5, monoSampleAmpAccent5, monoSampleAmp5, monoSampleAmpDelaySend5, monoSampleLeft5, monoSampleRight5),
+        MonoSampleInstance(monoSampleA6, monoSampleB6, monoSampleMixer6, monoSampleAmpEnv6, monoSampleAmpAccent6, monoSampleAmp6, monoSampleAmpDelaySend6, monoSampleLeft6, monoSampleRight6),
+        MonoSampleInstance(monoSampleA7, monoSampleB7, monoSampleMixer7, monoSampleAmpEnv7, monoSampleAmpAccent7, monoSampleAmp7, monoSampleAmpDelaySend7, monoSampleLeft7, monoSampleRight7),
+        MonoSampleInstance(monoSampleA8, monoSampleB8, monoSampleMixer8, monoSampleAmpEnv8, monoSampleAmpAccent8, monoSampleAmp8, monoSampleAmpDelaySend8, monoSampleLeft8, monoSampleRight8),
+        MonoSampleInstance(monoSampleA9, monoSampleB9, monoSampleMixer9, monoSampleAmpEnv9, monoSampleAmpAccent9, monoSampleAmp9, monoSampleAmpDelaySend9, monoSampleLeft9, monoSampleRight9),
+        MonoSampleInstance(monoSampleA10, monoSampleB10, monoSampleMixer10, monoSampleAmpEnv10, monoSampleAmpAccent10, monoSampleAmp10, monoSampleAmpDelaySend10, monoSampleLeft10, monoSampleRight10),
+        MonoSampleInstance(monoSampleA11, monoSampleB11, monoSampleMixer11, monoSampleAmpEnv11, monoSampleAmpAccent11, monoSampleAmp11, monoSampleAmpDelaySend11, monoSampleLeft11, monoSampleRight11),
+        MonoSampleInstance(monoSampleA12, monoSampleB12, monoSampleMixer12, monoSampleAmpEnv12, monoSampleAmpAccent12, monoSampleAmp12, monoSampleAmpDelaySend12, monoSampleLeft12, monoSampleRight12),
+        MonoSampleInstance(monoSampleA13, monoSampleB13, monoSampleMixer13, monoSampleAmpEnv13, monoSampleAmpAccent13, monoSampleAmp13, monoSampleAmpDelaySend13, monoSampleLeft13, monoSampleRight13),
+        MonoSampleInstance(monoSampleA14, monoSampleB14, monoSampleMixer14, monoSampleAmpEnv14, monoSampleAmpAccent14, monoSampleAmp14, monoSampleAmpDelaySend14, monoSampleLeft14, monoSampleRight14),
+        MonoSampleInstance(monoSampleA15, monoSampleB15, monoSampleMixer15, monoSampleAmpEnv15, monoSampleAmpAccent15, monoSampleAmp15, monoSampleAmpDelaySend15, monoSampleLeft15, monoSampleRight15),
+        MonoSampleInstance(monoSampleA16, monoSampleB16, monoSampleMixer16, monoSampleAmpEnv16, monoSampleAmpAccent16, monoSampleAmp16, monoSampleAmpDelaySend16, monoSampleLeft16, monoSampleRight16),
     };
     
     MonoSynthInstance monoSynthInstances[MAXIMUM_MONO_SYNTH_SOUNDS] = {
@@ -464,6 +466,12 @@ namespace XRSound
             _cvLevels[i] = i * 26;
         }
 
+        // by default set all cued samples to slot B
+        for (int c = 0; c < MAXIMUM_MONO_SAMPLE_SOUNDS; c++)
+        {
+            _cued_samples[c] = CUED_SAMPLE::B;
+        }
+
         initActiveSounds();
         initIdleSounds();
         initSoundStepMods();
@@ -523,9 +531,15 @@ namespace XRSound
         // init MonoSampleInstance objects
         for (int i=0; i<MAXIMUM_MONO_SAMPLE_SOUNDS; i++)
         {
-            monoSampleInstances[i].sample.setPlaybackRate(msmpSamplePlayRate);
-            monoSampleInstances[i].sample.enableInterpolation(true);
-            monoSampleInstances[i].sample.setBufferInPSRAM(true);
+            monoSampleInstances[i].sampleA.setPlaybackRate(msmpSamplePlayRate);
+            monoSampleInstances[i].sampleB.setPlaybackRate(msmpSamplePlayRate);
+            monoSampleInstances[i].sampleA.enableInterpolation(true);
+            monoSampleInstances[i].sampleB.enableInterpolation(true);
+            monoSampleInstances[i].sampleA.setBufferInPSRAM(true);
+            monoSampleInstances[i].sampleB.setBufferInPSRAM(true);
+            monoSampleInstances[i].cueMix.gain(0, 1);
+            monoSampleInstances[i].cueMix.gain(1, 1);
+
 
             monoSampleInstances[i].ampEnv.attack(msmpAatt);
             monoSampleInstances[i].ampEnv.decay(msmpAdec);
@@ -842,6 +856,174 @@ namespace XRSound
         // {
         //     currentPatternSounds[track].dexedParams[d] = dexedInitVoice[d];
         // }
+    }
+
+    void cueSamplesForSteps()
+    {
+        if (XRSequencer::getSeqState().currentStep == 1 && XRSequencer::lastStepCheckedForCue != 1) {
+            Serial.printf("Cue step 1 !!!\n");
+
+            auto currGlobalStep = XRSequencer::getSeqState().currentStep - 1; // zero-based step index
+            auto &currentPattern = XRSequencer::getCurrentSelectedPattern();
+            auto layer = XRSequencer::getCurrentSelectedTrackLayerNum();
+
+            for (int t=0; t<MAXIMUM_SEQUENCER_TRACKS; t++) {
+                auto &currTrack = currentPattern.layers[layer].tracks[t];
+                auto &currTrackStep = currTrack.steps[currGlobalStep];
+
+                if (currTrackStep.state == XRSequencer::STEP_STATE::STATE_ON || currTrackStep.state == XRSequencer::STEP_STATE::STATE_ACCENTED) {
+                    AudioNoInterrupts();
+                        monoSampleInstances[t].sampleA.setPlaybackRate(0.0);
+                        //monoSampleInstances[t].sampleB.setPlaybackRate(0.0);
+                    AudioInterrupts();
+
+                    std::string trackSampleName(activeSounds[t].sampleName);
+                    std::string trackSampleNameB(activeSounds[t].sampleNameB);
+                    bool hasFirstSample = trackSampleName.length() > 0;
+                    bool hasSecondSample = trackSampleNameB.length() > 0;
+
+                    std::string sampleToUse = hasFirstSample ? trackSampleName : "";
+                    if (hasSecondSample && currTrackStep.state == XRSequencer::STATE_ACCENTED) 
+                    {
+                        sampleToUse = trackSampleNameB;
+                    }
+
+                    if (sampleToUse.length() > 0) {
+                        const auto sampleName = std::string("/samples/") + std::string(sampleToUse);
+
+                        monoSampleInstances[t].sampleA.playWav(sampleName.c_str());
+                        //monoSampleInstances[t].sampleB.playWav(sampleName.c_str());
+                    }
+                }
+            }
+
+            XRSequencer::lastStepCheckedForCue = 1;
+        } else if (XRSequencer::getSeqState().currentStep > 1 && XRSequencer::getSeqState().currentStep != XRSequencer::lastStepCheckedForCue) {
+
+            auto currGlobalStep = XRSequencer::getSeqState().currentStep - 1; // zero-based step index
+            auto &currentPattern = XRSequencer::getCurrentSelectedPattern();
+            auto layer = XRSequencer::getCurrentSelectedTrackLayerNum();
+
+            for (int t=0; t<MAX_TRACKS; t++) {
+                auto &currTrack = currentPattern.layers[layer].tracks[t];
+                auto nextStepNum = (currGlobalStep == (currTrack.lstep-1)) ? 0 : currGlobalStep+1;
+                auto &nextTrackStep = currTrack.steps[nextStepNum];
+
+                Serial.printf("Cue step %d, next step %d\n", currGlobalStep+1, nextStepNum+1);
+
+                if (nextTrackStep.state == XRSequencer::STEP_STATE::STATE_ON || nextTrackStep.state == XRSequencer::STEP_STATE::STATE_ACCENTED) {
+                    if (_cued_samples[t] == CUED_SAMPLE::B) {
+                        _cued_samples[t] = CUED_SAMPLE::A;
+
+                        AudioNoInterrupts();
+                            monoSampleInstances[t].sampleA.setPlaybackRate(0.0);
+                        AudioInterrupts();
+
+                        std::string trackSampleName(activeSounds[t].sampleName);
+                        std::string trackSampleNameB(activeSounds[t].sampleNameB);
+                        bool hasFirstSample = trackSampleName.length() > 0;
+                        bool hasSecondSample = trackSampleNameB.length() > 0;
+
+                        std::string sampleToUse = hasFirstSample ? trackSampleName : "";
+                        if (hasSecondSample && nextTrackStep.state == XRSequencer::STATE_ACCENTED) 
+                        {
+                            sampleToUse = trackSampleNameB;
+                        }
+
+                        if (sampleToUse.length() > 0) {
+                            const auto sampleName = std::string("/samples/") + std::string(sampleToUse);
+
+                            monoSampleInstances[t].sampleA.playWav(sampleName.c_str());
+                        }
+
+                    } else if (_cued_samples[t] == CUED_SAMPLE::A) {
+                        _cued_samples[t] = CUED_SAMPLE::B;
+
+                        AudioNoInterrupts();
+                            monoSampleInstances[t].sampleB.setPlaybackRate(0.0);
+                        AudioInterrupts();
+
+                        std::string trackSampleName(activeSounds[t].sampleName);
+                        std::string trackSampleNameB(activeSounds[t].sampleNameB);
+                        bool hasFirstSample = trackSampleName.length() > 0;
+                        bool hasSecondSample = trackSampleNameB.length() > 0;
+
+                        std::string sampleToUse = hasFirstSample ? trackSampleName : "";
+                        if (hasSecondSample && nextTrackStep.state == XRSequencer::STATE_ACCENTED) 
+                        {
+                            sampleToUse = trackSampleNameB;
+                        }
+
+                        if (sampleToUse.length() > 0) {
+                            const auto sampleName = std::string("/samples/") + std::string(sampleToUse);
+
+                            monoSampleInstances[t].sampleB.playWav(sampleName.c_str());
+                        }
+                    }
+                }
+            }
+
+            XRSequencer::lastStepCheckedForCue = XRSequencer::getSeqState().currentStep;
+        }
+    }
+
+    void cueSamplesForTracks()
+    {
+        if (XRSequencer::lastTrackCheckedForCue != -1) {
+            XRSequencer::lastTrackCheckedForCue = -1;
+
+            auto &currTrack = XRSequencer::getCurrentSelectedTrack();
+            auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+
+            if (monoSampleInstances[currTrackNum].sampleB.isPlaying()) {
+                _cued_samples[currTrackNum] = CUED_SAMPLE::A;
+
+                AudioNoInterrupts();
+                    monoSampleInstances[currTrackNum].sampleA.setPlaybackRate(0.0);
+                AudioInterrupts();
+
+                std::string trackSampleName(activeSounds[currTrackNum].sampleName);
+                std::string trackSampleNameB(activeSounds[currTrackNum].sampleNameB);
+                bool hasFirstSample = trackSampleName.length() > 0;
+                bool hasSecondSample = trackSampleNameB.length() > 0;
+
+                std::string sampleToUse = hasFirstSample ? trackSampleName : "";
+                // if (hasSecondSample && currTrackStep.state == XRSequencer::STATE_ACCENTED) 
+                // {
+                //     sampleToUse = trackSampleNameB;
+                // }
+
+                if (sampleToUse.length() > 0) {
+                    const auto sampleName = std::string("/samples/") + std::string(sampleToUse);
+
+                    monoSampleInstances[currTrackNum].sampleA.playWav(sampleName.c_str());
+                }
+
+            } else {
+                _cued_samples[currTrackNum] = CUED_SAMPLE::B;
+
+                AudioNoInterrupts();
+                    monoSampleInstances[currTrackNum].sampleB.setPlaybackRate(0.0);
+                AudioInterrupts();
+
+                std::string trackSampleName(activeSounds[currTrackNum].sampleName);
+                std::string trackSampleNameB(activeSounds[currTrackNum].sampleNameB);
+                bool hasFirstSample = trackSampleName.length() > 0;
+                bool hasSecondSample = trackSampleNameB.length() > 0;
+
+                std::string sampleToUse = hasFirstSample ? trackSampleName : "";
+                // if (hasSecondSample && currTrackStep.state == XRSequencer::STATE_ACCENTED) 
+                // {
+                //     sampleToUse = trackSampleNameB;
+                // }
+
+                if (sampleToUse.length() > 0) {
+                    const auto sampleName = std::string("/samples/") + std::string(sampleToUse);
+
+                    monoSampleInstances[currTrackNum].sampleB.playWav(sampleName.c_str());
+                }
+            }
+        }
     }
 
     void loadNextDexedInstances()
@@ -2070,39 +2252,40 @@ namespace XRSound
 
         const float semi = powf(2.0f, 1.0f/12);
         float freq = powf(semi, 12*(trackToUse.octave - 4) + trackToUse.note);
-        monoSampleInstances[track].sample.setPlaybackRate(freq);
 
-        AudioInterrupts();
+        if (_cued_samples[track] == CUED_SAMPLE::A) {
+            monoSampleInstances[track].sampleA.setPlaybackRate(freq);
+        } else {
+            monoSampleInstances[track].sampleB.setPlaybackRate(freq);
+        }
 
         monoSampleInstances[track].ampEnv.noteOn();
 
-        std::string trackSampleName(activeSounds[track].sampleName);
+        AudioInterrupts();
 
-        if (trackSampleName.length() > 0) {
-            const auto sampleName = std::string("/samples/") + std::string(trackSampleName);
-
-#ifdef USE_WAV
-            monoSampleInstances[track].sample.playWav(sampleName.c_str());
-#else
-            monoSampleInstances[track].sample.playRaw(sampleName.c_str(), 1);
-#endif
-        }
+        // leave space for playback?
 
         AudioNoInterrupts();
 
         // always re-initialize loop type
-        monoSampleInstances[track].sample.setLoopType(loopTypeSelMap[msmpLooptype]);
+        monoSampleInstances[track].sampleA.setLoopType(loopTypeSelMap[msmpLooptype]);
+        monoSampleInstances[track].sampleB.setLoopType(loopTypeSelMap[msmpLooptype]);
 
         if (loopTypeSelMap[msmpLooptype] == looptype_none)
         {
-            monoSampleInstances[track].sample.setPlayStart(play_start::play_start_sample);
-            monoSampleInstances[track].sample.setLoopType(loop_type::looptype_none);
+            monoSampleInstances[track].sampleA.setPlayStart(play_start::play_start_sample);
+            monoSampleInstances[track].sampleB.setPlayStart(play_start::play_start_sample);
+            monoSampleInstances[track].sampleA.setLoopType(loop_type::looptype_none);
+            monoSampleInstances[track].sampleB.setLoopType(loop_type::looptype_none);
         }
         else if (loopTypeSelMap[msmpLooptype] == looptype_repeat)
         {
-            monoSampleInstances[track].sample.setPlayStart(msmpPlaystart == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
-            monoSampleInstances[track].sample.setLoopStart(msmpLoopstart);
-            monoSampleInstances[track].sample.setLoopFinish(msmpLoopfinish);
+            monoSampleInstances[track].sampleA.setPlayStart(msmpPlaystart == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
+            monoSampleInstances[track].sampleB.setPlayStart(msmpPlaystart == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
+            monoSampleInstances[track].sampleA.setLoopStart(msmpLoopstart);
+            monoSampleInstances[track].sampleB.setLoopStart(msmpLoopstart);
+            monoSampleInstances[track].sampleA.setLoopFinish(msmpLoopfinish);
+            monoSampleInstances[track].sampleB.setLoopFinish(msmpLoopfinish);
         }
 
         AudioInterrupts();
@@ -2398,64 +2581,46 @@ namespace XRSound
 
         const float semi = powf(2.0f, 1.0f/12);
         float freq = powf(semi, 12*(trackToUse.octave - 4) + trackToUse.note);
-        monoSampleInstances[track].sample.setPlaybackRate(freq * speedToUse);
 
-        //monoSampleInstances[track].sample.setPlaybackRate(speedToUse);
-        
-        AudioInterrupts();
-
-        std::string sampleToUse = hasFirstSample ? trackSampleName : "";
-        if (hasSecondSample && stepToUse.state == XRSequencer::STATE_ACCENTED) 
-        {
-            sampleToUse = trackSampleNameB;
+        if (_cued_samples[track] == CUED_SAMPLE::A) {
+            monoSampleInstances[track].sampleA.setPlaybackRate(freq * speedToUse);
+            //monoSampleInstances[track].sampleA.setPlaybackRate(speedToUse); // note-less
+        } else {
+            monoSampleInstances[track].sampleB.setPlaybackRate(freq * speedToUse);
+            //monoSampleInstances[track].sampleB.setPlaybackRate(speedToUse); // note-less
         }
 
         monoSampleInstances[track].ampEnv.noteOn();
+        
+        AudioInterrupts();
 
-        if (sampleToUse.length() > 0) {
-            const auto sampleName = std::string("/samples/") + std::string(sampleToUse);
+        // leave this open for playback?
 
-            // if (track == 4) Serial.printf("Sample: %s\n", sampleName.c_str());
-            // if (track == 4) Serial.printf("Velocity: %d\n", velocityToUse);
-            // if (track == 4) Serial.printf("LoopType: %d\n", looptypeToUse);
-            // if (track == 4) Serial.printf("LoopStart: %d\n", loopstartToUse);
-            // if (track == 4) Serial.printf("LoopFinish: %d\n", loopfinishToUse);
-            // if (track == 4) Serial.printf("PlayStart: %d\n", playstartToUse);
-            // if (track == 4) Serial.printf("Speed: %f\n", speedToUse);
-            // if (track == 4) Serial.printf("Pan L: %f\n", getStereoPanValues(msmpPan).left);
-            // if (track == 4) Serial.printf("Pan R: %f\n", getStereoPanValues(msmpPan).right);
-            // if (track == 4) Serial.printf("Level: %f\n", msmpLvl);
-            // if (track == 4) Serial.printf("Delay: %f\n", msmpDly);
-            // if (track == 4) Serial.printf("Attack: %f\n", msmpAatt);
-            // if (track == 4) Serial.printf("Decay: %f\n", msmpAdec);
-            // if (track == 4) Serial.printf("Sustain: %f\n", msmpAsus);
-            // if (track == 4) Serial.printf("Release: %f\n", msmpArel);
-
-#ifdef USE_WAV
-            monoSampleInstances[track].sample.playWav(sampleName.c_str());
-#else
-            monoSampleInstances[track].sample.playRaw(sampleName.c_str(), 1);
-#endif
-        }
-
-        AudioNoInterrupts();
+        AudioInterrupts();
 
         // always re-initialize loop type
-        monoSampleInstances[track].sample.setLoopType(loopTypeSelMap[looptypeToUse]);
+
+        monoSampleInstances[track].sampleA.setLoopType(loopTypeSelMap[looptypeToUse]);
+        monoSampleInstances[track].sampleB.setLoopType(loopTypeSelMap[looptypeToUse]);
 
         if (loopTypeSelMap[looptypeToUse] == looptype_none)
         {
-            monoSampleInstances[track].sample.setPlayStart(play_start::play_start_sample);
-            monoSampleInstances[track].sample.setLoopType(loop_type::looptype_none);
+            monoSampleInstances[track].sampleA.setPlayStart(play_start::play_start_sample);
+            monoSampleInstances[track].sampleA.setLoopType(loop_type::looptype_none);
+            monoSampleInstances[track].sampleB.setPlayStart(play_start::play_start_sample);
+            monoSampleInstances[track].sampleB.setLoopType(loop_type::looptype_none);
         }
         else if (loopTypeSelMap[looptypeToUse] == looptype_repeat)
         {
-            monoSampleInstances[track].sample.setPlayStart(playstartToUse == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
-            monoSampleInstances[track].sample.setLoopStart(loopstartToUse);
-            monoSampleInstances[track].sample.setLoopFinish(loopfinishToUse);
+            monoSampleInstances[track].sampleA.setPlayStart(playstartToUse == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
+            monoSampleInstances[track].sampleA.setLoopStart(loopstartToUse);
+            monoSampleInstances[track].sampleA.setLoopFinish(loopfinishToUse);
+            monoSampleInstances[track].sampleB.setPlayStart(playstartToUse == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
+            monoSampleInstances[track].sampleB.setLoopStart(loopstartToUse);
+            monoSampleInstances[track].sampleB.setLoopFinish(loopfinishToUse);
         }
-        
-        AudioInterrupts();
+
+        AudioNoInterrupts();
     }
 
     void handleMonoSynthNoteOnForTrackStep(int track, int step)
@@ -3116,7 +3281,14 @@ namespace XRSound
 
         const float semi = powf(2.0f, 1.0f/12);
         float freq = powf(semi, 12*(octave - 4) + note);
-        monoSampleInstances[t].sample.setPlaybackRate(freq);
+
+        if (_cued_samples[t] == CUED_SAMPLE::A) {
+            monoSampleInstances[t].sampleA.setPlaybackRate(freq);
+        } else {
+            monoSampleInstances[t].sampleB.setPlaybackRate(freq);
+        }
+
+        monoSampleInstances[t].ampEnv.noteOn();
 
         AudioInterrupts();
 
@@ -3126,33 +3298,33 @@ namespace XRSound
             sampleToUse = trackSampleNameB;
         }
 
-        monoSampleInstances[t].ampEnv.noteOn();
-
         if (sampleToUse.length() > 0) {
             const auto sampleName = std::string("/samples/") + std::string(sampleToUse);
 
-#ifdef USE_WAV
-            monoSampleInstances[t].sample.playWav(sampleName.c_str());
-#else
-            monoSampleInstances[t].sample.playRaw(sampleName.c_str(), 1);
-#endif
+            monoSampleInstances[t].sampleB.playWav(sampleName.c_str());
         }
 
         AudioNoInterrupts();
 
         // always re-initialize loop type
-        monoSampleInstances[t].sample.setLoopType(loopTypeSelMap[msmpLooptype]);
+        monoSampleInstances[t].sampleA.setLoopType(loopTypeSelMap[msmpLooptype]);
+        monoSampleInstances[t].sampleB.setLoopType(loopTypeSelMap[msmpLooptype]);
 
         if (loopTypeSelMap[msmpLooptype] == looptype_none)
         {
-            monoSampleInstances[t].sample.setPlayStart(play_start::play_start_sample);
-            monoSampleInstances[t].sample.setLoopType(loop_type::looptype_none);
+            monoSampleInstances[t].sampleA.setPlayStart(play_start::play_start_sample);
+            monoSampleInstances[t].sampleA.setLoopType(loop_type::looptype_none);
+            monoSampleInstances[t].sampleB.setPlayStart(play_start::play_start_sample);
+            monoSampleInstances[t].sampleB.setLoopType(loop_type::looptype_none);
         }
         else if (loopTypeSelMap[msmpLooptype] == looptype_repeat)
         {
-            monoSampleInstances[t].sample.setPlayStart(msmpPlaystart == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
-            monoSampleInstances[t].sample.setLoopStart(msmpLoopstart);
-            monoSampleInstances[t].sample.setLoopFinish(msmpLoopfinish);
+            monoSampleInstances[t].sampleA.setPlayStart(msmpPlaystart == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
+            monoSampleInstances[t].sampleA.setLoopStart(msmpLoopstart);
+            monoSampleInstances[t].sampleA.setLoopFinish(msmpLoopfinish);
+            monoSampleInstances[t].sampleB.setPlayStart(msmpPlaystart == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
+            monoSampleInstances[t].sampleB.setLoopStart(msmpLoopstart);
+            monoSampleInstances[t].sampleB.setLoopFinish(msmpLoopfinish);
         }
 
         AudioInterrupts();
