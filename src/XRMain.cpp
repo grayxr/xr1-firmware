@@ -87,7 +87,7 @@ namespace XRMain
             XRDisplay::drawSequencerScreen();
         }
 
-        //XRSequencer::handlePatternQueueActions();
+        XRSequencer::handlePatternQueueActions();
         //XRSequencer::handleTrackLayerQueueActions();
     }
 }

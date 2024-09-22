@@ -44,16 +44,16 @@ namespace XRAudio
 
     void logMetrics()
     {
-        //if (LOG_METRICS_ENABLED) {
-            Serial.printf(
-                "Memory: %d/%d CPU: %.2f/%.2f\n",
-                AudioMemoryUsage(),
-                AudioMemoryUsageMax(),
-                AudioProcessorUsage(),
-                AudioProcessorUsageMax()
-            );
-            resetMetrics();
-        //}
+        // if (LOG_METRICS_ENABLED) {
+        //     Serial.printf(
+        //         "Memory: %d/%d CPU: %.2f/%.2f\n",
+        //         AudioMemoryUsage(),
+        //         AudioMemoryUsageMax(),
+        //         AudioProcessorUsage(),
+        //         AudioProcessorUsageMax()
+        //     );
+        //     resetMetrics();
+        // }
     }
 
     void resetMetrics()

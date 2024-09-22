@@ -6,6 +6,8 @@
 #include <XRSound.h>
 #include <XRSequencer.h>
 #include <XRKeyMatrix.h>
+#include <XRHelpers.h>
+#include <XRLED.h>
 
 namespace XRVersa
 {
@@ -110,7 +112,7 @@ namespace XRVersa
             return;
         }
         
-        if (currentUXMode == XRUX::UX_MODE::PERFORM_RATCHET) {
+        if (currentUXMode == XRUX::UX_MODE::PERFORM_RATCHET || currentUXMode == XRUX::UX_MODE::SUBMITTING_RATCHET_STEP_VALUE) {
             handleKeyboardSetRatchets();
 
             return;
@@ -303,6 +305,10 @@ namespace XRVersa
                     XRKeyMatrix::getKeyboardOctave(),
                     XRKeyMatrix::isSelectBtnHeld()
                 );
+
+                if (currentUXMode == XRUX::PATTERN_WRITE) {
+                    XRLED::toggleNoteOnForTrackLED(XRSequencer::getCurrentSelectedTrackNum(), true);
+                }
             }
 
             Serial.printf("_keyboardNotesHeld: %d, invertedNoteNumber: %d\n", _keyboardNotesHeld, invertedNoteNumber);
@@ -331,6 +337,10 @@ namespace XRVersa
             // noteOff
             if (currentUXMode != XRUX::SUBMITTING_STEP_VALUE && currentUXMode != XRUX::TRACK_SEL) {
                 XRSound::noteOffTrackManually(invertedNoteNumber, XRKeyMatrix::getKeyboardOctave());
+
+                if (currentUXMode == XRUX::PATTERN_WRITE && _keyboardNotesHeld == 0) {
+                    XRLED::toggleNoteOnForTrackLED(XRSequencer::getCurrentSelectedTrackNum(), false);
+                }
             } 
             else if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelStepNum > -1) {
                 currLayer.tracks[currSelTrackNum].steps[currSelStepNum].mods[XRSequencer::NOTE] = invertedNoteNumber;
@@ -338,14 +348,21 @@ namespace XRVersa
                 currLayer.tracks[currSelTrackNum].steps[currSelStepNum].mods[XRSequencer::OCTAVE] = XRKeyMatrix::getKeyboardOctave();
                 currLayer.tracks[currSelTrackNum].steps[currSelStepNum].flags[XRSequencer::OCTAVE] = true;
 
-                XRDisplay::drawSequencerScreen(false);
+                std::string noteStr = XRHelpers::getNoteStringForBaseNoteNum(invertedNoteNumber);
+                noteStr += std::to_string(XRKeyMatrix::getKeyboardOctave());
+
+                //XRDisplay::drawSequencerScreen(false);
+                XRDisplay::drawGeneralConfirmOverlay("  step note: " + noteStr);
             } 
             else if (currentUXMode == XRUX::TRACK_SEL) {
                 // set track note
                 currTrack.note = invertedNoteNumber;
                 currTrack.octave = XRKeyMatrix::getKeyboardOctave();
 
-                XRDisplay::drawSequencerScreen(false);
+                std::string noteStr = XRHelpers::getNoteStringForBaseNoteNum(invertedNoteNumber);
+                noteStr += std::to_string(XRKeyMatrix::getKeyboardOctave());
+
+                XRDisplay::drawGeneralConfirmOverlay("  track note: " + noteStr);
             }
 
             Serial.printf("_keyboardNotesHeld: %d, invertedNoteNumber: %d\n", _keyboardNotesHeld, invertedNoteNumber);
@@ -396,9 +413,28 @@ namespace XRVersa
 
                 invertedNoteNumber = _backwardsNoteNumbers[i];
 
-                XRSequencer::setRatchetDivision(_keyedRatchetDivisions[invertedNoteNumber]);
+                auto currSelStepNum = XRSequencer::getCurrentSelectedRatchetStep();
+                if (XRUX::getCurrentMode() == XRUX::SUBMITTING_RATCHET_STEP_VALUE && currSelStepNum > -1)
+                {
+                    auto ratchetTrack = XRSequencer::getRatchetTrack();
 
-                XRDisplay::drawSequencerScreen(false);
+                    Serial.printf("RATCHET invertedNoteNumber: %d, octave: %d\n", invertedNoteNumber, XRKeyMatrix::getKeyboardOctave());
+
+                    XRSequencer::activePattern.ratchetLayer.tracks[ratchetTrack].steps[currSelStepNum].mods[XRSequencer::NOTE] = invertedNoteNumber;
+                    XRSequencer::activePattern.ratchetLayer.tracks[ratchetTrack].steps[currSelStepNum].flags[XRSequencer::NOTE] = true;
+                    XRSequencer::activePattern.ratchetLayer.tracks[ratchetTrack].steps[currSelStepNum].mods[XRSequencer::OCTAVE] = XRKeyMatrix::getKeyboardOctave();
+                    XRSequencer::activePattern.ratchetLayer.tracks[ratchetTrack].steps[currSelStepNum].flags[XRSequencer::OCTAVE] = true;
+
+                    std::string noteStr = XRHelpers::getNoteStringForBaseNoteNum(invertedNoteNumber);
+                    noteStr += std::to_string(XRKeyMatrix::getKeyboardOctave());
+
+                    XRDisplay::drawSequencerScreen(false);
+                    XRDisplay::drawGeneralConfirmOverlay("  step note: " + noteStr);
+
+                } else {
+                    XRSequencer::setRatchetDivision(_keyedRatchetDivisions[invertedNoteNumber]);
+                    XRDisplay::drawSequencerScreen(false);
+                }
 
                 //break;
             }
@@ -412,9 +448,14 @@ namespace XRVersa
                 
                 // check if all ratchets are finally unheld 
                 // after decrementing above
-                if (_ratchetsHeld == 0) {
+                if (_ratchetsHeld == 0 && XRSequencer::ratchetLatched == false) {
                     _ratchetReleaseTime = elapsedMs;
                     XRSequencer::setRatchetDivision(-1);
+                    XRSequencer::setCurrentRatchetStep(1);
+                    XRSequencer::resetRatchetBar();
+                    if (XRSequencer::getCurrentRatchetPageNum() == 1) {
+                        XRLED::setDisplayStateForAllStepLEDs();
+                    }
                 }
 
                 XRDisplay::drawSequencerScreen(false);
@@ -435,11 +476,30 @@ namespace XRVersa
             }
 
             _fastBtnPressed = true;
+
             invertedNoteNumber = _backwardsNoteNumbers[12];
 
-            XRSequencer::setRatchetDivision(_keyedRatchetDivisions[invertedNoteNumber]);
+            auto currSelStepNum = XRSequencer::getCurrentSelectedRatchetStep();
+            if (XRUX::getCurrentMode() == XRUX::SUBMITTING_RATCHET_STEP_VALUE && currSelStepNum > -1) {
+                auto ratchetTrack = XRSequencer::getRatchetTrack();
 
-            XRDisplay::drawSequencerScreen(false);
+                Serial.printf("RATCHET invertedNoteNumber: %d, octave: %d\n", invertedNoteNumber, XRKeyMatrix::getKeyboardOctave());
+
+                XRSequencer::activePattern.ratchetLayer.tracks[ratchetTrack].steps[currSelStepNum].mods[XRSequencer::NOTE] = invertedNoteNumber;
+                XRSequencer::activePattern.ratchetLayer.tracks[ratchetTrack].steps[currSelStepNum].flags[XRSequencer::NOTE] = true;
+                XRSequencer::activePattern.ratchetLayer.tracks[ratchetTrack].steps[currSelStepNum].mods[XRSequencer::OCTAVE] = XRKeyMatrix::getKeyboardOctave();
+                XRSequencer::activePattern.ratchetLayer.tracks[ratchetTrack].steps[currSelStepNum].flags[XRSequencer::OCTAVE] = true;
+
+                std::string noteStr = XRHelpers::getNoteStringForBaseNoteNum(invertedNoteNumber);
+                noteStr += std::to_string(XRKeyMatrix::getKeyboardOctave());
+
+                XRDisplay::drawSequencerScreen(false);
+                XRDisplay::drawGeneralConfirmOverlay("  step note: " + noteStr);
+
+            } else {
+                XRSequencer::setRatchetDivision(_keyedRatchetDivisions[invertedNoteNumber]);
+                XRDisplay::drawSequencerScreen(false);
+            }
         }
         else if (_fastBtnPressed && fastTouchRead(FAST_TOUCH_PIN) < 64)
         {

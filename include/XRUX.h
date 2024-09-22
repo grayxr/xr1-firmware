@@ -42,6 +42,7 @@ namespace XRUX
         COPY_ERROR,
         PATTERN_CHANGE_QUEUED,
         PATTERN_CHANGE_INSTANT,
+        SUBMITTING_RATCHET_STEP_VALUE,
     };
 
     void setCurrentMode(UX_MODE mode);

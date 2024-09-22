@@ -431,6 +431,7 @@ namespace XRSound
     SOUND_CONTROL_MODS getCvGateControlModData();
     SOUND_CONTROL_MODS getCvTrigControlModData();
     SOUND_CONTROL_MODS getEmptyControlModData();
+    SOUND_CONTROL_MODS getRatchetControlModData();
 
     PANNED_AMOUNTS getStereoPanValues(float pan);
 

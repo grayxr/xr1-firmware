@@ -2,6 +2,7 @@
 #include <XRSequencer.h>
 #include <XRHelpers.h>
 #include <XRKeyMatrix.h>
+#include <XRUX.h>
 #include <map>
 
 namespace XRLED
@@ -249,8 +250,14 @@ namespace XRLED
 
     void setDisplayStateForAllStepLEDs()
     {
-        auto &currTrack = XRSequencer::getCurrentSelectedTrack();
-        auto currStepPage = XRSequencer::getCurrentStepPage();
+        auto currUXMode = XRUX::getCurrentMode();
+        auto &currTrack = (currUXMode == XRUX::PERFORM_RATCHET || currUXMode == XRUX::SUBMITTING_RATCHET_STEP_VALUE) ? 
+            XRSequencer::activePattern.ratchetLayer.tracks[XRSequencer::getRatchetTrack()] : 
+            XRSequencer::getCurrentSelectedTrack();
+
+        auto currStepPage = (currUXMode == XRUX::PERFORM_RATCHET || currUXMode == XRUX::SUBMITTING_RATCHET_STEP_VALUE) ? 
+            1 : // ratchet track always has only 16 steps max
+            XRSequencer::getCurrentStepPage();
 
         const int MAX_TRACK_LEDS_SIZE = 17;
 
@@ -392,6 +399,24 @@ namespace XRLED
                 setPWM(_stepLEDPins[t], 4095);
             }
         }
+    }
+
+    void toggleNoteOnForTrackLED(uint8_t t, bool enable)
+    {
+        auto currLEDChar = XRHelpers::stepCharMap[t+1];
+        auto keyLED = XRLED::getKeyLED(currLEDChar);
+
+        Serial.printf("toggleNoteOnForTrackLED: %d, %d\n", t, keyLED);
+
+        XRLED::setPWM(keyLED, enable ? 4095 : 0);
+    }
+
+    void displayRatchetTrackLED(bool accented)
+    {
+        auto currLEDChar = XRHelpers::stepCharMap[XRSequencer::getRatchetTrack() + 1];
+        auto keyLED = XRLED::getKeyLED(currLEDChar);
+
+        XRLED::setPWM(keyLED, accented ? 4095 : 512);
     }
 
     void displayInitializedPatternLEDs()

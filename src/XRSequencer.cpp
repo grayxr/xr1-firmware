@@ -8,12 +8,14 @@
 #include <XRClock.h>
 #include <XRAudio.h>
 #include <map>
+#include <XRVersa.h>
 
 namespace XRSequencer
 {
     // private variables
  
     SEQUENCER_STATE _seqState;
+    RATCHET_STATE _ratchetState;
     QUEUED_PATTERN_STATE _queuedPatternState;
 
     STACK_STEP_DATA _stepStack[STEP_STACK_SIZE];
@@ -27,10 +29,13 @@ namespace XRSequencer
     int8_t _currentSelectedStep = -1;       // default to -1 (none)
     int8_t _currentStepPage = 1;
     int8_t _currentSelectedPage = 0;
-    int8_t _ratchetTrack = -1;
+    int8_t _ratchetTrack = 0;
     int8_t _ratchetDivision = -1;
+    int8_t _ratchetPageNum = 0;
+    int8_t _currentSelectedRatchetStep = -1;
 
     bool metronomeEnabled = false;
+    bool ratchetLatched = false;
 
     bool _initTracks[MAXIMUM_SEQUENCER_TRACKS];
 
@@ -107,8 +112,6 @@ namespace XRSequencer
         }
 
         initActivePattern();
-        //initActiveTrackLayer();
-        //initActiveTrackStepModLayer();
 
         return true;
     }
@@ -206,6 +209,94 @@ namespace XRSequencer
         noteOffForAllSounds();
     }
 
+    void ClockOut96PPQN(uint32_t tick)
+    {
+        auto currentUXMode = XRUX::getCurrentMode();
+        if (currentUXMode == XRUX::UX_MODE::PROJECT_INITIALIZE || currentUXMode == XRUX::UX_MODE::PROJECT_BUSY)
+        {
+            return;
+        }
+
+        handle96PPQN(tick);
+
+        // Send MIDI_CLOCK to external gears
+        // usbMIDI.sendRealTime(usbMIDI.Clock);
+    }
+
+    bool isRatchetActive()
+    {
+        return _ratchetDivision > -1;
+    }
+
+    void handle96PPQN(uint32_t tick)
+    {
+        auto currentUXMode = XRUX::getCurrentMode();
+        
+        if (onRatchetStepPage())
+        {
+            if (isRatchetActive() && !(tick % (_ratchetDivision*4))) // while ratcheting
+            {
+                XRLED::setDisplayStateForAllStepLEDs();
+            }
+
+            if (!(tick % _bpmBlinkTimer)) {
+                if (isRatchetActive() && !(tick % (_ratchetDivision*4))) // while ratcheting
+                {
+                    handleRatchetTrackStepLEDs(_ratchetTrack);
+                }
+            }
+        }
+
+        triggerRatchetingTrack(tick);
+
+        // step should be removed from stack at rate of 96ppqn / 6
+        if (!(tick % 6)) { 
+            handleRemoveFromStepStack(tick);
+            handleRemoveFromIgnoredStepStack(tick);
+        }
+
+        if (!(tick % 2) && currentUXMode == XRUX::UX_MODE::PATTERN_WRITE)
+        {
+            displayAllTrackNoteOnLEDs(false);
+        }
+
+        if (_recording) {
+            XRLED::setPWM(23, 512);
+            //XRLED::setPWM(23, 1024);
+        }
+
+        if (!(tick % 6))
+        {
+            XRLED::setPWM(23, 0); // turn start button led OFF every 16th note
+
+            if (currentUXMode == XRUX::UX_MODE::PATTERN_SEL)
+            {
+                XRLED::clearAllStepLEDs();
+                XRLED::displayCurrentlySelectedPattern();
+            }
+            else if (currentUXMode == XRUX::UX_MODE::TRACK_SEL)
+            {
+                XRLED::clearAllStepLEDs();
+                XRLED::displayCurrentlySelectedTrack();
+            }
+
+            if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE)
+            {
+                int lastStep = (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) ? activePattern.lstep : activePattern.layers[_currentSelectedTrackLayer].tracks[_currentSelectedTrack].lstep;
+
+                if (!XRKeyMatrix::isFunctionActive())
+                {
+                    XRLED::displayPageLEDs(
+                        -1,
+                        (_seqState.playbackState == RUNNING),
+                        _currentStepPage,
+                        lastStep
+                    );   
+                }
+            }
+        }
+    }
+
     void ClockOut16PPQN(uint32_t tick)
     {
         auto currentUXMode = XRUX::getCurrentMode();
@@ -215,6 +306,28 @@ namespace XRSequencer
         }
 
         // NOTE: this function is affected by swing
+
+        if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE)
+        {
+            displayAllTrackNoteOnLEDs(true);
+        }
+
+        // if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE || currentUXMode == XRUX::UX_MODE::SUBMITTING_STEP_VALUE)
+        // {
+        //     XRLED::setDisplayStateForAllStepLEDs();
+
+        //     int lastStep = (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) ? activePattern.lstep : activePattern.layers[_currentSelectedTrackLayer].tracks[_currentSelectedTrack].lstep;
+
+        //     if (!XRKeyMatrix::isFunctionActive())
+        //     {
+        //         XRLED::displayPageLEDs(
+        //             -1,
+        //             (_seqState.playbackState == RUNNING),
+        //             _currentStepPage,
+        //             lastStep
+        //         );   
+        //     }
+        // }
 
         // handle16PPQN(tick);
     }
@@ -237,7 +350,17 @@ namespace XRSequencer
             XRLED::setPWM(23, 4095); // when recording, each straight quarter note start button led FULL ON
 
             if (metronomeEnabled) {
-                XRSound::handleNoteOnForMetronome((_seqState.currentBar == 1 && _seqState.currentStep == 1));
+                auto plstp = activePattern.lstep;
+                auto lsDivBy16 = (plstp >= 16 && !(plstp % 16));
+                //auto lsDivBy12 = (plstp >= 12 && !(plstp % 12));
+                
+                bool accented = false;
+                if ( _seqState.currentStep == 1 || (lsDivBy16 && !((_seqState.currentStep-1)%16)))
+                {
+                    accented = true;
+                }
+
+                XRSound::handleNoteOnForMetronome(accented);
                 //XRDisplay::toggleMetronomeDirection();
                 //XRDisplay::drawSequencerScreen(false);
             }
@@ -321,6 +444,62 @@ namespace XRSequencer
         }
     }
 
+    void handleRatchetTrackStepLEDs(uint8_t t)
+    {
+        auto currentUXMode = XRUX::getCurrentMode();
+        auto currStepChar = XRHelpers::stepCharMap[_ratchetState.currentStep];
+        auto keyLED = XRLED::getKeyLED(currStepChar);
+
+        if (onRatchetStepPage())
+        {
+            bool transitionStepLEDs = (_ratchetState.currentStep <= 16);
+            bool turnOffLastLED = (_ratchetState.currentStep == 1);
+
+            if (_ratchetState.currentStep > 1)
+            {
+                if (transitionStepLEDs)
+                {
+                    uint8_t prevKeyLED = XRLED::getKeyLED(XRHelpers::stepCharMap[_ratchetState.currentStep - 1]);
+
+                    auto &currTrack = activePattern.ratchetLayer.tracks[t];
+                    auto prevTrackStepData = currTrack.steps[_ratchetState.currentStep-2];
+
+                    if (prevTrackStepData.state == STEP_STATE::STATE_ACCENTED)
+                    {
+                        XRLED::setPWM(prevKeyLED, 4095); // turn prev sixteenth led ACCENTED ON
+                    } else if (prevTrackStepData.state == STEP_STATE::STATE_ON) {
+                        XRLED::setPWM(prevKeyLED, 512); // turn prev sixteenth led ON
+                    } else {
+                        XRLED::setPWM(prevKeyLED, 0); // turn prev sixteenth led OFF
+                    }
+                }
+            } 
+            else if (turnOffLastLED) 
+            {
+                XRLED::setDisplayStateForAllStepLEDs();
+                // auto &currTrack = activePattern.ratchetLayer.tracks[t];
+                // auto currTrackLastStep = currTrack.lstep;
+
+                // uint8_t prevKeyLED = XRLED::getKeyLED(XRHelpers::stepCharMap[currTrackLastStep]);
+
+                // XRLED::setPWM(prevKeyLED, 0); // turn prev sixteenth led OFF
+            }
+
+            if (transitionStepLEDs)
+            {
+                auto &currTrack = activePattern.ratchetLayer.tracks[t];
+                auto currTrackStepData = currTrack.steps[_ratchetState.currentStep-1];
+
+                if (currTrackStepData.state != STEP_STATE::STATE_OFF)
+                {
+                    XRLED::setPWM(keyLED, currTrackStepData.state == STEP_STATE::STATE_ON ? 4095 : 0); // turn sixteenth led OFF
+                } else {
+                    XRLED::setPWM(keyLED, 4095); // turn sixteenth led ON
+                }
+            }
+        }
+    }
+
     void handleCurrentTrackStepLEDs(uint8_t t)
     {
         auto currentUXMode = XRUX::getCurrentMode();
@@ -371,22 +550,7 @@ namespace XRSequencer
         int8_t currStepChar = XRHelpers::stepCharMap[currStepPaged];
         int8_t keyLED = XRLED::getKeyLED(currStepChar);
 
-        if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE)
-        {
-            displayAllTrackNoteOnLEDs(true);
-        }
-
-        if (currentUXMode == XRUX::UX_MODE::PATTERN_SEL)
-        {
-            XRLED::clearAllStepLEDs();
-            XRLED::displayCurrentlySelectedPattern();
-        }
-        else if (currentUXMode == XRUX::UX_MODE::TRACK_SEL)
-        {
-            XRLED::clearAllStepLEDs();
-            XRLED::displayCurrentlySelectedTrack();
-        }
-        else if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE)
+        if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE)
         {
             bool transitionStepLEDs = ((currentStepPage == 1 && currentSelectedTrackCurrentStep <= 16) ||
                                     (currentStepPage == 2 && currentSelectedTrackCurrentStep > 16 && currentSelectedTrackCurrentStep <= 32) ||
@@ -409,9 +573,9 @@ namespace XRSequencer
 
                     if (prevTrackStepData.state == STEP_STATE::STATE_ACCENTED)
                     {
-                        XRLED::setPWM(keyLED, 4095); // turn prev sixteenth led ACCENTED ON
+                        XRLED::setPWM(prevKeyLED, 4095); // turn prev sixteenth led ACCENTED ON
                     } else if (prevTrackStepData.state == STEP_STATE::STATE_ON) {
-                        XRLED::setPWM(keyLED, 512); // turn prev sixteenth led ON
+                        XRLED::setPWM(prevKeyLED, 512); // turn prev sixteenth led ON
                     } else {
                         XRLED::setPWM(prevKeyLED, 0); // turn prev sixteenth led OFF
                     }
@@ -421,17 +585,20 @@ namespace XRSequencer
             {
                 if (turnOffLastLED)
                 {
-                    auto &currTrack = getCurrentSelectedTrack();
-                    auto currTrackLastStep = currTrack.lstep;
+                    XRLED::setDisplayStateForAllStepLEDs();
+                    // Serial.println("turning off last LED");
 
-                    if (currTrackLastStep > 16)
-                    {
-                        currTrackLastStep -= 16;
-                    }
+                    // auto &currTrack = getCurrentSelectedTrack();
+                    // auto currTrackLastStep = currTrack.lstep;
 
-                    uint8_t prevKeyLED = XRLED::getKeyLED(XRHelpers::stepCharMap[currTrackLastStep]);
+                    // if (currTrackLastStep > 16)
+                    // {
+                    //     currTrackLastStep -= 16;
+                    // }
 
-                    XRLED::setPWM(prevKeyLED, 0); // turn prev sixteenth led OFF
+                    // uint8_t prevKeyLED = XRLED::getKeyLED(XRHelpers::stepCharMap[currTrackLastStep]);
+
+                    // XRLED::setPWM(prevKeyLED, 0); // turn prev sixteenth led OFF
                 }
             }
 
@@ -442,7 +609,7 @@ namespace XRSequencer
 
                 if (currTrackStepData.state != STEP_STATE::STATE_OFF)
                 {
-                    XRLED::setPWM(keyLED, 0); // turn sixteenth led OFF
+                    XRLED::setPWM(keyLED, currTrackStepData.state == STEP_STATE::STATE_ON ? 4095 : 0); // turn sixteenth led OFF
                 } else {
                     XRLED::setPWM(keyLED, 4095); // turn sixteenth led ON
                 }
@@ -450,72 +617,8 @@ namespace XRSequencer
         }
     }
 
-    void ClockOut96PPQN(uint32_t tick)
-    {
-        auto currentUXMode = XRUX::getCurrentMode();
-        if (currentUXMode == XRUX::UX_MODE::PROJECT_INITIALIZE || currentUXMode == XRUX::UX_MODE::PROJECT_BUSY)
-        {
-            return;
-        }
-
-        handle96PPQN(tick);
-
-        // Send MIDI_CLOCK to external gears
-        // usbMIDI.sendRealTime(usbMIDI.Clock);
-    }
-
-    void handle96PPQN(uint32_t tick)
-    {
-        auto currentUXMode = XRUX::getCurrentMode();
-
-        if ((tick % 6) && !(tick % _bpmBlinkTimer))
-        {
-            XRLED::setPWM(23, 0); // turn start button led OFF every 16th note
-        }
-
-        if (_recording) {
-            XRLED::setPWM(23, 512);
-            //XRLED::setPWM(23, 1024);
-        }
-
-        //if (!(tick % 8)) {
-        triggerRatchetingTrack(tick);
-        //}
-
-        // step should be removed from stack at rate of 96ppqn / 6
-        if (!(tick % 6)) { 
-            handleRemoveFromStepStack(tick);
-            handleRemoveFromIgnoredStepStack(tick);
-        }
-
-        if ((tick % (6)) && !(tick % _bpmBlinkTimer))
-        {
-            if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE)
-            {
-                displayAllTrackNoteOnLEDs(false);
-            }
-            else if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE || currentUXMode == XRUX::UX_MODE::SUBMITTING_STEP_VALUE)
-            {
-                XRLED::setDisplayStateForAllStepLEDs();
-
-                int lastStep = (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) ? activePattern.lstep : activePattern.layers[_currentSelectedTrackLayer].tracks[_currentSelectedTrack].lstep;
-
-                if (!XRKeyMatrix::isFunctionActive())
-                {
-                    XRLED::displayPageLEDs(
-                        -1,
-                        (_seqState.playbackState == RUNNING),
-                        _currentStepPage,
-                        lastStep
-                    );   
-                }
-            }
-        }
-    }
-
     void handleRemoveFromStepStack(uint32_t tick)
     {
-
         for (int i = 0; i < STEP_STACK_SIZE; i++)
         {
             if (_stepStack[i].length != -1)
@@ -714,6 +817,21 @@ namespace XRSequencer
         return _ratchetTrack;
     }
 
+    bool isRatchetAccented()
+    {
+        return false; // _isRatchetAccented
+    }
+
+    void toggleIsRatchetAccented(bool enable)
+    {
+        //_isRatchetAccented = enable;
+    }
+
+    int8_t getCurrentRatchetPageNum()
+    {
+        return _ratchetPageNum;
+    }
+
     int8_t getRatchetDivision()
     {
         return _ratchetDivision;
@@ -725,6 +843,9 @@ namespace XRSequencer
 
         for (int t = 1; t < MAX_PATTERN_TRACK_SIZE; t++)
         {
+            // ignore this track's LED if currently playing a note on the keys
+            if (t-1 == _currentSelectedTrack && XRVersa::getKeyboardNotesHeld() > 0) continue;
+
             auto &currTrack = activePattern.layers[_currentSelectedTrackLayer].tracks[t - 1];
             auto currTrackStep = _seqState.currentTrackSteps[t - 1].currentStep;
             auto currTrackStepForLED = currTrack.steps[currTrackStep - 1];
@@ -742,7 +863,11 @@ namespace XRSequencer
                     XRLED::setPWM(keyLED, 0);
                 }
             }
-            else if (currTrackStepForLED.state == STEP_STATE::STATE_ON || currTrackStepForLED.state == STEP_STATE::STATE_ACCENTED)
+            else if (currTrackStepForLED.state == STEP_STATE::STATE_ON)
+            {
+                XRLED::setPWM(keyLED, enable ? 512 : 0);
+            }
+            else if (currTrackStepForLED.state == STEP_STATE::STATE_ACCENTED)
             {
                 XRLED::setPWM(keyLED, enable ? 4095 : 0);
             }
@@ -797,7 +922,9 @@ namespace XRSequencer
 
     void handleAddToStepStack(uint32_t tick, int track, int step)
     {
-        if (_ratchetTrack == track && _ratchetDivision > -1)  // if ratcheting is enabled
+        // TODO handle concurrent ratcheting and step stacking
+        // by using separate trigger trackers
+        if (_ratchetTrack == track && isRatchetActive())  // if ratcheting is enabled
         {
             return;
         }
@@ -1046,6 +1173,30 @@ namespace XRSequencer
                 }
             }
         }
+
+        // ratchet layer stuff
+        for (size_t rt = 0; rt < MAXIMUM_SEQUENCER_TRACKS; rt++)
+        {
+            activePattern.ratchetLayer.tracks[rt].length = 2;
+            activePattern.ratchetLayer.tracks[rt].note = 0;
+            activePattern.ratchetLayer.tracks[rt].octave = 4;
+            activePattern.ratchetLayer.tracks[rt].velocity = 50;
+            activePattern.ratchetLayer.tracks[rt].probability = 100;
+            activePattern.ratchetLayer.tracks[rt].lstep = DEFAULT_LAST_STEP;
+            activePattern.ratchetLayer.tracks[rt].initialized = false;
+
+            // now fill in steps
+            for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
+            {
+                activePattern.ratchetLayer.tracks[rt].steps[s].state = STEP_STATE::STATE_ON;
+
+                for (int m = 0; m < MAXIMUM_TRACK_MODS; m++)
+                {
+                    activePattern.ratchetLayer.tracks[rt].steps[s].mods[m] = 0;
+                    activePattern.ratchetLayer.tracks[rt].steps[s].flags[m] = false;
+                }
+            }
+        }
     }
 
     void initIdlePattern()
@@ -1057,8 +1208,8 @@ namespace XRSequencer
         idlePattern.accent = DEFAULT_GLOBAL_ACCENT;
         idlePattern.fx = getInitPatternFxParams();
 
-        for (size_t l = 0; l < MAXIMUM_SEQUENCER_TRACK_LAYERS; l++) {
-
+        for (size_t l = 0; l < MAXIMUM_SEQUENCER_TRACK_LAYERS; l++)
+        {
             for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
             {
                 idlePattern.layers[l].tracks[t].length = 4;
@@ -1079,6 +1230,30 @@ namespace XRSequencer
                         idlePattern.layers[l].tracks[t].steps[s].mods[m] = 0;
                         idlePattern.layers[l].tracks[t].steps[s].flags[m] = false;
                     }
+                }
+            }
+        }
+
+        // ratchet layer stuff
+        for (size_t rt = 0; rt < MAXIMUM_SEQUENCER_TRACKS; rt++)
+        {
+            idlePattern.ratchetLayer.tracks[rt].length = 2;
+            idlePattern.ratchetLayer.tracks[rt].note = 0;
+            idlePattern.ratchetLayer.tracks[rt].octave = 4;
+            idlePattern.ratchetLayer.tracks[rt].velocity = 50;
+            idlePattern.ratchetLayer.tracks[rt].probability = 100;
+            idlePattern.ratchetLayer.tracks[rt].lstep = DEFAULT_LAST_STEP;
+            idlePattern.ratchetLayer.tracks[rt].initialized = false;
+
+            // now fill in steps
+            for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
+            {
+                idlePattern.ratchetLayer.tracks[rt].steps[s].state = STEP_STATE::STATE_ON;
+
+                for (int m = 0; m < MAXIMUM_TRACK_MODS; m++)
+                {
+                    idlePattern.ratchetLayer.tracks[rt].steps[s].mods[m] = 0;
+                    idlePattern.ratchetLayer.tracks[rt].steps[s].flags[m] = false;
                 }
             }
         }
@@ -1191,9 +1366,17 @@ namespace XRSequencer
 
             _dequeuePattern = false;
 
+            // TODO: fix pattern dequeueing
+            _queuedPatternState.bank = -1;
+            _queuedPatternState.number = -1;
+            _drawPatternQueueBlink = -1;
+            XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_WRITE);
+            return;
+
             // IMPORTANT: must change sounds before changing sequencer data!
             XRSound::saveSoundDataForPatternChange(); // make sure current sounds are saved first
             XRSound::loadSoundDataForPatternChange(_queuedPatternState.bank, _queuedPatternState.number);
+
             swapSequencerMemoryForPattern(_queuedPatternState.bank, _queuedPatternState.number);
 
             XRDexedManager::swapInstances();
@@ -1208,6 +1391,8 @@ namespace XRSequencer
 
             _currentStepPage = 1;
             _currentSelectedPage = 0;
+            _ratchetTrack = 0;
+            _ratchetPageNum = 0;
             //_currentSelectedTrack = 0;
 
             auto currentUXMode = XRUX::getCurrentMode();
@@ -1285,9 +1470,6 @@ namespace XRSequencer
     void swapSequencerMemoryForPattern(int newBank, int newPattern)
     {
         XRSD::saveActivePatternToSdCard();
-        // if (!XRSD::loadNextPattern(newBank, newPattern)){
-        //     initNextPattern();
-        // }
 
         // swap data
         activePattern = idlePattern;
@@ -1351,8 +1533,13 @@ namespace XRSequencer
 
         uint8_t stepNum = stepToUse - 1; // get zero based step num
 
-        auto &currTrack = getCurrentSelectedTrack();
-        auto currStepState = currTrack.steps[stepNum].state;
+        auto &currTrack = onRatchetStepPage() ? 
+            activePattern.ratchetLayer.tracks[_ratchetTrack] : 
+            getCurrentSelectedTrack();
+
+        auto currStepState = onRatchetStepPage() ? 
+            activePattern.ratchetLayer.tracks[_ratchetTrack].steps[stepNum].state : 
+            currTrack.steps[stepNum].state;
 
         if (currStepState == STEP_STATE::STATE_OFF)
         {
@@ -1386,17 +1573,18 @@ namespace XRSequencer
                 // Stopped, so reset sequencer to FIRST step in pattern
                 _seqState.currentStep = 1;
                 _seqState.currentBar = 1;
+                _ratchetState.firstBar = true;
 
                 rewindAllCurrentStepsForAllTracks();
 
-                if (
-                    currentUXMode == XRUX::UX_MODE::PERFORM_TAP ||
-                    currentUXMode == XRUX::UX_MODE::PERFORM_MUTE ||
-                    currentUXMode == XRUX::UX_MODE::PERFORM_SOLO ||
-                    currentUXMode == XRUX::UX_MODE::PERFORM_RATCHET
-                ) {
-                    return;
-                }
+                // if (
+                //     currentUXMode == XRUX::UX_MODE::PERFORM_TAP ||
+                //     currentUXMode == XRUX::UX_MODE::PERFORM_MUTE ||
+                //     currentUXMode == XRUX::UX_MODE::PERFORM_SOLO ||
+                //     currentUXMode == XRUX::UX_MODE::PERFORM_RATCHET
+                // ) {
+                //     return;
+                // }
 
                 XRLED::setPWM(keyLED, 0); // turn off current step LED
                 XRLED::setPWM(23, 0);     // turn start button led OFF
@@ -1456,6 +1644,7 @@ namespace XRSequencer
                 // Stopped, so reset sequencer to FIRST step in pattern
                 _seqState.currentStep = 1;
                 _seqState.currentBar = 1;
+                _ratchetState.firstBar = true;
 
                 rewindAllCurrentStepsForAllTracks();
 
@@ -1492,6 +1681,11 @@ namespace XRSequencer
         }
     }
 
+    void setCurrentRatchetStep(int8_t step)
+    {
+        _ratchetState.currentStep = step;
+    }
+
     void rewindAllCurrentStepsForAllTracks()
     {
         for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
@@ -1502,21 +1696,48 @@ namespace XRSequencer
 
     void triggerRatchetingTrack(uint32_t tick)
     {
-        if (_ratchetTrack == -1)
-        {
+        handleRemoveFromRatchetStack();
+
+        if (XRUX::getCurrentMode() != XRUX::PERFORM_RATCHET && XRUX::getCurrentMode() != XRUX::SUBMITTING_RATCHET_STEP_VALUE) {
             return;
         }
 
-        handleRemoveFromRatchetStack();
-
-        if (_ratchetDivision > -1 && !(tick % (_ratchetDivision*4)))
+        if (isRatchetActive() && !(tick % (_ratchetDivision*4))) // while ratcheting
         {
-            Serial.print("in ratchet division! tick: ");
-            Serial.print(tick);
-            Serial.print(" ratchet_division: ");
-            Serial.println(_ratchetDivision);
+            // Serial.print("in ratchet division! tick: ");
+            // Serial.print(tick);
+            // Serial.print(" ratchet_division: ");
+            // Serial.println(_ratchetDivision);
 
-            handleAddToRatchetStack();
+            int8_t currRatchetStep = _ratchetState.currentStep - 1; // get zero-based ratchet step number
+
+            auto &ratchetTrack = activePattern.ratchetLayer.tracks[_ratchetTrack];
+            auto &currTrackStepData = ratchetTrack.steps[currRatchetStep];
+            
+            if ((currTrackStepData.state == STEP_STATE::STATE_ON) || (currTrackStepData.state == STEP_STATE::STATE_ACCENTED))
+            {
+                //if (isStepProbablyEnabled(t, currRatchetStep)) {
+                    handleAddToRatchetStack(currRatchetStep);
+                // } else {
+                //     handleAddToIgnoredStepStack(tick, t, currTrackStep);
+                // }
+            }
+
+            auto trackLastStep = ratchetTrack.lstep;
+            auto trackCurrentStep = _ratchetState.currentStep;
+
+            if (trackCurrentStep <= trackLastStep)
+            {
+                if (trackCurrentStep < trackLastStep)
+                {
+                    ++_ratchetState.currentStep; // advance current step for ratchet track
+                }
+                else
+                {
+                    _ratchetState.currentStep = 1; // reset current step for ratchet track
+                    _ratchetState.firstBar = false;
+                }
+            }
         }
     }
 
@@ -1547,19 +1768,22 @@ namespace XRSequencer
         }
     }
 
-    void handleAddToRatchetStack()
+    void handleAddToRatchetStack(int step)
     {
-        for (size_t i = 0; i < STEP_STACK_SIZE; i++)
+        auto &currRatchetTrack = activePattern.ratchetLayer.tracks[_ratchetTrack];
+
+        for (size_t i = 0; i < RATCHET_STACK_SIZE; i++)
         {
             if (_ratchetStack[i].length == -1)
             {
                 _ratchetStack[i].trackNum = _ratchetTrack;
-                _ratchetStack[i].length = 2; // TODO: shorten?
+                _ratchetStack[i].length = currRatchetTrack.length;
 
                 // handleNoteOnForTrack(_ratchetStack[i].trackNum, trackTriggerState.trackTriggers[0]);
                 trackTriggerState.trackTriggers[_ratchetStack[i].trackNum].currentState = 1;
                 trackTriggerState.trackTriggers[_ratchetStack[i].trackNum].pattern = _currentSelectedPattern;
                 trackTriggerState.trackTriggers[_ratchetStack[i].trackNum].layer = _currentSelectedTrackLayer;
+                trackTriggerState.trackTriggers[_ratchetStack[i].trackNum].step = step;
                 trackTriggerState.trackTriggers[_ratchetStack[i].trackNum].soundType = XRSound::activeSounds[_ratchetStack[i].trackNum].type;
 
                 return;
@@ -1726,5 +1950,30 @@ namespace XRSequencer
     void setRatchetDivision(int track)
     {
         _ratchetDivision = track;
+    }
+
+    void setCurrentRatchetPageNum(int8_t page)
+    {
+        _ratchetPageNum = page;
+    }
+
+    void resetRatchetBar()
+    {
+        _ratchetState.firstBar = true;
+    }
+
+    void setCurrentSelectedRatchetStep(int step)
+    {
+        _currentSelectedRatchetStep = step;
+    }
+
+    int8_t getCurrentSelectedRatchetStep()
+    {
+        return _currentSelectedRatchetStep;
+    }
+
+    bool onRatchetStepPage()
+    {
+        return XRUX::getCurrentMode() == XRUX::PERFORM_RATCHET && _ratchetPageNum == 1;
     }
 }

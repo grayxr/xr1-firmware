@@ -31,7 +31,9 @@ namespace XREncoder
     void handleEncoderSetStepMicrotime(int diff);
     void handleEncoderSetPatternMods();
     void handleEncoderSetTrackMods();
+    void handleEncoderSetRatchetMods();
     void handleEncoderTraversePages(int diff);
+    void handleEncoderTraverseRatchetPages(int diff);
     void handleEncoderPatternModA(int diff);
     void handleEncoderPatternModB(int diff);
     void handleEncoderPatternModC(int diff);
@@ -176,6 +178,17 @@ namespace XREncoder
         }
 
         if (
+            currentUXMode == XRUX::UX_MODE::PERFORM_RATCHET || 
+            currentUXMode == XRUX::UX_MODE::SUBMITTING_RATCHET_STEP_VALUE
+        ) {
+            int diff = getDiff(MAIN_ENCODER_ADDRESS);
+            handleEncoderTraverseRatchetPages(diff);
+            handleEncoderSetRatchetMods();
+
+            return;
+        }
+
+        if (
             currentUXMode == XRUX::UX_MODE::TRACK_WRITE || 
             currentUXMode == XRUX::UX_MODE::SUBMITTING_STEP_VALUE ||
             currentUXMode == XRUX::UX_MODE::ASSIGN_SAMPLE_TO_TRACK_SOUND
@@ -239,17 +252,25 @@ namespace XREncoder
             auto &currLayer = XRSequencer::getCurrentSelectedTrackLayer();
             auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
             auto currStep = XRSequencer::getCurrentSelectedStepNum();
+
+            // initialize a shuffle template for the track
+            int8_t trackShuffleTemplate[MAXIMUM_SEQUENCER_STEPS];
+            
+            // try to build the template for the track based on the pattern first
             int currGrooveId = currPattern.groove.id;
             int currGrooveAmt = currPattern.groove.amount;
-            auto currPatternTemplate = XRClock::getShuffleTemplateForGroove(currGrooveId, currGrooveAmt);
+            if (currGrooveId != -1) { // pattern has a groove template
+                auto currPatternTemplate = XRClock::getShuffleTemplateForGroove(currGrooveId, currGrooveAmt);
+                size_t currPatternTemplateLength = sizeof(currPatternTemplate);
 
-            // build the shuffle template for the track based on the pattern first
-            int8_t trackShuffleTemplate[MAXIMUM_SEQUENCER_STEPS];
-            size_t currPatternTemplateLength = sizeof(currPatternTemplate);
-
-            for (size_t i = 0; i < MAXIMUM_SEQUENCER_STEPS; i++)
-            {
-                trackShuffleTemplate[i] = currPatternTemplate[i % currPatternTemplateLength];
+                for (size_t i = 0; i < MAXIMUM_SEQUENCER_STEPS; i++)
+                {
+                    trackShuffleTemplate[i] = currPatternTemplate[i % currPatternTemplateLength];
+                }
+            } else {
+                // pattern doesn't have groove but we need ot enable shuffle on the clock
+                // so we can apply microtiming to the track
+                XRClock::setShuffle(true);
             }
 
             // then get any existing step mods for the entire track and apply them to the template
@@ -370,6 +391,133 @@ namespace XREncoder
             XRSequencer::setSelectedPage(newPage);
             
             XRDisplay::drawSequencerScreen(false);
+        }
+    }
+
+    void handleEncoderTraverseRatchetPages(int diff)
+    {
+        auto rPage = XRSequencer::getCurrentRatchetPageNum();
+
+        int newPage = rPage + diff;
+
+        if (newPage != rPage) {
+            int maxPages = 2;
+
+            if (newPage > (maxPages - 1)) {
+                newPage = 0;
+            } else if (newPage < 0) {
+                newPage = maxPages - 1;
+            }
+
+            XRSequencer::setCurrentRatchetPageNum(newPage);
+
+            if (newPage == 1) {
+                XRLED::setDisplayStateForAllStepLEDs();
+            } else {
+                XRLED::clearAllStepLEDs();
+                XRLED::displayRatchetTrackLED(false);
+            }
+            
+            XRDisplay::drawSequencerScreen(false);
+        }
+    }
+
+    void handleEncoderSetRatchetMods()
+    {
+        const int modCount = 4;
+        for (int m = 0; m < modCount; m++)
+        {
+            int diff = getDiff(m + 1);
+
+            if (diff != 0)
+            {
+                if (m == 0)
+                {
+                    auto ratchetTrackNum = XRSequencer::getRatchetTrack();
+                    auto &ratchetTrack = XRSequencer::activePattern.ratchetLayer.tracks[ratchetTrackNum];
+
+                    // last step
+                    int currLastStep = ratchetTrack.lstep;
+                    int newLastStep = constrain(ratchetTrack.lstep + diff, 1, 16);
+
+                    if (newLastStep != currLastStep)
+                    {
+                        ratchetTrack.lstep = newLastStep;
+
+                        XRLED::setDisplayStateForAllStepLEDs();
+                        XRDisplay::drawSequencerScreen(false);
+                    }
+                }
+                else if (m == 1)
+                {
+                    auto ratchetTrackNum = XRSequencer::getRatchetTrack();
+                    auto &ratchetTrack = XRSequencer::activePattern.ratchetLayer.tracks[ratchetTrackNum];
+
+                    // note
+                    int currNote = ratchetTrack.note;
+                    int newNote = ratchetTrack.note + diff;
+
+                    if (newNote != currNote)
+                    {
+                        auto newOctave = ratchetTrack.octave;
+
+                        if (newNote < 0) {
+                            newNote = 12 - newNote;
+                            --newOctave;
+                        } else if (newNote > 12) {
+                            newNote = newNote - 12;
+                            ++newOctave;
+                        }
+
+                        if (newOctave < 1 || newOctave > 7) {
+                            return;
+                        }
+
+                        ratchetTrack.note = newNote;
+                        ratchetTrack.octave = newOctave;
+
+                        XRDisplay::drawSequencerScreen(false);
+                    }
+                }
+                else if (m == 2)
+                {
+                    auto ratchetTrackNum = XRSequencer::getRatchetTrack();
+                    auto &ratchetTrack = XRSequencer::activePattern.ratchetLayer.tracks[ratchetTrackNum];
+
+                    // velocity
+                    int currVelo = ratchetTrack.velocity;
+                    int newVelo = constrain(ratchetTrack.velocity + diff, 0, 100);
+
+                    if (newVelo != currVelo)
+                    {
+                        ratchetTrack.velocity = newVelo;
+
+                        XRDisplay::drawSequencerScreen(false);
+                    }
+                }
+                else if (m == 3)
+                {
+                    auto ratchetTrackNum = XRSequencer::getRatchetTrack();
+                    auto &ratchetTrack = XRSequencer::activePattern.ratchetLayer.tracks[ratchetTrackNum];
+
+                    // ratchet latch
+                    bool ratchetLatched = XRSequencer::ratchetLatched;
+
+                    if (diff < 0)
+                    {
+                        XRSequencer::ratchetLatched = false;
+                        
+                        XRSequencer::setRatchetDivision(-1);
+                        XRSequencer::setCurrentRatchetStep(1);
+                        XRSequencer::resetRatchetBar();
+                        XRLED::setDisplayStateForAllStepLEDs();
+                    } else {
+                        XRSequencer::ratchetLatched = true;
+                    }
+                    
+                    XRDisplay::drawSequencerScreen(false);
+                }
+            }
         }
     }
     
@@ -1582,8 +1730,10 @@ namespace XREncoder
             float currPan = getValueNormalizedAsFloat(XRSound::activeSounds[currSelectedTrackNum].params[DEXE_PAN]);
             float newPan = currPan + (diff * 0.1);
 
-            if (!(newPan < -1.0 || newPan > 1.0) && newPan != currPan)
+            if (newPan != currPan)
             {
+                newPan = constrain(newPan, -1.0, 1.0);
+
                 XRSound::activeSounds[currSelectedTrackNum].params[DEXE_PAN] = getFloatValuePaddedAsInt32(newPan);
                 XRSound::patternSoundsDirty = true;
 

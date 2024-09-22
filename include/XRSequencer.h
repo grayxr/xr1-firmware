@@ -83,6 +83,7 @@ namespace XRSequencer
     typedef struct
     {
         TRACK_LAYER layers[MAXIMUM_SEQUENCER_TRACK_LAYERS];
+        TRACK_LAYER ratchetLayer;
 
         PATTERN_FX_PARAMS fx;
         PATTERN_GROOVE groove;
@@ -140,6 +141,11 @@ namespace XRSequencer
         int8_t currentBar = 1;
     } SEQUENCER_STATE;
 
+    typedef struct {
+        bool firstBar = true;
+        int8_t currentStep = 1;
+    } RATCHET_STATE;
+
     // noteOn / noteOff stacks
 
     typedef struct
@@ -186,18 +192,19 @@ namespace XRSequencer
     extern TRACK_TRIGGER_STATE trackTriggerState;
 
     extern bool metronomeEnabled;
+    extern bool ratchetLatched;
 
     bool init();
 
     bool isStepProbablyEnabled(int track, int step);
+    bool isRatchetAccented();
+    bool onRatchetStepPage();
 
     void initActivePattern();
     void initActiveTrackLayer();
     void initActiveTrackStepModLayer();
-
     void initIdlePattern();
     void initNextTrackLayer();
-
     void initTrackLayerCopyBuffer();
     
     void swapSequencerMemoryForPattern(int newBank, int newPattern);
@@ -225,7 +232,7 @@ namespace XRSequencer
     void triggerAllStepsForAllTracks(uint32_t tick);
     void triggerRatchetingTrack(uint32_t tick);
     void handleAddToStepStack(uint32_t tick, int track, int step);
-    void handleAddToRatchetStack();
+    void handleAddToRatchetStack(int step);
     void handleRemoveFromStepStack(uint32_t tick);
     void handleRemoveFromRatchetStack();
 
@@ -255,9 +262,15 @@ namespace XRSequencer
     void setSelectedPage(int8_t page);
     void initializeCurrentSelectedTrack();
     void setCurrentSelectedStep(int step);
+    void setCurrentSelectedRatchetStep(int step);
     void setCurrentStepPage(int8_t page);
     void setRatchetTrack(int track);
     void setRatchetDivision(int track);
+    void setCurrentRatchetPageNum(int8_t page);
+    void handleRatchetTrackStepLEDs(uint8_t t);
+    void setCurrentRatchetStep(int8_t step);
+    void resetRatchetBar();
+    void toggleIsRatchetAccented(bool enable);
 
     void toggleSequencerPlayback(char btn);
     void rewindAllCurrentStepsForAllTracks();
@@ -286,6 +299,8 @@ namespace XRSequencer
     int8_t getCurrentStepPage();
     int8_t getRatchetTrack();
     int8_t getRatchetDivision();
+    int8_t getCurrentRatchetPageNum();
+    int8_t getCurrentSelectedRatchetStep();
 }
 
 #endif /* XRSequencer_h */

@@ -43,14 +43,7 @@ namespace XRSD
     bool loadActivePattern();
     void saveActivePatternToSdCard();
 
-    bool loadActiveTrackLayer();
-    void saveActiveTrackLayerToSdCard();
-
     bool loadNextPattern(int bank, int pattern);
-    bool loadNextTrackLayer(int bank, int pattern, int layer);
-
-    bool loadActiveTrackStepModLayerFromSdCard(int bank, int pattern, int layer);
-    void saveActiveTrackStepModLayerToSdCard();
 
     bool loadActiveSounds();
     void saveActiveSounds();

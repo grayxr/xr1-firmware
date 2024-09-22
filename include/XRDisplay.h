@@ -25,7 +25,7 @@ namespace XRDisplay
     void drawControlMods();
     void drawPatternControlMods();
     void drawNormalControlMods();
-    void drawExtendedControlMods();
+    void drawExtendedControlMods(bool useRatchetTrack = false);
     void drawSampleFileControlMods();
     void drawControlModsForADSR(int att, int dec, float sus, int rel);
     void drawPageNumIndicators();
@@ -43,6 +43,8 @@ namespace XRDisplay
     void drawStraightDashedLine(int startX, int endX, int yPos);
     void drawStepMicrotimingOverlay(std::string value);
     void toggleMetronomeDirection();
+    void drawRatchetPageNumIndicators();
+    void drawTrackSoundName();
 
     std::string getDisplayNote();
     std::string getNumberBufferedStr(std::string inputStr, int8_t value, bool hideNum);

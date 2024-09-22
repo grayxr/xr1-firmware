@@ -41,6 +41,7 @@ namespace XRClock
     {
         uClock.init();
         uClock.setOnPPQN(XRSequencer::ClockOut96PPQN);
+        uClock.setOnStep(XRSequencer::ClockOut16PPQN);       
         uClock.setOnRigidStep(XRSequencer::ClockOutRigid16PPQN);       
         uClock.setTrackOnStep(XRSequencer::ClockOutTracked16PPQN);
         uClock.setOnClockStart(XRSequencer::onClockStart);

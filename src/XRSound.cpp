@@ -6,6 +6,7 @@
 #include <XRCV.h>
 #include <XRSD.h>
 #include <XRKeyMatrix.h>
+#include <XRHelpers.h>
 #include <map>
 
 #define USE_WAV true
@@ -1143,6 +1144,39 @@ namespace XRSound
         return mods;
     }
 
+    SOUND_CONTROL_MODS getRatchetControlModData()
+    {
+        SOUND_CONTROL_MODS mods;
+
+        auto &ratchetTrack = XRSequencer::activePattern.ratchetLayer.tracks[XRSequencer::getRatchetTrack()];
+        auto currUXMode = XRUX::getCurrentMode();
+
+        mods.isAbleToStepModA = false;
+        mods.isAbleToStepModB = true;
+        mods.isAbleToStepModC = true;
+        mods.isAbleToStepModD = false;
+
+        mods.isActiveStepModA = false;
+        mods.isActiveStepModB = false;
+        mods.isActiveStepModC = false;
+        mods.isActiveStepModD = false;
+
+        auto noteToUse = XRHelpers::getNoteStringForBaseNoteNum(ratchetTrack.note);
+        noteToUse += std::to_string(ratchetTrack.octave);
+
+        mods.aName = "lstep";
+        mods.bName = "note";
+        mods.cName = "velo";
+        mods.dName = "latch";
+
+        mods.aValue = std::to_string(ratchetTrack.lstep);
+        mods.bValue = noteToUse;
+        mods.cValue = std::to_string(ratchetTrack.velocity);
+        mods.dValue = XRSequencer::ratchetLatched ? "ON" : "OFF";
+
+        return mods;
+    }
+
     SOUND_CONTROL_MODS getMonoSampleControlModData()
     {
         SOUND_CONTROL_MODS mods;
@@ -2053,23 +2087,25 @@ namespace XRSound
         auto msmpLvl = getValueNormalizedAsFloat(activeSounds[track].params[MSMP_LEVEL]);
         auto msmpDly = getValueNormalizedAsFloat(activeSounds[track].params[MSMP_DELAY]);
 
+        auto velocityToUse = trackToUse.velocity;
+        auto octaveToUse = trackToUse.octave;
+        auto noteToUse = trackToUse.note;
+
         AudioNoInterrupts();
 
         monoSampleInstances[track].ampEnv.attack(msmpAatt);
         monoSampleInstances[track].ampEnv.decay(msmpAdec);
         monoSampleInstances[track].ampEnv.sustain(msmpAsus);
         monoSampleInstances[track].ampEnv.release(msmpArel);
-        
-        monoSampleInstances[track].ampAccent.gain(trackToUse.velocity * 0.01);
-
+        monoSampleInstances[track].ampAccent.gain(velocityToUse * 0.01);
         monoSampleInstances[track].amp.gain(msmpLvl);
         monoSampleInstances[track].ampDelaySend.gain(msmpDly);
-
         monoSampleInstances[track].left.gain(getStereoPanValues(msmpPan).left);
         monoSampleInstances[track].right.gain(getStereoPanValues(msmpPan).right);
 
         const float semi = powf(2.0f, 1.0f/12);
-        float freq = powf(semi, 12*(trackToUse.octave - 4) + trackToUse.note);
+        float freq = powf(semi, 12*(octaveToUse - 4) + noteToUse);
+        
         monoSampleInstances[track].sample.setPlaybackRate(freq);
 
         AudioInterrupts();
@@ -2128,9 +2164,13 @@ namespace XRSound
         auto msynLvl = getValueNormalizedAsFloat(activeSounds[track].params[MSYN_LEVEL]);
         auto msynDly = getValueNormalizedAsFloat(activeSounds[track].params[MSYN_DELAY]);
 
-        float foundBaseFreq = _noteToFreqArr[trackToUse.note];
-        float octaveFreqA = (foundBaseFreq + (msynFine * 0.01)) * (pow(2, trackToUse.octave));
-        float octaveFreqB = (foundBaseFreq * pow(2.0, (float)msynDetune / 12.0)) * (pow(2, trackToUse.octave));
+        auto velocityToUse = trackToUse.velocity;
+        auto octaveToUse = trackToUse.octave;
+        auto noteToUse = trackToUse.note;
+
+        float foundBaseFreq = _noteToFreqArr[noteToUse];
+        float octaveFreqA = (foundBaseFreq + (msynFine * 0.01)) * (pow(2, velocityToUse));
+        float octaveFreqB = (foundBaseFreq * pow(2.0, (float)msynDetune / 12.0)) * (pow(2, octaveToUse));
         
         AudioNoInterrupts();
 
@@ -2148,8 +2188,8 @@ namespace XRSound
         monoSynthInstances[track].ampEnv.sustain(msynAsus);
         monoSynthInstances[track].ampEnv.release(msynArel);
 
-        monoSynthInstances[track].filterAccent.gain((trackToUse.velocity * 0.01));
-        monoSynthInstances[track].ampAccent.gain((trackToUse.velocity * 0.01));
+        monoSynthInstances[track].filterAccent.gain((velocityToUse * 0.01));
+        monoSynthInstances[track].ampAccent.gain((velocityToUse * 0.01));
         //monoSynthInstances[track].amp.gain(msynLvl * (trackToUse.velocity * 0.01));
         monoSynthInstances[track].amp.gain(msynLvl);
         monoSynthInstances[track].ampDelaySend.gain(msynDly);
@@ -2173,14 +2213,15 @@ namespace XRSound
         auto dexeLvl = getValueNormalizedAsFloat(activeSounds[track].params[DEXE_LEVEL]);
         auto dexeDly = getValueNormalizedAsFloat(activeSounds[track].params[DEXE_DELAY]);
 
-        uint8_t noteToUse = trackToUse.note;
-        uint8_t octaveToUse = trackToUse.octave;
+        auto velocityToUse = trackToUse.velocity;
+        auto octaveToUse = trackToUse.octave;
+        auto noteToUse = trackToUse.note;
 
         int midiNote = (noteToUse + (12 * (octaveToUse)));
 
         auto di = XRDexedManager::getActiveInstanceForTrack(track);
 
-        dexedInstances[di].ampAccent.gain((trackToUse.velocity * 0.01));
+        dexedInstances[di].ampAccent.gain((velocityToUse * 0.01));
         dexedInstances[di].amp.gain(dexeLvl);
         dexedInstances[di].ampDelaySend.gain(0);
 
@@ -2208,7 +2249,9 @@ namespace XRSound
         auto fmDrumLvl = getValueNormalizedAsFloat(activeSounds[track].params[FMD_LEVEL]);
         auto fmDrumDly = getValueNormalizedAsFloat(activeSounds[track].params[FMD_DELAY]);
 
-        fmDrumInstances[track].ampAccent.gain((trackToUse.velocity * 0.01));
+        auto velocityToUse = trackToUse.velocity;
+
+        fmDrumInstances[track].ampAccent.gain((velocityToUse * 0.01));
         fmDrumInstances[track].amp.gain(fmDrumLvl);
         fmDrumInstances[track].ampDelaySend.gain(0);
 
@@ -2335,12 +2378,54 @@ namespace XRSound
         bool hasSecondSample = trackSampleNameB.length() > 0;
 
         auto velocityToUse = trackToUse.velocity;
+        auto octaveToUse = trackToUse.octave;
+        auto noteToUse = trackToUse.note;
+
         if (hasSecondSample) 
         {
             velocityToUse = 100;
-        }
-        else if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
+        } else if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
             velocityToUse = max(trackToUse.velocity, XRSequencer::activePattern.accent);
+        }
+
+        if (stepToUse.flags[XRSequencer::NOTE])
+        {
+            noteToUse = stepToUse.mods[XRSequencer::NOTE];
+        }
+
+        if (stepToUse.flags[XRSequencer::OCTAVE])
+        {
+            octaveToUse = stepToUse.mods[XRSequencer::OCTAVE];
+        }
+
+        // is currently ratcheting and this is the ratcheting track
+        if (track == XRSequencer::getRatchetTrack() && XRSequencer::getRatchetDivision() > -1){
+            auto &ratchetTrack = XRSequencer::activePattern.ratchetLayer.tracks[track];
+            auto &ratchetTrackStep = XRSequencer::activePattern.ratchetLayer.tracks[track].steps[step];
+
+            velocityToUse = ratchetTrack.velocity;
+
+            if (hasSecondSample) 
+            {
+                velocityToUse = 100;
+            } else if (ratchetTrackStep.state == XRSequencer::STATE_ACCENTED) {
+                velocityToUse = max(ratchetTrack.velocity, XRSequencer::activePattern.accent);
+            }
+
+            octaveToUse = ratchetTrack.octave;
+            noteToUse = ratchetTrack.note;
+
+            if (ratchetTrackStep.flags[XRSequencer::NOTE])
+            {
+                noteToUse = ratchetTrackStep.mods[XRSequencer::NOTE];
+            }
+
+            if (ratchetTrackStep.flags[XRSequencer::OCTAVE])
+            {
+                octaveToUse = ratchetTrackStep.mods[XRSequencer::OCTAVE];
+            }
+
+            Serial.printf("Ratchet noteToUse: %d, octaveToUse: %d\n", noteToUse, octaveToUse);
         }
 
         // if (patternMods.tracks[track].step_mod_flags[step].flags[XRSequencer::MOD_ATTRS::VELOCITY])
@@ -2397,7 +2482,7 @@ namespace XRSound
         monoSampleInstances[track].right.gain(getStereoPanValues(msmpPan).right);
 
         const float semi = powf(2.0f, 1.0f/12);
-        float freq = powf(semi, 12*(trackToUse.octave - 4) + trackToUse.note);
+        float freq = powf(semi, 12*(octaveToUse - 4) + noteToUse);
         monoSampleInstances[track].sample.setPlaybackRate(freq * speedToUse);
 
         //monoSampleInstances[track].sample.setPlaybackRate(speedToUse);
@@ -2484,24 +2569,58 @@ namespace XRSound
         auto msynLvl = getValueNormalizedAsFloat(activeSounds[track].params[MSYN_LEVEL]);
         auto msynDly = getValueNormalizedAsFloat(activeSounds[track].params[MSYN_DELAY]);
 
-        uint8_t noteToUse = trackToUse.note;
+        auto velocityToUse = trackToUse.velocity;
+        auto octaveToUse = trackToUse.octave;
+        auto noteToUse = trackToUse.note;
+
+        if (stepToUse.flags[XRSequencer::VELOCITY])
+        {
+            velocityToUse = stepToUse.mods[XRSequencer::VELOCITY];
+        }
+
         if (stepToUse.flags[XRSequencer::NOTE])
         {
             noteToUse = stepToUse.mods[XRSequencer::NOTE];
         }
 
-        uint8_t octaveToUse = trackToUse.octave;
         if (stepToUse.flags[XRSequencer::OCTAVE])
         {
             octaveToUse = stepToUse.mods[XRSequencer::OCTAVE];
         }
 
-        uint8_t velocityToUse = trackToUse.velocity;
         if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
             if (stepToUse.flags[XRSequencer::VELOCITY]) {
                 velocityToUse = stepToUse.mods[XRSequencer::VELOCITY];
             } else {
                 velocityToUse = max(trackToUse.velocity, XRSequencer::activePattern.accent);
+            }
+        }
+
+        // is currently ratcheting and this is the ratcheting track
+        if (track == XRSequencer::getRatchetTrack() && XRSequencer::getRatchetDivision() > -1){
+            auto &ratchetTrack = XRSequencer::activePattern.ratchetLayer.tracks[track];
+            auto &ratchetTrackStep = XRSequencer::activePattern.ratchetLayer.tracks[track].steps[step];
+
+            velocityToUse = ratchetTrack.velocity;
+            if (ratchetTrackStep.state == XRSequencer::STATE_ACCENTED) {
+                if (ratchetTrackStep.flags[XRSequencer::VELOCITY]) {
+                    velocityToUse = ratchetTrackStep.mods[XRSequencer::VELOCITY];
+                } else {
+                    velocityToUse = max(ratchetTrack.velocity, XRSequencer::activePattern.accent);
+                }
+            }
+
+            octaveToUse = ratchetTrack.octave;
+            noteToUse = ratchetTrack.note;
+
+            if (ratchetTrackStep.flags[XRSequencer::NOTE])
+            {
+                noteToUse = ratchetTrackStep.mods[XRSequencer::NOTE];
+            }
+
+            if (ratchetTrackStep.flags[XRSequencer::OCTAVE])
+            {
+                octaveToUse = ratchetTrackStep.mods[XRSequencer::OCTAVE];
             }
         }
 
@@ -2562,24 +2681,53 @@ namespace XRSound
         auto &stepToUse = XRSequencer::getStep(track, step);
         auto currLayer = XRSequencer::getCurrentSelectedTrackLayerNum();
 
-        uint8_t noteToUse = trackToUse.note;
+        auto velocityToUse = trackToUse.velocity;
+        auto octaveToUse = trackToUse.octave;
+        auto noteToUse = trackToUse.note;
+
         if (stepToUse.flags[XRSequencer::NOTE])
         {
             noteToUse = stepToUse.mods[XRSequencer::NOTE];
         }
 
-        uint8_t octaveToUse = trackToUse.octave;
         if (stepToUse.flags[XRSequencer::OCTAVE])
         {
             octaveToUse = stepToUse.mods[XRSequencer::OCTAVE];
         }
 
-        uint8_t velocityToUse = trackToUse.velocity;
         if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
             if (stepToUse.flags[XRSequencer::VELOCITY]) {
                 velocityToUse = stepToUse.mods[XRSequencer::VELOCITY];
             } else {
                 velocityToUse = max(trackToUse.velocity, XRSequencer::activePattern.accent);
+            }
+        }
+
+        // is currently ratcheting and this is the ratcheting track
+        if (track == XRSequencer::getRatchetTrack() && XRSequencer::getRatchetDivision() > -1){
+            auto &ratchetTrack = XRSequencer::activePattern.ratchetLayer.tracks[track];
+            auto &ratchetTrackStep = XRSequencer::activePattern.ratchetLayer.tracks[track].steps[step];
+
+            velocityToUse = ratchetTrack.velocity;
+            if (ratchetTrackStep.state == XRSequencer::STATE_ACCENTED) {
+                if (ratchetTrackStep.flags[XRSequencer::VELOCITY]) {
+                    velocityToUse = ratchetTrackStep.mods[XRSequencer::VELOCITY];
+                } else {
+                    velocityToUse = max(ratchetTrack.velocity, XRSequencer::activePattern.accent);
+                }
+            }
+
+            octaveToUse = ratchetTrack.octave;
+            noteToUse = ratchetTrack.note;
+
+            if (ratchetTrackStep.flags[XRSequencer::NOTE])
+            {
+                noteToUse = ratchetTrackStep.mods[XRSequencer::NOTE];
+            }
+
+            if (ratchetTrackStep.flags[XRSequencer::OCTAVE])
+            {
+                octaveToUse = ratchetTrackStep.mods[XRSequencer::OCTAVE];
             }
         }
 
@@ -2687,12 +2835,28 @@ namespace XRSound
         auto fmdLvl = getValueNormalizedAsFloat(activeSounds[track].params[FMD_LEVEL]);
         auto fmdDly = getValueNormalizedAsFloat(activeSounds[track].params[FMD_DELAY]);
 
-        uint8_t velocityToUse = trackToUse.velocity;
+        auto velocityToUse = trackToUse.velocity;
+
         if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
             if (stepToUse.flags[XRSequencer::VELOCITY]) {
                 velocityToUse = stepToUse.mods[XRSequencer::VELOCITY];
             } else {
                 velocityToUse = max(trackToUse.velocity, XRSequencer::activePattern.accent);
+            }
+        }
+
+        // is currently ratcheting and this is the ratcheting track
+        if (track == XRSequencer::getRatchetTrack() && XRSequencer::getRatchetDivision() > -1){
+            auto &ratchetTrack = XRSequencer::activePattern.ratchetLayer.tracks[track];
+            auto &ratchetTrackStep = XRSequencer::activePattern.ratchetLayer.tracks[track].steps[step];
+
+            velocityToUse = ratchetTrack.velocity;
+            if (ratchetTrackStep.state == XRSequencer::STATE_ACCENTED) {
+                if (ratchetTrackStep.flags[XRSequencer::VELOCITY]) {
+                    velocityToUse = ratchetTrackStep.mods[XRSequencer::VELOCITY];
+                } else {
+                    velocityToUse = max(ratchetTrack.velocity, XRSequencer::activePattern.accent);
+                }
             }
         }
 
@@ -3090,6 +3254,17 @@ namespace XRSound
         auto msmpLvl = getValueNormalizedAsFloat(activeSounds[t].params[MSMP_LEVEL]);
         auto msmpDly = getValueNormalizedAsFloat(monoSampleInitParams[MSMP_DELAY]);
 
+        auto looptypeToUse = msmpLooptype;
+        auto step = XRSequencer::getCurrentSelectedStepNum();
+        if (step != -1) {
+            auto layer = XRSequencer::getCurrentSelectedTrackLayerNum();
+
+            if (activeSoundModLayer.sounds[t].steps[step].flags[MSMP_LOOPTYPE])
+            {
+                looptypeToUse = getValueNormalizedAsUInt8(activeSoundModLayer.sounds[t].steps[step].mods[MSMP_LOOPTYPE]);
+            }
+        }
+
         std::string trackSampleName(activeSounds[t].sampleName);
         std::string trackSampleNameB(activeSounds[t].sampleNameB);
         bool hasFirstSample = trackSampleName.length() > 0;
@@ -3141,14 +3316,14 @@ namespace XRSound
         AudioNoInterrupts();
 
         // always re-initialize loop type
-        monoSampleInstances[t].sample.setLoopType(loopTypeSelMap[msmpLooptype]);
+        monoSampleInstances[t].sample.setLoopType(loopTypeSelMap[looptypeToUse]);
 
-        if (loopTypeSelMap[msmpLooptype] == looptype_none)
+        if (loopTypeSelMap[looptypeToUse] == looptype_none)
         {
             monoSampleInstances[t].sample.setPlayStart(play_start::play_start_sample);
             monoSampleInstances[t].sample.setLoopType(loop_type::looptype_none);
         }
-        else if (loopTypeSelMap[msmpLooptype] == looptype_repeat)
+        else if (loopTypeSelMap[looptypeToUse] == looptype_repeat)
         {
             monoSampleInstances[t].sample.setPlayStart(msmpPlaystart == play_start::play_start_loop ? play_start::play_start_loop : play_start::play_start_sample);
             monoSampleInstances[t].sample.setLoopStart(msmpLoopstart);
