@@ -193,6 +193,7 @@ namespace XRSequencer
 
     extern bool metronomeEnabled;
     extern bool ratchetLatched;
+    extern bool patternDirty;
 
     bool init();
 
@@ -207,7 +208,7 @@ namespace XRSequencer
     void initNextTrackLayer();
     void initTrackLayerCopyBuffer();
     
-    void swapSequencerMemoryForPattern(int newBank, int newPattern);
+    void swapSequencerDataForPatternChange(int newBank, int newPattern);
     void swapSequencerMemoryForTrackLayerChange();
     void saveCurrentPatternOffHeap();
     void toggleSelectedStep(uint8_t step);

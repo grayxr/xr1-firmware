@@ -6,9 +6,39 @@
 #include <SD.h>
 #include <XRConfig.h>
 #include <string>
+#include <SdFat.h>
+
+#define SD_CONFIG SdioConfig(FIFO_SDIO)
+
+#define ASYNC_IO_BUFFER_SIZE 512 * 80
 
 namespace XRSD
 {
+    typedef struct {
+        File file;
+        std::string filename;
+        byte buffer[ASYNC_IO_BUFFER_SIZE];
+        uint32_t offset;
+        uint32_t remaining;
+        bool complete = false;
+        bool started = false;
+    } WRITE_IO;
+
+    extern EXTMEM WRITE_IO wAsyncActivePatternIO;
+    extern EXTMEM WRITE_IO wAsyncActiveSoundsIO;
+    extern EXTMEM WRITE_IO wAsyncActiveSoundModsIO;
+
+    extern bool loadNextPatternAsync;
+    extern bool loadNextSoundsAsync;
+    extern bool loadNextSoundModsAsync;
+    extern bool asyncFileReadComplete;
+    bool readFileBufferedAsync(std::string filename, void *buf, size_t size);
+
+    extern bool saveActivePatternAsync;
+    extern bool saveActiveSoundsAsync;
+    extern bool saveActiveSoundModsAsync;
+    extern bool asyncFileWriteComplete;
+    
     typedef struct
     {
         char lastOpenedProject[50];
@@ -41,18 +71,19 @@ namespace XRSD
     void saveCurrentSequencerData();
     
     bool loadActivePattern();
-    void saveActivePatternToSdCard();
+    void saveActivePattern(bool async = false);
 
-    bool loadNextPattern(int bank, int pattern);
+    bool loadNextPattern(int bank, int pattern, bool async = false);
 
     bool loadActiveSounds();
     void saveActiveSounds();
 
     void applyActivePatternGroove();
 
-    bool loadNextPatternSounds(int bank, int pattern);
-    bool loadSoundModLayerFromSdCard(int bank, int pattern, int layer);
-    void saveActiveSoundModLayerToSdCard();
+    bool loadNextPatternSounds(int bank, int pattern, bool async = false);
+    bool loadSoundModLayer(int bank, int pattern, int layer, bool async = false);
+    bool loadNextSoundModLayer(int bank, int pattern, int layer, bool async = false);
+    void saveActiveSoundModLayer();
 
     void loadDexedVoiceToCurrentTrack(int t = -1);
 
@@ -71,6 +102,8 @@ namespace XRSD
     std::string getCurrentDexedSysexBank();
     std::string getCurrentDexedSysexPatchNum();
     std::string getCurrentDexedSysexPatchName();
+    
+    std::string getActivePatternFilename();
 }
 
 #endif /* XRSD_h */

@@ -151,6 +151,7 @@ namespace XRSound
     EXTMEM SOUND activeSounds[MAXIMUM_SEQUENCER_TRACKS];
     EXTMEM SOUND idleSounds[MAXIMUM_SEQUENCER_TRACKS];
     EXTMEM SOUND_MOD_LAYER activeSoundModLayer;
+    EXTMEM SOUND_MOD_LAYER idleSoundModLayer;
 
     bool soundNeedsReinit[MAXIMUM_SEQUENCER_TRACKS] = {
         false, false, false, false,
@@ -468,6 +469,7 @@ namespace XRSound
         initActiveSounds();
         initIdleSounds();
         initSoundStepMods();
+        initIdleSoundStepMods();
         initVoices();
 
         XRDexedManager::init();
@@ -505,6 +507,24 @@ namespace XRSound
                 for (int p = 0; p < MAXIMUM_SOUND_PARAMS; p++) {
                     activeSoundModLayer.sounds[t].steps[s].mods[p] = 0;
                     activeSoundModLayer.sounds[t].steps[s].flags[p] = false;
+
+                    idleSoundModLayer.sounds[t].steps[s].mods[p] = 0;
+                    idleSoundModLayer.sounds[t].steps[s].flags[p] = false;
+                }
+            }
+        }
+    }
+
+    // Since initIdleSoundStepMods lives in EXTMEM, we need to initialize its contents
+    void initIdleSoundStepMods()
+    {
+        for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+        {
+            for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
+            {
+                for (int p = 0; p < MAXIMUM_SOUND_PARAMS; p++) {
+                    idleSoundModLayer.sounds[t].steps[s].mods[p] = 0;
+                    idleSoundModLayer.sounds[t].steps[s].flags[p] = false;
                 }
             }
         }
@@ -1010,23 +1030,8 @@ namespace XRSound
         metronome.noteOn();
     }
 
-    void saveSoundDataForPatternChange()
+    void swapSoundDataForPatternChange(int nextBank, int nextPattern)
     {
-        if (patternSoundsDirty) {
-            XRSD::saveActiveSounds();
-        }
-
-        if (patternSoundStepModsDirty) {
-            XRSD::saveActiveSoundModLayerToSdCard();
-        }
-    }
-
-    void loadSoundDataForPatternChange(int nextBank, int nextPattern)
-    {
-        if (!XRSD::loadSoundModLayerFromSdCard(nextBank, nextPattern, 0)) {
-            initSoundStepMods();
-        }
-
         auto &seqState = XRSequencer::getSeqState();
 
         if (seqState.playbackState == XRSequencer::SEQUENCER_PLAYBACK_STATE::RUNNING) {

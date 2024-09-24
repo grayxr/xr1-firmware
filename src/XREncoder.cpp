@@ -998,24 +998,17 @@ namespace XREncoder
                 }
             }
 
-            int newLoopType = (currLoopType + diff);
-
-            if (newLoopType < 0)
-            {
-                newLoopType = 1;
-            }
-            else if (newLoopType > 1)
-            {
-                newLoopType = 0;
-            }
+            int newLoopType = constrain(currLoopType + diff, 0, 1);
 
             if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE) {
                 XRSound::activeSoundModLayer.sounds[currSelectedTrackNum].steps[currSelectedStepNum].flags[XRSound::MSMP_LOOPTYPE] = true;
                 XRSound::activeSoundModLayer.sounds[currSelectedTrackNum].steps[currSelectedStepNum].mods[XRSound::MSMP_LOOPTYPE] = getInt32ValuePaddedAsInt32(newLoopType);
+
                 XRSound::patternSoundStepModsDirty = true;
             } else {
                 XRSound::activeSounds[currSelectedTrackNum].params[MSMP_LOOPTYPE] = getInt32ValuePaddedAsInt32(newLoopType);
             }
+
             XRSound::patternSoundsDirty = true;
 
             XRDisplay::drawSequencerScreen(false);

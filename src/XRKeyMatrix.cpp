@@ -317,8 +317,6 @@ namespace XRKeyMatrix
 
                 XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_CHANGE_QUEUED);
 
-                // TODO: fix pattern queuing
-
                 // if (!XRSD::loadNextPattern(nextBank, nextPattern)) 
                 // {
                 //     XRSequencer::initIdlePattern();
@@ -330,6 +328,22 @@ namespace XRKeyMatrix
                 // }
 
                 XRSequencer::queuePattern(nextPattern, nextBank);
+
+                // prepare async writes
+                //if (XRSequencer::patternDirty) {
+                    //XRSD::saveActivePatternAsync = true;
+                //}
+                // if (XRSound::patternSoundsDirty) {
+                //     XRSD::saveActiveSoundsAsync = true;
+                // }
+                // if (XRSound::patternSoundStepModsDirty) {
+                //     XRSD::saveActiveSoundModsAsync = true;
+                // }
+
+                // prepare async reads
+                XRSD::loadNextPatternAsync = true;
+                XRSD::loadNextSoundsAsync = true;
+                XRSD::loadNextSoundModsAsync = true;
 
                 XRLED::clearAllStepLEDs();
                 XRDisplay::drawSequencerScreen(false);
@@ -352,12 +366,13 @@ namespace XRKeyMatrix
                 XRSound::loadNextDexedInstances();
 
                 // IMPORTANT: must change sound data before sequencer data!
-                XRSound::saveSoundDataForPatternChange(); // save current sound data first
-                XRSound::loadSoundDataForPatternChange(nextBank, nextPattern);
+                XRSD::saveActiveSounds();
+                XRSD::saveActiveSoundModLayer();
+                XRSound::swapSoundDataForPatternChange(nextBank, nextPattern);
 
                 // save any track step mods for current pattern to SD
                 XRSD::saveCurrentSequencerData();
-                XRSequencer::swapSequencerMemoryForPattern(nextBank, nextPattern);
+                XRSequencer::swapSequencerDataForPatternChange(nextBank, nextPattern);
 
                 // swap dexed instances so inactive = active and vice versa
                 XRDexedManager::swapInstances();
@@ -469,7 +484,8 @@ namespace XRKeyMatrix
                 XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_CHANGE_INSTANT);
 
                 // IMPORTANT: must change sound data before sequencer data!
-                XRSound::saveSoundDataForPatternChange(); // save current sound data first
+                XRSD::saveActiveSounds();
+                XRSD::saveActiveSoundModLayer();
 
                 if (!XRSD::loadNextPattern(nextBank, nextPattern)) 
                 {
@@ -484,11 +500,11 @@ namespace XRKeyMatrix
                 // load next dexed instances
                 XRSound::loadNextDexedInstances();
 
-                XRSound::loadSoundDataForPatternChange(nextBank, nextPattern);
+                XRSound::swapSoundDataForPatternChange(nextBank, nextPattern);
 
                 // save any track step mods for current pattern to SD
                 XRSD::saveCurrentSequencerData();
-                XRSequencer::swapSequencerMemoryForPattern(nextBank, nextPattern);
+                XRSequencer::swapSequencerDataForPatternChange(nextBank, nextPattern);
 
                 // swap dexed instances so inactive = active and vice versa
                 XRDexedManager::swapInstances();
@@ -934,8 +950,8 @@ namespace XRKeyMatrix
             //
             //
 
-            XRSD::saveActiveSoundModLayerToSdCard();
-            if (!XRSD::loadSoundModLayerFromSdCard(XRSequencer::getCurrentSelectedBankNum(), XRSequencer::getCurrentSelectedPatternNum(), selTrackLayer)) {
+            XRSD::saveActiveSoundModLayer();
+            if (!XRSD::loadSoundModLayer(XRSequencer::getCurrentSelectedBankNum(), XRSequencer::getCurrentSelectedPatternNum(), selTrackLayer)) {
                 XRSound::initSoundStepMods();
             }
 
@@ -1285,8 +1301,8 @@ namespace XRKeyMatrix
             //
             //
 
-            XRSD::saveActiveSoundModLayerToSdCard();
-            if (!XRSD::loadSoundModLayerFromSdCard(XRSequencer::getCurrentSelectedBankNum(), XRSequencer::getCurrentSelectedPatternNum(), selTrackLayer)) {
+            XRSD::saveActiveSoundModLayer();
+            if (!XRSD::loadSoundModLayer(XRSequencer::getCurrentSelectedBankNum(), XRSequencer::getCurrentSelectedPatternNum(), selTrackLayer)) {
                 XRSound::initSoundStepMods();
             }
 

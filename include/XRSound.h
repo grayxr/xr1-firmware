@@ -395,6 +395,7 @@ namespace XRSound
     extern EXTMEM SOUND activeSounds[MAXIMUM_SEQUENCER_TRACKS];
     extern EXTMEM SOUND idleSounds[MAXIMUM_SEQUENCER_TRACKS];
     extern EXTMEM SOUND_MOD_LAYER activeSoundModLayer;
+    extern EXTMEM SOUND_MOD_LAYER idleSoundModLayer;
 
     extern MonoSampleInstance monoSampleInstances[MAXIMUM_MONO_SAMPLE_SOUNDS];
     extern MonoSynthInstance monoSynthInstances[MAXIMUM_MONO_SYNTH_SOUNDS];
@@ -455,6 +456,7 @@ namespace XRSound
     void initActiveSounds();
     void initIdleSounds();
     void initSoundStepMods();
+    void initIdleSoundStepMods();
     void initVoices();
     void setSoundNeedsReinit(int sound, bool reinit);
     void reinitSoundForTrack(int track);
@@ -462,8 +464,7 @@ namespace XRSound
     void applyFxForActivePattern();
     void applyTrackChokes();
     void loadNextDexedInstances();
-    void saveSoundDataForPatternChange();
-    void loadSoundDataForPatternChange(int nextBank, int nextPattern);
+    void swapSoundDataForPatternChange(int nextBank, int nextPattern);
     void assignSampleToTrackSound();
     void changeTrackSoundType(uint8_t t, SOUND_TYPE newType);
     void initTrackSound(int8_t t);

@@ -36,6 +36,7 @@ namespace XRSequencer
 
     bool metronomeEnabled = false;
     bool ratchetLatched = false;
+    bool patternDirty = false;
 
     bool _initTracks[MAXIMUM_SEQUENCER_TRACKS];
 
@@ -1366,22 +1367,12 @@ namespace XRSequencer
 
             _dequeuePattern = false;
 
-            // TODO: fix pattern dequeueing
-            _queuedPatternState.bank = -1;
-            _queuedPatternState.number = -1;
-            _drawPatternQueueBlink = -1;
-            XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_WRITE);
-            return;
-
-            // IMPORTANT: must change sounds before changing sequencer data!
-            XRSound::saveSoundDataForPatternChange(); // make sure current sounds are saved first
-            XRSound::loadSoundDataForPatternChange(_queuedPatternState.bank, _queuedPatternState.number);
-
-            swapSequencerMemoryForPattern(_queuedPatternState.bank, _queuedPatternState.number);
-
+            // swap sounds first
+            XRSound::swapSoundDataForPatternChange(_queuedPatternState.bank, _queuedPatternState.number);
             XRDexedManager::swapInstances();
 
-            Serial.println("finished swapping seq mem!");
+            // then swap seq data
+            swapSequencerDataForPatternChange(_queuedPatternState.bank, _queuedPatternState.number);
 
             // reset queue flags
             _queuedPatternState.bank = -1;
@@ -1467,11 +1458,8 @@ namespace XRSequencer
         // activeTrackLayer = nextTrackLayer;
     }
 
-    void swapSequencerMemoryForPattern(int newBank, int newPattern)
+    void swapSequencerDataForPatternChange(int newBank, int newPattern)
     {
-        XRSD::saveActivePatternToSdCard();
-
-        // swap data
         activePattern = idlePattern;
 
         // always initialize next pattern?
