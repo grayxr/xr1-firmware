@@ -13,6 +13,9 @@
 
 namespace XRSound
 {
+    EXTMEM N_SOUND_SET nActiveSoundSet[MAXIMUM_SEQUENCER_TRACKS];
+    EXTMEM N_SOUND_MOD_LAYER nActiveSoundModLayer;
+
     // private variables
 
     uint8_t _numChannels = 1;
@@ -1036,7 +1039,7 @@ namespace XRSound
 
         if (seqState.playbackState == XRSequencer::SEQUENCER_PLAYBACK_STATE::RUNNING) {
             // TODO: verify that idlePattern is loaded first from nextBank and nextPattern
-            auto &tracks = XRSequencer::idlePattern.layers[0].tracks;
+            auto &tracks = XRSequencer::activePattern.layers[0].tracks;
 
             for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
             {

@@ -10,6 +10,7 @@ namespace XRMain
     bool ticked = false;
 
     bool writeBusy = false;
+    bool readsDone = false;
 
     bool rStepOneDone = false;
     bool rStepTwoDone = false;
@@ -79,6 +80,15 @@ namespace XRMain
             }
         }
 
+        // delay(5000);
+        
+        // // log new data structures
+        // Serial.printf("sizeof(XRSound::nActiveSoundSet): %d\n", sizeof(XRSound::nActiveSoundSet));
+        // Serial.printf("sizeof(XRSound::nActiveSoundModLayer): %d\n", sizeof(XRSound::nActiveSoundModLayer));
+        // Serial.printf("sizeof(XRSequencer::nActiveTrackLayer): %d\n", sizeof(XRSequencer::nActiveTrackLayer));
+        // Serial.printf("sizeof(XRSequencer::nRatchetTrackLayer): %d\n", sizeof(XRSequencer::nRatchetTrackLayer));
+        // Serial.printf("sizeof(XRSequencer::nActivePatternSchema): %d\n", sizeof(XRSequencer::nActivePatternSchema));
+
         XRAudio::resetMetrics();
     }
 
@@ -99,36 +109,6 @@ namespace XRMain
 
     void handleAsyncFileIO()
     {
-        // // write active pattern async if dirty here
-        // if (!wStepThreeDone && XRSD::saveActivePatternAsync && !XRSD::wAsyncActivePatternIO.complete) {
-        //     // start async active pattern write
-        //     if (!XRSD::wAsyncActivePatternIO.started) {
-        //         Serial.println("starting async active pattern write...");
-        //         Serial.printf("filename: %s, remaining: %d\n", XRSD::getActivePatternFilename().c_str(), XRSD::wAsyncActivePatternIO.remaining);
-
-        //         XRSD::wAsyncActivePatternIO.started = true;
-        //         XRSD::wAsyncActivePatternIO.complete = false;
-        //         XRSD::wAsyncActivePatternIO.filename = XRSD::getActivePatternFilename();
-        //         XRSD::wAsyncActivePatternIO.remaining = sizeof(XRSequencer::activePattern);
-        //     }
-
-        //     XRSD::saveActivePattern(true);
-        // } else if (XRSD::saveActivePatternAsync && XRSD::wAsyncActivePatternIO.complete) {
-        //     Serial.println("finished async active pattern write...");
-
-        //     // disable async active pattern write
-        //     XRSD::saveActivePatternAsync = false;
-        //     wStepThreeDone = true;
-
-        //     // reset active pattern write state
-        //     XRSD::wAsyncActivePatternIO.started = false;
-        //     XRSD::wAsyncActivePatternIO.complete = false;
-        //     XRSD::wAsyncActivePatternIO.filename = "";
-        //     XRSD::wAsyncActivePatternIO.offset = 0;
-        // }
-
-
-
         if (!rStepOneDone && XRSD::loadNextPatternAsync && !XRSD::asyncFileReadComplete) {
             auto &queuedPattern = XRSequencer::getQueuedPatternState();
 
@@ -225,6 +205,40 @@ namespace XRMain
             rStepOneDone = false;
             rStepTwoDone = false;
             rStepThreeDone = false;
+
+            readsDone = true;
+        }
+
+        // write active pattern async if dirty here
+        if (readsDone && XRSD::saveActivePatternAsync && !XRSD::wAsyncActivePatternIO.complete) {
+            // start async active pattern write
+            if (!XRSD::wAsyncActivePatternIO.started) {
+                Serial.println("starting async active pattern write...");
+                Serial.printf("filename: %s, remaining: %d\n", XRSD::getActivePatternFilename().c_str(), XRSD::wAsyncActivePatternIO.remaining);
+
+                XRSD::wAsyncActivePatternIO.started = true;
+                XRSD::wAsyncActivePatternIO.complete = false;
+                XRSD::wAsyncActivePatternIO.open = false;
+                XRSD::wAsyncActivePatternIO.filename = XRSD::getActivePatternFilename();
+                XRSD::wAsyncActivePatternIO.remaining = sizeof(XRSequencer::writePattern);
+                XRSD::wAsyncActivePatternIO.size = sizeof(XRSequencer::writePattern);
+            }
+
+            yield();
+            XRSD::saveActivePattern(true);
+        } else if (XRSD::saveActivePatternAsync && XRSD::wAsyncActivePatternIO.complete) {
+            Serial.println("finished async active pattern write...");
+
+            // disable async active pattern write
+            XRSD::saveActivePatternAsync = false;
+
+            // reset active pattern write state
+            XRSD::wAsyncActivePatternIO.started = false;
+            XRSD::wAsyncActivePatternIO.complete = false;
+            XRSD::wAsyncActivePatternIO.open = false;
+            XRSD::wAsyncActivePatternIO.filename = "";
+            XRSD::wAsyncActivePatternIO.offset = 0;
+            XRSequencer::patternDirty = false;
         }
     }
 

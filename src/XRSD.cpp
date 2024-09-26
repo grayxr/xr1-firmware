@@ -23,6 +23,11 @@ namespace XRSD
     File asyncReadFile;
     bool asyncFileReadComplete = false;
     uint32_t asyncReadFileTotalRead = 0;
+    bool readFileOpen = false;
+    uint32_t readStart = 0;
+    uint32_t readFinish = 0;
+
+    File asyncWriteFile;
 
     bool loadNextPatternAsync = false;
     bool loadNextSoundsAsync = false;
@@ -72,6 +77,9 @@ namespace XRSD
 
     std::string dexedPatchName = "";
 
+    uint32_t writeStart;
+    uint32_t writeFinish;
+
     bool get_sd_voice(File sysex, uint8_t voice_number, uint8_t *data);
 
     bool init()
@@ -92,9 +100,11 @@ namespace XRSD
         // initialize async write io
         wAsyncActivePatternIO.filename = "";
         wAsyncActivePatternIO.offset = 0;
+        wAsyncActivePatternIO.size = 0;
         wAsyncActivePatternIO.remaining = 0;
         wAsyncActivePatternIO.complete = false;
         wAsyncActivePatternIO.started = false;
+        wAsyncActivePatternIO.open = false;
 
         ready = true;
 
@@ -148,30 +158,29 @@ namespace XRSD
             wAsyncActivePatternIO : 
             (type == ACTIVE_SOUNDS ? wAsyncActiveSoundsIO : wAsyncActiveSoundModsIO);
 
-        // Serial.printf("offset: %d, complete: %d, remaining: %d for file: %s\n", wIO.offset, (int)wIO.complete, wIO.remaining, wIO.filename.c_str());
-        // // test early return
-        // wIO.remaining = 0;
-        // wIO.complete = true;
-        // return;
-
-        // Serial.printf("expected size: %d for file: %s", wIO.remaining, wIO.filename.c_str());
         
-        wIO.file = SD.open(wIO.filename.c_str(), FILE_WRITE_BEGIN);
-        if (!wIO.file)
-        {
-            Serial.printf("Failed to open file for writing: %s\n", wIO.filename.c_str());
-            return;
+        if (!wIO.open) {
+            asyncWriteFile = SD.open(wIO.filename.c_str(), FILE_WRITE_BEGIN);
+            if (!asyncWriteFile)
+            {
+                Serial.printf("Failed to open file for writing: %s\n", wIO.filename.c_str());
+                return;
+            }
+
+            wIO.open = true;
+
+            writeStart = micros();
         }
 
         if (wIO.remaining > 0) {
-            uint32_t chunkSize = min(ASYNC_IO_BUFFER_SIZE, wIO.remaining);
+            uint32_t chunkSize = min(ASYNC_IO_W_BUFFER_SIZE, wIO.remaining);
 
             memcpy(wIO.buffer, wData + wIO.offset, chunkSize);
 
-            uint32_t bytesWritten = wIO.file.write(wIO.buffer, chunkSize);
+            uint32_t bytesWritten = asyncWriteFile.write(wIO.buffer, chunkSize);
 
             wIO.offset += chunkSize;
-            wIO.remaining -= chunkSize; // should use bytesWritten or chunkSize?
+            wIO.remaining -= bytesWritten; // should use bytesWritten or chunkSize?
 
             Serial.printf("remaining: %d\n", wIO.remaining);
         }
@@ -179,9 +188,12 @@ namespace XRSD
         if (wIO.remaining <= 0) {
             Serial.printf("REMAINING <=0, remaining: %d, complete: %d\n", wIO.remaining, (int)wIO.complete);
             wIO.complete = true;
+            asyncWriteFile.close();
+            writeFinish = micros();
+            Serial.printf("total write time: %d\n", writeFinish - writeStart);
+            writeStart = 0;
+            writeFinish = 0;
         }
-
-        wIO.file.close();
     }
 
     bool readFileBuffered(std::string filename, void *buf, size_t size)
@@ -227,35 +239,43 @@ namespace XRSD
             return true;
         }
 
-        Serial.printf("expected size: %d for file: %s", size, filename.c_str());
+        //Serial.printf("expected size: %d for file: %s", size, filename.c_str());
 
-        asyncReadFile = SD.open(filename.c_str(), FILE_READ);
-        if (!asyncReadFile || !asyncReadFile.available())
-        {
-            Serial.printf("Failed to open file for reading: %s\n", filename.c_str());
-            return false;
-        }
+        //if (!readFileOpen) {
+            asyncReadFile = SD.open(filename.c_str(), FILE_READ);
+            if (!asyncReadFile || !asyncReadFile.available())
+            {
+                Serial.printf("Failed to open file for reading: %s\n", filename.c_str());
+                return false;
+            }
+        //} 
 
-        Serial.printf(" asyncReadFile available: %d", asyncReadFile.available());
+        //Serial.printf(" asyncReadFile available: %d", asyncReadFile.available());
 
         size_t bufferSize = ASYNC_IO_BUFFER_SIZE;
         int8_t *index = (int8_t*)buf;
         uint32_t chunkSize = min(bufferSize, size - asyncReadFileTotalRead);
 
         asyncReadFileTotalRead += asyncReadFile.readBytes((char *)index, chunkSize);
-        Serial.printf(" asyncReadFileTotalRead: %d, chunkSize: %d\n", asyncReadFileTotalRead, chunkSize);
+        Serial.printf("asyncReadFileTotalRead: %d, chunkSize: %d\n", asyncReadFileTotalRead, chunkSize);
 
-        if (asyncReadFileTotalRead == size) {
+        if (asyncReadFileTotalRead >= size) {
             asyncFileReadComplete = true;
             asyncReadFileTotalRead = 0;
+            //readFileOpen = false;
             asyncReadFile.close();
 
             Serial.printf("done reading file %s!\n", filename.c_str());
 
+            //readFinish = micros();
+            //Serial.printf("total read time: %d\n", readFinish - readStart);
+            //readStart = 0;
+            //readFinish = 0;
+
             return true;
         }
 
-        asyncReadFile.close();
+       asyncReadFile.close();
 
         return true;
     }
@@ -780,9 +800,9 @@ namespace XRSD
     void saveActivePattern(bool async)
     {
         if (async) {
-            rewriteFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_PATTERN, (byte *)&XRSequencer::activePattern);
+            rewriteFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_PATTERN, (byte *)&XRSequencer::writePattern);
         } else {
-            rewriteFileBuffered(getActivePatternFilename(), (byte *)&XRSequencer::activePattern, sizeof(XRSequencer::activePattern));
+            rewriteFileBuffered(getActivePatternFilename(), (byte *)&XRSequencer::writePattern, sizeof(XRSequencer::writePattern));
         }
     }
 

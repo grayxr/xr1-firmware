@@ -42,6 +42,7 @@ namespace XRSequencer
 
     bool _recording = false;
     bool _dequeuePattern = false;
+    bool triggerDequeue = false;
     bool _patternQueueBlinked = false;
     bool _dequeueTrackLayer = false;
     bool _trackLayerBlinked = false;
@@ -54,8 +55,13 @@ namespace XRSequencer
 
     // extern globals
 
+    EXTMEM N_TRACK_LAYER nActiveTrackLayer;
+    EXTMEM N_RATCHET_LAYER nRatchetTrackLayer;
+    EXTMEM N_PATTERN_SCHEMA nActivePatternSchema;
+
     EXTMEM PATTERN activePattern;
     EXTMEM PATTERN idlePattern;
+    EXTMEM PATTERN writePattern;
 
     DMAMEM PATTERN_FX_PAGE_INDEXES patternFxPages[MAXIMUM_PATTERN_FX_PARAM_PAGES];
     DMAMEM TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
@@ -1363,16 +1369,16 @@ namespace XRSequencer
 
         if (_dequeuePattern)
         {
-            Serial.println("enter _dequeuePattern!");
+            Serial.println("enter triggerDequeue!");
 
             _dequeuePattern = false;
+
+            // then swap seq data
+            swapSequencerDataForPatternChange(_queuedPatternState.bank, _queuedPatternState.number);
 
             // swap sounds first
             XRSound::swapSoundDataForPatternChange(_queuedPatternState.bank, _queuedPatternState.number);
             XRDexedManager::swapInstances();
-
-            // then swap seq data
-            swapSequencerDataForPatternChange(_queuedPatternState.bank, _queuedPatternState.number);
 
             // reset queue flags
             _queuedPatternState.bank = -1;

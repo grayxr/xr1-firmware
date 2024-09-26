@@ -330,9 +330,10 @@ namespace XRKeyMatrix
                 XRSequencer::queuePattern(nextPattern, nextBank);
 
                 // prepare async writes
-                //if (XRSequencer::patternDirty) {
-                    //XRSD::saveActivePatternAsync = true;
-                //}
+                if (XRSequencer::patternDirty) {
+                    XRSequencer::writePattern = XRSequencer::activePattern;
+                    XRSD::saveActivePatternAsync = true;
+                }
                 // if (XRSound::patternSoundsDirty) {
                 //     XRSD::saveActiveSoundsAsync = true;
                 // }
@@ -1348,6 +1349,7 @@ namespace XRKeyMatrix
             uint8_t stepToToggle = getKeyStepNum(key);
 
             XRSequencer::toggleSelectedStep(stepToToggle);
+            XRSequencer::patternDirty = true;
             XRLED::setDisplayStateForAllStepLEDs();
 
             Serial.println("toggling ratchet step!");
@@ -1427,6 +1429,7 @@ namespace XRKeyMatrix
             uint8_t stepToToggle = getKeyStepNum(key);
 
             XRSequencer::toggleSelectedStep(stepToToggle);
+            XRSequencer::patternDirty = true;
             XRLED::setDisplayStateForAllStepLEDs();
 
             Serial.println("toggling step!");
@@ -1895,6 +1898,7 @@ namespace XRKeyMatrix
                 uint8_t stepToToggle = getKeyStepNum(key);
 
                 XRSequencer::toggleSelectedStep(stepToToggle);
+                XRSequencer::patternDirty = true;
                 XRLED::setDisplayStateForAllStepLEDs();
             }
 
@@ -1940,6 +1944,7 @@ namespace XRKeyMatrix
                 uint8_t stepToToggle = getKeyStepNum(key);
 
                 XRSequencer::toggleSelectedStep(stepToToggle);
+                XRSequencer::patternDirty = true;
                 XRLED::setDisplayStateForAllStepLEDs();
             }
 

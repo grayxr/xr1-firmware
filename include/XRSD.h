@@ -11,17 +11,19 @@
 #define SD_CONFIG SdioConfig(FIFO_SDIO)
 
 #define ASYNC_IO_BUFFER_SIZE 512 * 80
+#define ASYNC_IO_W_BUFFER_SIZE 512 * 8
 
 namespace XRSD
 {
     typedef struct {
-        File file;
         std::string filename;
-        byte buffer[ASYNC_IO_BUFFER_SIZE];
+        byte buffer[ASYNC_IO_W_BUFFER_SIZE];
         uint32_t offset;
         uint32_t remaining;
+        uint32_t size;
         bool complete = false;
         bool started = false;
+        bool open = false;
     } WRITE_IO;
 
     extern EXTMEM WRITE_IO wAsyncActivePatternIO;

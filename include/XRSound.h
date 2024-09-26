@@ -224,8 +224,8 @@ namespace XRSound
             filter{filter},
             ampEnv{ampEnv},
             ampAccent{ampAccent},
-            ampDelaySend{ampDelaySend},
             amp{amp},
+            ampDelaySend{ampDelaySend},
             left{left},
             right{right}
         {
@@ -396,6 +396,44 @@ namespace XRSound
     extern EXTMEM SOUND idleSounds[MAXIMUM_SEQUENCER_TRACKS];
     extern EXTMEM SOUND_MOD_LAYER activeSoundModLayer;
     extern EXTMEM SOUND_MOD_LAYER idleSoundModLayer;
+
+
+
+    // new data structure testing
+
+    typedef struct
+    {
+        int16_t mods[MAXIMUM_SOUND_PARAMS]; // divide by 10 to get real param mod values
+        bool flags[MAXIMUM_SOUND_PARAMS]; // whether the param mod should apply or not
+    } N_SOUND_MOD_STEP;
+
+    typedef struct
+    {
+        N_SOUND_MOD_STEP steps[MAXIMUM_SEQUENCER_STEPS];
+    } N_SOUND_MOD;
+    
+    typedef struct
+    {
+        N_SOUND_MOD soundMods[MAXIMUM_SEQUENCER_TRACKS];
+    } N_SOUND_MOD_LAYER;
+    
+    typedef struct
+    {
+        SOUND_TYPE type = T_EMPTY;
+        char name[MAX_SOUND_NAME_LENGTH];
+        char sampleName[MAX_SAMPLE_NAME_LENGTH];
+        char sampleNameB[MAX_SAMPLE_NAME_LENGTH];
+        int16_t params[MAXIMUM_SOUND_PARAMS]; // divide by 10 to get real param values
+        uint8_t dexedParams[MAXIMUM_DEXED_SOUND_PARAMS];
+    } N_SOUND;
+
+    typedef struct
+    {
+        N_SOUND sounds[MAXIMUM_SEQUENCER_TRACKS];
+    } N_SOUND_SET;
+
+    extern EXTMEM N_SOUND_SET nActiveSoundSet[MAXIMUM_SEQUENCER_TRACKS];
+    extern EXTMEM N_SOUND_MOD_LAYER nActiveSoundModLayer;
 
     extern MonoSampleInstance monoSampleInstances[MAXIMUM_MONO_SAMPLE_SOUNDS];
     extern MonoSynthInstance monoSynthInstances[MAXIMUM_MONO_SYNTH_SOUNDS];

@@ -179,12 +179,40 @@ namespace XRSequencer
     typedef struct
     {
         RECORDING_TRACK tracks[MAXIMUM_SEQUENCER_TRACKS];
-    } RECORDING_STATE;   
+    } RECORDING_STATE;  
+
+    // testing new data structures 
+
+    typedef struct
+    {
+        PATTERN_FX_PARAMS fx;
+        PATTERN_GROOVE groove;
+        uint8_t lstep = DEFAULT_LAST_STEP;
+        uint8_t accent = DEFAULT_GLOBAL_ACCENT;
+        float tempo;
+        bool initialized = false;
+    } N_PATTERN_SCHEMA;
+
+    typedef struct
+    {
+        TRACK tracks[MAXIMUM_SEQUENCER_TRACKS];
+    } N_TRACK_LAYER;
+
+    typedef struct
+    {
+        TRACK tracks[16];
+    } N_RATCHET_LAYER;
+
+    extern EXTMEM N_TRACK_LAYER nActiveTrackLayer;
+    extern EXTMEM N_RATCHET_LAYER nRatchetTrackLayer;
+    extern EXTMEM N_PATTERN_SCHEMA nActivePatternSchema;
+
 
     // extern globals
 
     extern EXTMEM PATTERN activePattern;
     extern EXTMEM PATTERN idlePattern;
+    extern EXTMEM PATTERN writePattern;
 
     extern DMAMEM PATTERN_FX_PAGE_INDEXES patternFxPages[MAXIMUM_PATTERN_FX_PARAM_PAGES];
     extern DMAMEM TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
