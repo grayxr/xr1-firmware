@@ -127,7 +127,9 @@ namespace XRSD
             //return;
         }
 
-        const size_t bufferSize = 512;
+        Serial.printf("Writing file: %s\n", filename.c_str());
+
+        const size_t bufferSize = ASYNC_IO_W_BUFFER_SIZE;
         byte buffer[bufferSize];
 
         int remaining = size;
@@ -227,11 +229,13 @@ namespace XRSD
             return false;
         }
 
+        Serial.printf("Reading file: %s\n", filename.c_str());
+
         uint32_t total_read = 0;
         int8_t *index = (int8_t*)buf;
 
         while(file.available()) {
-            uint16_t bytesRead = file.read(index, 512);
+            uint16_t bytesRead = file.read(index, ASYNC_IO_BUFFER_SIZE);
             if (bytesRead == -1)
                 break;
 
@@ -476,13 +480,12 @@ namespace XRSD
         currProjectFile.write((byte *)&_current_project, sizeof(_current_project));
         currProjectFile.close();
 
-        saveCurrentSequencerDataSync();
-        saveActiveKitSync();
+        saveCurrentProjectDataSync();
 
         Serial.println("done saving project!");
     }
 
-    void saveCurrentSequencerDataSync()
+    void saveCurrentProjectDataSync()
     {
         writeFileBuffered(
             getActivePatternSettingsFilename(), 
@@ -562,7 +565,10 @@ namespace XRSD
 
         XRSound::init();
 
-        loadActiveKitSync();
+        if (!loadActiveKitSync()) {
+            XRDisplay::drawError("FAILED TO LOAD KIT DATA!");
+        }
+
         XRSound::applyActiveSounds();
 
         Serial.printf(
@@ -682,7 +688,11 @@ namespace XRSD
 
     bool loadActiveKitSync()
     {
-        readFileBuffered(getActiveKitFilename(), (byte *)&XRSound::activeKit, sizeof(XRSound::activeKit));
+        if (!readFileBuffered(getActiveKitFilename(), (byte *)&XRSound::activeKit, sizeof(XRSound::activeKit))) {
+            return false;
+        }
+
+        Serial.printf("loaded active kit, first sound type: %d, sample: %s\n", XRSound::activeKit.sounds[0].type, XRSound::activeKit.sounds[0].sampleName);
 
         return true;
     }
@@ -1282,5 +1292,4 @@ namespace XRSD
             XRSequencer::getCurrentSelectedPatternNum()
         );
     }
-
 }

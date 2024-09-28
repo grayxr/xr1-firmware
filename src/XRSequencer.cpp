@@ -12,6 +12,27 @@
 
 namespace XRSequencer
 {
+    // extern globals
+
+    // active = current (used for playback), idle = next (read from SD card during pattern change)
+    EXTMEM TRACK_LAYER activeTrackLayer;
+    EXTMEM TRACK_LAYER idleTrackLayer;
+    EXTMEM RATCHET_LAYER activeRatchetLayer;
+    EXTMEM RATCHET_LAYER idleRatchetLayer;
+    EXTMEM PATTERN_SETTINGS activePatternSettings;
+    EXTMEM PATTERN_SETTINGS idlePatternSettings;
+
+    // used for saving to SD card
+    EXTMEM TRACK_LAYER trackLayerForWrite;
+    EXTMEM RATCHET_LAYER ratchetLayerForWrite;
+    EXTMEM PATTERN_SETTINGS patternSettingsForWrite;
+
+    DMAMEM PATTERN_FX_PAGE_INDEXES patternFxPages[MAXIMUM_PATTERN_FX_PARAM_PAGES];
+    DMAMEM TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
+    DMAMEM RECORDING_STATE recordingState;
+
+    TRACK_TRIGGER_STATE trackTriggerState;
+    
     // private variables
  
     SEQUENCER_STATE _seqState;
@@ -51,27 +72,6 @@ namespace XRSequencer
     int _drawTrackLayerQueueBlink = -1;
 
     uint8_t _bpmBlinkTimer = 2;
-
-    // extern globals
-
-    // active = current (used for playback), idle = next (read from SD card during pattern change)
-    EXTMEM TRACK_LAYER activeTrackLayer;
-    EXTMEM TRACK_LAYER idleTrackLayer;
-    EXTMEM RATCHET_LAYER activeRatchetLayer;
-    EXTMEM RATCHET_LAYER idleRatchetLayer;
-    EXTMEM PATTERN_SETTINGS activePatternSettings;
-    EXTMEM PATTERN_SETTINGS idlePatternSettings;
-
-    // used for saving to SD card
-    EXTMEM TRACK_LAYER trackLayerForWrite;
-    EXTMEM RATCHET_LAYER ratchetLayerForWrite;
-    EXTMEM PATTERN_SETTINGS patternSettingsForWrite;
-
-    DMAMEM PATTERN_FX_PAGE_INDEXES patternFxPages[MAXIMUM_PATTERN_FX_PARAM_PAGES];
-    DMAMEM TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
-    DMAMEM RECORDING_STATE recordingState;
-
-    TRACK_TRIGGER_STATE trackTriggerState;
 
     bool init()
     {

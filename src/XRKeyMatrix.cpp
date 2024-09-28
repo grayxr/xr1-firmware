@@ -2105,23 +2105,29 @@ namespace XRKeyMatrix
         // instant pattern change
         XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_CHANGE_INSTANT);
 
+        XRSD::saveCurrentProjectDataSync();
+        
         if (!XRSD::loadNextPatternSettings(nextBank, nextPattern)) 
         {
+            Serial.println("failed ot load next pattern settings, init it instead!");
             XRSequencer::initPatternSettings(XRSequencer::idlePatternSettings);
         }
 
         if (!XRSD::loadNextTrackLayer(nextBank, nextPattern, 0)) 
         {
+            Serial.println("failed ot load next track layer, init it instead!");
             XRSequencer::initTrackLayer(XRSequencer::idleTrackLayer);
         }
 
         if (!XRSD::loadNextRatchetLayer(nextBank, nextPattern)) 
         {
+            Serial.println("failed ot load next ratchet layer, init it instead!");
             XRSequencer::initRatchetLayer(XRSequencer::idleRatchetLayer);
         }
 
         if (!XRSD::loadNextKit(nextBank, nextPattern)) 
         {
+            Serial.println("failed ot load next kit, init it instead!");
             XRSound::initKit(XRSound::idleKit);
         }
 
@@ -2129,11 +2135,7 @@ namespace XRKeyMatrix
         XRSound::loadNextDexedInstances();
 
         // IMPORTANT: must change sound data before sequencer data!
-        XRSD::saveActiveKitSync();
         XRSound::swapSoundDataForPatternChange(nextBank, nextPattern);
-
-        // save any track step mods for current pattern to SD
-        XRSD::saveCurrentSequencerDataSync();
         XRSequencer::swapSequencerDataForPatternChange(nextBank, nextPattern);
 
         // swap dexed instances so inactive = active and vice versa

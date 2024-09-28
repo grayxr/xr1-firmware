@@ -71,7 +71,7 @@ namespace XRSD
     void createNewProject();
     bool loadLastProject();
     void saveProject();
-    void saveCurrentSequencerDataSync();
+    void saveCurrentProjectDataSync();
     bool loadActivePatternSettingsSync();
     bool loadActiveTrackLayerSync();
     bool loadActiveRatchetLayerSync();
