@@ -8,6 +8,7 @@
 #include <XRMenu.h>
 #include <XRClock.h>
 #include <XRHelpers.h>
+#include <XRAsyncIO.h>
 #include <map>
 
 namespace XRKeyMatrix
@@ -92,6 +93,7 @@ namespace XRKeyMatrix
     bool handleCopySelect(char key);
 
     void instantPatternChange(int nextBank, int nextPattern);
+    void prepareQueuedPatternChange(int nextBank, int nextPattern);
     
     // TODO: extract to XRSound namespace method
     XRSound::SOUND_TYPE selectNewSoundTypeForTrack(int currTrackNum, XRSound::SOUND_TYPE currType);
@@ -317,29 +319,11 @@ namespace XRKeyMatrix
                 // queued pattern change
                 Serial.printf("queueing pattern: %d\n", nextPattern);
 
-                // XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_CHANGE_QUEUED);
+                XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_CHANGE_QUEUED);
 
-                // XRSequencer::queuePattern(nextPattern, nextBank);
+                XRSequencer::queuePattern(nextPattern, nextBank);
 
-                // // prepare async writes
-                // if (XRSequencer::patternDirty) {
-                //     // snapshot write data here
-                //     XRSequencer::writePattern = XRSequencer::activePattern;
-                //     // then mark the write data to be saved async in main loop
-                //     XRSD::saveActivePatternAsync = true;
-                // }
-                
-                // // if (XRSound::patternSoundsDirty) {
-                // //     XRSD::saveActiveSoundsAsync = true;
-                // // }
-                // // if (XRSound::patternSoundStepModsDirty) {
-                // //     XRSD::saveActiveSoundModsAsync = true;
-                // // }
-
-                // // prepare async reads
-                // XRSD::loadNextPatternAsync = true;
-                // XRSD::loadNextSoundsAsync = true;
-                // XRSD::loadNextSoundModsAsync = true;
+                prepareQueuedPatternChange(nextBank, nextPattern);
 
                 XRLED::clearAllStepLEDs();
                 XRDisplay::drawSequencerScreen(false);
@@ -423,9 +407,11 @@ namespace XRKeyMatrix
                 // queued pattern change
                 Serial.printf("queueing bank: %d\n", nextBank);
 
-                // XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_CHANGE_QUEUED);
+                XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_CHANGE_QUEUED);
 
-                // XRSequencer::queuePattern(nextPattern, nextBank);
+                XRSequencer::queuePattern(nextPattern, nextBank);
+
+                prepareQueuedPatternChange(nextBank, nextPattern);
 
                 XRLED::clearAllStepLEDs();
                 XRDisplay::drawSequencerScreen(false);
@@ -1265,7 +1251,6 @@ namespace XRKeyMatrix
             uint8_t stepToToggle = getKeyStepNum(key);
 
             XRSequencer::toggleSelectedStep(stepToToggle);
-            XRSequencer::patternDirty = true;
             XRLED::setDisplayStateForAllStepLEDs();
 
             Serial.println("toggling ratchet step!");
@@ -1345,7 +1330,6 @@ namespace XRKeyMatrix
             uint8_t stepToToggle = getKeyStepNum(key);
 
             XRSequencer::toggleSelectedStep(stepToToggle);
-            XRSequencer::patternDirty = true;
             XRLED::setDisplayStateForAllStepLEDs();
 
             Serial.println("toggling step!");
@@ -1814,7 +1798,6 @@ namespace XRKeyMatrix
                 uint8_t stepToToggle = getKeyStepNum(key);
 
                 XRSequencer::toggleSelectedStep(stepToToggle);
-                XRSequencer::patternDirty = true;
                 XRLED::setDisplayStateForAllStepLEDs();
             }
 
@@ -1860,7 +1843,6 @@ namespace XRKeyMatrix
                 uint8_t stepToToggle = getKeyStepNum(key);
 
                 XRSequencer::toggleSelectedStep(stepToToggle);
-                XRSequencer::patternDirty = true;
                 XRLED::setDisplayStateForAllStepLEDs();
             }
 
@@ -2106,7 +2088,7 @@ namespace XRKeyMatrix
         XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_CHANGE_INSTANT);
 
         XRSD::saveCurrentProjectDataSync();
-        
+
         if (!XRSD::loadNextPatternSettings(nextBank, nextPattern)) 
         {
             Serial.println("failed ot load next pattern settings, init it instead!");
@@ -2147,5 +2129,70 @@ namespace XRKeyMatrix
 
         XRLED::clearAllStepLEDs();
         XRDisplay::drawSequencerScreen(false);
+    }
+
+    void patternQueueCallback(const XRAsyncIO::IO_CONTEXT& item)
+    {
+        switch (item.fileType)
+        {
+        case XRAsyncIO::FILE_TYPE::PATTERN_SETTINGS:
+            XRSequencer::initPatternSettings(XRSequencer::idlePatternSettings);
+            Serial.println("pattern settings initialized!");
+            break;
+        case XRAsyncIO::FILE_TYPE::RATCHET_LAYER:
+            XRSequencer::initRatchetLayer(XRSequencer::idleRatchetLayer);
+            Serial.println("ratchet layer initialized!");
+            break;
+        case XRAsyncIO::FILE_TYPE::TRACK_LAYER:
+            XRSequencer::initTrackLayer(XRSequencer::idleTrackLayer);
+            Serial.println("track layer initialized!");
+            break;
+        case XRAsyncIO::FILE_TYPE::KIT:
+            XRSound::initKit(XRSound::idleKit);
+            Serial.println("kit initialized!");
+            break;
+        
+        default:
+            break;
+        }
+
+        XRAsyncIO::setCallback(nullptr); // clear callback
+    }
+
+    void prepareQueuedPatternChange(int nextBank, int nextPattern)
+    {
+        XRAsyncIO::setCallback(patternQueueCallback);
+
+        // TODO: swap dexed instances?
+
+        XRAsyncIO::addItem({
+            XRAsyncIO::FILE_TYPE::PATTERN_SETTINGS,
+            XRAsyncIO::FILE_IO_TYPE::READ,
+            XRSD::getPatternSettingsFilename(nextBank, nextPattern),
+            sizeof(XRSequencer::idlePatternSettings),
+        });
+
+        XRAsyncIO::addItem({
+            XRAsyncIO::FILE_TYPE::RATCHET_LAYER,
+            XRAsyncIO::FILE_IO_TYPE::READ,
+            XRSD::getRatchetLayerFilename(nextBank, nextPattern),
+            sizeof(XRSequencer::idleRatchetLayer),
+        });
+
+        XRAsyncIO::addItem({
+            XRAsyncIO::FILE_TYPE::TRACK_LAYER,
+            XRAsyncIO::FILE_IO_TYPE::READ,
+            XRSD::getTrackLayerFilename(nextBank, nextPattern, 0),
+            sizeof(XRSequencer::idleTrackLayer),
+        });
+
+        XRAsyncIO::addItem({
+            XRAsyncIO::FILE_TYPE::KIT,
+            XRAsyncIO::FILE_IO_TYPE::READ,
+            XRSD::getKitFilename(nextBank, nextPattern),
+            sizeof(XRSound::idleKit),
+        });
+
+        // yield();
     }
 }

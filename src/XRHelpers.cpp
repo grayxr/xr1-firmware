@@ -100,10 +100,8 @@ namespace XRHelpers
     {
         sprintf(
             buf,
-            "/%s/%s/%s", 
-            COMPANY_NAME,
-            DEVICE_NAME,
-            DATA_FOLDER_NAME
+            "/%s", 
+            DEVICE_NAME
         );
     }
     
@@ -111,7 +109,7 @@ namespace XRHelpers
     {
         sprintf(
             buf,
-            "/%s-%s.%s",
+            "/.%s-%s.%s",
             MACHINE_STATE_FILENAME_PREFIX,
             FIRMWARE_VERSION,
             "bin"
@@ -122,10 +120,8 @@ namespace XRHelpers
     {
         sprintf(
             buf,
-            "/%s/%s/%s", 
-            COMPANY_NAME,
-            DEVICE_NAME,
-            PROJECTS_FOLDER_NAME
+            "/%s",
+            DEVICE_NAME
         );
     }
 

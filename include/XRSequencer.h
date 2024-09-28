@@ -197,8 +197,12 @@ namespace XRSequencer
 
     // used for saving to SD card
     extern EXTMEM TRACK_LAYER trackLayerForWrite;
+    extern EXTMEM std::string trackLayerWriteFilename;
     extern EXTMEM RATCHET_LAYER ratchetLayerForWrite;
+    extern EXTMEM std::string ratchetLayerWriteFilename;
     extern EXTMEM PATTERN_SETTINGS patternSettingsForWrite;
+    extern EXTMEM std::string patternSettingsWriteFilename;
+
 
     extern DMAMEM PATTERN_FX_PAGE_INDEXES patternFxPages[MAXIMUM_PATTERN_FX_PARAM_PAGES];
     extern DMAMEM TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
@@ -207,7 +211,10 @@ namespace XRSequencer
 
     extern bool metronomeEnabled;
     extern bool ratchetLatched;
-    extern bool patternDirty;
+
+    extern bool patternSettingsDirty;
+    extern bool ratchetLayerDirty;
+    extern bool trackLayerDirty;
 
     bool init();
 

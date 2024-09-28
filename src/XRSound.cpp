@@ -17,12 +17,15 @@ namespace XRSound
     EXTMEM KIT activeKit;
     EXTMEM KIT idleKit;
 
+    // used for saving to SD card
+    EXTMEM KIT kitForWrite;
+    EXTMEM std::string kitWriteFilename;
+
     // private variables
 
     uint8_t _numChannels = 1;
 
-    bool patternSoundsDirty = false;
-    bool patternSoundStepModsDirty = false;
+    bool kitDirty = false;
 
     float _noteToFreqArr[13] = {
         16.35, 17.32, 18.35, 19.45, 20.60, 21.83, 23.12, 24.50, 25.96, 27.50, 29.14, 30.87, 32.70
@@ -3111,7 +3114,7 @@ namespace XRSound
                 strcpy(activeKit.sounds[track].sampleNameB, "");
             }
 
-            patternSoundsDirty = true;
+            kitDirty = true;
 
             return;
         }
@@ -3125,7 +3128,7 @@ namespace XRSound
             strcpy(activeKit.sounds[track].sampleNameB, selected.c_str());
         }
 
-        patternSoundsDirty = true;
+        kitDirty = true;
     }
 
     void changeTrackSoundType(uint8_t t, SOUND_TYPE newType)
@@ -3140,6 +3143,8 @@ namespace XRSound
         initTrackSound(t);
 
         AudioInterrupts();
+        
+        kitDirty = true;
     }
 
     void triggerTrackManually(uint8_t t, uint8_t note, uint8_t octave, bool accented)

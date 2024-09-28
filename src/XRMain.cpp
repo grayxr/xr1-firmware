@@ -3,10 +3,13 @@
 #include <XRSequencer.h>
 #include <XRSound.h>
 #include <XRUX.h>
+#include <XRAsyncIO.h>
 
 namespace XRMain
 {
-    elapsedMillis elapsedMs;
+    elapsedMillis runtimeDisplayMs;
+    elapsedMillis seqWriteIntervalMs;
+
     bool ticked = false;
 
     bool writeBusy = false;
@@ -15,13 +18,15 @@ namespace XRMain
     bool rStepOneDone = false;
     bool rStepTwoDone = false;
     bool rStepThreeDone = false;
+    bool rStepFourDone = false;
 
     bool wStepOneDone = false;
     bool wStepTwoDone = false;
     bool wStepThreeDone = false;
+    bool wStepFourDone = false;
 
-    void handleAsyncFileIO();
     void handleRuntimeDisplayUpdates();
+    void handleWriteUpdates();
 
     void boot()
     {
@@ -93,161 +98,86 @@ namespace XRMain
 
     void update()
     {
-        XRAudio::handleHeadphones();    
+        XRAudio::handleHeadphones(); 
+
         XRKeyMatrix::handleStates(false);
         XRVersa::handleStates();
         XREncoder::handleStates();
         XRSequencer::handleTriggerStates();
 
-        handleRuntimeDisplayUpdates();
-        handleAsyncFileIO();
+        handleWriteUpdates();
+        XRAsyncIO::update();
 
         XRSequencer::handlePatternQueueActions();
         //XRSequencer::handleTrackLayerQueueActions();
-    }
 
-    void handleAsyncFileIO()
-    {
-        // if (!rStepOneDone && XRSD::loadNextPatternAsync && !XRSD::asyncFileReadComplete) {
-        //     auto &queuedPattern = XRSequencer::getQueuedPatternState();
-
-        //     if (queuedPattern.bank == -1 || queuedPattern.number == -1) {
-        //         Serial.println("queued pattern state is invalid! cancel load...");
-        //         XRSD::loadNextPatternAsync = false;
-        //         rStepOneDone = true;
-
-        //         XRSequencer::initIdlePattern();
-        //     } else {
-        //         auto res1 = XRSD::loadNextPatternSettings(queuedPattern.bank, queuedPattern.number, true);
-
-        //         if (!res1) {
-        //             Serial.println("next pattern probably does not exist! cancel load...");
-        //             XRSD::loadNextPatternAsync = false;
-        //             rStepOneDone = true;
-
-        //             XRSequencer::initIdlePattern();
-        //         }
-        //     }
-        // } else if (XRSD::loadNextPatternAsync && XRSD::asyncFileReadComplete) {
-        //     XRSD::loadNextPatternAsync = false;
-        //     XRSD::asyncFileReadComplete = false;
-        //     rStepOneDone = true;
-
-        //     Serial.println("next pattern done loading!");
-        // }
-
-        // // write active sounds async if dirty here
-
-        // if (rStepOneDone && !rStepTwoDone && XRSD::loadNextSoundsAsync && !XRSD::asyncFileReadComplete) {
-        //     auto &queuedPattern = XRSequencer::getQueuedPatternState();
-        //     if (queuedPattern.bank == -1 || queuedPattern.number == -1) {
-        //         Serial.println("queued pattern state is invalid! cancel load...");
-        //         XRSD::loadNextSoundsAsync = false;
-        //         rStepTwoDone = true;
-                
-        //         XRSound::loadNextDexedInstances();
-
-        //         XRSound::initIdleSounds();
-        //     } else {
-        //         auto res2 = XRSD::loadNextKit(queuedPattern.bank, queuedPattern.number, true);
-        //         if (!res2) {
-        //             Serial.println("next sounds probably do not exist! cancel load...");
-        //             XRSD::loadNextSoundsAsync = false;
-        //             rStepTwoDone = true;
-                    
-        //             XRSound::loadNextDexedInstances();
-
-        //             XRSound::initIdleSounds();
-        //         }
-        //     }
-        // } else if (rStepOneDone && XRSD::loadNextSoundsAsync && XRSD::asyncFileReadComplete) {
-        //     XRSound::loadNextDexedInstances();
-            
-        //     XRSD::loadNextSoundsAsync = false;
-        //     XRSD::asyncFileReadComplete = false;
-        //     rStepTwoDone = true;
-
-        //     Serial.println("next sounds done loading!");
-        // }
-
-        // // write active sound mods async if dirty here
-
-        // if (rStepOneDone && rStepTwoDone && !rStepThreeDone && XRSD::loadNextSoundModsAsync && !XRSD::asyncFileReadComplete) {
-        //     auto &queuedPattern = XRSequencer::getQueuedPatternState();
-        //     if (queuedPattern.bank == -1 || queuedPattern.number == -1) {
-        //         Serial.println("queued pattern state is invalid! cancel load...");
-        //         XRSD::loadNextSoundModsAsync = false;
-        //         rStepThreeDone = true;
-
-        //         XRSound::initIdleSoundStepMods();
-        //     } else {
-        //         auto res3 = XRSD::loadNextSoundModLayer(queuedPattern.bank, queuedPattern.number, 0, true);
-        //         if (!res3) {
-        //             Serial.println("next sound mods probably do not exist! cancel load...");
-        //             XRSD::loadNextSoundModsAsync = false;
-        //             rStepThreeDone = true;
-
-        //             XRSound::initIdleSoundStepMods();
-        //         }
-        //     }
-        // } else if (rStepTwoDone && XRSD::loadNextSoundModsAsync && XRSD::asyncFileReadComplete) {
-        //     XRSD::loadNextSoundModsAsync = false;
-        //     XRSD::asyncFileReadComplete = false;
-        //     rStepThreeDone = true;
-
-        //     Serial.println("next sound mods done loading!");
-        // }
-
-        // if (rStepOneDone && rStepTwoDone && rStepThreeDone) {
-        //     Serial.println("all async file io done!");
-
-        //     rStepOneDone = false;
-        //     rStepTwoDone = false;
-        //     rStepThreeDone = false;
-
-        //     readsDone = true;
-        // }
-
-        // // write active pattern async if dirty here
-        // if (readsDone && XRSD::saveActivePatternAsync && !XRSD::wActivePatternSettingsIO.complete) {
-        //     // start async active pattern write
-        //     if (!XRSD::wActivePatternSettingsIO.started) {
-        //         Serial.println("starting async active pattern write...");
-        //         Serial.printf("filename: %s, remaining: %d\n", XRSD::getActivePatternSettingsFilename().c_str(), XRSD::wActivePatternSettingsIO.remaining);
-
-        //         XRSD::wActivePatternSettingsIO.started = true;
-        //         XRSD::wActivePatternSettingsIO.complete = false;
-        //         XRSD::wActivePatternSettingsIO.open = false;
-        //         XRSD::wActivePatternSettingsIO.filename = XRSD::getActivePatternSettingsFilename();
-        //         XRSD::wActivePatternSettingsIO.remaining = sizeof(XRSequencer::writePattern);
-        //         XRSD::wActivePatternSettingsIO.size = sizeof(XRSequencer::writePattern);
-        //     }
-
-        //     yield();
-        //     XRSD::saveActivePatternSettings(true);
-        // } else if (XRSD::saveActivePatternAsync && XRSD::wActivePatternSettingsIO.complete) {
-        //     Serial.println("finished async active pattern write...");
-
-        //     // disable async active pattern write
-        //     XRSD::saveActivePatternAsync = false;
-
-        //     // reset active pattern write state
-        //     XRSD::wActivePatternSettingsIO.started = false;
-        //     XRSD::wActivePatternSettingsIO.complete = false;
-        //     XRSD::wActivePatternSettingsIO.open = false;
-        //     XRSD::wActivePatternSettingsIO.filename = "";
-        //     XRSD::wActivePatternSettingsIO.offset = 0;
-        //     XRSequencer::patternDirty = false;
-        // }
+        handleRuntimeDisplayUpdates();
     }
 
     void handleRuntimeDisplayUpdates()
     {
-        if (XRSequencer::getSeqState().playbackState == XRSequencer::RUNNING && XRUX::getCurrentMode() == XRUX::PATTERN_WRITE && elapsedMs >= 250)
+        if (XRSequencer::getSeqState().playbackState == XRSequencer::RUNNING && XRUX::getCurrentMode() == XRUX::PATTERN_WRITE && runtimeDisplayMs >= 250)
         {
-            elapsedMs -= 250;
+            runtimeDisplayMs -= 250;
 
             XRDisplay::drawSequencerScreen();
+        }
+    }
+
+    void handleWriteUpdates()
+    {
+        if (seqWriteIntervalMs >= 1000) {
+            seqWriteIntervalMs -= 1000;
+
+            // writes
+
+            if (XRSequencer::patternSettingsDirty) {
+                XRSequencer::patternSettingsForWrite = XRSequencer::activePatternSettings;
+                XRAsyncIO::addItem({
+                    XRAsyncIO::FILE_TYPE::PATTERN_SETTINGS,
+                    XRAsyncIO::FILE_IO_TYPE::WRITE,
+                    XRSD::getActivePatternSettingsFilename(),
+                    sizeof(XRSequencer::patternSettingsForWrite),
+                });
+
+                XRSequencer::patternSettingsDirty = false;
+            }
+
+            if (XRSequencer::ratchetLayerDirty) {
+                XRSequencer::ratchetLayerForWrite = XRSequencer::activeRatchetLayer;
+                XRAsyncIO::addItem({
+                    XRAsyncIO::FILE_TYPE::RATCHET_LAYER,
+                    XRAsyncIO::FILE_IO_TYPE::WRITE,
+                    XRSD::getActiveRatchetLayerFilename(),
+                    sizeof(XRSequencer::ratchetLayerForWrite),
+                });
+
+                XRSequencer::ratchetLayerDirty = false;
+            }
+
+            if (XRSequencer::trackLayerDirty) {
+                XRSequencer::trackLayerForWrite = XRSequencer::activeTrackLayer;
+                XRAsyncIO::addItem({
+                    XRAsyncIO::FILE_TYPE::TRACK_LAYER,
+                    XRAsyncIO::FILE_IO_TYPE::WRITE,
+                    XRSD::getActiveTrackLayerFilename(),
+                    sizeof(XRSequencer::trackLayerForWrite),
+                });
+
+                XRSequencer::trackLayerDirty = false;
+            }
+
+            if (XRSound::kitDirty) {
+                XRSound::kitForWrite = XRSound::activeKit;
+                XRAsyncIO::addItem({
+                    XRAsyncIO::FILE_TYPE::KIT,
+                    XRAsyncIO::FILE_IO_TYPE::WRITE,
+                    XRSD::getActiveKitFilename(),
+                    sizeof(XRSound::kitForWrite),
+                });
+
+                XRSound::kitDirty = false;
+            }
         }
     }
 }

@@ -27,8 +27,9 @@ namespace XRSD
     } WRITE_IO;
 
     extern EXTMEM WRITE_IO wActivePatternSettingsIO;
-    extern EXTMEM WRITE_IO wAsyncActiveSoundsIO;
-    extern EXTMEM WRITE_IO wAsyncActiveSoundModsIO;
+    extern EXTMEM WRITE_IO wActiveTrackLayerIO;
+    extern EXTMEM WRITE_IO wActiveRatchetLayerIO;
+    extern EXTMEM WRITE_IO wActiveKitIO;
 
     extern bool loadNextPatternAsync;
     extern bool loadNextSoundsAsync;
@@ -65,23 +66,31 @@ namespace XRSD
 
     void initWriteIO(WRITE_IO &wIO);
 
+    bool sdBusy();
+
     void initMachineState();
     bool loadMachineState();
 
     void createNewProject();
     bool loadLastProject();
+
     void saveProject();
     void saveCurrentProjectDataSync();
+
     bool loadActivePatternSettingsSync();
     bool loadActiveTrackLayerSync();
     bool loadActiveRatchetLayerSync();
-    void saveActivePatternSettings(bool async = false);
     bool loadActiveKitSync();
-    void saveActiveKitSync();
+    
     bool loadNextPatternSettings(int bank, int pattern, bool async = false);
     bool loadNextTrackLayer(int bank, int pattern, int layer, bool async = false);
     bool loadNextRatchetLayer(int bank, int pattern, bool async = false);
     bool loadNextKit(int bank, int pattern, bool async = false);
+
+    void saveActivePatternSettings(bool async = false);
+    void saveActiveRatchetLayer(bool async = false);
+    void saveActiveTrackLayer(bool async = false);
+    void saveActiveKit(bool async = false);
 
     void applyActivePatternGroove();
     void loadDexedVoiceToCurrentTrack(int t = -1);

@@ -24,14 +24,21 @@ namespace XRSequencer
 
     // used for saving to SD card
     EXTMEM TRACK_LAYER trackLayerForWrite;
+    EXTMEM std::string trackLayerWriteFilename;
     EXTMEM RATCHET_LAYER ratchetLayerForWrite;
+    EXTMEM std::string ratchetLayerWriteFilename;
     EXTMEM PATTERN_SETTINGS patternSettingsForWrite;
+    EXTMEM std::string patternSettingsWriteFilename;
 
     DMAMEM PATTERN_FX_PAGE_INDEXES patternFxPages[MAXIMUM_PATTERN_FX_PARAM_PAGES];
     DMAMEM TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
     DMAMEM RECORDING_STATE recordingState;
 
     TRACK_TRIGGER_STATE trackTriggerState;
+
+    bool patternSettingsDirty;
+    bool ratchetLayerDirty;
+    bool trackLayerDirty;
     
     // private variables
  
@@ -154,7 +161,7 @@ namespace XRSequencer
             trackLayer.tracks[t].velocity = 50;
             trackLayer.tracks[t].probability = 100;
             trackLayer.tracks[t].lstep = DEFAULT_LAST_STEP;
-            trackLayer.tracks[t].initialized = false;
+            trackLayer.tracks[t].initialized = true;
 
             // now fill in steps
             for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
@@ -186,6 +193,7 @@ namespace XRSequencer
             ratchetLayer.tracks[rt].note = 0;
             ratchetLayer.tracks[rt].octave = 4;
             ratchetLayer.tracks[rt].velocity = 50;
+            ratchetLayer.tracks[rt].initialized = true;
 
             // now fill in steps
             for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
@@ -254,6 +262,8 @@ namespace XRSequencer
                     // then reinit recording state
                     recordingState.tracks[t].steps[zPrevStep].state = STEP_STATE::STATE_OFF;
                     recordingState.tracks[t].steps[zPrevStep].queued = false;
+
+                    trackLayerDirty = true;
                 }
             }
         } else {
@@ -274,6 +284,8 @@ namespace XRSequencer
                 // then reinit recording state
                 recordingState.tracks[t].steps[zLastStep].state = STEP_STATE::STATE_OFF;
                 recordingState.tracks[t].steps[zLastStep].queued = false;
+
+                trackLayerDirty = true;
             }
         }
     }
@@ -1334,11 +1346,16 @@ namespace XRSequencer
 
         // if the new pattern has a groove, set it on the clock
         if (activePatternSettings.groove.id > -1) {
+
+        yield();
             XRClock::setShuffle(true);
             XRClock::setShuffleTemplateForGroove(activePatternSettings.groove.id, activePatternSettings.groove.amount);
 
+        yield();
             XRClock::setShuffleForAllTracks(true);
             XRClock::setShuffleTemplateForGrooveForAllTracks(activePatternSettings.groove.id, activePatternSettings.groove.amount);
+
+        yield();
         } else {
             XRClock::setShuffle(false);
             XRClock::setShuffleForAllTracks(false);
@@ -1399,6 +1416,12 @@ namespace XRSequencer
         else if (currStepState == STEP_STATE::STATE_ACCENTED)
         {
             currTrack.steps[stepNum].state = STEP_STATE::STATE_OFF;
+        }
+
+        if (onRatchetStepPage()) {
+            ratchetLayerDirty = true;
+        } else {
+            trackLayerDirty = true;
         }
     }
 

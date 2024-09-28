@@ -45,6 +45,9 @@ namespace XRSD
     MACHINE_STATE_0_1_0 _machine_state;
     PROJECT _current_project;
 
+
+    EXTMEM byte wBuffer[ASYNC_IO_W_BUFFER_SIZE];
+
     typedef struct
     {
         std::string list[255];
@@ -122,31 +125,28 @@ namespace XRSD
         if (!file)
         {
             Serial.println("Failed to open file for writing");
-            //XRDisplay::drawError("FAILED TO OVERWRITE FILE!");
-            //delay(2000);
-            //return;
+            XRDisplay::drawError("FAILED TO OVERWRITE FILE!");
+            delay(2000);
+            return;
         }
 
         Serial.printf("Writing file: %s\n", filename.c_str());
 
-        const size_t bufferSize = ASYNC_IO_W_BUFFER_SIZE;
-        byte buffer[bufferSize];
-
         int remaining = size;
-        //Serial.printf("size: %d\n", size);
+        Serial.printf("size: %d\n", size);
 
         size_t offset = 0;
 
         while (remaining > 0) {
-            size_t chunkSize = min(bufferSize, remaining);
-            //Serial.printf("remainingBefore: %d, chunkSize: %d ", remaining, chunkSize);
+            size_t chunkSize = min(ASYNC_IO_W_BUFFER_SIZE, remaining);
+            Serial.printf("remainingBefore: %d, chunkSize: %d ", remaining, chunkSize);
 
-            memcpy(buffer, data + offset, chunkSize);
-            size_t bytesWritten = file.write(buffer, chunkSize);
+            memcpy(wBuffer, data + offset, chunkSize);
+            size_t bytesWritten = file.write(wBuffer, chunkSize);
 
             offset += chunkSize;
             remaining -= chunkSize;
-            //Serial.printf("bytesWritten: %d, remainingAfter: %d\n", bytesWritten, remaining);
+            Serial.printf("bytesWritten: %d, remainingAfter: %d\n", bytesWritten, remaining);
         }
 
         Serial.println("done writing file!");
@@ -161,7 +161,7 @@ namespace XRSD
             return;
         }
 
-        WRITE_IO &wIO = wActiveRatchetLayerIO; // Default assignment
+        WRITE_IO &wIO = wActivePatternSettingsIO; // Default assignment
         
         switch (type) {
             case ACTIVE_PATTERN_SETTINGS:
@@ -182,10 +182,11 @@ namespace XRSD
                 break;
         }
 
+        File wFile;
         
         if (!wIO.open) {
-            asyncWriteFile = SD.open(wIO.filename.c_str(), FILE_WRITE_BEGIN);
-            if (!asyncWriteFile)
+            wFile = SD.open(wIO.filename.c_str(), FILE_WRITE_BEGIN);
+            if (!wFile)
             {
                 Serial.printf("Failed to open file for writing: %s\n", wIO.filename.c_str());
                 return;
@@ -201,7 +202,7 @@ namespace XRSD
 
             memcpy(wIO.buffer, wData + wIO.offset, chunkSize);
 
-            uint32_t bytesWritten = asyncWriteFile.write(wIO.buffer, chunkSize);
+            uint32_t bytesWritten = wFile.write(wIO.buffer, chunkSize);
 
             wIO.offset += chunkSize;
             wIO.remaining -= bytesWritten; // should use bytesWritten or chunkSize?
@@ -212,7 +213,7 @@ namespace XRSD
         if (wIO.remaining <= 0) {
             Serial.printf("REMAINING <=0, remaining: %d, complete: %d\n", wIO.remaining, (int)wIO.complete);
             wIO.complete = true;
-            asyncWriteFile.close();
+            wFile.close();
             writeFinish = micros();
             Serial.printf("total write time: %d\n", writeFinish - writeStart);
             writeStart = 0;
@@ -260,11 +261,13 @@ namespace XRSD
             return true;
         }
 
-        //Serial.printf("expected size: %d for file: %s", size, filename.c_str());
+        Serial.printf("expected size: %d for file: %s\n", size, filename.c_str());
+
+        File rFile;
 
         //if (!readFileOpen) {
-            asyncReadFile = SD.open(filename.c_str(), FILE_READ);
-            if (!asyncReadFile || !asyncReadFile.available())
+            rFile = SD.open(filename.c_str(), FILE_READ);
+            if (!rFile || !rFile.available())
             {
                 Serial.printf("Failed to open file for reading: %s\n", filename.c_str());
                 return false;
@@ -277,14 +280,14 @@ namespace XRSD
         int8_t *index = (int8_t*)buf;
         uint32_t chunkSize = min(bufferSize, size - asyncReadFileTotalRead);
 
-        asyncReadFileTotalRead += asyncReadFile.readBytes((char *)index, chunkSize);
+        asyncReadFileTotalRead += rFile.readBytes((char *)index, chunkSize);
         Serial.printf("asyncReadFileTotalRead: %d, chunkSize: %d\n", asyncReadFileTotalRead, chunkSize);
 
         if (asyncReadFileTotalRead >= size) {
             asyncFileReadComplete = true;
             asyncReadFileTotalRead = 0;
             //readFileOpen = false;
-            asyncReadFile.close();
+            rFile.close();
 
             Serial.printf("done reading file %s!\n", filename.c_str());
 
@@ -296,7 +299,7 @@ namespace XRSD
             return true;
         }
 
-       asyncReadFile.close();
+       rFile.close();
 
         return true;
     }
@@ -321,7 +324,9 @@ namespace XRSD
 
         int lastHyphenPos = machineStateFilename.rfind('-');
         std::string machineStateVersion = machineStateFilename.substr(lastHyphenPos + 1, 5); // todo: fix 5 char version string limit
-        // Serial.printf("machineStateVersion: %s\n", machineStateVersion.c_str());
+        Serial.printf("machineStateVersion: %s\n", machineStateVersion.c_str());
+        Serial.printf("machineStateFilename: %s\n", machineStateFilename.c_str());
+        Serial.printf("newProjectName: %s\n", newProjectName.c_str());
 
         // write machine state binary for current version
         if (machineStateVersion == "0.1.0")
@@ -357,6 +362,7 @@ namespace XRSD
         XRHelpers::getMachineStateFile(machineStateFilenameBuf);
         std::string machineStateFilename(machineStateFilenameBuf);
         std::string finalPath = machineStateDir + machineStateFilename;
+            Serial.printf("finalPath: %s\n", finalPath.c_str());
 
         File machineStateFile = SD.open(finalPath.c_str(), FILE_READ);
         if (!machineStateFile.available())
@@ -399,7 +405,6 @@ namespace XRSD
         std::string newProjectDataDir = projectsPath;
         newProjectDataDir += "/";
         newProjectDataDir += newProjectName;
-        newProjectDataDir += "/.data";
 
         // verify file dir exists first
         if (!SD.exists(newProjectDataDir.c_str()))
@@ -413,7 +418,7 @@ namespace XRSD
 
         std::string newProjectFilePath;
         newProjectFilePath = newProjectDataDir;
-        newProjectFilePath += "/settings.bin";
+        newProjectFilePath += "/.settings.bin";
 
         File newProjectFile = SD.open(newProjectFilePath.c_str(), FILE_WRITE);
         newProjectFile.write((byte *)&_current_project, sizeof(_current_project));
@@ -456,7 +461,6 @@ namespace XRSD
         std::string projectDataDir = projectsPath;
         projectDataDir += "/";
         projectDataDir += _current_project.name;
-        projectDataDir += "/.data";
 
         // verify project data dir exists first
         if (!SD.exists(projectDataDir.c_str()))
@@ -471,7 +475,7 @@ namespace XRSD
 
         std::string currProjectFilePath;
         currProjectFilePath = projectDataDir;
-        currProjectFilePath += "/settings.bin";
+        currProjectFilePath += "/.settings.bin";
 
         Serial.printf("Saving current project settings file to SD card at path: %s with tempo: %f\n", currProjectFilePath.c_str(),  _current_project.tempo);
 
@@ -515,6 +519,7 @@ namespace XRSD
     bool loadLastProject()
     {
         std::string lastKnownProject(_machine_state.lastOpenedProject);
+            Serial.printf("lastKnownProject: %s\n", lastKnownProject.c_str());
 
         if (lastKnownProject.length() == 0)
         {
@@ -529,7 +534,8 @@ namespace XRSD
         std::string projectPath(projectsPathPrefixBuf); // read char array into string
         projectPath += "/";
         projectPath += lastKnownProject;
-        projectPath += "/.data/settings.bin";
+        projectPath += "/.settings.bin";
+            Serial.printf("projectPath: %s\n", projectPath.c_str());
 
         File lastKnownProjectFile = SD.open(projectPath.c_str(), FILE_READ);
         if (!lastKnownProjectFile.available())
@@ -641,6 +647,7 @@ namespace XRSD
 
         if (async) {
             if (!readFileBufferedAsync(filename, (byte *)&XRSequencer::idlePatternSettings, sizeof(XRSequencer::idlePatternSettings))) {
+                Serial.println("failed to read pattern settings async!");
                 return false;
             }
         } else {
@@ -723,9 +730,31 @@ namespace XRSD
         }
     }
 
-    void saveActiveKitSync()
+    void saveActiveRatchetLayer(bool async)
     {
-        writeFileBuffered(getActiveKitFilename(), (byte *)&XRSound::activeKit, sizeof(XRSound::activeKit));
+        if (async) {
+            writeFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_RATCHET_LAYER, (byte *)&XRSequencer::ratchetLayerForWrite);
+        } else {
+            writeFileBuffered(getActiveRatchetLayerFilename(), (byte *)&XRSequencer::activeRatchetLayer, sizeof(XRSequencer::activeRatchetLayer));
+        }
+    }
+
+    void saveActiveTrackLayer(bool async)
+    {
+        if (async) {
+            writeFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_TRACK_LAYER, (byte *)&XRSequencer::trackLayerForWrite);
+        } else {
+            writeFileBuffered(getActiveTrackLayerFilename(), (byte *)&XRSequencer::activeTrackLayer, sizeof(XRSequencer::activeTrackLayer));
+        }
+    }
+
+    void saveActiveKit(bool async)
+    {
+        if (async) {
+            writeFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_KIT, (byte *)&XRSound::kitForWrite);
+        } else {
+            writeFileBuffered(getActiveKitFilename(), (byte *)&XRSound::activeKit, sizeof(XRSound::activeKit));
+        }
     }
 
     void saveCopiedStep(int track, int sourceStep, int destStep)
@@ -1037,7 +1066,7 @@ namespace XRSD
     {
         File sysexDir;
 
-        std::string voiceBankName = "/audio enjoyer/xr-1/sysex/dexed/";
+        std::string voiceBankName = "/xr-1/sysex/dexed/";
         voiceBankName += std::to_string(dexedCurrentPool);
         voiceBankName += "/";
         voiceBankName += std::to_string(dexedCurrentBank);
@@ -1195,7 +1224,7 @@ namespace XRSD
         std::string name = projectPath;
         name += "/";
         name += _current_project.name;
-        name += "/.data/b";
+        name += "/.b";
         name += std::to_string(bank);
         name += "p";
         name += std::to_string(pattern);
@@ -1221,11 +1250,11 @@ namespace XRSD
         std::string name = projectPath;
         name += "/";
         name += _current_project.name;
-        name += "/.data/b";
+        name += "/.b";
         name += std::to_string(bank);
         name += "p";
         name += std::to_string(pattern);
-        name += "tl";
+        name += "t";
         name += std::to_string(layer);
         name += ".bin";
 
@@ -1250,11 +1279,11 @@ namespace XRSD
         std::string name = projectPath;
         name += "/";
         name += _current_project.name;
-        name += "/.data/b";
+        name += "/.b";
         name += std::to_string(bank);
         name += "p";
         name += std::to_string(pattern);
-        name += "rl.bin";
+        name += "r.bin";
 
         return name;
     }
@@ -1276,7 +1305,7 @@ namespace XRSD
         std::string name = projectPath;
         name += "/";
         name += _current_project.name;
-        name += "/.data/b";
+        name += "/.b";
         name += std::to_string(bank);
         name += "p";
         name += std::to_string(pattern);
@@ -1292,4 +1321,6 @@ namespace XRSD
             XRSequencer::getCurrentSelectedPatternNum()
         );
     }
+
+    
 }

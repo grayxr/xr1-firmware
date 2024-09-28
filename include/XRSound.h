@@ -380,7 +380,8 @@ namespace XRSound
     extern EXTMEM KIT activeKit;
     extern EXTMEM KIT idleKit;
 
-    // new data structure testing
+    extern EXTMEM KIT kitForWrite;
+    extern EXTMEM std::string kitWriteFilename;
 
     extern MonoSampleInstance monoSampleInstances[MAXIMUM_MONO_SAMPLE_SOUNDS];
     extern MonoSynthInstance monoSynthInstances[MAXIMUM_MONO_SYNTH_SOUNDS];
@@ -403,8 +404,8 @@ namespace XRSound
     extern int chokeDestSource[MAXIMUM_SEQUENCER_TRACKS];
     extern bool chokeSourcesEnabled[MAXIMUM_SEQUENCER_TRACKS];
     extern bool soundNeedsReinit[MAXIMUM_SEQUENCER_TRACKS];
-    extern bool patternSoundsDirty;
-    extern bool patternSoundStepModsDirty;
+
+    extern bool kitDirty;
 
     SOUND_CONTROL_MODS getControlModDataForPattern();
     SOUND_CONTROL_MODS getControlModDataForTrack();
