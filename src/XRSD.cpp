@@ -12,9 +12,10 @@ namespace XRSD
 {
     enum WRITE_FILE_TYPE
     {
-        ACTIVE_PATTERN = 0,
-        ACTIVE_SOUNDS,
-        ACTIVE_SOUND_MODS
+        ACTIVE_PATTERN_SETTINGS = 0,
+        ACTIVE_TRACK_LAYER,
+        ACTIVE_RATCHET_LAYER,
+        ACTIVE_KIT,
     };
 
     SdFs sd;
@@ -27,23 +28,19 @@ namespace XRSD
     uint32_t readStart = 0;
     uint32_t readFinish = 0;
 
-    File asyncWriteFile;
-
     bool loadNextPatternAsync = false;
-    bool loadNextSoundsAsync = false;
-    bool loadNextSoundModsAsync = false;
 
-    EXTMEM WRITE_IO wAsyncActivePatternIO;
-    EXTMEM WRITE_IO wAsyncActiveSoundsIO;
-    EXTMEM WRITE_IO wAsyncActiveSoundModsIO;
+    File asyncWriteFile;
+    EXTMEM WRITE_IO wActivePatternSettingsIO;
+    EXTMEM WRITE_IO wActiveTrackLayerIO;
+    EXTMEM WRITE_IO wActiveRatchetLayerIO;
+    EXTMEM WRITE_IO wActiveKitIO;
 
     bool saveActivePatternAsync = false;
     bool saveActiveSoundsAsync = false;
-    bool saveActiveSoundModsAsync = false;
 
-    bool ready = false;
-
-    bool sdBusy() { return ready ? sd.card()->isBusy() : false; }
+    bool sdReady = false;
+    bool sdBusy() { return sdReady ? sd.card()->isBusy() : false; }
 
     MACHINE_STATE_0_1_0 _machine_state;
     PROJECT _current_project;
@@ -98,20 +95,28 @@ namespace XRSD
         }
 
         // initialize async write io
-        wAsyncActivePatternIO.filename = "";
-        wAsyncActivePatternIO.offset = 0;
-        wAsyncActivePatternIO.size = 0;
-        wAsyncActivePatternIO.remaining = 0;
-        wAsyncActivePatternIO.complete = false;
-        wAsyncActivePatternIO.started = false;
-        wAsyncActivePatternIO.open = false;
+        initWriteIO(wActivePatternSettingsIO);
+        initWriteIO(wActiveRatchetLayerIO);
+        initWriteIO(wActiveTrackLayerIO);
+        initWriteIO(wActiveKitIO);
 
-        ready = true;
+        sdReady = true;
 
         return true;
     }
 
-    void rewriteFileBuffered(std::string filename, const byte *data, size_t size)
+    void initWriteIO(WRITE_IO &wIO)
+    {
+        wIO.filename = "";
+        wIO.offset = 0;
+        wIO.remaining = 0;
+        wIO.size = 0;
+        wIO.complete = false;
+        wIO.started = false;
+        wIO.open = false;
+    }
+
+    void writeFileBuffered(std::string filename, const byte *data, size_t size)
     {
         File file = SD.open(filename.c_str(), FILE_WRITE_BEGIN);
         if (!file)
@@ -147,16 +152,33 @@ namespace XRSD
         file.close();
     }
     
-    void rewriteFileBufferedAsync(WRITE_FILE_TYPE type, const byte *wData)
+    void writeFileBufferedAsync(WRITE_FILE_TYPE type, const byte *wData)
     {
         if(sdBusy()) {
             Serial.println("SD CARD BUSY, CANNOT ASYNC WRITE!");
             return;
         }
 
-        auto &wIO = type == ACTIVE_PATTERN ? 
-            wAsyncActivePatternIO : 
-            (type == ACTIVE_SOUNDS ? wAsyncActiveSoundsIO : wAsyncActiveSoundModsIO);
+        WRITE_IO &wIO = wActiveRatchetLayerIO; // Default assignment
+        
+        switch (type) {
+            case ACTIVE_PATTERN_SETTINGS:
+                wIO = wActivePatternSettingsIO;
+                break;
+            case ACTIVE_TRACK_LAYER:
+                wIO = wActiveTrackLayerIO;
+                break;
+            case ACTIVE_RATCHET_LAYER:
+                wIO = wActiveRatchetLayerIO;
+                break;
+            case ACTIVE_KIT:
+                wIO = wActiveKitIO;
+                break;
+            default:
+                Serial.println("COULD NOT DETERMINE WRITE FILE TYPE!");
+                return;
+                break;
+        }
 
         
         if (!wIO.open) {
@@ -204,11 +226,6 @@ namespace XRSD
             Serial.printf("Failed to open file for reading: %s\n", filename.c_str());
             return false;
         }
-
-        Serial.printf("expected size: %d for file: %s\n", size, filename.c_str());
-
-        // uint8_t* dst = reinterpret_cast<uint8_t*>(buf);
-       // uint8_t* dst[512];
 
         uint32_t total_read = 0;
         int8_t *index = (int8_t*)buf;
@@ -459,16 +476,37 @@ namespace XRSD
         currProjectFile.write((byte *)&_current_project, sizeof(_current_project));
         currProjectFile.close();
 
-        saveCurrentSequencerData();
-        saveActiveSounds();
-        saveActiveSoundModLayer();
+        saveCurrentSequencerDataSync();
+        saveActiveKitSync();
 
         Serial.println("done saving project!");
     }
 
-    void saveCurrentSequencerData()
+    void saveCurrentSequencerDataSync()
     {
-        rewriteFileBuffered(getActivePatternFilename(), (byte *)&XRSequencer::activePattern, sizeof(XRSequencer::activePattern));
+        writeFileBuffered(
+            getActivePatternSettingsFilename(), 
+            (byte *)&XRSequencer::activePatternSettings, 
+            sizeof(XRSequencer::activePatternSettings)
+        );
+
+        writeFileBuffered(
+            getActiveRatchetLayerFilename(), 
+            (byte *)&XRSequencer::activeRatchetLayer, 
+            sizeof(XRSequencer::activeRatchetLayer)
+        );
+
+        writeFileBuffered(
+            getActiveTrackLayerFilename(), 
+            (byte *)&XRSequencer::activeTrackLayer, 
+            sizeof(XRSequencer::activeTrackLayer)
+        );
+
+        writeFileBuffered(
+            getActiveKitFilename(), 
+            (byte *)&XRSound::activeKit, 
+            sizeof(XRSound::activeKit)
+        );
     }
 
     bool loadLastProject()
@@ -505,24 +543,27 @@ namespace XRSD
 
         XRSequencer::init();
 
-        if (!loadActivePattern()) {
+        if (!loadActivePatternSettingsSync()) {
             XRDisplay::drawError("FAILED TO LOAD PATTERN DATA!");
             delay(2000);
             return false;
         }
-
+        if (!loadActiveTrackLayerSync()) {
+            XRDisplay::drawError("FAILED TO LOAD TRACK LAYER DATA!");
+            delay(2000);
+            return false;
+        }
+        if (!loadActiveRatchetLayerSync()) {
+            XRDisplay::drawError("FAILED TO LOAD RATCHET LAYER DATA!");
+            delay(2000);
+            return false;
+        }
         applyActivePatternGroove();
 
         XRSound::init();
 
-        loadActiveSounds();
+        loadActiveKitSync();
         XRSound::applyActiveSounds();
-
-        loadSoundModLayer(
-            XRSequencer::getCurrentSelectedBankNum(),
-            XRSequencer::getCurrentSelectedPatternNum(),
-            XRSequencer::getCurrentSelectedTrackLayerNum()
-        );
 
         Serial.printf(
             "proj name: %s proj machineVersion: %s proj tempo: %f\n",
@@ -532,14 +573,33 @@ namespace XRSD
         );
 
         XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_WRITE);
+
         XRDisplay::drawSequencerScreen(false);
 
         return true;
     }
 
-    bool loadActivePattern()
+    bool loadActivePatternSettingsSync()
     {
-        if(!readFileBuffered(getActivePatternFilename(), (byte *)&XRSequencer::activePattern, sizeof(XRSequencer::activePattern))) {
+        if(!readFileBuffered(getActivePatternSettingsFilename(), (byte *)&XRSequencer::activePatternSettings, sizeof(XRSequencer::activePatternSettings))) {
+            return false;
+        }
+
+        return true;
+    }
+
+    bool loadActiveTrackLayerSync()
+    {
+        if(!readFileBuffered(getActiveTrackLayerFilename(), (byte *)&XRSequencer::activeTrackLayer, sizeof(XRSequencer::activeTrackLayer))) {
+            return false;
+        }
+
+        return true;
+    }
+
+    bool loadActiveRatchetLayerSync()
+    {
+        if(!readFileBuffered(getActiveRatchetLayerFilename(), (byte *)&XRSequencer::activeRatchetLayer, sizeof(XRSequencer::activeRatchetLayer))) {
             return false;
         }
 
@@ -549,16 +609,19 @@ namespace XRSD
     void applyActivePatternGroove()
     {
         // if loaded active pattern has a groove, set it on the clock
-        if (XRSequencer::activePattern.groove.id > -1) {
+        if (XRSequencer::activePatternSettings.groove.id > -1) {
             // first apply pattern groove
             XRClock::setShuffle(true);
-            XRClock::setShuffleTemplateForGroove(XRSequencer::activePattern.groove.id, XRSequencer::activePattern.groove.amount);
+            XRClock::setShuffleTemplateForGroove(
+                XRSequencer::activePatternSettings.groove.id, 
+                XRSequencer::activePatternSettings.groove.amount
+            );
 
             // then apply track level groove / microtiming
             XRClock::setShuffleForAllTracks(true);
             XRClock::setShuffleTemplateForGrooveForAllTracks(
-                XRSequencer::activePattern.groove.id, 
-                XRSequencer::activePattern.groove.amount
+                XRSequencer::activePatternSettings.groove.id, 
+                XRSequencer::activePatternSettings.groove.amount
             );
         } else {
             // otherwise make sure any track microtiming mod grooves are enabled
@@ -566,294 +629,93 @@ namespace XRSD
         }
     }
 
-    bool loadNextPattern(int bank, int pattern, bool async)
+    bool loadNextPatternSettings(int bank, int pattern, bool async)
     {
-        // get project path
-        char projectsPathPrefixBuf[50];
-        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
-        std::string projectPath(projectsPathPrefixBuf); // read char array into string
-
-        // pattern file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/pattern.bin
-        std::string baseDir = projectPath;
-        baseDir += "/";
-        baseDir += _current_project.name;
-        baseDir += "/.data/sequencer_bank_";
-        baseDir += std::to_string(bank);
-        baseDir += "_pattern_";
-        baseDir += std::to_string(pattern);
-        baseDir += ".bin";
-
-        //Serial.printf("loadNextPattern:  %s\n", baseDir.c_str());
+        auto filename = getPatternSettingsFilename(bank, pattern);
 
         if (async) {
-            if (!readFileBufferedAsync(baseDir, (byte *)&XRSequencer::idlePattern, sizeof(XRSequencer::idlePattern))) {
+            if (!readFileBufferedAsync(filename, (byte *)&XRSequencer::idlePatternSettings, sizeof(XRSequencer::idlePatternSettings))) {
                 return false;
             }
         } else {
-            if (!readFileBuffered(baseDir, (byte *)&XRSequencer::idlePattern, sizeof(XRSequencer::idlePattern))) {
+            if (!readFileBuffered(filename, (byte *)&XRSequencer::idlePatternSettings, sizeof(XRSequencer::idlePatternSettings))) {
                 return false;
             }
         }
-
-        // File f = SD.open(baseDir.c_str(), FILE_READ);
-        // if (!f.available()) {
-        //     Serial.println("Active pattern file not available!");
-        //     return false;
-        // }
-
-        // f.read((byte *)&XRSequencer::idlePattern, sizeof(XRSequencer::idlePattern));
-        // f.close();
-
-        //Serial.printf("READING next pattern accent: %d\n", XRSequencer::idlePattern.accent);
-
-        //Serial.printf("sizeof(idlePattern): %d\n", sizeof(XRSequencer::idlePattern));
 
         return true;
     }
 
-    bool loadActiveSounds()
+    bool loadNextTrackLayer(int bank, int pattern, int layer, bool async)
     {
-        // get project path
-        char projectsPathPrefixBuf[50];
-        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
-        std::string projectPath(projectsPathPrefixBuf); // read char array into string
+        auto filename = getTrackLayerFilename(bank, pattern, layer);
 
-        // pattern sounds file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/sounds.bin
-        std::string baseDir = projectPath;
-        baseDir += "/";
-        baseDir += _current_project.name;
-        baseDir += "/.data/sequencer_bank_";
-        baseDir += std::to_string(XRSequencer::getCurrentSelectedBankNum());
-        baseDir += "_pattern_";
-        baseDir += std::to_string(XRSequencer::getCurrentSelectedPatternNum());
-        baseDir += "_sounds.bin";
-
-        File soundsFile = SD.open(baseDir.c_str(), FILE_READ);
-        if (!soundsFile.available()) {
-            Serial.println("Active sounds not available!");
-
-            return false;
+        if (async) {
+            if (!readFileBufferedAsync(filename, (byte *)&XRSequencer::idleTrackLayer, sizeof(XRSequencer::idleTrackLayer))) {
+                return false;
+            }
+        } else {
+            if (!readFileBuffered(filename, (byte *)&XRSequencer::idleTrackLayer, sizeof(XRSequencer::idleTrackLayer))) {
+                return false;
+            }
         }
-
-        soundsFile.read((byte *)&XRSound::activeSounds, sizeof(XRSound::activeSounds));
-        soundsFile.close();
-
-        //Serial.printf("sizeof(activeSounds): %d\n", sizeof(XRSound::activeSounds));
 
         return true;
     }
 
-    bool loadNextPatternSounds(int bank, int pattern, bool async)
+    bool loadNextRatchetLayer(int bank, int pattern, bool async)
     {
-        // get project path
-        char projectsPathPrefixBuf[50];
-        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
-        std::string projectPath(projectsPathPrefixBuf); // read char array into string
-
-        // pattern sounds file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/sounds.bin
-        std::string baseDir = projectPath;
-        baseDir += "/";
-        baseDir += _current_project.name;
-        baseDir += "/.data/sequencer_bank_";
-        baseDir += std::to_string(bank);
-        baseDir += "_pattern_";
-        baseDir += std::to_string(pattern);
-        baseDir += "_sounds.bin";
-
-        //Serial.printf("idleSounds:  %s\n", baseDir.c_str());
+        auto filename = getRatchetLayerFilename(bank, pattern);
 
         if (async) {
-            if (!readFileBufferedAsync(baseDir, (byte *)&XRSound::idleSounds, sizeof(XRSound::idleSounds))) {
+            if (!readFileBufferedAsync(filename, (byte *)&XRSequencer::idleRatchetLayer, sizeof(XRSequencer::idleRatchetLayer))) {
                 return false;
             }
         } else {
-            if (!readFileBuffered(baseDir, (byte *)&XRSound::idleSounds, sizeof(XRSound::idleSounds))) {
+            if (!readFileBuffered(filename, (byte *)&XRSequencer::idleRatchetLayer, sizeof(XRSequencer::idleRatchetLayer))) {
                 return false;
             }
         }
-
-        // File f = SD.open(baseDir.c_str(), FILE_READ);
-        // if (!f.available()) {
-        //     Serial.println("Next sounds file not available!");
-        //     return false;
-        // }
-
-        // f.read((byte *)&XRSound::idleSounds, sizeof(XRSound::idleSounds));
-        // f.close();
-
-        //Serial.printf("sizeof(idleSounds): %d\n", sizeof(XRSound::idleSounds));
 
         return true;
     }
 
-    bool loadSoundModLayer(int bank, int pattern, int layer, bool async)
+    bool loadActiveKitSync()
     {
-        // get project path
-        char projectsPathPrefixBuf[50];
-        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
-        std::string projectPath(projectsPathPrefixBuf); // read char array into string
+        readFileBuffered(getActiveKitFilename(), (byte *)&XRSound::activeKit, sizeof(XRSound::activeKit));
 
-        // sound mod layer file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/layers/{layer}/sound_mod.bin
-        std::string baseDir = projectPath;
-        baseDir += "/";
-        baseDir += _current_project.name;
-        baseDir += "/.data/sequencer/bank_";
-        baseDir += std::to_string(bank);
-        baseDir += "_pattern_";
-        baseDir += std::to_string(pattern);
-        baseDir += "_layer_";
-        baseDir += std::to_string(layer);
-        baseDir += "_sound_mod.bin";
-
-       // Serial.printf("activeSoundModLayer:  %s\n", baseDir.c_str());
-
-        if (async) {
-            if (!readFileBufferedAsync(baseDir, (byte *)&XRSound::activeSoundModLayer, sizeof(XRSound::activeSoundModLayer))) {
-                return false;
-            }
-        } else {
-            if (!readFileBuffered(baseDir, (byte *)&XRSound::activeSoundModLayer, sizeof(XRSound::activeSoundModLayer))) {
-                return false;
-            }
-        }
-
-        // File f = SD.open(baseDir.c_str(), FILE_READ);
-        // if (!f.available()) {
-        //     Serial.println("Sound mod file not available!");
-        //     return false;
-        // }
-
-        // f.read((byte *)&XRSound::activeSoundModLayer, sizeof(XRSound::activeSoundModLayer));
-        // f.close();
-        
-        //Serial.printf("sizeof(activeSoundModLayer): %d\n", sizeof(XRSound::activeSoundModLayer));
-        
         return true;
     }
 
-    bool loadNextSoundModLayer(int bank, int pattern, int layer, bool async)
+    bool loadNextKit(int bank, int pattern, bool async)
     {
-        // get project path
-        char projectsPathPrefixBuf[50];
-        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
-        std::string projectPath(projectsPathPrefixBuf); // read char array into string
-
-        // sound mod layer file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/layers/{layer}/sound_mod.bin
-        std::string baseDir = projectPath;
-        baseDir += "/";
-        baseDir += _current_project.name;
-        baseDir += "/.data/sequencer_bank_";
-        baseDir += std::to_string(bank);
-        baseDir += "_pattern_";
-        baseDir += std::to_string(pattern);
-        baseDir += "_layer_";
-        baseDir += std::to_string(layer);
-        baseDir += "_sound_mod.bin";
-
-        //Serial.printf("idleSoundModLayer:  %s\n", baseDir.c_str());
+        auto filename = getKitFilename(bank, pattern);
 
         if (async) {
-            if (!readFileBufferedAsync(baseDir, (byte *)&XRSound::idleSoundModLayer, sizeof(XRSound::idleSoundModLayer))) {
+            if (!readFileBufferedAsync(filename, (byte *)&XRSound::idleKit, sizeof(XRSound::idleKit))) {
                 return false;
             }
         } else {
-            if (!readFileBuffered(baseDir, (byte *)&XRSound::idleSoundModLayer, sizeof(XRSound::idleSoundModLayer))) {
+            if (!readFileBuffered(filename, (byte *)&XRSound::idleKit, sizeof(XRSound::idleKit))) {
                 return false;
             }
         }
 
-        // File f = SD.open(baseDir.c_str(), FILE_READ);
-        // if (!f.available()) {
-        //     Serial.println("Sound mod file not available!");
-        //     return false;
-        // }
-
-        // f.read((byte *)&XRSound::activeSoundModLayer, sizeof(XRSound::activeSoundModLayer));
-        // f.close();
-        
-        //Serial.printf("sizeof(activeSoundModLayer): %d\n", sizeof(XRSound::activeSoundModLayer));
-        
         return true;
     }
 
-    std::string getActivePatternFilename()
-    {
-        char projectsPathPrefixBuf[50];
-        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
-        std::string projectPath(projectsPathPrefixBuf); // read char array into string
-
-        // pattern file names are {project}/.data/sequencer_bank_{bank}_pattern_{pattern}.bin
-        std::string activePatternDir = projectPath;
-        activePatternDir += "/";
-        activePatternDir += _current_project.name;
-        activePatternDir += "/.data/sequencer_bank_";
-        activePatternDir += std::to_string(XRSequencer::getCurrentSelectedBankNum());
-        activePatternDir += "_pattern_";
-        activePatternDir += std::to_string(XRSequencer::getCurrentSelectedPatternNum());
-        activePatternDir += ".bin";
-
-        Serial.printf("GET FILENAME FOR activePattern: %s\n", activePatternDir.c_str());
-
-        return activePatternDir;
-    }
-
-    void saveActivePattern(bool async)
+    void saveActivePatternSettings(bool async)
     {
         if (async) {
-            rewriteFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_PATTERN, (byte *)&XRSequencer::writePattern);
+            writeFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_PATTERN_SETTINGS, (byte *)&XRSequencer::patternSettingsForWrite);
         } else {
-            rewriteFileBuffered(getActivePatternFilename(), (byte *)&XRSequencer::writePattern, sizeof(XRSequencer::writePattern));
+            writeFileBuffered(getActivePatternSettingsFilename(), (byte *)&XRSequencer::patternSettingsForWrite, sizeof(XRSequencer::patternSettingsForWrite));
         }
     }
 
-    void saveActiveSounds()
+    void saveActiveKitSync()
     {
-        // get project path
-        char projectsPathPrefixBuf[50];
-        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
-        std::string projectPath(projectsPathPrefixBuf); // read char array into string
-
-        // pattern sounds file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/sounds.bin
-         std::string baseDir = projectPath;
-        baseDir += "/";
-        baseDir += _current_project.name;
-        baseDir += "/.data/sequencer_bank_";
-        baseDir += std::to_string(XRSequencer::getCurrentSelectedBankNum());
-        baseDir += "_pattern_";
-        baseDir += std::to_string(XRSequencer::getCurrentSelectedPatternNum());
-        baseDir += "_sounds.bin";
-
-        //Serial.printf("activeSounds: %s\n", baseDir.c_str());
-
-        rewriteFileBuffered(baseDir, (byte *)&XRSound::activeSounds, sizeof(XRSound::activeSounds));
-
-        //Serial.printf("sizeof(activePatternSounds): %d\n", sizeof(XRSound::activePatternSounds));
-    }
-
-    void saveActiveSoundModLayer()
-    {
-        // get project path
-        char projectsPathPrefixBuf[50];
-        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
-        std::string projectPath(projectsPathPrefixBuf); // read char array into string
-
-        // sound step mod file names are {project}/.data/sequencer/banks/{bank}/patterns/{pattern}/layers/{layer}/sound_mod.bin
-        std::string baseDir = projectPath;
-        baseDir += "/";
-        baseDir += _current_project.name;
-        baseDir += "/.data/sequencer_bank_";
-        baseDir += std::to_string(XRSequencer::getCurrentSelectedBankNum());
-        baseDir += "_pattern_";
-        baseDir += std::to_string(XRSequencer::getCurrentSelectedPatternNum());
-        baseDir += "_layer_";
-        baseDir += std::to_string(XRSequencer::getCurrentSelectedTrackLayerNum());
-        baseDir += "_sound_mod.bin";
-
-        //Serial.printf("activeSoundModLayer:  %s\n", baseDir.c_str());
-
-        rewriteFileBuffered(baseDir, (byte *)&XRSound::activeSoundModLayer, sizeof(XRSound::activeSoundModLayer));
-
-        //Serial.printf("sizeof(activeSoundModLayer): %d\n", sizeof(XRSound::activeSoundModLayer));
+        writeFileBuffered(getActiveKitFilename(), (byte *)&XRSound::activeKit, sizeof(XRSound::activeKit));
     }
 
     void saveCopiedStep(int track, int sourceStep, int destStep)
@@ -865,7 +727,7 @@ namespace XRSD
         // // TODO: save above to SD card as well ?
     }
 
-    void saveCopiedTrackToSamePattern(int sourceTrack, int destTrack)
+    void saveCopiedTrackToSameLayer(int sourceTrack, int destTrack)
     {
         // // -- BEGIN COPY TRACK SOUND
 
@@ -1223,8 +1085,8 @@ namespace XRSD
                 std::string tempDexedPatchName(dexedTempNameBuf);
                 dexedPatchName = tempDexedPatchName;
 
-                std::string currTrackName(XRSound::activeSounds[trackNum].name);
-                strcpy(XRSound::activeSounds[trackNum].name, tempDexedPatchName.c_str());
+                std::string currTrackName(XRSound::activeKit.sounds[trackNum].name);
+                strcpy(XRSound::activeKit.sounds[trackNum].name, tempDexedPatchName.c_str());
             }
         }
 
@@ -1313,4 +1175,112 @@ namespace XRSD
     {
         return dexedPatchName;
     }
+
+    std::string getPatternSettingsFilename(int8_t bank, int8_t pattern)
+    {
+        char projectsPathPrefixBuf[50];
+        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
+        std::string projectPath(projectsPathPrefixBuf); // read char array into string
+
+        std::string name = projectPath;
+        name += "/";
+        name += _current_project.name;
+        name += "/.data/b";
+        name += std::to_string(bank);
+        name += "p";
+        name += std::to_string(pattern);
+        name += ".bin";
+
+        return name;
+    }
+    
+    std::string getActivePatternSettingsFilename()
+    {
+        return getPatternSettingsFilename(
+            XRSequencer::getCurrentSelectedBankNum(),
+            XRSequencer::getCurrentSelectedPatternNum()
+        );
+    }
+
+    std::string getTrackLayerFilename(int8_t bank, int8_t pattern, int8_t layer)
+    {
+        char projectsPathPrefixBuf[50];
+        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
+        std::string projectPath(projectsPathPrefixBuf); // read char array into string
+
+        std::string name = projectPath;
+        name += "/";
+        name += _current_project.name;
+        name += "/.data/b";
+        name += std::to_string(bank);
+        name += "p";
+        name += std::to_string(pattern);
+        name += "tl";
+        name += std::to_string(layer);
+        name += ".bin";
+
+        return name;
+    }
+    
+    std::string getActiveTrackLayerFilename()
+    {
+        return getTrackLayerFilename(
+            XRSequencer::getCurrentSelectedBankNum(),
+            XRSequencer::getCurrentSelectedPatternNum(),
+            XRSequencer::getCurrentSelectedTrackLayerNum()
+        );
+    }
+
+    std::string getRatchetLayerFilename(int8_t bank, int8_t pattern)
+    {
+        char projectsPathPrefixBuf[50];
+        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
+        std::string projectPath(projectsPathPrefixBuf); // read char array into string
+
+        std::string name = projectPath;
+        name += "/";
+        name += _current_project.name;
+        name += "/.data/b";
+        name += std::to_string(bank);
+        name += "p";
+        name += std::to_string(pattern);
+        name += "rl.bin";
+
+        return name;
+    }
+
+    std::string getActiveRatchetLayerFilename()
+    {
+        return getRatchetLayerFilename(
+            XRSequencer::getCurrentSelectedBankNum(),
+            XRSequencer::getCurrentSelectedPatternNum()
+        );
+    }
+
+    std::string getKitFilename(int8_t bank, int8_t pattern)
+    {
+        char projectsPathPrefixBuf[50];
+        XRHelpers::getProjectsDir(projectsPathPrefixBuf);
+        std::string projectPath(projectsPathPrefixBuf); // read char array into string
+
+        std::string name = projectPath;
+        name += "/";
+        name += _current_project.name;
+        name += "/.data/b";
+        name += std::to_string(bank);
+        name += "p";
+        name += std::to_string(pattern);
+        name += "k.bin";
+
+        return name;
+    }
+    
+    std::string getActiveKitFilename()
+    {
+        return getKitFilename(
+            XRSequencer::getCurrentSelectedBankNum(),
+            XRSequencer::getCurrentSelectedPatternNum()
+        );
+    }
+
 }

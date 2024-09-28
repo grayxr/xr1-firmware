@@ -252,7 +252,7 @@ namespace XRLED
     {
         auto currUXMode = XRUX::getCurrentMode();
         auto &currTrack = (currUXMode == XRUX::PERFORM_RATCHET || currUXMode == XRUX::SUBMITTING_RATCHET_STEP_VALUE) ? 
-            XRSequencer::activePattern.ratchetLayer.tracks[XRSequencer::getRatchetTrack()] : 
+            XRSequencer::activeRatchetLayer.tracks[XRSequencer::getRatchetTrack()] : 
             XRSequencer::getCurrentSelectedTrack();
 
         auto currStepPage = (currUXMode == XRUX::PERFORM_RATCHET || currUXMode == XRUX::SUBMITTING_RATCHET_STEP_VALUE) ? 
@@ -438,11 +438,9 @@ namespace XRLED
 
     void displayInitializedTrackLEDs()
     {
-        auto &currLayer = XRSequencer::getCurrentSelectedTrackLayer();
-
         for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
         {
-            if (currLayer.tracks[t].initialized)
+            if (XRSequencer::activeTrackLayer.tracks[t].initialized)
             {
                 setPWM(_stepLEDPins[t], 4095);
             }

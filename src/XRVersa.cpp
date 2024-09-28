@@ -322,7 +322,7 @@ namespace XRVersa
         auto currentUXMode = XRUX::getCurrentMode();
         auto layer = XRSequencer::getCurrentSelectedTrackLayerNum();
         auto &currTrack = XRSequencer::getCurrentSelectedTrack();
-        auto &currLayer = XRSequencer::getCurrentSelectedTrackLayer();
+        auto &currLayer = XRSequencer::activeTrackLayer;
 
         int8_t invertedNoteNumber = -1;
         invertedNoteNumber = _backwardsNoteNumbers[pin];
@@ -343,10 +343,10 @@ namespace XRVersa
                 }
             } 
             else if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelStepNum > -1) {
-                currLayer.tracks[currSelTrackNum].steps[currSelStepNum].mods[XRSequencer::NOTE] = invertedNoteNumber;
-                currLayer.tracks[currSelTrackNum].steps[currSelStepNum].flags[XRSequencer::NOTE] = true;
-                currLayer.tracks[currSelTrackNum].steps[currSelStepNum].mods[XRSequencer::OCTAVE] = XRKeyMatrix::getKeyboardOctave();
-                currLayer.tracks[currSelTrackNum].steps[currSelStepNum].flags[XRSequencer::OCTAVE] = true;
+                currLayer.tracks[currSelTrackNum].steps[currSelStepNum].tMods[XRSequencer::NOTE] = invertedNoteNumber;
+                currLayer.tracks[currSelTrackNum].steps[currSelStepNum].tFlags[XRSequencer::NOTE] = true;
+                currLayer.tracks[currSelTrackNum].steps[currSelStepNum].tMods[XRSequencer::OCTAVE] = XRKeyMatrix::getKeyboardOctave();
+                currLayer.tracks[currSelTrackNum].steps[currSelStepNum].tFlags[XRSequencer::OCTAVE] = true;
 
                 std::string noteStr = XRHelpers::getNoteStringForBaseNoteNum(invertedNoteNumber);
                 noteStr += std::to_string(XRKeyMatrix::getKeyboardOctave());
@@ -420,10 +420,10 @@ namespace XRVersa
 
                     Serial.printf("RATCHET invertedNoteNumber: %d, octave: %d\n", invertedNoteNumber, XRKeyMatrix::getKeyboardOctave());
 
-                    XRSequencer::activePattern.ratchetLayer.tracks[ratchetTrack].steps[currSelStepNum].mods[XRSequencer::NOTE] = invertedNoteNumber;
-                    XRSequencer::activePattern.ratchetLayer.tracks[ratchetTrack].steps[currSelStepNum].flags[XRSequencer::NOTE] = true;
-                    XRSequencer::activePattern.ratchetLayer.tracks[ratchetTrack].steps[currSelStepNum].mods[XRSequencer::OCTAVE] = XRKeyMatrix::getKeyboardOctave();
-                    XRSequencer::activePattern.ratchetLayer.tracks[ratchetTrack].steps[currSelStepNum].flags[XRSequencer::OCTAVE] = true;
+                    XRSequencer::activeRatchetLayer.tracks[ratchetTrack].steps[currSelStepNum].tMods[XRSequencer::NOTE] = invertedNoteNumber;
+                    XRSequencer::activeRatchetLayer.tracks[ratchetTrack].steps[currSelStepNum].tFlags[XRSequencer::NOTE] = true;
+                    XRSequencer::activeRatchetLayer.tracks[ratchetTrack].steps[currSelStepNum].tMods[XRSequencer::OCTAVE] = XRKeyMatrix::getKeyboardOctave();
+                    XRSequencer::activeRatchetLayer.tracks[ratchetTrack].steps[currSelStepNum].tFlags[XRSequencer::OCTAVE] = true;
 
                     std::string noteStr = XRHelpers::getNoteStringForBaseNoteNum(invertedNoteNumber);
                     noteStr += std::to_string(XRKeyMatrix::getKeyboardOctave());
@@ -485,10 +485,10 @@ namespace XRVersa
 
                 Serial.printf("RATCHET invertedNoteNumber: %d, octave: %d\n", invertedNoteNumber, XRKeyMatrix::getKeyboardOctave());
 
-                XRSequencer::activePattern.ratchetLayer.tracks[ratchetTrack].steps[currSelStepNum].mods[XRSequencer::NOTE] = invertedNoteNumber;
-                XRSequencer::activePattern.ratchetLayer.tracks[ratchetTrack].steps[currSelStepNum].flags[XRSequencer::NOTE] = true;
-                XRSequencer::activePattern.ratchetLayer.tracks[ratchetTrack].steps[currSelStepNum].mods[XRSequencer::OCTAVE] = XRKeyMatrix::getKeyboardOctave();
-                XRSequencer::activePattern.ratchetLayer.tracks[ratchetTrack].steps[currSelStepNum].flags[XRSequencer::OCTAVE] = true;
+                XRSequencer::activeRatchetLayer.tracks[ratchetTrack].steps[currSelStepNum].tMods[XRSequencer::NOTE] = invertedNoteNumber;
+                XRSequencer::activeRatchetLayer.tracks[ratchetTrack].steps[currSelStepNum].tFlags[XRSequencer::NOTE] = true;
+                XRSequencer::activeRatchetLayer.tracks[ratchetTrack].steps[currSelStepNum].tMods[XRSequencer::OCTAVE] = XRKeyMatrix::getKeyboardOctave();
+                XRSequencer::activeRatchetLayer.tracks[ratchetTrack].steps[currSelStepNum].tFlags[XRSequencer::OCTAVE] = true;
 
                 std::string noteStr = XRHelpers::getNoteStringForBaseNoteNum(invertedNoteNumber);
                 noteStr += std::to_string(XRKeyMatrix::getKeyboardOctave());

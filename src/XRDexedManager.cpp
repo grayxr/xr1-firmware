@@ -20,12 +20,6 @@ namespace XRDexedManager
 
     }
 
-    // get the inactive instance for the track in the current pattern
-    uint8_t getInactiveInstanceForTrack(uint8_t track)
-    {
-        return inactiveInstances[track];
-    }
-
     // swap active and inactive instances right before/when pattern starts
     void swapInstances()
     {
@@ -35,6 +29,12 @@ namespace XRDexedManager
             activeInstances[i] = inactiveInstances[i];
             inactiveInstances[i] = temp;
         }
+    }
+
+    // get the inactive instance for the track in the current pattern
+    uint8_t getInactiveInstanceForTrack(uint8_t track)
+    {
+        return inactiveInstances[track];
     }
 
     // get the active instance for the track in the current pattern

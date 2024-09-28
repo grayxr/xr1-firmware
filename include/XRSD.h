@@ -26,7 +26,7 @@ namespace XRSD
         bool open = false;
     } WRITE_IO;
 
-    extern EXTMEM WRITE_IO wAsyncActivePatternIO;
+    extern EXTMEM WRITE_IO wActivePatternSettingsIO;
     extern EXTMEM WRITE_IO wAsyncActiveSoundsIO;
     extern EXTMEM WRITE_IO wAsyncActiveSoundModsIO;
 
@@ -63,34 +63,31 @@ namespace XRSD
 
     bool init();
 
+    void initWriteIO(WRITE_IO &wIO);
+
     void initMachineState();
     bool loadMachineState();
 
     void createNewProject();
     bool loadLastProject();
     void saveProject();
-
-    void saveCurrentSequencerData();
-    
-    bool loadActivePattern();
-    void saveActivePattern(bool async = false);
-
-    bool loadNextPattern(int bank, int pattern, bool async = false);
-
-    bool loadActiveSounds();
-    void saveActiveSounds();
+    void saveCurrentSequencerDataSync();
+    bool loadActivePatternSettingsSync();
+    bool loadActiveTrackLayerSync();
+    bool loadActiveRatchetLayerSync();
+    void saveActivePatternSettings(bool async = false);
+    bool loadActiveKitSync();
+    void saveActiveKitSync();
+    bool loadNextPatternSettings(int bank, int pattern, bool async = false);
+    bool loadNextTrackLayer(int bank, int pattern, int layer, bool async = false);
+    bool loadNextRatchetLayer(int bank, int pattern, bool async = false);
+    bool loadNextKit(int bank, int pattern, bool async = false);
 
     void applyActivePatternGroove();
-
-    bool loadNextPatternSounds(int bank, int pattern, bool async = false);
-    bool loadSoundModLayer(int bank, int pattern, int layer, bool async = false);
-    bool loadNextSoundModLayer(int bank, int pattern, int layer, bool async = false);
-    void saveActiveSoundModLayer();
-
     void loadDexedVoiceToCurrentTrack(int t = -1);
 
     void saveCopiedStep(int track, int sourceStep, int destStep);
-    void saveCopiedTrackToSamePattern(int sourceTrack, int destTrack);
+    void saveCopiedTrackToSameLayer(int sourceTrack, int destTrack);
     
     std::string *getSampleList(int16_t cursor);
     std::string getCurrSampleFileHighlighted();
@@ -105,7 +102,14 @@ namespace XRSD
     std::string getCurrentDexedSysexPatchNum();
     std::string getCurrentDexedSysexPatchName();
     
-    std::string getActivePatternFilename();
+    std::string getPatternSettingsFilename(int8_t bank, int8_t pattern);
+    std::string getTrackLayerFilename(int8_t bank, int8_t pattern, int8_t layer);
+    std::string getRatchetLayerFilename(int8_t bank, int8_t pattern);
+    std::string getKitFilename(int8_t bank, int8_t pattern);
+    std::string getActivePatternSettingsFilename();
+    std::string getActiveTrackLayerFilename();
+    std::string getActiveRatchetLayerFilename();
+    std::string getActiveKitFilename();
 }
 
 #endif /* XRSD_h */

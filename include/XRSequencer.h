@@ -18,8 +18,10 @@ namespace XRSequencer
     typedef struct
     {
         STEP_STATE state = STEP_STATE::STATE_OFF;
-        int8_t mods[MAXIMUM_TRACK_MODS];
-        bool flags[MAXIMUM_TRACK_MODS]; // whether the param mod should apply or not
+        int8_t tMods[MAXIMUM_TRACK_MODS];
+        bool tFlags[MAXIMUM_TRACK_MODS]; // whether the param mod should apply or not
+        int32_t sMods[MAXIMUM_SOUND_PARAMS];
+        bool sFlags[MAXIMUM_SOUND_PARAMS]; // whether the param mod should apply or not
     } STEP;
 
     enum TRACK_MOD_NUM : uint8_t
@@ -53,6 +55,11 @@ namespace XRSequencer
 
     typedef struct
     {
+        TRACK tracks[MAXIMUM_SEQUENCER_TRACKS];
+    } RATCHET_LAYER;
+
+    typedef struct
+    {
         int8_t id = -1;
         uint8_t amount = 0;
     } PATTERN_GROOVE;
@@ -82,16 +89,13 @@ namespace XRSequencer
 
     typedef struct
     {
-        TRACK_LAYER layers[MAXIMUM_SEQUENCER_TRACK_LAYERS];
-        TRACK_LAYER ratchetLayer;
-
         PATTERN_FX_PARAMS fx;
         PATTERN_GROOVE groove;
         uint8_t lstep = DEFAULT_LAST_STEP;
         uint8_t accent = DEFAULT_GLOBAL_ACCENT;
         float tempo;
         bool initialized = false;
-    } PATTERN;
+    } PATTERN_SETTINGS;
 
     // sequencer state
 
@@ -179,40 +183,22 @@ namespace XRSequencer
     typedef struct
     {
         RECORDING_TRACK tracks[MAXIMUM_SEQUENCER_TRACKS];
-    } RECORDING_STATE;  
-
-    // testing new data structures 
-
-    typedef struct
-    {
-        PATTERN_FX_PARAMS fx;
-        PATTERN_GROOVE groove;
-        uint8_t lstep = DEFAULT_LAST_STEP;
-        uint8_t accent = DEFAULT_GLOBAL_ACCENT;
-        float tempo;
-        bool initialized = false;
-    } N_PATTERN_SCHEMA;
-
-    typedef struct
-    {
-        TRACK tracks[MAXIMUM_SEQUENCER_TRACKS];
-    } N_TRACK_LAYER;
-
-    typedef struct
-    {
-        TRACK tracks[16];
-    } N_RATCHET_LAYER;
-
-    extern EXTMEM N_TRACK_LAYER nActiveTrackLayer;
-    extern EXTMEM N_RATCHET_LAYER nRatchetTrackLayer;
-    extern EXTMEM N_PATTERN_SCHEMA nActivePatternSchema;
-
+    } RECORDING_STATE;
 
     // extern globals
 
-    extern EXTMEM PATTERN activePattern;
-    extern EXTMEM PATTERN idlePattern;
-    extern EXTMEM PATTERN writePattern;
+    // active = current (used for playback), idle = next (read from SD card during pattern change)
+    extern EXTMEM TRACK_LAYER activeTrackLayer;
+    extern EXTMEM TRACK_LAYER idleTrackLayer;
+    extern EXTMEM RATCHET_LAYER activeRatchetLayer;
+    extern EXTMEM RATCHET_LAYER idleRatchetLayer;
+    extern EXTMEM PATTERN_SETTINGS activePatternSettings;
+    extern EXTMEM PATTERN_SETTINGS idlePatternSettings;
+
+    // used for saving to SD card
+    extern EXTMEM TRACK_LAYER trackLayerForWrite;
+    extern EXTMEM RATCHET_LAYER ratchetLayerForWrite;
+    extern EXTMEM PATTERN_SETTINGS patternSettingsForWrite;
 
     extern DMAMEM PATTERN_FX_PAGE_INDEXES patternFxPages[MAXIMUM_PATTERN_FX_PARAM_PAGES];
     extern DMAMEM TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
@@ -225,16 +211,13 @@ namespace XRSequencer
 
     bool init();
 
+    void initPatternSettings(PATTERN_SETTINGS &patternSettings);
+    void initTrackLayer(TRACK_LAYER &trackLayer);
+    void initRatchetLayer(RATCHET_LAYER &ratchetLayer);
+
     bool isStepProbablyEnabled(int track, int step);
     bool isRatchetAccented();
     bool onRatchetStepPage();
-
-    void initActivePattern();
-    void initActiveTrackLayer();
-    void initActiveTrackStepModLayer();
-    void initIdlePattern();
-    void initNextTrackLayer();
-    void initTrackLayerCopyBuffer();
     
     void swapSequencerDataForPatternChange(int newBank, int newPattern);
     void swapSequencerMemoryForTrackLayerChange();
@@ -304,20 +287,16 @@ namespace XRSequencer
     void toggleSequencerPlayback(char btn);
     void rewindAllCurrentStepsForAllTracks();
 
+    PATTERN_FX_PARAMS getInitPatternFxParams();
+
     SEQUENCER_STATE &getSeqState();
     QUEUED_PATTERN_STATE &getQueuedPatternState();
 
-    PATTERN &getActivePattern();
-    PATTERN &getNextPattern();
     TRACK &getTrack(int track);
     STEP &getStep(int track, int step);
 
-    PATTERN &getCurrentSelectedPattern();
     TRACK &getCurrentSelectedTrack();
-    TRACK_LAYER &getCurrentSelectedTrackLayer();
     STEP &getCurrentSelectedTrackStep();
-
-    PATTERN_FX_PARAMS getInitPatternFxParams();
 
     int8_t getCurrentSelectedBankNum();
     int8_t getCurrentSelectedPatternNum();
