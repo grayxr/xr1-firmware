@@ -11,13 +11,20 @@
 #define SD_CONFIG SdioConfig(FIFO_SDIO)
 
 #define ASYNC_IO_BUFFER_SIZE 512 * 80
-#define ASYNC_IO_W_BUFFER_SIZE 512 * 8
+#define ASYNC_IO_WR_BUFFER_SIZE 512 * 8
 
 namespace XRSD
 {
+    enum WRITE_STATE
+    {
+        IDLE = 0,
+        START,
+        COMPLETE,
+    };
+
     typedef struct {
         std::string filename;
-        byte buffer[ASYNC_IO_W_BUFFER_SIZE];
+        byte buffer[ASYNC_IO_WR_BUFFER_SIZE];
         uint32_t offset;
         uint32_t remaining;
         uint32_t size;
@@ -41,6 +48,8 @@ namespace XRSD
     extern bool saveActiveSoundsAsync;
     extern bool saveActiveSoundModsAsync;
     extern bool asyncFileWriteComplete;
+
+    extern WRITE_STATE writeState;
     
     typedef struct
     {

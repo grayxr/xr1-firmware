@@ -10,7 +10,7 @@
 #include <XRSequencer.h>
 #include <XRSound.h>
 
-#define ASYNC_IO_BUFFER_SIZE 512 * 8
+#define ASYNC_IO_R_BUFFER_SIZE 512 * 80
 #define ASYNC_IO_W_BUFFER_SIZE 512 * 8
 
 namespace XRAsyncIO
@@ -43,6 +43,8 @@ namespace XRAsyncIO
         FILE_IO_TYPE ioType;
         std::string filename;
         uint32_t size;
+        std::function<void(const FILE_TYPE)> failedCb;
+        std::function<void(const FILE_TYPE)> successCb;
     } IO_CONTEXT;
 
     typedef struct {
@@ -59,7 +61,6 @@ namespace XRAsyncIO
     void update();
     void addItem(IO_CONTEXT ctx);
     void processNextItem();
-    void setCallback(std::function<void(const IO_CONTEXT&)> cb);
 }
 
 #endif /* XRAsyncIO_h */

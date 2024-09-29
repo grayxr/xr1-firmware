@@ -246,33 +246,33 @@ namespace XRSound
         }
     };
 
-    class FmDrumInstance
-    {
-    public:
-        AudioSynthFMDrum &fmDrum;
-        AudioAmplifier &ampAccent;
-        AudioAmplifier &amp;
-        AudioAmplifier &ampDelaySend;
-        AudioAmplifier &left;
-        AudioAmplifier &right;
+    // class FmDrumInstance
+    // {
+    // public:
+    //     AudioSynthFMDrum &fmDrum;
+    //     AudioAmplifier &ampAccent;
+    //     AudioAmplifier &amp;
+    //     AudioAmplifier &ampDelaySend;
+    //     AudioAmplifier &left;
+    //     AudioAmplifier &right;
 
-        FmDrumInstance(
-            AudioSynthFMDrum &fmDrum,
-            AudioAmplifier &ampAccent,
-            AudioAmplifier &amp,
-            AudioAmplifier &ampDelaySend,
-            AudioAmplifier &left,
-            AudioAmplifier &right
-        ) : fmDrum{fmDrum},
-            ampAccent{ampAccent},
-            amp{amp},
-            ampDelaySend{ampDelaySend},
-            left{left},
-            right{right}
-        {
-            //
-        }
-    };
+    //     FmDrumInstance(
+    //         AudioSynthFMDrum &fmDrum,
+    //         AudioAmplifier &ampAccent,
+    //         AudioAmplifier &amp,
+    //         AudioAmplifier &ampDelaySend,
+    //         AudioAmplifier &left,
+    //         AudioAmplifier &right
+    //     ) : fmDrum{fmDrum},
+    //         ampAccent{ampAccent},
+    //         amp{amp},
+    //         ampDelaySend{ampDelaySend},
+    //         left{left},
+    //         right{right}
+    //     {
+    //         //
+    //     }
+    // };
 
     // class BraidsInstance
     // {
@@ -387,7 +387,7 @@ namespace XRSound
     extern MonoSynthInstance monoSynthInstances[MAXIMUM_MONO_SYNTH_SOUNDS];
     extern DexedInstance dexedInstances[MAXIMUM_DEXED_SYNTH_SOUNDS];
     // extern BraidsInstance braidsInstances[MAXIMUM_BRAIDS_SYNTH_SOUNDS];
-    extern FmDrumInstance fmDrumInstances[MAXIMUM_FM_DRUM_SOUNDS];
+    //extern FmDrumInstance fmDrumInstances[MAXIMUM_FM_DRUM_SOUNDS];
     extern StereoDelayInstance delayInstances[MAXIMUM_DELAY_INSTANCES];
 
     extern std::string patternPageNames[MAXIMUM_PATTERN_PAGES];
@@ -440,7 +440,9 @@ namespace XRSound
 
     void init();
     void initKit(KIT &kit);
+    void initIdleKit();
     void initVoices();
+    void initSoundForIdleKit(uint8_t t);
 
     void setSoundNeedsReinit(int sound, bool reinit);
     void reinitSoundForTrack(int track);

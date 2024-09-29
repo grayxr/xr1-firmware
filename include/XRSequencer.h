@@ -197,11 +197,11 @@ namespace XRSequencer
 
     // used for saving to SD card
     extern EXTMEM TRACK_LAYER trackLayerForWrite;
-    extern EXTMEM std::string trackLayerWriteFilename;
+    // extern EXTMEM std::string trackLayerWriteFilename;
     extern EXTMEM RATCHET_LAYER ratchetLayerForWrite;
-    extern EXTMEM std::string ratchetLayerWriteFilename;
+    // extern EXTMEM std::string ratchetLayerWriteFilename;
     extern EXTMEM PATTERN_SETTINGS patternSettingsForWrite;
-    extern EXTMEM std::string patternSettingsWriteFilename;
+    // extern EXTMEM std::string patternSettingsWriteFilename;
 
 
     extern DMAMEM PATTERN_FX_PAGE_INDEXES patternFxPages[MAXIMUM_PATTERN_FX_PARAM_PAGES];
@@ -219,8 +219,11 @@ namespace XRSequencer
     bool init();
 
     void initPatternSettings(PATTERN_SETTINGS &patternSettings);
+    void initIdlePatternSettings();
     void initTrackLayer(TRACK_LAYER &trackLayer);
+    void initIdleTrackLayer();
     void initRatchetLayer(RATCHET_LAYER &ratchetLayer);
+    void initIdleRatchetLayer();
 
     bool isStepProbablyEnabled(int track, int step);
     bool isRatchetAccented();
@@ -261,8 +264,6 @@ namespace XRSequencer
 
     void handleTriggerStates();
 
-    void handleNoteOnForTrack(int track, TRACK_TRIGGER trigger);
-    void handleNoteOffForTrack(int track);
     void handleNoteOnForTrackStep(int track, int step, TRACK_TRIGGER trigger);
     void handleNoteOffForTrackStep(int track, int step);
     

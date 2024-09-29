@@ -9,6 +9,7 @@
 #include <XRAudio.h>
 #include <map>
 #include <XRVersa.h>
+#include <queue>
 
 namespace XRSequencer
 {
@@ -24,11 +25,11 @@ namespace XRSequencer
 
     // used for saving to SD card
     EXTMEM TRACK_LAYER trackLayerForWrite;
-    EXTMEM std::string trackLayerWriteFilename;
+    //EXTMEM std::string trackLayerWriteFilename;
     EXTMEM RATCHET_LAYER ratchetLayerForWrite;
-    EXTMEM std::string ratchetLayerWriteFilename;
+    //EXTMEM std::string ratchetLayerWriteFilename;
     EXTMEM PATTERN_SETTINGS patternSettingsForWrite;
-    EXTMEM std::string patternSettingsWriteFilename;
+    //EXTMEM std::string patternSettingsWriteFilename;
 
     DMAMEM PATTERN_FX_PAGE_INDEXES patternFxPages[MAXIMUM_PATTERN_FX_PARAM_PAGES];
     DMAMEM TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
@@ -78,7 +79,15 @@ namespace XRSequencer
     int _drawPatternQueueBlink = -1;
     int _drawTrackLayerQueueBlink = -1;
 
+    int tracksFinalSteps[MAXIMUM_SEQUENCER_TRACKS] = {-1};
+    XRSound::SOUND_TYPE tracksFinalSoundTypes[MAXIMUM_SEQUENCER_TRACKS] = {XRSound::SOUND_TYPE::T_EMPTY};
+
     uint8_t _bpmBlinkTimer = 2;
+
+    std::queue<int8_t> _trkSwapQueue;
+
+    bool swapTracks = false;
+    bool swapTracksDone = false;
 
     bool init()
     {
@@ -151,6 +160,16 @@ namespace XRSequencer
         patternSettings.fx = getInitPatternFxParams();
     }
 
+    void initIdlePatternSettings()
+    {
+        idlePatternSettings.initialized = true;
+        idlePatternSettings.lstep = DEFAULT_LAST_STEP;
+        idlePatternSettings.groove.amount = 0;
+        idlePatternSettings.groove.id = -1;
+        idlePatternSettings.accent = DEFAULT_GLOBAL_ACCENT;
+        idlePatternSettings.fx = getInitPatternFxParams();
+    }
+
     void initTrackLayer(TRACK_LAYER &trackLayer)
     {
         for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
@@ -183,6 +202,38 @@ namespace XRSequencer
         }
     }
 
+    void initIdleTrackLayer()
+    {
+        for (size_t t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+        {
+            idleTrackLayer.tracks[t].length = 4;
+            idleTrackLayer.tracks[t].note = 0;
+            idleTrackLayer.tracks[t].octave = 4;
+            idleTrackLayer.tracks[t].velocity = 50;
+            idleTrackLayer.tracks[t].probability = 100;
+            idleTrackLayer.tracks[t].lstep = DEFAULT_LAST_STEP;
+            idleTrackLayer.tracks[t].initialized = true;
+
+            // now fill in steps
+            for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
+            {
+                idleTrackLayer.tracks[t].steps[s].state = STEP_STATE::STATE_OFF;
+
+                for (int tm = 0; tm < MAXIMUM_TRACK_MODS; tm++)
+                {
+                    idleTrackLayer.tracks[t].steps[s].tMods[tm] = 0;
+                    idleTrackLayer.tracks[t].steps[s].tFlags[tm] = false;
+                }
+
+                for (int sm = 0; sm < MAXIMUM_SOUND_PARAMS; sm++)
+                {
+                    idleTrackLayer.tracks[t].steps[s].sMods[sm] = 0;
+                    idleTrackLayer.tracks[t].steps[s].sFlags[sm] = false;
+                }
+            }
+        }
+    }
+
     void initRatchetLayer(RATCHET_LAYER &ratchetLayer)
     {
         // ratchet layer stuff
@@ -210,6 +261,38 @@ namespace XRSequencer
                 {
                     ratchetLayer.tracks[rt].steps[s].sMods[sm] = 0;
                     ratchetLayer.tracks[rt].steps[s].sFlags[sm] = false;
+                }
+            }
+        }
+    }
+
+    void initIdleRatchetLayer()
+    {
+        // ratchet layer stuff
+        for (size_t rt = 0; rt < MAXIMUM_SEQUENCER_TRACKS; rt++)
+        {
+            idleRatchetLayer.tracks[rt].lstep = DEFAULT_LAST_STEP;
+            idleRatchetLayer.tracks[rt].length = 2;
+            idleRatchetLayer.tracks[rt].note = 0;
+            idleRatchetLayer.tracks[rt].octave = 4;
+            idleRatchetLayer.tracks[rt].velocity = 50;
+            idleRatchetLayer.tracks[rt].initialized = true;
+
+            // now fill in steps
+            for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
+            {
+                idleRatchetLayer.tracks[rt].steps[s].state = STEP_STATE::STATE_ON;
+
+                for (int tm = 0; tm < MAXIMUM_TRACK_MODS; tm++)
+                {
+                    idleRatchetLayer.tracks[rt].steps[s].tMods[tm] = 0;
+                    idleRatchetLayer.tracks[rt].steps[s].tFlags[tm] = false;
+                }
+
+                for (int sm = 0; sm < MAXIMUM_SOUND_PARAMS; sm++)
+                {
+                    idleRatchetLayer.tracks[rt].steps[s].sMods[sm] = 0;
+                    idleRatchetLayer.tracks[rt].steps[s].sFlags[sm] = false;
                 }
             }
         }
@@ -429,6 +512,8 @@ namespace XRSequencer
         {
             displayAllTrackNoteOnLEDs(true);
         }
+        
+        updateCurrentPatternStepState();
     }
 
     void ClockOutRigid16PPQN(uint32_t tick)
@@ -464,8 +549,6 @@ namespace XRSequencer
                 //XRDisplay::drawSequencerScreen(false);
             }
         }
-        
-        updateCurrentPatternStepState();
 
         if (!(tick % 4)) {
             // blink queued pattern number every qtr note if pattern is queued
@@ -495,6 +578,62 @@ namespace XRSequencer
         }
 
         // NOTE: this function is affected by swing
+
+        //if (t == 0 && _seqState.currentTrackSteps[t].currentStep == 1 && _seqState.currentTrackSteps[t].currentBar == 1) {
+        if (_seqState.currentTrackSteps[t].currentStep == 1 && _seqState.currentTrackSteps[t].currentBar == 1) {
+            if (_queuedPatternState.bank > -1 && _queuedPatternState.number > -1)
+            {
+                if (t == 0) {
+                    Serial.println("MARKING PATTERN DEQUEUE HERE!");
+                    _dequeuePattern = true;
+                }
+
+                handleNoteOffForTrackStep(t, tracksFinalSteps[t]);
+                tracksFinalSteps[t] = -1;
+                
+                // eager load some track stuff from next layer,
+                // and the first couple step data
+                // the rest is too large to write over here
+                activeTrackLayer.tracks[t].length = idleTrackLayer.tracks[t].length;
+                //Serial.printf("track %d length: %d\n", t, activeTrackLayer.tracks[t].length);
+                activeTrackLayer.tracks[t].note = idleTrackLayer.tracks[t].note;
+                activeTrackLayer.tracks[t].octave = idleTrackLayer.tracks[t].octave;
+                activeTrackLayer.tracks[t].velocity = idleTrackLayer.tracks[t].velocity;
+                activeTrackLayer.tracks[t].probability = idleTrackLayer.tracks[t].probability;
+                activeTrackLayer.tracks[t].lstep = idleTrackLayer.tracks[t].lstep;
+                activeTrackLayer.tracks[t].initialized = idleTrackLayer.tracks[t].initialized;
+
+                activeTrackLayer.tracks[t].steps[0] = idleTrackLayer.tracks[t].steps[0];
+                activeTrackLayer.tracks[t].steps[1] = idleTrackLayer.tracks[t].steps[1];
+
+                XRSound::activeKit.sounds[t] = XRSound::idleKit.sounds[t];
+                XRSound::soundNeedsReinit[t] = true;
+
+                 if (t < 4) {
+                    Serial.printf("swapping dexed instance for track: %d\n", t);
+                    XRDexedManager::swapInstanceForTrack(t);
+                    
+                    auto a = XRDexedManager::getActiveInstanceForTrack(t);
+                    auto in = XRDexedManager::getInactiveInstanceForTrack(t);
+
+                    // enable active instance, mute inactive instance
+                    // TODO: fade out quick instead?
+                    AudioNoInterrupts();
+                    XRSound::dexedInstances[a].amp.gain(1);
+                    XRSound::dexedInstances[in].amp.gain(0);
+                    XRSound::dexedInstances[in].dexed.notesOff();
+                    AudioInterrupts();
+                }
+
+                _trkSwapQueue.push(t);
+                //swapTracks = true;
+                //swapTracksDone = false;
+            } else if (_queuedTrackLayer > -1)
+            {
+                if (t == 0) _dequeueTrackLayer = true;
+                //activeTrackLayer.tracks[t] = idleTrackLayer.tracks[t];
+            }
+        }
 
         handleCurrentTrackStepLEDs(t);
 
@@ -1014,6 +1153,8 @@ namespace XRSequencer
         bool lenStepModEnabled = trackToUse.steps[step].tFlags[LENGTH];
         int lenStepMod = trackToUse.steps[step].tMods[LENGTH];
 
+        // if (track == 1) Serial.printf("adding to step stack: track: %d, step: %d, len: %d\n", track, step, lenStepModEnabled ? lenStepMod : trackToUse.length);
+
         for (uint8_t i = 0; i < STEP_STACK_SIZE; i++)
         {
             if (!trackPerformState[track].muted && _stepStack[i].length == -1)
@@ -1079,50 +1220,44 @@ namespace XRSequencer
             return;
         }
 
-        // TODO: extract this to XRSound namespace function
-        if (step == 0 && XRSound::soundNeedsReinit[track]) {
-            for (int d = 0; d < 4; d++)
-            {
-                if (XRSound::activeKit.sounds[d].type == XRSound::T_DEXED_SYNTH) {
-                    XRSound::reinitSoundForTrack(track);
+        // // TODO: extract this to XRSound namespace function
+        // if (step == 0 && XRSound::soundNeedsReinit[track]) {
+        //     // for (int d = 0; d < 4; d++)
+        //     // {
+        //     //     if (XRSound::activeKit.sounds[d].type == XRSound::T_DEXED_SYNTH) {
+        //     //         //XRSound::reinitSoundForTrack(track);
 
-                    auto a = XRDexedManager::getActiveInstanceForTrack(d);
-                    auto in = XRDexedManager::getInactiveInstanceForTrack(d);
+        //     //         auto a = XRDexedManager::getActiveInstanceForTrack(d);
+        //     //         auto in = XRDexedManager::getInactiveInstanceForTrack(d);
 
-                    // enable active instance, mute inactive instance
-                    // TODO: fade out quick instead?
-                    AudioNoInterrupts();
-                    XRSound::dexedInstances[a].amp.gain(1);
-                    XRSound::dexedInstances[in].amp.gain(0);
-                    XRSound::dexedInstances[in].dexed.notesOff();
-                    AudioInterrupts();
-                }
-            }
+        //     //         // enable active instance, mute inactive instance
+        //     //         // TODO: fade out quick instead?
+        //     //         AudioNoInterrupts();
+        //     //         XRSound::dexedInstances[a].amp.gain(1);
+        //     //         XRSound::dexedInstances[in].amp.gain(0);
+        //     //         XRSound::dexedInstances[in].dexed.notesOff();
+        //     //         AudioInterrupts();
+        //     //     }
+        //     // }
 
-            // if (track == 0) {
-            //     Serial.printf("reinit sound for track: %d\n", track);
+        //     Serial.printf("reinit sound for track: %d\n", track);
 
-            //     XRSound::reinitSoundForTrack(track);
-            //     // TODO: apply specific track choke instead of reapplying all chokes here
-            //     XRSound::applyTrackChokes();
-            // }
+        //     //XRSound::reinitSoundForTrack(track);
 
-            Serial.printf("reinit sound for track: %d\n", track);
-
-            XRSound::reinitSoundForTrack(track);
-
-            // TODO: apply specific track choke instead of reapplying all chokes here
-            XRSound::applyTrackChokes();
-        }
+        //     // TODO: apply specific track choke instead of reapplying all chokes here
+        //     XRSound::applyTrackChokes();
+        //     XRSound::soundNeedsReinit[track] = false;
+        // }
 
         if (XRSound::soundNeedsReinit[track])
         {
-            Serial.printf("reinit sounds for track: %d\n", track);
+            Serial.printf("reinit sounds for track: %d, of type: %d\n", track, XRSound::activeKit.sounds[track].type);
 
-            XRSound::reinitSoundForTrack(track);
+            //XRSound::reinitSoundForTrack(track);
 
             // TODO: apply specific track choke instead of reapplying all chokes here
             XRSound::applyTrackChokes();
+            XRSound::soundNeedsReinit[track] = false;
         }
 
         switch (XRSound::activeKit.sounds[track].type)
@@ -1179,14 +1314,6 @@ namespace XRSequencer
             {
                 _seqState.currentStep = 1; // reset current step
                 _seqState.currentBar = 1;  // reset current bar
-
-                if (_queuedPatternState.bank > -1 && _queuedPatternState.number > -1)
-                {
-                    _dequeuePattern = true;
-                } else if (_queuedTrackLayer > -1)
-                {
-                    _dequeueTrackLayer = true;
-                }
             }
         }
     }
@@ -1222,6 +1349,7 @@ namespace XRSequencer
 
     void handlePatternQueueActions()
     {
+        // do draw blink
         if (_drawPatternQueueBlink > -1)
         {
             if (_drawPatternQueueBlink == 1)
@@ -1234,18 +1362,135 @@ namespace XRSequencer
             }
         }
 
-        if (_dequeuePattern)
+        // when there are track swaps, do them
+        if (_dequeuePattern && !_trkSwapQueue.empty()) {
+        //if (_dequeuePattern && swapTracks && !swapTracksDone) {
+        //if (_dequeuePattern) {
+            // at this point, next/idle data should be pre-loaded via async IO
+            // so now swap track data!
+
+            auto trk = _trkSwapQueue.front();
+
+            // for (int trk = 0; trk < MAXIMUM_SEQUENCER_TRACKS; trk++)
+            // {
+                // copy the idle/next layer's track to the active NOW
+                // FIXME: USE FLAG TO WAIT FOR TRACK TO FINISH PLAYING BEFORE SWAPPING
+                for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
+                {
+                    if (s < 2) continue;;
+
+                    activeTrackLayer.tracks[trk].steps[s] = idleTrackLayer.tracks[trk].steps[s];
+                }
+               // activeTrackLayer.tracks[trk] = idleTrackLayer.tracks[trk];
+
+                // ok, now that the track data is swapped, we need to reinit the sound.
+
+                // if (trk > 3) {
+                //     XRSound::activeKit.sounds[trk] = XRSound::idleKit.sounds[trk];
+
+                //     // mark the track sound as needing reinit LATER
+                //     // TODO: if using same sound, don't reinit?
+                //     XRSound::soundNeedsReinit[trk] = true;
+                // }
+            //}
+
+            //swapTracksDone = true;
+
+            _trkSwapQueue.pop();
+
+            // for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+            // {
+            //     activeTrackLayer.tracks[t] = idleTrackLayer.tracks[t];
+            //     XRSound::activeKit.sounds[t] = XRSound::idleKit.sounds[t];
+            //     XRSound::soundNeedsReinit[t] = true;
+            // }
+        }
+
+        // if track swaps are done, do rest of pattern stuff
+        // if (_dequeuePattern && swapTracks && swapTracksDone)
+        if (_dequeuePattern && _trkSwapQueue.empty())
+        //if (_dequeuePattern)
         {
             Serial.println("enter triggerDequeue!");
 
             _dequeuePattern = false;
+            //swapTracks = false;
+            //swapTracksDone = false;
 
-            // then swap seq data
-            swapSequencerDataForPatternChange(_queuedPatternState.bank, _queuedPatternState.number);
+            // do any final note off and
+            // clear out track final steps mapping
 
-            // swap sounds first
-            XRSound::swapSoundDataForPatternChange(_queuedPatternState.bank, _queuedPatternState.number);
-            XRDexedManager::swapInstances();
+
+            // TODO fix this so that it does a note off
+            // if the track does not use the same sound type?
+
+            // WHY IS THIS NOT WORKING ?!?!?!
+
+            // for (int ft = 0; ft < MAXIMUM_SEQUENCER_TRACKS; ft++)
+            // {
+            //     if (tracksFinalSteps[ft] > 0 && tracksFinalSoundTypes[ft] != XRSound::activeKit.sounds[ft].type) { // FIXME: should be -1?
+            //         //Serial.printf("trackFinalSteps[%d]: %d\n", ft, tracksFinalSteps[ft]);
+
+            //         handleNoteOffForTrackStep(ft, tracksFinalSteps[ft]);
+            //     }
+
+            //     tracksFinalSteps[ft] = -1;
+            //     tracksFinalSoundTypes[ft] = XRSound::SOUND_TYPE::T_EMPTY;
+            // }
+
+
+
+
+            // then swap the pattern settings
+            activePatternSettings = idlePatternSettings;
+
+            // when moving to the new pattern, make sure the pattern is initialized
+            activePatternSettings.initialized = true;
+
+            //Serial.println("swapped pattern settings!");
+
+            // if the new pattern & tracks have a groove, set them on the clock
+            if (activePatternSettings.groove.id > -1) {
+                yield();
+                XRClock::setShuffle(true);
+                XRClock::setShuffleTemplateForGroove(activePatternSettings.groove.id, activePatternSettings.groove.amount);
+                yield();
+                XRClock::setShuffleForAllTracks(true);
+                XRClock::setShuffleTemplateForGrooveForAllTracks(activePatternSettings.groove.id, activePatternSettings.groove.amount);
+            } else {
+                yield();
+                XRClock::setShuffle(false);
+                yield();
+                XRClock::setShuffleForAllTracks(false);
+            }
+
+            //Serial.println("applied any pattern groove!");
+
+            yield();
+            XRSound::applyFxForActivePattern();
+            XRSound::applyTrackChokes();
+
+            //Serial.println("applied any pattern fx and chokes!");
+
+            // then swap the ratchet layer
+            activeRatchetLayer = idleRatchetLayer;
+
+            //Serial.println("swapped ratchet layer!");
+
+            // now all the seq data is swapped, reinit the idle/next data
+            // so that it's cleared out and ready for the next pattern change
+            XRSequencer::initIdlePatternSettings();
+            XRSequencer::initIdleRatchetLayer();
+            XRSequencer::initIdleTrackLayer();
+            XRSound::initIdleKit();
+
+            //Serial.println("reinit idle seq data!");
+
+            // update currently selected vars
+            _currentSelectedBank = _queuedPatternState.bank;
+            _currentSelectedPattern = _queuedPatternState.number;
+            _currentSelectedTrack = 0; // when changing patterns, always select first track as default
+            _currentSelectedTrackLayer = 0; // when changing patterns, always select first layer as default
 
             // reset queue flags
             _queuedPatternState.bank = -1;
@@ -1259,6 +1504,9 @@ namespace XRSequencer
             _ratchetPageNum = 0;
             //_currentSelectedTrack = 0;
 
+            //Serial.println("reset pattern/track/queue flags!");
+
+            // handle the LEDs and display for the pattern change
             auto currentUXMode = XRUX::getCurrentMode();
             if (currentUXMode == XRUX::PATTERN_CHANGE_QUEUED) {
                 XRLED::clearAllStepLEDs();
@@ -1277,7 +1525,11 @@ namespace XRSequencer
                 );
             }
 
+            yield();
             XRDisplay::drawSequencerScreen(false);
+
+            //Serial.println("did display / LED updates!");
+            Serial.println("all pattern queue thigns done!");
         }
     }
 
@@ -1334,32 +1586,36 @@ namespace XRSequencer
     void swapSequencerDataForPatternChange(int newBank, int newPattern)
     {
         activePatternSettings = idlePatternSettings;
-
-        // always initialize next pattern?
         activePatternSettings.initialized = true;
-
-        activeTrackLayer = idleTrackLayer;
-        activeRatchetLayer = idleRatchetLayer;
-
-        XRSound::applyFxForActivePattern();
-        XRSound::applyTrackChokes();
 
         // if the new pattern has a groove, set it on the clock
         if (activePatternSettings.groove.id > -1) {
-
-        yield();
+            yield();
             XRClock::setShuffle(true);
             XRClock::setShuffleTemplateForGroove(activePatternSettings.groove.id, activePatternSettings.groove.amount);
 
-        yield();
+            yield();
             XRClock::setShuffleForAllTracks(true);
             XRClock::setShuffleTemplateForGrooveForAllTracks(activePatternSettings.groove.id, activePatternSettings.groove.amount);
 
-        yield();
+            yield();
         } else {
+            yield();
             XRClock::setShuffle(false);
             XRClock::setShuffleForAllTracks(false);
+            yield();
         }
+
+        activeRatchetLayer = idleRatchetLayer;
+
+        if (_seqState.playbackState != XRSequencer::SEQUENCER_PLAYBACK_STATE::RUNNING) {
+            activeTrackLayer = idleTrackLayer;
+        }
+
+        yield();
+        XRSound::applyFxForActivePattern();
+        XRSound::applyTrackChokes();
+        yield();
 
         // update currently selected vars
         _currentSelectedBank = newBank;
@@ -1509,6 +1765,10 @@ namespace XRSequencer
 
                 XRClock::stop();
 
+                for (size_t d = 0; d < MAXIMUM_DEXED_SYNTH_SOUNDS; d++) {
+                    XRSound::dexedInstances[d].dexed.notesOff();
+                }
+
                 applyRecordingToSequencerWhenStopped();
 
                 // Stopped, so reset sequencer to FIRST step in pattern
@@ -1649,7 +1909,6 @@ namespace XRSequencer
                 _ratchetStack[i].trackNum = _ratchetTrack;
                 _ratchetStack[i].length = currRatchetTrack.length;
 
-                // handleNoteOnForTrack(_ratchetStack[i].trackNum, trackTriggerState.trackTriggers[0]);
                 trackTriggerState.trackTriggers[_ratchetStack[i].trackNum].currentState = 1;
                 trackTriggerState.trackTriggers[_ratchetStack[i].trackNum].pattern = _currentSelectedPattern;
                 trackTriggerState.trackTriggers[_ratchetStack[i].trackNum].layer = _currentSelectedTrackLayer;
@@ -1659,49 +1918,6 @@ namespace XRSequencer
                 return;
             }
         }
-    }
-
-    void handleNoteOnForTrack(int track, TRACK_TRIGGER trigger)
-    {
-        switch (XRSound::activeKit.sounds[track].type)
-        {
-        case XRSound::T_MONO_SAMPLE:
-            XRSound::handleMonoSampleNoteOnForTrack(track);
-
-            break;
-        case XRSound::T_MONO_SYNTH:
-            XRSound::handleMonoSynthNoteOnForTrack(track);
-
-            break;
-        case XRSound::T_DEXED_SYNTH:
-            XRSound::handleDexedSynthNoteOnForTrack(track);
-
-            break;
-        case XRSound::T_BRAIDS_SYNTH:
-            XRSound::handleBraidsNoteOnForTrack(track);
-
-            break;
-        case XRSound::T_FM_DRUM:
-            XRSound::handleFmDrumNoteOnForTrack(track);
-
-            break;
-        case XRSound::T_MIDI:
-            XRSound::handleMIDINoteOnForTrack(track);
-
-            break;
-        case XRSound::T_CV_GATE:
-            XRSound::handleCvGateNoteOnForTrack(track);
-            
-            break;
-        
-        default:
-            break;
-        }
-    }
-
-    void handleNoteOffForTrack(int track)
-    {
-        XRSound::handleNoteOffForTrack(track);
     }
 
     void handleTriggerStates()
@@ -1715,7 +1931,23 @@ namespace XRSequencer
                 if (trackTriggerState.trackTriggers[t].step > -1) {
                     if (trackTriggerState.trackTriggers[t].currentState == 1)
                     {
-                        //Serial.printf("triggering ON step %d for track %d\n", trackTriggerState.trackTriggers[t].step+1, t+1);
+                        // if (t == 1) {
+                        //     Serial.printf("triggering ON step %d for track %d\n", trackTriggerState.trackTriggers[t].step, t);
+                        // }
+
+                        // IF THIS IS THE LAST STEP OF THE PATTERN, THEN SET A FLAG TO REINIT THE TRACK
+                        if (_queuedPatternState.bank > -1 && _queuedPatternState.number> -1) {
+                            for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++) {
+                                for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++) {
+                                    if (activeTrackLayer.tracks[t].steps[s].state == STEP_STATE::STATE_ON || activeTrackLayer.tracks[t].steps[s].state == STEP_STATE::STATE_ACCENTED) {
+                                        if (s > 0 && s > tracksFinalSteps[t]) {
+                                            tracksFinalSteps[t] = s;
+                                            tracksFinalSoundTypes[t] = XRSound::activeKit.sounds[t].type;
+                                        }
+                                    }
+                                }
+                            }
+                        }
 
                         handleNoteOnForTrackStep(t, trackTriggerState.trackTriggers[t].step, trackTriggerState.trackTriggers[t]);
 
@@ -1727,29 +1959,6 @@ namespace XRSequencer
                         //Serial.printf("triggering OFF step %d for track %d\n", trackTriggerState.trackTriggers[t].step+1, t+1);
 
                         handleNoteOffForTrackStep(t, trackTriggerState.trackTriggers[t].step);
-
-                        trackTriggerState.trackTriggers[t].pattern = -1;
-                        trackTriggerState.trackTriggers[t].layer = -1;
-                        trackTriggerState.trackTriggers[t].step = -1;
-                        trackTriggerState.trackTriggers[t].soundType = XRSound::T_EMPTY;
-
-                        trackTriggerState.trackTriggers[t].lastState = trackTriggerState.trackTriggers[t].currentState;
-                    }
-                } else {
-                    if (trackTriggerState.trackTriggers[t].currentState == 1)
-                    {
-                        //Serial.printf("triggering ON track %d\n", t+1);
-
-                        handleNoteOnForTrack(t, trackTriggerState.trackTriggers[t]);
-
-                        trackTriggerState.trackTriggers[t].lastState = trackTriggerState.trackTriggers[t].currentState;
-                        trackTriggerState.trackTriggers[t].currentState = 2;
-                    }
-                    else if (trackTriggerState.trackTriggers[t].currentState == 0)
-                    {
-                        //Serial.printf("triggering OFF track %d\n", t+1);
-
-                        handleNoteOffForTrack(t);
 
                         trackTriggerState.trackTriggers[t].pattern = -1;
                         trackTriggerState.trackTriggers[t].layer = -1;

@@ -230,11 +230,11 @@ namespace XRSound
         DexedInstance(dexed8, dexedAmpAccent8, dexedAmp8, dexedAmpDelaySend8, dexedLeft8, dexedRight8),
     };
 
-    FmDrumInstance fmDrumInstances[MAXIMUM_FM_DRUM_SOUNDS] = {
-        FmDrumInstance(fmDrum1, fmDrumAmpAccent1, fmDrumAmp1, fmDrumAmpDelaySend1, fmDrumLeft1, fmDrumRight1),
-        FmDrumInstance(fmDrum2, fmDrumAmpAccent2, fmDrumAmp2, fmDrumAmpDelaySend2, fmDrumLeft2, fmDrumRight2),
-        FmDrumInstance(fmDrum3, fmDrumAmpAccent3, fmDrumAmp3, fmDrumAmpDelaySend3, fmDrumLeft3, fmDrumRight3),
-    };
+    // FmDrumInstance fmDrumInstances[MAXIMUM_FM_DRUM_SOUNDS] = {
+    //     FmDrumInstance(fmDrum1, fmDrumAmpAccent1, fmDrumAmp1, fmDrumAmpDelaySend1, fmDrumLeft1, fmDrumRight1),
+    //     FmDrumInstance(fmDrum2, fmDrumAmpAccent2, fmDrumAmp2, fmDrumAmpDelaySend2, fmDrumLeft2, fmDrumRight2),
+    //     FmDrumInstance(fmDrum3, fmDrumAmpAccent3, fmDrumAmp3, fmDrumAmpDelaySend3, fmDrumLeft3, fmDrumRight3),
+    // };
 
     // BraidsInstance braidsInstances[MAXIMUM_BRAIDS_SYNTH_SOUNDS] = {
     //     BraidsInstance(braids1, braidsAmp1, braidsLeft1, braidsRight1),
@@ -489,6 +489,43 @@ namespace XRSound
         }
     }
 
+    void initIdleKit()
+    {
+        for (int t = 0; t < MAXIMUM_SEQUENCER_TRACKS; t++)
+        {
+            idleKit.sounds[t].type = T_EMPTY;
+
+            for (int p = 0; p < MAXIMUM_SOUND_PARAMS; p++) {
+                idleKit.sounds[t].params[p] = 0;
+            }
+
+            for (int dp = 0; dp < MAXIMUM_DEXED_SOUND_PARAMS; dp++) {
+                idleKit.sounds[t].dexedParams[dp] = dexedInitVoice[dp];
+            }
+
+            strcpy(idleKit.sounds[t].name, "NO SOUND");
+            strcpy(idleKit.sounds[t].sampleName, "");
+            strcpy(idleKit.sounds[t].sampleNameB, "");
+        }
+    }
+
+    void initSoundForIdleKit(uint8_t t)
+    {
+        idleKit.sounds[t].type = T_EMPTY;
+
+        for (int p = 0; p < MAXIMUM_SOUND_PARAMS; p++) {
+            idleKit.sounds[t].params[p] = 0;
+        }
+
+        for (int dp = 0; dp < MAXIMUM_DEXED_SOUND_PARAMS; dp++) {
+            idleKit.sounds[t].dexedParams[dp] = dexedInitVoice[dp];
+        }
+
+        strcpy(idleKit.sounds[t].name, "NO SOUND");
+        strcpy(idleKit.sounds[t].sampleName, "");
+        strcpy(idleKit.sounds[t].sampleNameB, "");
+    }
+
     void initVoices()
     {
         auto msmpSamplePlayRate = getValueNormalizedAsFloat(monoSampleInitParams[MSMP_SAMPLEPLAYRATE]);
@@ -618,18 +655,18 @@ namespace XRSound
 
         Serial.printf("fmDrumLvl: %f\n");
 
-        for (int f=0; f<MAXIMUM_FM_DRUM_SOUNDS; f++)
-        {
-            fmDrumInstances[f].fmDrum.init();
+        // for (int f=0; f<MAXIMUM_FM_DRUM_SOUNDS; f++)
+        // {
+        //     fmDrumInstances[f].fmDrum.init();
 
-            fmDrumInstances[f].ampAccent.gain(1.0); // used by track velocity
-            fmDrumInstances[f].amp.gain(fmDrumLvl);
-            fmDrumInstances[f].ampDelaySend.gain(0);
+        //     fmDrumInstances[f].ampAccent.gain(1.0); // used by track velocity
+        //     fmDrumInstances[f].amp.gain(fmDrumLvl);
+        //     fmDrumInstances[f].ampDelaySend.gain(0);
 
-            PANNED_AMOUNTS fmDrumPannedAmounts = getStereoPanValues(fmDrumPan);
-            fmDrumInstances[f].left.gain(fmDrumPannedAmounts.left);
-            fmDrumInstances[f].right.gain(fmDrumPannedAmounts.right);
-        }
+        //     PANNED_AMOUNTS fmDrumPannedAmounts = getStereoPanValues(fmDrumPan);
+        //     fmDrumInstances[f].left.gain(fmDrumPannedAmounts.left);
+        //     fmDrumInstances[f].right.gain(fmDrumPannedAmounts.right);
+        // }
 
         // Delay sub mixers
         delaySubMix1.gain(0, 1);
@@ -829,8 +866,12 @@ namespace XRSound
         // first 4 tracks are dexed synth capable
         for (int t = 0; t < 4; t++)
         {
+            //Serial.printf("Trying to load dexed instances, track type is %d\n", idleKit.sounds[t].type);
+
             if (idleKit.sounds[t].type == T_DEXED_SYNTH) {
                 auto i = XRDexedManager::inactiveInstances[t];
+
+                //Serial.printf("LOADING DEXED FOR TRACK %d USING INSTANCE %d\n", t, i);
 
                 // print loading next pattern's track's dexed voice settings into the inactive instance
                 //Serial.printf("LOADING DEXED FOR NEXT TRACK %d USING INSTANCE %d\n", t, i);
@@ -851,10 +892,14 @@ namespace XRSound
 
     void reinitSoundForTrack(int track)
     {
+        // reinit active sound from next/idle
         activeKit.sounds[track] = idleKit.sounds[track];
 
         // all done reinitializing sound
         soundNeedsReinit[track] = false;
+
+        // reset idle sound
+        initSoundForIdleKit(track);
     }
 
     void applyFxForActivePattern()
@@ -1731,111 +1776,111 @@ namespace XRSound
     {
         SOUND_CONTROL_MODS mods;
 
-        auto &currentSelectedTrackLayer = XRSequencer::activeTrackLayer;
-        auto &currentSelectedTrack = XRSequencer::getCurrentSelectedTrack();
-        auto currentSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        auto currSelectedStep = XRSequencer::getCurrentSelectedStepNum();
-        auto currentUXMode = XRUX::getCurrentMode();
+        // auto &currentSelectedTrackLayer = XRSequencer::activeTrackLayer;
+        // auto &currentSelectedTrack = XRSequencer::getCurrentSelectedTrack();
+        // auto currentSelectedTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+        // auto currentSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+        // auto currSelectedStep = XRSequencer::getCurrentSelectedStepNum();
+        // auto currentUXMode = XRUX::getCurrentMode();
 
-        mods.isAbleToStepModA = false;
-        mods.isAbleToStepModB = false;
-        mods.isAbleToStepModC = false;
-        mods.isAbleToStepModD = false;
+        // mods.isAbleToStepModA = false;
+        // mods.isAbleToStepModB = false;
+        // mods.isAbleToStepModC = false;
+        // mods.isAbleToStepModD = false;
 
-        mods.isActiveStepModA = false;
-        mods.isActiveStepModB = false;
-        mods.isActiveStepModC = false;
-        mods.isActiveStepModD = false;
+        // mods.isActiveStepModA = false;
+        // mods.isActiveStepModB = false;
+        // mods.isActiveStepModC = false;
+        // mods.isActiveStepModD = false;
 
-        auto freq = getValueNormalizedAsUInt32(activeKit.sounds[currentSelectedTrackNum].params[FMD_FREQ]);
-        auto fm = getValueNormalizedAsFloat(activeKit.sounds[currentSelectedTrackNum].params[FMD_FM]);
-        auto dec = getValueNormalizedAsFloat(activeKit.sounds[currentSelectedTrackNum].params[FMD_DECAY]);
-        auto nse = getValueNormalizedAsFloat(activeKit.sounds[currentSelectedTrackNum].params[FMD_NOISE]);
+        // auto freq = getValueNormalizedAsUInt32(activeKit.sounds[currentSelectedTrackNum].params[FMD_FREQ]);
+        // auto fm = getValueNormalizedAsFloat(activeKit.sounds[currentSelectedTrackNum].params[FMD_FM]);
+        // auto dec = getValueNormalizedAsFloat(activeKit.sounds[currentSelectedTrackNum].params[FMD_DECAY]);
+        // auto nse = getValueNormalizedAsFloat(activeKit.sounds[currentSelectedTrackNum].params[FMD_NOISE]);
 
-        switch (currentSelectedPageNum)
-        {
-        case 0: // MAIN
-            {
-                mods.isAbleToStepModC = true;
-                mods.isAbleToStepModD = true;
+        // switch (currentSelectedPageNum)
+        // {
+        // case 0: // MAIN
+        //     {
+        //         mods.isAbleToStepModC = true;
+        //         mods.isAbleToStepModD = true;
 
-                mods.aName = "lstep";
-                mods.bName = "--";
-                mods.cName = "velo";
-                mods.dName = "prob";
+        //         mods.aName = "lstep";
+        //         mods.bName = "--";
+        //         mods.cName = "velo";
+        //         mods.dName = "prob";
 
-                auto prob = currentSelectedTrack.probability;
+        //         auto prob = currentSelectedTrack.probability;
 
-                if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStep > -1) {
-                    if (currentSelectedTrackLayer.tracks[currentSelectedTrackNum].steps[currSelectedStep].tFlags[XRSequencer::PROBABILITY]) {
-                        mods.isActiveStepModD = true;
-                        prob = currentSelectedTrackLayer.tracks[currentSelectedTrackNum].steps[currSelectedStep].tMods[XRSequencer::PROBABILITY];
-                    }
-                }
+        //         if (currentUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStep > -1) {
+        //             if (currentSelectedTrackLayer.tracks[currentSelectedTrackNum].steps[currSelectedStep].tFlags[XRSequencer::PROBABILITY]) {
+        //                 mods.isActiveStepModD = true;
+        //                 prob = currentSelectedTrackLayer.tracks[currentSelectedTrackNum].steps[currSelectedStep].tMods[XRSequencer::PROBABILITY];
+        //             }
+        //         }
 
-                mods.aValue = std::to_string(currentSelectedTrack.lstep);
-                mods.bValue = "--";
-                mods.cValue = std::to_string(currentSelectedTrack.velocity);
-                mods.dValue = std::to_string(prob) + "%";
-            }
+        //         mods.aValue = std::to_string(currentSelectedTrack.lstep);
+        //         mods.bValue = "--";
+        //         mods.cValue = std::to_string(currentSelectedTrack.velocity);
+        //         mods.dValue = std::to_string(prob) + "%";
+        //     }
 
-            break;
+        //     break;
 
-        case 1: // DRUM
-            {
-                mods.isAbleToStepModA = true;
-                mods.isAbleToStepModB = true;
-                mods.isAbleToStepModC = true;
-                mods.isAbleToStepModD = true;
+        // case 1: // DRUM
+        //     {
+        //         mods.isAbleToStepModA = true;
+        //         mods.isAbleToStepModB = true;
+        //         mods.isAbleToStepModC = true;
+        //         mods.isAbleToStepModD = true;
 
-                mods.aName = "tune";
-                mods.bName = "fm";
-                mods.cName = "decay";
-                mods.dName = "noise";
+        //         mods.aName = "tune";
+        //         mods.bName = "fm";
+        //         mods.cName = "decay";
+        //         mods.dName = "noise";
 
-                mods.aValue = std::to_string(freq);
-                mods.aValue += "hz";
-                mods.bValue = std::to_string((float)round(fm * 100) / 100);
-                mods.bValue = mods.bValue.substr(0, 4);
-                mods.cValue = std::to_string((float)round(dec * 100) / 100);
-                mods.cValue = mods.cValue.substr(0, 4);
-                mods.dValue = std::to_string((float)round(nse * 100) / 100);
-                mods.dValue = mods.dValue.substr(0, 4);
-            }
+        //         mods.aValue = std::to_string(freq);
+        //         mods.aValue += "hz";
+        //         mods.bValue = std::to_string((float)round(fm * 100) / 100);
+        //         mods.bValue = mods.bValue.substr(0, 4);
+        //         mods.cValue = std::to_string((float)round(dec * 100) / 100);
+        //         mods.cValue = mods.cValue.substr(0, 4);
+        //         mods.dValue = std::to_string((float)round(nse * 100) / 100);
+        //         mods.dValue = mods.dValue.substr(0, 4);
+        //     }
 
-            break;
+        //     break;
 
-        case 2: // OUTPUT
-            {
-                mods.isAbleToStepModB = true;
-                mods.isAbleToStepModD = true;
+        // case 2: // OUTPUT
+        //     {
+        //         mods.isAbleToStepModB = true;
+        //         mods.isAbleToStepModD = true;
 
-                mods.aName = "level";
-                mods.bName = "pan";
-                mods.cName = "choke";
-                mods.dName = "delay";
+        //         mods.aName = "level";
+        //         mods.bName = "pan";
+        //         mods.cName = "choke";
+        //         mods.dName = "delay";
 
-                auto lvl = getValueNormalizedAsFloat(activeKit.sounds[currentSelectedTrackNum].params[FMD_LEVEL]);
-                auto pan = getValueNormalizedAsFloat(activeKit.sounds[currentSelectedTrackNum].params[FMD_PAN]);
-                auto chk = getValueNormalizedAsInt8(activeKit.sounds[currentSelectedTrackNum].params[FMD_CHOKE]);
-                auto dly = getValueNormalizedAsFloat(activeKit.sounds[currentSelectedTrackNum].params[FMD_DELAY]);
+        //         auto lvl = getValueNormalizedAsFloat(activeKit.sounds[currentSelectedTrackNum].params[FMD_LEVEL]);
+        //         auto pan = getValueNormalizedAsFloat(activeKit.sounds[currentSelectedTrackNum].params[FMD_PAN]);
+        //         auto chk = getValueNormalizedAsInt8(activeKit.sounds[currentSelectedTrackNum].params[FMD_CHOKE]);
+        //         auto dly = getValueNormalizedAsFloat(activeKit.sounds[currentSelectedTrackNum].params[FMD_DELAY]);
 
-                mods.aValue = std::to_string(round(lvl * 100));
-                mods.bValue = std::to_string((float)round(pan * 100) / 100);
-                mods.bValue = mods.bValue.substr(0, 3);
-                mods.bFloatValue = pan;
-                mods.bType = RANGE;
+        //         mods.aValue = std::to_string(round(lvl * 100));
+        //         mods.bValue = std::to_string((float)round(pan * 100) / 100);
+        //         mods.bValue = mods.bValue.substr(0, 3);
+        //         mods.bFloatValue = pan;
+        //         mods.bType = RANGE;
 
-                mods.cValue = chk > -1 ? std::to_string(chk+1) : "--";
-                mods.dValue = std::to_string(round(dly * 100));
-            }
+        //         mods.cValue = chk > -1 ? std::to_string(chk+1) : "--";
+        //         mods.dValue = std::to_string(round(dly * 100));
+        //     }
             
-            break;
+        //     break;
 
-        default:
-            break;
-        }
+        // default:
+        //     break;
+        // }
 
         return mods;
     }
@@ -2187,20 +2232,20 @@ namespace XRSound
 
     void handleFmDrumNoteOnForTrack(int track)
     {
-        if (track > 2) return;
+        // if (track > 2) return;
 
-        auto &trackToUse = XRSequencer::getTrack(track);
+        // auto &trackToUse = XRSequencer::getTrack(track);
 
-        auto fmDrumLvl = getValueNormalizedAsFloat(activeKit.sounds[track].params[FMD_LEVEL]);
-        auto fmDrumDly = getValueNormalizedAsFloat(activeKit.sounds[track].params[FMD_DELAY]);
+        // auto fmDrumLvl = getValueNormalizedAsFloat(activeKit.sounds[track].params[FMD_LEVEL]);
+        // auto fmDrumDly = getValueNormalizedAsFloat(activeKit.sounds[track].params[FMD_DELAY]);
 
-        auto velocityToUse = trackToUse.velocity;
+        // auto velocityToUse = trackToUse.velocity;
 
-        fmDrumInstances[track].ampAccent.gain((velocityToUse * 0.01));
-        fmDrumInstances[track].amp.gain(fmDrumLvl);
-        fmDrumInstances[track].ampDelaySend.gain(0);
+        // fmDrumInstances[track].ampAccent.gain((velocityToUse * 0.01));
+        // fmDrumInstances[track].amp.gain(fmDrumLvl);
+        // fmDrumInstances[track].ampDelaySend.gain(0);
 
-        fmDrumInstances[track].fmDrum.noteOn();
+        // fmDrumInstances[track].fmDrum.noteOn();
     }
 
     void handleMIDINoteOnForTrack(int track)
@@ -2246,10 +2291,11 @@ namespace XRSound
 
                 dexedInstances[di].amp.gain(0);
                 dexedInstances[di].ampDelaySend.gain(0);
-            } else if (activeKit.sounds[track].type == T_FM_DRUM) {
-                fmDrumInstances[track].amp.gain(0);
-                fmDrumInstances[track].ampDelaySend.gain(0);
             } 
+            // else if (activeKit.sounds[track].type == T_FM_DRUM) {
+            //     fmDrumInstances[track].amp.gain(0);
+            //     fmDrumInstances[track].ampDelaySend.gain(0);
+            // } 
             // else if (activeKit.sounds[track].type == T_BRAIDS_SYNTH) {
             //     braidsInstances[track].amp.gain(0);
             //     braidsInstances[track].ampDelaySend.gain(0);
@@ -2280,10 +2326,11 @@ namespace XRSound
 
                 dexedInstances[di].amp.gain(0);
                 dexedInstances[di].ampDelaySend.gain(0);
-            } else if (activeKit.sounds[chokeDestTrk].type == T_FM_DRUM) {
-                fmDrumInstances[chokeDestTrk].amp.gain(0);
-                fmDrumInstances[chokeDestTrk].ampDelaySend.gain(0);
             } 
+            // else if (activeKit.sounds[chokeDestTrk].type == T_FM_DRUM) {
+            //     fmDrumInstances[chokeDestTrk].amp.gain(0);
+            //     fmDrumInstances[chokeDestTrk].ampDelaySend.gain(0);
+            // } 
             // else if (activeKit.sounds[chokeDestTrk].type == T_BRAIDS_SYNTH) {
             //     braidsInstances[chokeDestTrk].amp.gain(0);
             //     braidsInstances[chokeDestTrk].ampDelaySend.gain(0);
@@ -2413,6 +2460,9 @@ namespace XRSound
         // }
         
         AudioNoInterrupts();
+
+        //auto &sampleVoice = getNextFreeSampleVoiceForTrack(track, sampleToUse);
+        //auto &sampleVoice = monoSampleInstances[track];
 
         monoSampleInstances[track].ampEnv.attack(msmpAatt);
         monoSampleInstances[track].ampEnv.decay(msmpAdec);
@@ -2622,6 +2672,8 @@ namespace XRSound
 
         applyChokeForSourceTrack(track);
 
+        //Serial.printf("handling dexed synth note on for track: %d, step: %d\n", track, step);
+
         auto &trackToUse = XRSequencer::getTrack(track);
         auto &stepToUse = XRSequencer::getStep(track, step);
         auto currLayer = XRSequencer::getCurrentSelectedTrackLayerNum();
@@ -2763,65 +2815,65 @@ namespace XRSound
 
     void handleFmDrumNoteOnForTrackStep(int track, int step)
     {
-        if (track > 2) return;
+        // if (track > 2) return;
 
-        if (applyChokeForDestinationTrackStep(track, step)) return;
+        // if (applyChokeForDestinationTrackStep(track, step)) return;
 
-        applyChokeForSourceTrack(track);
+        // applyChokeForSourceTrack(track);
 
-        auto &trackToUse = XRSequencer::getTrack(track);
-        auto &stepToUse = XRSequencer::getStep(track, step);
+        // auto &trackToUse = XRSequencer::getTrack(track);
+        // auto &stepToUse = XRSequencer::getStep(track, step);
 
-        auto fmdNoise = getValueNormalizedAsFloat(activeKit.sounds[track].params[FMD_NOISE]);
-        auto fmdDecay = getValueNormalizedAsFloat(activeKit.sounds[track].params[FMD_DECAY]);
-        auto fmdFm = getValueNormalizedAsFloat(activeKit.sounds[track].params[FMD_FM]);
-        auto fmdFreq = getValueNormalizedAsUInt8(activeKit.sounds[track].params[FMD_FREQ]);
-        auto fmdPan = getValueNormalizedAsFloat(activeKit.sounds[track].params[FMD_PAN]);
-        auto fmdLvl = getValueNormalizedAsFloat(activeKit.sounds[track].params[FMD_LEVEL]);
-        auto fmdDly = getValueNormalizedAsFloat(activeKit.sounds[track].params[FMD_DELAY]);
+        // auto fmdNoise = getValueNormalizedAsFloat(activeKit.sounds[track].params[FMD_NOISE]);
+        // auto fmdDecay = getValueNormalizedAsFloat(activeKit.sounds[track].params[FMD_DECAY]);
+        // auto fmdFm = getValueNormalizedAsFloat(activeKit.sounds[track].params[FMD_FM]);
+        // auto fmdFreq = getValueNormalizedAsUInt8(activeKit.sounds[track].params[FMD_FREQ]);
+        // auto fmdPan = getValueNormalizedAsFloat(activeKit.sounds[track].params[FMD_PAN]);
+        // auto fmdLvl = getValueNormalizedAsFloat(activeKit.sounds[track].params[FMD_LEVEL]);
+        // auto fmdDly = getValueNormalizedAsFloat(activeKit.sounds[track].params[FMD_DELAY]);
 
-        auto velocityToUse = trackToUse.velocity;
+        // auto velocityToUse = trackToUse.velocity;
 
-        if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
-            if (stepToUse.tFlags[XRSequencer::VELOCITY]) {
-                velocityToUse = stepToUse.tMods[XRSequencer::VELOCITY];
-            } else {
-                velocityToUse = max(trackToUse.velocity, XRSequencer::activePatternSettings.accent);
-            }
-        }
+        // if (stepToUse.state == XRSequencer::STATE_ACCENTED) {
+        //     if (stepToUse.tFlags[XRSequencer::VELOCITY]) {
+        //         velocityToUse = stepToUse.tMods[XRSequencer::VELOCITY];
+        //     } else {
+        //         velocityToUse = max(trackToUse.velocity, XRSequencer::activePatternSettings.accent);
+        //     }
+        // }
 
-        // is currently ratcheting and this is the ratcheting track
-        if (track == XRSequencer::getRatchetTrack() && XRSequencer::getRatchetDivision() > -1){
-            auto &ratchetTrack = XRSequencer::activeRatchetLayer.tracks[track];
-            auto &ratchetTrackStep = XRSequencer::activeRatchetLayer.tracks[track].steps[step];
+        // // is currently ratcheting and this is the ratcheting track
+        // if (track == XRSequencer::getRatchetTrack() && XRSequencer::getRatchetDivision() > -1){
+        //     auto &ratchetTrack = XRSequencer::activeRatchetLayer.tracks[track];
+        //     auto &ratchetTrackStep = XRSequencer::activeRatchetLayer.tracks[track].steps[step];
 
-            velocityToUse = ratchetTrack.velocity;
-            if (ratchetTrackStep.state == XRSequencer::STATE_ACCENTED) {
-                if (ratchetTrackStep.tFlags[XRSequencer::VELOCITY]) {
-                    velocityToUse = ratchetTrackStep.tMods[XRSequencer::VELOCITY];
-                } else {
-                    velocityToUse = max(ratchetTrack.velocity, XRSequencer::activePatternSettings.accent);
-                }
-            }
-        }
+        //     velocityToUse = ratchetTrack.velocity;
+        //     if (ratchetTrackStep.state == XRSequencer::STATE_ACCENTED) {
+        //         if (ratchetTrackStep.tFlags[XRSequencer::VELOCITY]) {
+        //             velocityToUse = ratchetTrackStep.tMods[XRSequencer::VELOCITY];
+        //         } else {
+        //             velocityToUse = max(ratchetTrack.velocity, XRSequencer::activePatternSettings.accent);
+        //         }
+        //     }
+        // }
 
-        AudioNoInterrupts();
+        // AudioNoInterrupts();
 
-        fmDrumInstances[track].fmDrum.noise(fmdNoise);
-        fmDrumInstances[track].fmDrum.decay(fmdDecay);
-        fmDrumInstances[track].fmDrum.fm(fmdFm);
-        fmDrumInstances[track].fmDrum.frequency(fmdFreq);
+        // fmDrumInstances[track].fmDrum.noise(fmdNoise);
+        // fmDrumInstances[track].fmDrum.decay(fmdDecay);
+        // fmDrumInstances[track].fmDrum.fm(fmdFm);
+        // fmDrumInstances[track].fmDrum.frequency(fmdFreq);
 
-        fmDrumInstances[track].ampAccent.gain((velocityToUse * 0.01));
-        fmDrumInstances[track].amp.gain(fmdLvl);
-        fmDrumInstances[track].ampDelaySend.gain(fmdDly);
+        // fmDrumInstances[track].ampAccent.gain((velocityToUse * 0.01));
+        // fmDrumInstances[track].amp.gain(fmdLvl);
+        // fmDrumInstances[track].ampDelaySend.gain(fmdDly);
 
-        fmDrumInstances[track].left.gain(getStereoPanValues(fmdPan).left);
-        fmDrumInstances[track].right.gain(getStereoPanValues(fmdPan).right);
+        // fmDrumInstances[track].left.gain(getStereoPanValues(fmdPan).left);
+        // fmDrumInstances[track].right.gain(getStereoPanValues(fmdPan).right);
         
-        AudioInterrupts();
+        // AudioInterrupts();
 
-        fmDrumInstances[track].fmDrum.noteOn();
+        // fmDrumInstances[track].fmDrum.noteOn();
     }
 
     void handleMIDINoteOnForTrackStep(int track, int step)
@@ -2896,10 +2948,12 @@ namespace XRSound
             } else if (activeKit.sounds[t].type == T_MONO_SYNTH) {
                 monoSynthInstances[t].amp.gain(0);
                 monoSynthInstances[t].ampDelaySend.gain(0);
-            } else if (activeKit.sounds[t].type == T_FM_DRUM) {
-                fmDrumInstances[t].amp.gain(0);
-                fmDrumInstances[t].ampDelaySend.gain(0);
-            }
+            } 
+            
+            // else if (activeKit.sounds[t].type == T_FM_DRUM) {
+            //     fmDrumInstances[t].amp.gain(0);
+            //     fmDrumInstances[t].ampDelaySend.gain(0);
+            // }
 
             // else if (activeKit.sounds[t].type == T_BRAIDS_SYNTH) {
             //     braidsInstances[t].amp.gain(0);
@@ -3365,31 +3419,31 @@ namespace XRSound
 
     void triggerFmDrumNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented)
     {
-        if (t > 2) return;
+        // if (t > 2) return;
 
-        auto &trackToUse = XRSequencer::getTrack(t);
+        // auto &trackToUse = XRSequencer::getTrack(t);
 
-        auto fmdLvl = getValueNormalizedAsFloat(activeKit.sounds[t].params[FMD_LEVEL]);
-        auto fmdDly = getValueNormalizedAsFloat(activeKit.sounds[t].params[FMD_DELAY]);
-        auto fmdPan = getValueNormalizedAsFloat(activeKit.sounds[t].params[FMD_PAN]);
+        // auto fmdLvl = getValueNormalizedAsFloat(activeKit.sounds[t].params[FMD_LEVEL]);
+        // auto fmdDly = getValueNormalizedAsFloat(activeKit.sounds[t].params[FMD_DELAY]);
+        // auto fmdPan = getValueNormalizedAsFloat(activeKit.sounds[t].params[FMD_PAN]);
 
-        uint8_t velocityToUse = trackToUse.velocity;
-        if (accented) {
-            velocityToUse = max(trackToUse.velocity, XRSequencer::activePatternSettings.accent);
-        }
+        // uint8_t velocityToUse = trackToUse.velocity;
+        // if (accented) {
+        //     velocityToUse = max(trackToUse.velocity, XRSequencer::activePatternSettings.accent);
+        // }
 
-        AudioNoInterrupts();
+        // AudioNoInterrupts();
 
-        fmDrumInstances[t].ampAccent.gain((velocityToUse * 0.01));
-        fmDrumInstances[t].amp.gain(fmdLvl);
-        fmDrumInstances[t].ampDelaySend.gain(fmdDly);
+        // fmDrumInstances[t].ampAccent.gain((velocityToUse * 0.01));
+        // fmDrumInstances[t].amp.gain(fmdLvl);
+        // fmDrumInstances[t].ampDelaySend.gain(fmdDly);
 
-        fmDrumInstances[t].left.gain(getStereoPanValues(fmdPan).left);
-        fmDrumInstances[t].right.gain(getStereoPanValues(fmdPan).right);
+        // fmDrumInstances[t].left.gain(getStereoPanValues(fmdPan).left);
+        // fmDrumInstances[t].right.gain(getStereoPanValues(fmdPan).right);
 
-        AudioInterrupts();
+        // AudioInterrupts();
 
-        fmDrumInstances[t].fmDrum.noteOn();
+        // fmDrumInstances[t].fmDrum.noteOn();
     }
 
     void triggerCvGateNoteOn(uint8_t t, uint8_t note, uint8_t octave, bool accented)

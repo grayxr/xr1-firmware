@@ -38,6 +38,8 @@ namespace XRSD
 
     bool saveActivePatternAsync = false;
     bool saveActiveSoundsAsync = false;
+    
+    WRITE_STATE writeState = IDLE;
 
     bool sdReady = false;
     bool sdBusy() { return sdReady ? sd.card()->isBusy() : false; }
@@ -46,7 +48,7 @@ namespace XRSD
     PROJECT _current_project;
 
 
-    EXTMEM byte wBuffer[ASYNC_IO_W_BUFFER_SIZE];
+    EXTMEM byte wBuffer[ASYNC_IO_WR_BUFFER_SIZE];
 
     typedef struct
     {
@@ -138,7 +140,7 @@ namespace XRSD
         size_t offset = 0;
 
         while (remaining > 0) {
-            size_t chunkSize = min(ASYNC_IO_W_BUFFER_SIZE, remaining);
+            size_t chunkSize = min(ASYNC_IO_WR_BUFFER_SIZE, remaining);
             Serial.printf("remainingBefore: %d, chunkSize: %d ", remaining, chunkSize);
 
             memcpy(wBuffer, data + offset, chunkSize);
@@ -198,7 +200,7 @@ namespace XRSD
         }
 
         if (wIO.remaining > 0) {
-            uint32_t chunkSize = min(ASYNC_IO_W_BUFFER_SIZE, wIO.remaining);
+            uint32_t chunkSize = min(ASYNC_IO_WR_BUFFER_SIZE, wIO.remaining);
 
             memcpy(wIO.buffer, wData + wIO.offset, chunkSize);
 
@@ -724,16 +726,16 @@ namespace XRSD
     void saveActivePatternSettings(bool async)
     {
         if (async) {
-            writeFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_PATTERN_SETTINGS, (byte *)&XRSequencer::patternSettingsForWrite);
+            //writeFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_PATTERN_SETTINGS, (byte *)&XRSequencer::patternSettingsForWrite);
         } else {
-            writeFileBuffered(getActivePatternSettingsFilename(), (byte *)&XRSequencer::patternSettingsForWrite, sizeof(XRSequencer::patternSettingsForWrite));
+            writeFileBuffered(getActivePatternSettingsFilename(), (byte *)&XRSequencer::activePatternSettings, sizeof(XRSequencer::activePatternSettings));
         }
     }
 
     void saveActiveRatchetLayer(bool async)
     {
         if (async) {
-            writeFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_RATCHET_LAYER, (byte *)&XRSequencer::ratchetLayerForWrite);
+            //writeFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_RATCHET_LAYER, (byte *)&XRSequencer::ratchetLayerForWrite);
         } else {
             writeFileBuffered(getActiveRatchetLayerFilename(), (byte *)&XRSequencer::activeRatchetLayer, sizeof(XRSequencer::activeRatchetLayer));
         }
@@ -742,7 +744,7 @@ namespace XRSD
     void saveActiveTrackLayer(bool async)
     {
         if (async) {
-            writeFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_TRACK_LAYER, (byte *)&XRSequencer::trackLayerForWrite);
+            //writeFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_TRACK_LAYER, (byte *)&XRSequencer::trackLayerForWrite);
         } else {
             writeFileBuffered(getActiveTrackLayerFilename(), (byte *)&XRSequencer::activeTrackLayer, sizeof(XRSequencer::activeTrackLayer));
         }
@@ -751,7 +753,7 @@ namespace XRSD
     void saveActiveKit(bool async)
     {
         if (async) {
-            writeFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_KIT, (byte *)&XRSound::kitForWrite);
+            //writeFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_KIT, (byte *)&XRSound::kitForWrite);
         } else {
             writeFileBuffered(getActiveKitFilename(), (byte *)&XRSound::activeKit, sizeof(XRSound::activeKit));
         }

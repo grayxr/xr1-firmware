@@ -46,10 +46,10 @@ namespace XREncoder
     void handleEncoderDexedSynthModB(int diff);
     void handleEncoderDexedSynthModC(int diff);
     void handleEncoderDexedSynthModD(int diff);
-    void handleEncoderFmDrumModA(int diff);
-    void handleEncoderFmDrumModB(int diff);
-    void handleEncoderFmDrumModC(int diff);
-    void handleEncoderFmDrumModD(int diff);
+    // void handleEncoderFmDrumModA(int diff);
+    // void handleEncoderFmDrumModB(int diff);
+    // void handleEncoderFmDrumModC(int diff);
+    // void handleEncoderFmDrumModD(int diff);
     void handleEncoderMonoSampleModA(int diff);
     void handleEncoderMonoSampleModB(int diff);
     void handleEncoderMonoSampleModC(int diff);
@@ -859,18 +859,18 @@ namespace XREncoder
                     handleEncoderDexedSynthModD(mDiff);
                 }
             }
-            else if (XRSound::activeKit.sounds[currTrackNum].type == T_FM_DRUM)
-            {
-                if (m == 1) {
-                    handleEncoderFmDrumModA(mDiff);
-                } else if (m == 2) {
-                    handleEncoderFmDrumModB(mDiff);
-                } else if (m == 3) {
-                    handleEncoderFmDrumModC(mDiff);
-                } else if (m == 4) {
-                    handleEncoderFmDrumModD(mDiff);
-                }
-            }
+            // else if (XRSound::activeKit.sounds[currTrackNum].type == T_FM_DRUM)
+            // {
+            //     if (m == 1) {
+            //         handleEncoderFmDrumModA(mDiff);
+            //     } else if (m == 2) {
+            //         handleEncoderFmDrumModB(mDiff);
+            //     } else if (m == 3) {
+            //         handleEncoderFmDrumModC(mDiff);
+            //     } else if (m == 4) {
+            //         handleEncoderFmDrumModD(mDiff);
+            //     }
+            // }
             else if (XRSound::activeKit.sounds[currTrackNum].type == T_CV_GATE)
             {
                 // if (m == 1) {
@@ -1951,287 +1951,287 @@ namespace XREncoder
         }
     }
 
-    void handleEncoderFmDrumModA(int diff)
-    {
-        if (diff == 0) {
-            return;
-        }
+    // void handleEncoderFmDrumModA(int diff)
+    // {
+    //     if (diff == 0) {
+    //         return;
+    //     }
 
-        auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        auto &trackToUse = XRSequencer::getTrack(currTrackNum);
-        auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
+    //     auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+    //     auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+    //     auto &trackToUse = XRSequencer::getTrack(currTrackNum);
+    //     auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
 
-        switch (currSelectedPageNum)
-        {
-        case 0:
-            updateTrackLastStep(diff);
-            break;
-        case 1:
-        {
-            uint16_t currFreq = getValueNormalizedAsUInt32(XRSound::activeKit.sounds[currTrackNum].params[FMD_FREQ]);
-            uint16_t newFreq = currFreq + diff;
+    //     switch (currSelectedPageNum)
+    //     {
+    //     case 0:
+    //         updateTrackLastStep(diff);
+    //         break;
+    //     case 1:
+    //     {
+    //         uint16_t currFreq = getValueNormalizedAsUInt32(XRSound::activeKit.sounds[currTrackNum].params[FMD_FREQ]);
+    //         uint16_t newFreq = currFreq + diff;
 
-            if (newFreq != currFreq) {
-                newFreq = constrain(newFreq, 0, 255);
+    //         if (newFreq != currFreq) {
+    //             newFreq = constrain(newFreq, 0, 255);
 
-                XRSound::activeKit.sounds[currTrackNum].params[FMD_FREQ] = getUInt32ValuePaddedAsInt32(newFreq);
-                XRSound::kitDirty = true;
+    //             XRSound::activeKit.sounds[currTrackNum].params[FMD_FREQ] = getUInt32ValuePaddedAsInt32(newFreq);
+    //             XRSound::kitDirty = true;
 
-                fmDrumInstance.fmDrum.frequency(newFreq);
-            }
+    //             fmDrumInstance.fmDrum.frequency(newFreq);
+    //         }
 
-            XRDisplay::drawSequencerScreen(false);
-        }
-        break;
-        case 2:
-        {
-            float currLvl = getValueNormalizedAsFloat(XRSound::activeKit.sounds[currTrackNum].params[FMD_LEVEL]);
-            float newLvl = currLvl + (diff * 0.01);
+    //         XRDisplay::drawSequencerScreen(false);
+    //     }
+    //     break;
+    //     case 2:
+    //     {
+    //         float currLvl = getValueNormalizedAsFloat(XRSound::activeKit.sounds[currTrackNum].params[FMD_LEVEL]);
+    //         float newLvl = currLvl + (diff * 0.01);
 
-            if (newLvl != currLvl)
-            {
-                newLvl = constrain(newLvl, 0, 1.0);
+    //         if (newLvl != currLvl)
+    //         {
+    //             newLvl = constrain(newLvl, 0, 1.0);
 
-                XRSound::activeKit.sounds[currTrackNum].params[FMD_LEVEL] = getFloatValuePaddedAsInt32(newLvl);
-                XRSound::kitDirty = true;
+    //             XRSound::activeKit.sounds[currTrackNum].params[FMD_LEVEL] = getFloatValuePaddedAsInt32(newLvl);
+    //             XRSound::kitDirty = true;
 
-                AudioNoInterrupts();
+    //             AudioNoInterrupts();
 
-                fmDrumInstance.amp.gain(newLvl);
+    //             fmDrumInstance.amp.gain(newLvl);
 
-                AudioInterrupts();
+    //             AudioInterrupts();
 
-                XRDisplay::drawSequencerScreen(false);
-            }
-        }
-        break;
+    //             XRDisplay::drawSequencerScreen(false);
+    //         }
+    //     }
+    //     break;
 
-        default:
-            break;
-        }
-    }
+    //     default:
+    //         break;
+    //     }
+    // }
 
-    void handleEncoderFmDrumModB(int diff)
-    {
-        if (diff == 0) {
-            return;
-        }
+    // void handleEncoderFmDrumModB(int diff)
+    // {
+    //     if (diff == 0) {
+    //         return;
+    //     }
 
-        auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
+    //     auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+    //     auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+    //     auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
 
-        switch (currSelectedPageNum)
-        {
-        case 0:
-            //
+    //     switch (currSelectedPageNum)
+    //     {
+    //     case 0:
+    //         //
 
-            break;
-        case 1:
-            {
-                float currFm = getValueNormalizedAsFloat(XRSound::activeKit.sounds[currTrackNum].params[FMD_FM]);
-                float newFm = currFm + (diff * 0.01);
+    //         break;
+    //     case 1:
+    //         {
+    //             float currFm = getValueNormalizedAsFloat(XRSound::activeKit.sounds[currTrackNum].params[FMD_FM]);
+    //             float newFm = currFm + (diff * 0.01);
 
-                if (newFm != currFm) {
-                    newFm = constrain(newFm, 0.0, 1.0);
+    //             if (newFm != currFm) {
+    //                 newFm = constrain(newFm, 0.0, 1.0);
 
-                    XRSound::activeKit.sounds[currTrackNum].params[FMD_FM] = getFloatValuePaddedAsInt32(newFm);
-                    XRSound::kitDirty = true;
+    //                 XRSound::activeKit.sounds[currTrackNum].params[FMD_FM] = getFloatValuePaddedAsInt32(newFm);
+    //                 XRSound::kitDirty = true;
 
-                    AudioNoInterrupts();
+    //                 AudioNoInterrupts();
 
-                    fmDrumInstance.fmDrum.fm(newFm);
+    //                 fmDrumInstance.fmDrum.fm(newFm);
 
-                    AudioInterrupts();
+    //                 AudioInterrupts();
 
-                    XRDisplay::drawSequencerScreen(false);
-                }
-            }
+    //                 XRDisplay::drawSequencerScreen(false);
+    //             }
+    //         }
 
-            break;
+    //         break;
 
-        case 2:
-        {
-            float currPan = getValueNormalizedAsFloat(XRSound::activeKit.sounds[currTrackNum].params[FMD_PAN]);
-            float newPan = currPan + (diff * 0.1);
+    //     case 2:
+    //     {
+    //         float currPan = getValueNormalizedAsFloat(XRSound::activeKit.sounds[currTrackNum].params[FMD_PAN]);
+    //         float newPan = currPan + (diff * 0.1);
 
-            if (!(newPan < -1.0 || newPan > 1.0) && newPan != currPan)
-            {
-                XRSound::activeKit.sounds[currTrackNum].params[FMD_PAN] = getFloatValuePaddedAsInt32(newPan);
-                XRSound::kitDirty = true;
+    //         if (!(newPan < -1.0 || newPan > 1.0) && newPan != currPan)
+    //         {
+    //             XRSound::activeKit.sounds[currTrackNum].params[FMD_PAN] = getFloatValuePaddedAsInt32(newPan);
+    //             XRSound::kitDirty = true;
 
-                float newGainL = 1.0;
-                if (newPan < 0)
-                {
-                    newGainL += newPan;
-                }
+    //             float newGainL = 1.0;
+    //             if (newPan < 0)
+    //             {
+    //                 newGainL += newPan;
+    //             }
 
-                float newGainR = 1.0;
-                if (newPan > 0)
-                {
-                    newGainR -= newPan;
-                }
+    //             float newGainR = 1.0;
+    //             if (newPan > 0)
+    //             {
+    //                 newGainR -= newPan;
+    //             }
                 
-                AudioNoInterrupts();
+    //             AudioNoInterrupts();
 
-                fmDrumInstance.left.gain(newGainR);
-                fmDrumInstance.right.gain(newGainL);
+    //             fmDrumInstance.left.gain(newGainR);
+    //             fmDrumInstance.right.gain(newGainL);
 
-                AudioInterrupts();
+    //             AudioInterrupts();
 
-                XRDisplay::drawSequencerScreen(false);
-            }
-        }
+    //             XRDisplay::drawSequencerScreen(false);
+    //         }
+    //     }
 
-        break;
+    //     break;
 
-        default:
-            break;
-        }
-    }
+    //     default:
+    //         break;
+    //     }
+    // }
 
-    void handleEncoderFmDrumModC(int diff)
-    {
-        if (diff == 0) {
-            return;
-        }
+    // void handleEncoderFmDrumModC(int diff)
+    // {
+    //     if (diff == 0) {
+    //         return;
+    //     }
 
-        auto &currTrack = XRSequencer::getCurrentSelectedTrack();
-        auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
+    //     auto &currTrack = XRSequencer::getCurrentSelectedTrack();
+    //     auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+    //     auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+    //     auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
 
-        switch (currSelectedPageNum)
-        {
-        case 0:
-            {
-                float currVel = currTrack.velocity;
-                float newVel = currVel + diff;
+    //     switch (currSelectedPageNum)
+    //     {
+    //     case 0:
+    //         {
+    //             float currVel = currTrack.velocity;
+    //             float newVel = currVel + diff;
 
-                // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1) {
-                //     currVel = currStep.velocity;
-                //     newVel = currVel + diff;
-                // }
+    //             // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1) {
+    //             //     currVel = currStep.velocity;
+    //             //     newVel = currVel + diff;
+    //             // }
 
-                if (!(newVel < 1 || newVel > 100) && newVel != currVel)
-                {
-                    // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1) {
-                    //     patternMods.tracks[currSelectedTrackNum].step_mod_flags[currSelectedStepNum].flags[XRSequencer::MOD_ATTRS::VELOCITY] = true;
-                    //     patternMods.tracks[currSelectedTrackNum].steps[currSelectedStepNum].velocity = newVel;
-                    // } else {
-                        currTrack.velocity = newVel;
-                    // }
+    //             if (!(newVel < 1 || newVel > 100) && newVel != currVel)
+    //             {
+    //                 // if (currUXMode == XRUX::SUBMITTING_STEP_VALUE && currSelectedStepNum > -1) {
+    //                 //     patternMods.tracks[currSelectedTrackNum].step_mod_flags[currSelectedStepNum].flags[XRSequencer::MOD_ATTRS::VELOCITY] = true;
+    //                 //     patternMods.tracks[currSelectedTrackNum].steps[currSelectedStepNum].velocity = newVel;
+    //                 // } else {
+    //                     currTrack.velocity = newVel;
+    //                 // }
 
-                    // AudioNoInterrupts();
-                    // voices[current_selected_track].leftCtrl.gain(newVel * 0.01);
-                    // voices[current_selected_track].rightCtrl.gain(newVel * 0.01);
-                    // AudioInterrupts();
+    //                 // AudioNoInterrupts();
+    //                 // voices[current_selected_track].leftCtrl.gain(newVel * 0.01);
+    //                 // voices[current_selected_track].rightCtrl.gain(newVel * 0.01);
+    //                 // AudioInterrupts();
 
-                    XRDisplay::drawSequencerScreen(false);
-                XRSequencer::trackLayerDirty = true;
-                }
-            }
-            break;
-        case 1:
-            {
-                auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-                auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
+    //                 XRDisplay::drawSequencerScreen(false);
+    //             XRSequencer::trackLayerDirty = true;
+    //             }
+    //         }
+    //         break;
+    //     case 1:
+    //         {
+    //             auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+    //             auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
 
-                float currDecay = getValueNormalizedAsFloat(XRSound::activeKit.sounds[currTrackNum].params[FMD_DECAY]);
-                float newDecay  = currDecay + (diff * 0.01);
+    //             float currDecay = getValueNormalizedAsFloat(XRSound::activeKit.sounds[currTrackNum].params[FMD_DECAY]);
+    //             float newDecay  = currDecay + (diff * 0.01);
 
-                if (newDecay != currDecay) {
-                    newDecay = constrain(newDecay, 0.0, 1.0);
+    //             if (newDecay != currDecay) {
+    //                 newDecay = constrain(newDecay, 0.0, 1.0);
 
-                    XRSound::activeKit.sounds[currTrackNum].params[FMD_DECAY] = getFloatValuePaddedAsInt32(newDecay);
-                    XRSound::kitDirty = true;
+    //                 XRSound::activeKit.sounds[currTrackNum].params[FMD_DECAY] = getFloatValuePaddedAsInt32(newDecay);
+    //                 XRSound::kitDirty = true;
 
-                    AudioNoInterrupts();
+    //                 AudioNoInterrupts();
 
-                    fmDrumInstance.fmDrum.decay(newDecay);
+    //                 fmDrumInstance.fmDrum.decay(newDecay);
 
-                    AudioInterrupts();
+    //                 AudioInterrupts();
 
-                    XRDisplay::drawSequencerScreen(false);
-                }
-            }
-            break;
-        case 2:
-            {
+    //                 XRDisplay::drawSequencerScreen(false);
+    //             }
+    //         }
+    //         break;
+    //     case 2:
+    //         {
 
-            }
-            break;
+    //         }
+    //         break;
         
-        default:
-            break;
-        }
-    }
+    //     default:
+    //         break;
+    //     }
+    // }
 
-    void handleEncoderFmDrumModD(int diff)
-    {
-        if (diff == 0) {
-            return;
-        }
+    // void handleEncoderFmDrumModD(int diff)
+    // {
+    //     if (diff == 0) {
+    //         return;
+    //     }
 
-        auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
-        auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
+    //     auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+    //     auto currSelectedPageNum = XRSequencer::getCurrentSelectedPage();
+    //     auto &fmDrumInstance = XRSound::fmDrumInstances[currTrackNum];
 
-        switch (currSelectedPageNum)
-        {
-        case 0:
-            updateTrackProbability(diff);
+    //     switch (currSelectedPageNum)
+    //     {
+    //     case 0:
+    //         updateTrackProbability(diff);
 
-            break;
-        case 1:
-            {
-                float currNoise = getValueNormalizedAsFloat(XRSound::activeKit.sounds[currTrackNum].params[FMD_NOISE]);
-                float newNoise = currNoise + (diff * 0.01);
+    //         break;
+    //     case 1:
+    //         {
+    //             float currNoise = getValueNormalizedAsFloat(XRSound::activeKit.sounds[currTrackNum].params[FMD_NOISE]);
+    //             float newNoise = currNoise + (diff * 0.01);
 
-                if (newNoise != currNoise) {
-                    newNoise = constrain(newNoise, 0.0, 1.0);
+    //             if (newNoise != currNoise) {
+    //                 newNoise = constrain(newNoise, 0.0, 1.0);
 
-                    XRSound::activeKit.sounds[currTrackNum].params[FMD_NOISE] = getFloatValuePaddedAsInt32(newNoise);
-                    XRSound::kitDirty = true;
+    //                 XRSound::activeKit.sounds[currTrackNum].params[FMD_NOISE] = getFloatValuePaddedAsInt32(newNoise);
+    //                 XRSound::kitDirty = true;
 
-                    AudioNoInterrupts();
+    //                 AudioNoInterrupts();
 
-                    fmDrumInstance.fmDrum.noise(newNoise);
+    //                 fmDrumInstance.fmDrum.noise(newNoise);
 
-                    AudioInterrupts();
+    //                 AudioInterrupts();
 
-                    XRDisplay::drawSequencerScreen(false);
-                }
-            }
-            break;
-        case 2:
-        {
-            float currDly = getValueNormalizedAsFloat(XRSound::activeKit.sounds[currTrackNum].params[FMD_DELAY]);
-            float newDly = currDly + (diff * 0.01);
+    //                 XRDisplay::drawSequencerScreen(false);
+    //             }
+    //         }
+    //         break;
+    //     case 2:
+    //     {
+    //         float currDly = getValueNormalizedAsFloat(XRSound::activeKit.sounds[currTrackNum].params[FMD_DELAY]);
+    //         float newDly = currDly + (diff * 0.01);
 
-            if (newDly != currDly)
-            {
-                newDly = constrain(newDly, 0, 1.0);
+    //         if (newDly != currDly)
+    //         {
+    //             newDly = constrain(newDly, 0, 1.0);
 
-                XRSound::activeKit.sounds[currTrackNum].params[FMD_DELAY] = getFloatValuePaddedAsInt32(newDly);
-                XRSound::kitDirty = true;
+    //             XRSound::activeKit.sounds[currTrackNum].params[FMD_DELAY] = getFloatValuePaddedAsInt32(newDly);
+    //             XRSound::kitDirty = true;
 
-                AudioNoInterrupts();
+    //             AudioNoInterrupts();
 
-                fmDrumInstance.ampDelaySend.gain(newDly);
+    //             fmDrumInstance.ampDelaySend.gain(newDly);
 
-                AudioInterrupts();
+    //             AudioInterrupts();
 
-                XRDisplay::drawSequencerScreen(false);
-            }
-        }
-            break;
+    //             XRDisplay::drawSequencerScreen(false);
+    //         }
+    //     }
+    //         break;
         
-        default:
-            break;
-        }
-    }
+    //     default:
+    //         break;
+    //     }
+    // }
 
     void handleEncoderMonoSynthModA(int diff)
     {

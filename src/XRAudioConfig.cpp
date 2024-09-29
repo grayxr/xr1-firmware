@@ -113,10 +113,10 @@ AudioSynthDexed          dexed3(4, SAMPLE_RATE);         //xy=1279.0000228881836
 AudioSynthDexed          dexed1(4, SAMPLE_RATE);         //xy=1283.0000228881836,896.0000238418579
 AudioSynthDexed          dexed2(4, SAMPLE_RATE);         //xy=1283.0000228881836,1027.000023841858
 AudioSynthDexed          dexed4(4, SAMPLE_RATE);         //xy=1282.0000228881836,1284.000023841858
-AudioSynthFMDrum         fmDrum3;        //xy=1278.0000228881836,2295.333291053772
-AudioSynthFMDrum         fmDrum2;        //xy=1283.0000228881836,2151.333291053772
-AudioSynthFMDrum         fmDrum1;        //xy=1288.0000228881836,2006.333291053772
-AudioSynthFMDrum         fmDrum4;        //xy=1289.0000228881836,2432.333291053772
+// AudioSynthFMDrum         fmDrum3;        //xy=1278.0000228881836,2295.333291053772
+// AudioSynthFMDrum         fmDrum2;        //xy=1283.0000228881836,2151.333291053772
+// AudioSynthFMDrum         fmDrum1;        //xy=1288.0000228881836,2006.333291053772
+// AudioSynthFMDrum         fmDrum4;        //xy=1289.0000228881836,2432.333291053772
 AudioAmplifier           dexedAmp7;      //xy=1413.8333587646484,1748.0000743865967
 AudioAmplifier           dexedAmp6;      //xy=1416.8333587646484,1621.0000743865967
 AudioAmplifier           dexedAmp5;      //xy=1417.8333587646484,1490.0000743865967
@@ -427,10 +427,10 @@ AudioConnection          patchCord137(dexed3, 0, dexedAmpAccent3, 0);
 AudioConnection          patchCord138(dexed1, 0, dexedAmpAccent1, 0);
 AudioConnection          patchCord139(dexed2, 0, dexedAmpAccent2, 0);
 AudioConnection          patchCord140(dexed4, 0, dexedAmpAccent4, 0);
-AudioConnection          patchCord141(fmDrum3, fmDrumAmpAccent3);
-AudioConnection          patchCord142(fmDrum2, fmDrumAmpAccent2);
-AudioConnection          patchCord143(fmDrum1, fmDrumAmpAccent1);
-AudioConnection          patchCord144(fmDrum4, fmDrumAmpAccent4);
+// AudioConnection          patchCord141(fmDrum3, fmDrumAmpAccent3);
+// AudioConnection          patchCord142(fmDrum2, fmDrumAmpAccent2);
+// AudioConnection          patchCord143(fmDrum1, fmDrumAmpAccent1);
+// AudioConnection          patchCord144(fmDrum4, fmDrumAmpAccent4);
 AudioConnection          patchCord145(dexedAmp7, dexedLeft7);
 AudioConnection          patchCord146(dexedAmp7, dexedRight7);
 AudioConnection          patchCord147(dexedAmp7, dexedAmpDelaySend7);

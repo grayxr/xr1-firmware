@@ -31,6 +31,21 @@ namespace XRDexedManager
         }
     }
 
+     // swap active and inactive instances right before/when pattern starts
+    void swapInstanceForTrack(uint8_t track)
+    {
+        if (track > 3)
+        {
+            Serial.println("INVALID TRACK FOR SWAP INSTANCE!");
+            
+            return;
+        }
+
+        uint8_t temp = activeInstances[track];
+        activeInstances[track] = inactiveInstances[track];
+        inactiveInstances[track] = temp;
+    }
+
     // get the inactive instance for the track in the current pattern
     uint8_t getInactiveInstanceForTrack(uint8_t track)
     {

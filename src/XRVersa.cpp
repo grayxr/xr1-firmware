@@ -353,6 +353,7 @@ namespace XRVersa
 
                 //XRDisplay::drawSequencerScreen(false);
                 XRDisplay::drawGeneralConfirmOverlay("  step note: " + noteStr);
+                XRSequencer::trackLayerDirty = true;
             } 
             else if (currentUXMode == XRUX::TRACK_SEL) {
                 // set track note

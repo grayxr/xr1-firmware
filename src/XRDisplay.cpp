@@ -533,17 +533,25 @@ namespace XRDisplay
         //     u8g2.drawStr(55, XR_DISP_SHIFT_Y+4, pStr.c_str());
         // }
 
+        if (XRSD::writeState != XRSD::WRITE_STATE::IDLE) {
+            // draw file sync icon
+            u8g2.setFont(u8g2_font_open_iconic_arrow_1x_t);
+            u8g2.drawGlyph(100, XR_DISP_SHIFT_Y+4, 0X56); 
+            u8g2.setFont(small_font);
+        }
+
         // metronome indicator area
         
         // triangle
-        int xShift = 8;
-        int middleX = xShift+98;
-        u8g2.drawLine(xShift+95, XR_DISP_SHIFT_Y+9, middleX, XR_DISP_SHIFT_Y+5);
-        u8g2.drawLine(middleX, XR_DISP_SHIFT_Y+5, xShift+101, XR_DISP_SHIFT_Y+9);
-        u8g2.drawLine(xShift+95, XR_DISP_SHIFT_Y+9, xShift+101, XR_DISP_SHIFT_Y+9);
-        // middle stick
-        auto middleStickTopX = metronomeSwing ? 95 : 101;
-        u8g2.drawLine(middleX, XR_DISP_SHIFT_Y+9, xShift+middleStickTopX, XR_DISP_SHIFT_Y+6);
+
+        // int xShift = 8;
+        // int middleX = xShift+98;
+        // u8g2.drawLine(xShift+95, XR_DISP_SHIFT_Y+9, middleX, XR_DISP_SHIFT_Y+5);
+        // u8g2.drawLine(middleX, XR_DISP_SHIFT_Y+5, xShift+101, XR_DISP_SHIFT_Y+9);
+        // u8g2.drawLine(xShift+95, XR_DISP_SHIFT_Y+9, xShift+101, XR_DISP_SHIFT_Y+9);
+        // // middle stick
+        // auto middleStickTopX = metronomeSwing ? 95 : 101;
+        // u8g2.drawLine(middleX, XR_DISP_SHIFT_Y+9, xShift+middleStickTopX, XR_DISP_SHIFT_Y+6);
 
         // bpm area
 

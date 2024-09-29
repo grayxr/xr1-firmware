@@ -2000,12 +2000,12 @@ namespace XRKeyMatrix
                 }
                 else if (currType == XRSound::T_DEXED_SYNTH)
                 {
-                    newType = XRSound::T_FM_DRUM;
-                }
-                else if (currType == XRSound::T_FM_DRUM)
-                {
                     newType = XRSound::T_MIDI;
                 }
+                // else if (currType == XRSound::T_FM_DRUM)
+                // {
+                //     newType = XRSound::T_MIDI;
+                // }
                 else if (currType == XRSound::T_MIDI)
                 {
                     newType = XRSound::T_MONO_SAMPLE;
@@ -2131,45 +2131,58 @@ namespace XRKeyMatrix
         XRDisplay::drawSequencerScreen(false);
     }
 
-    void patternQueueCallback(const XRAsyncIO::IO_CONTEXT& item)
+    void ptnFailedReadCallback(const XRAsyncIO::FILE_TYPE fileType)
     {
-        switch (item.fileType)
+        Serial.printf("ptnFailedReadCallback for file type: %d\n", fileType);
+
+        switch (fileType)
         {
         case XRAsyncIO::FILE_TYPE::PATTERN_SETTINGS:
-            XRSequencer::initPatternSettings(XRSequencer::idlePatternSettings);
+            XRSequencer::initIdlePatternSettings();
             Serial.println("pattern settings initialized!");
             break;
         case XRAsyncIO::FILE_TYPE::RATCHET_LAYER:
-            XRSequencer::initRatchetLayer(XRSequencer::idleRatchetLayer);
+            XRSequencer::initIdleRatchetLayer();
             Serial.println("ratchet layer initialized!");
             break;
         case XRAsyncIO::FILE_TYPE::TRACK_LAYER:
-            XRSequencer::initTrackLayer(XRSequencer::idleTrackLayer);
+            XRSequencer::initIdleTrackLayer();
             Serial.println("track layer initialized!");
             break;
         case XRAsyncIO::FILE_TYPE::KIT:
-            XRSound::initKit(XRSound::idleKit);
+            XRSound::initIdleKit();
+            XRSound::loadNextDexedInstances();
             Serial.println("kit initialized!");
             break;
         
         default:
             break;
         }
+    }
 
-        XRAsyncIO::setCallback(nullptr); // clear callback
+    void ptnSuccessReadCallback(const XRAsyncIO::FILE_TYPE fileType)
+    {
+        //Serial.printf("ptnSuccessReadCallback for file type: %d\n", fileType);
+
+        switch (fileType)
+        {
+        case XRAsyncIO::FILE_TYPE::KIT:
+            // make sure the inactive/idle dexed instances have the next pattern's voices loaded
+            XRSound::loadNextDexedInstances();
+            Serial.println("loaded next dexed instances!");
+            break;
+        }
     }
 
     void prepareQueuedPatternChange(int nextBank, int nextPattern)
     {
-        XRAsyncIO::setCallback(patternQueueCallback);
-
-        // TODO: swap dexed instances?
-
         XRAsyncIO::addItem({
             XRAsyncIO::FILE_TYPE::PATTERN_SETTINGS,
             XRAsyncIO::FILE_IO_TYPE::READ,
             XRSD::getPatternSettingsFilename(nextBank, nextPattern),
             sizeof(XRSequencer::idlePatternSettings),
+            ptnFailedReadCallback,
+            ptnSuccessReadCallback
         });
 
         XRAsyncIO::addItem({
@@ -2177,6 +2190,8 @@ namespace XRKeyMatrix
             XRAsyncIO::FILE_IO_TYPE::READ,
             XRSD::getRatchetLayerFilename(nextBank, nextPattern),
             sizeof(XRSequencer::idleRatchetLayer),
+            ptnFailedReadCallback,
+            ptnSuccessReadCallback
         });
 
         XRAsyncIO::addItem({
@@ -2184,6 +2199,8 @@ namespace XRKeyMatrix
             XRAsyncIO::FILE_IO_TYPE::READ,
             XRSD::getTrackLayerFilename(nextBank, nextPattern, 0),
             sizeof(XRSequencer::idleTrackLayer),
+            ptnFailedReadCallback,
+            ptnSuccessReadCallback
         });
 
         XRAsyncIO::addItem({
@@ -2191,6 +2208,8 @@ namespace XRKeyMatrix
             XRAsyncIO::FILE_IO_TYPE::READ,
             XRSD::getKitFilename(nextBank, nextPattern),
             sizeof(XRSound::idleKit),
+            ptnFailedReadCallback,
+            ptnSuccessReadCallback
         });
 
         // yield();

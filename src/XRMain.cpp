@@ -12,6 +12,9 @@ namespace XRMain
 
     bool ticked = false;
 
+    bool startWrite = false;
+    bool writeDisplayUpdate = false;
+
     bool writeBusy = false;
     bool readsDone = false;
 
@@ -103,13 +106,14 @@ namespace XRMain
         XRKeyMatrix::handleStates(false);
         XRVersa::handleStates();
         XREncoder::handleStates();
+
+        XRSequencer::handlePatternQueueActions();
+        //XRSequencer::handleTrackLayerQueueActions();
+        
         XRSequencer::handleTriggerStates();
 
         handleWriteUpdates();
         XRAsyncIO::update();
-
-        XRSequencer::handlePatternQueueActions();
-        //XRSequencer::handleTrackLayerQueueActions();
 
         handleRuntimeDisplayUpdates();
     }
@@ -132,51 +136,89 @@ namespace XRMain
             // writes
 
             if (XRSequencer::patternSettingsDirty) {
+                startWrite = true;
+
                 XRSequencer::patternSettingsForWrite = XRSequencer::activePatternSettings;
                 XRAsyncIO::addItem({
                     XRAsyncIO::FILE_TYPE::PATTERN_SETTINGS,
                     XRAsyncIO::FILE_IO_TYPE::WRITE,
                     XRSD::getActivePatternSettingsFilename(),
                     sizeof(XRSequencer::patternSettingsForWrite),
+                    nullptr,
+                    nullptr
                 });
 
                 XRSequencer::patternSettingsDirty = false;
             }
 
             if (XRSequencer::ratchetLayerDirty) {
+                startWrite = true;
+
                 XRSequencer::ratchetLayerForWrite = XRSequencer::activeRatchetLayer;
                 XRAsyncIO::addItem({
                     XRAsyncIO::FILE_TYPE::RATCHET_LAYER,
                     XRAsyncIO::FILE_IO_TYPE::WRITE,
                     XRSD::getActiveRatchetLayerFilename(),
                     sizeof(XRSequencer::ratchetLayerForWrite),
+                    nullptr,
+                    nullptr
                 });
 
                 XRSequencer::ratchetLayerDirty = false;
             }
 
             if (XRSequencer::trackLayerDirty) {
+                startWrite = true;
+
                 XRSequencer::trackLayerForWrite = XRSequencer::activeTrackLayer;
                 XRAsyncIO::addItem({
                     XRAsyncIO::FILE_TYPE::TRACK_LAYER,
                     XRAsyncIO::FILE_IO_TYPE::WRITE,
                     XRSD::getActiveTrackLayerFilename(),
                     sizeof(XRSequencer::trackLayerForWrite),
+                    nullptr,
+                    nullptr
                 });
 
                 XRSequencer::trackLayerDirty = false;
             }
 
             if (XRSound::kitDirty) {
+                startWrite = true;
+
                 XRSound::kitForWrite = XRSound::activeKit;
                 XRAsyncIO::addItem({
                     XRAsyncIO::FILE_TYPE::KIT,
                     XRAsyncIO::FILE_IO_TYPE::WRITE,
                     XRSD::getActiveKitFilename(),
                     sizeof(XRSound::kitForWrite),
+                    nullptr,
+                    nullptr
                 });
 
                 XRSound::kitDirty = false;
+            }
+
+            if (startWrite) {
+                XRSD::writeState = XRSD::WRITE_STATE::START;
+                startWrite = false;
+            }
+
+            if (
+                XRUX::getCurrentMode() == XRUX::PATTERN_WRITE || XRUX::getCurrentMode() == XRUX::TRACK_WRITE ||
+                XRUX::getCurrentMode() == XRUX::PERFORM_RATCHET
+            ){
+                if (!writeDisplayUpdate && XRSD::writeState == XRSD::WRITE_STATE::START) {
+                    writeDisplayUpdate = true;
+                    yield();
+                    XRDisplay::drawSequencerScreen(false);
+                    Serial.println("DISPLAY WRITE START!");
+                } else if (writeDisplayUpdate && (XRSD::writeState == XRSD::WRITE_STATE::COMPLETE || XRSD::writeState == XRSD::WRITE_STATE::IDLE)) {
+                    writeDisplayUpdate = false;
+                    yield();
+                    XRDisplay::drawSequencerScreen(false);
+                    Serial.println("DISPLAY WRITE IDLE/COMPLETE!");
+                }
             }
         }
     }

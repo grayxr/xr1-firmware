@@ -6,7 +6,6 @@ namespace XRAsyncIO
     File _file;
     
     std::queue<IO_CONTEXT> _ioQueue;
-    std::function<void(const IO_CONTEXT&)> _callback;
     
     READ_IO _readIO;
     WRITE_IO _writeIO;
@@ -28,6 +27,11 @@ namespace XRAsyncIO
             case IDLE:
                 if (!_ioQueue.empty()) { // there are items to process
                     _state = START;
+                } else {
+                    if (XRSD::writeState != XRSD::WRITE_STATE::IDLE) {
+                        //Serial.println("CHANGING SD WRITE STATE TO IDLE NOW!");
+                        XRSD::writeState = XRSD::WRITE_STATE::IDLE;
+                    }
                 }
                 break;
             case START:
@@ -38,6 +42,8 @@ namespace XRAsyncIO
                 break;
             case COMPLETE:
                 _state = IDLE;
+                XRSD::writeState = XRSD::WRITE_STATE::COMPLETE;
+                        //Serial.println("CHANGING SD WRITE STATE TO COMPLETE NOW!");
                 break;
             case ERROR:
                 Serial.println("ASYNC IO ERROR!");
@@ -70,15 +76,15 @@ namespace XRAsyncIO
                 _readIO.index = (int8_t*)getReadObject(ctx.fileType);
                 _readIO.total = 0;
 
-                Serial.printf("Opening file: %s, at index: %d\n", ctx.filename.c_str(), _readIO.index);
+                //Serial.printf("Opening file: %s, at index: %d\n", ctx.filename.c_str(), _readIO.index);
 
                 if (!openForRead(ctx)) {
-                    Serial.println("failed to open for read!");
-                    // if read failed, do any side effects via callback first
-                    if (_callback) {
-                        Serial.println("calling callback for failed read!");
+                    //Serial.println("failed to open for read!");
 
-                        _callback(ctx);
+                    if (ctx.failedCb != nullptr) {
+                        //Serial.println("calling present callback for failed read!");
+
+                        ctx.failedCb(ctx.fileType);
                     }
 
                     _ioQueue.pop();
@@ -93,11 +99,13 @@ namespace XRAsyncIO
                 _writeIO.remaining = ctx.size;
 
                 if (!openForWrite(ctx)) {
-                    Serial.println("failed to open for write, retrying!");
+                    //Serial.println("failed to open for write, retrying!");
 
                     _state = START; // retry if failed to open for write
                 } else {
                     _state = BUSY; // begin processing write
+                    XRSD::writeState = XRSD::WRITE_STATE::START;
+                       // Serial.println("CHANGING SD WRITE STATE TO START NOW!");
                 }
 
                 break;
@@ -110,7 +118,6 @@ namespace XRAsyncIO
             Serial.println("ASYNC IO QUEUE EMPTY!");
 
             _state = COMPLETE; // all items processed, mark complete
-            _callback = nullptr;
 
             return;
         }
@@ -129,7 +136,14 @@ namespace XRAsyncIO
                 if (!doneReading(ctx, getReadObject(ctx.fileType))) {
                     _state = BUSY; // continue reading
                 } else {
-                    _state = START; // so we open the next file!
+                    _state = IDLE; // so we open the next file!
+
+                    if (ctx.successCb != nullptr) {
+                        //Serial.println("calling present callback for successful read completed!");
+
+                        ctx.successCb(ctx.fileType);
+                    }
+
                     _ioQueue.pop();
                 }
 
@@ -138,7 +152,7 @@ namespace XRAsyncIO
                 if (!doneWriting(ctx, getWriteObject(ctx.fileType))) {
                     _state = BUSY; // continue writing
                 } else {
-                    _state = START; // so we open the next file!
+                    _state = IDLE; // so we open the next file!
                     _ioQueue.pop();
                 }
 
@@ -148,87 +162,78 @@ namespace XRAsyncIO
 
     bool openForRead(IO_CONTEXT& ctx)
     {
-        _file = SD.open(ctx.filename.c_str(), FILE_READ);
         yield();
+        _file = SD.open(ctx.filename.c_str(), FILE_READ);
         if (!_file || !_file.available())
         {
-            Serial.printf("Failed to open file for reading: %s\n", ctx.filename.c_str());
+            //Serial.printf("Failed to open file for reading: %s\n", ctx.filename.c_str());
             return false;
         }
 
-        Serial.printf("opened file for reading: %s\n", ctx.filename.c_str());
+        //Serial.printf("opened file for reading: %s\n", ctx.filename.c_str());
 
         return true;
     }
 
     bool openForWrite(IO_CONTEXT& ctx)
     {
-        _file = SD.open(ctx.filename.c_str(), FILE_WRITE_BEGIN);
         yield();
+        _file = SD.open(ctx.filename.c_str(), FILE_WRITE_BEGIN);
         if (!_file)
         {
-            Serial.printf("Failed to open file for writing: %s\n", ctx.filename.c_str());
+            //Serial.printf("Failed to open file for writing: %s\n", ctx.filename.c_str());
             return false;
         }
 
-        Serial.printf("opened file for writing: %s\n", ctx.filename.c_str());
+        //Serial.printf("opened file for writing: %s\n", ctx.filename.c_str());
 
         return true;
     }
     
     bool doneReading(IO_CONTEXT& ctx, void *buf)
     {
-        Serial.printf("Reading file: %s ", ctx.filename.c_str());
+        //Serial.printf("Reading file: %s ", ctx.filename.c_str());
 
-        //if (_file.available()) {
-            uint32_t chunkSize = min(ASYNC_IO_BUFFER_SIZE, ctx.size - _readIO.total);
+        uint32_t chunkSize = min(ASYNC_IO_R_BUFFER_SIZE, ctx.size - _readIO.total);
 
-            _readIO.total += _file.readBytes((char *)_readIO.index, chunkSize);
-            _readIO.index += chunkSize;
+        yield();
+        _readIO.total += _file.readBytes((char *)_readIO.index, chunkSize);
+        _readIO.index += chunkSize;
 
-            Serial.printf("ctx.size: %d, _readIO.readTotal: %d, chunkSize: %d, _readIO.index: %d\n", ctx.size, _readIO.total, chunkSize, _readIO.index);
-        //}
+        //Serial.printf("ctx.size: %d, _readIO.readTotal: %d, chunkSize: %d, _readIO.index: %d\n", ctx.size, _readIO.total, chunkSize, _readIO.index);
 
         if (_readIO.total >= ctx.size) {
             _file.close();
 
-            Serial.printf("done reading file %s!\n", ctx.filename.c_str());
+            //Serial.printf("done reading file %s!\n", ctx.filename.c_str());
 
             return true;
         }
-
-        // delay(500);
-
-        // if (ctx.filename == "/xr-1/ABC/.b0p7.bin") {
-        //     _file.close();
-        //     _readIO.total = 0;
-        //     return true;
-        // }
 
         return false;
     }
 
     bool doneWriting(IO_CONTEXT& ctx, const byte *buf)
     {
-        Serial.printf("Writing file: %s ", ctx.filename.c_str());
+        //Serial.printf("Writing file: %s ", ctx.filename.c_str());
 
         if (_writeIO.remaining > 0) {
             uint32_t chunkSize = min(ASYNC_IO_W_BUFFER_SIZE, _writeIO.remaining);
 
-            //auto data = getWriteObject(ctx.fileType);
-            memcpy(_writeIO.buffer, (byte *)buf + _writeIO.offset, chunkSize);
-            uint32_t bytesWritten = _file.write(_writeIO.buffer, chunkSize);
             yield();
+            memcpy(_writeIO.buffer, (byte *)buf + _writeIO.offset, chunkSize);
+            yield();
+            uint32_t bytesWritten = _file.write(_writeIO.buffer, chunkSize);
 
             _writeIO.offset += chunkSize;
             _writeIO.remaining -= bytesWritten; // should use bytesWritten or chunkSize?
 
-            Serial.printf("REMAINING <=0, remaining: %d\n", _writeIO.remaining);
+            //Serial.printf("REMAINING <=0, remaining: %d\n", _writeIO.remaining);
 
             if (_writeIO.remaining <= 0) {
                 _file.close();
 
-                Serial.printf("done writing file %s!\n", ctx.filename.c_str());
+                //Serial.printf("done writing file %s!\n", ctx.filename.c_str());
 
                 _writeIO.remaining = 0;
                 _writeIO.offset = 0;
@@ -238,10 +243,6 @@ namespace XRAsyncIO
         }
 
         return false;
-    }
-
-    void setCallback(std::function<void(const IO_CONTEXT&)> cb) {
-        _callback = cb;
     }
 
     void *getReadObject(FILE_TYPE fileType)

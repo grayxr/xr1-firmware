@@ -5,7 +5,7 @@
 #include <Audio.h>
 #include <TeensyVariablePlayback.h>
 #include <synth_dexed.h>
-#include <synth_fm_drum.h>
+//#include <synth_fm_drum.h>
 //#include <synth_braids.h>
 
 // GUItool: begin automatically generated code
@@ -121,10 +121,10 @@ extern AudioSynthDexed          dexed3;         //xy=1279.0000228881836,1154.000
 extern AudioSynthDexed          dexed1;         //xy=1283.0000228881836,896.0000238418579
 extern AudioSynthDexed          dexed2;         //xy=1283.0000228881836,1027.000023841858
 extern AudioSynthDexed          dexed4;         //xy=1282.0000228881836,1284.000023841858
-extern AudioSynthFMDrum         fmDrum3;        //xy=1278.0000228881836,2295.333291053772
-extern AudioSynthFMDrum         fmDrum2;        //xy=1283.0000228881836,2151.333291053772
-extern AudioSynthFMDrum         fmDrum1;        //xy=1288.0000228881836,2006.333291053772
-extern AudioSynthFMDrum         fmDrum4;        //xy=1289.0000228881836,2432.333291053772
+// extern AudioSynthFMDrum         fmDrum3;        //xy=1278.0000228881836,2295.333291053772
+// extern AudioSynthFMDrum         fmDrum2;        //xy=1283.0000228881836,2151.333291053772
+// extern AudioSynthFMDrum         fmDrum1;        //xy=1288.0000228881836,2006.333291053772
+// extern AudioSynthFMDrum         fmDrum4;        //xy=1289.0000228881836,2432.333291053772
 extern AudioAmplifier           dexedAmp7;      //xy=1413.8333587646484,1748.0000743865967
 extern AudioAmplifier           dexedAmp6;      //xy=1416.8333587646484,1621.0000743865967
 extern AudioAmplifier           dexedAmp5;      //xy=1417.8333587646484,1490.0000743865967
