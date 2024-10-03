@@ -1688,7 +1688,6 @@ namespace XRSequencer
                     (fillState.fillType == FILL_TYPE::AUTO || fillState.fillType == FILL_TYPE::MANUAL) && 
                     (currentUXMode == XRUX::FILL_BASE_LAYER_CHANGE || (currentUXMode == XRUX::PERFORM_FILL_CHAIN && _queuedTrackLayer > -1))
                 ) {
-                    Serial.println("here1111!!!!!!!");
                     //XRLED::clearAllStepLEDs();
                     XRLED::displaySelectedTrackLayer(true);
                 } else if (
@@ -1709,7 +1708,6 @@ namespace XRSequencer
                     (fillState.fillType == FILL_TYPE::AUTO || fillState.fillType == FILL_TYPE::MANUAL) && 
                     (currentUXMode == XRUX::FILL_BASE_LAYER_CHANGE || (currentUXMode == XRUX::PERFORM_FILL_CHAIN && _queuedTrackLayer > -1))
                 ) {
-                    Serial.println("here2222!!!!!!!");
                     //XRLED::clearAllStepLEDs();
                     XRLED::displaySelectedTrackLayer(false);
                 } else if (
