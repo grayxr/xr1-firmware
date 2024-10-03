@@ -9,32 +9,90 @@
 #include <XRHelpers.h>
 #include <string>
 #include <map>
-#ifdef BUILD_FOR_LINUX
-#include "u8g2_opengl.h"
-#include "u8g2_opengl_main.h"
-#include <Wire.h>
-#include <Keypad.h>
-#include "XRKeyMatrix.h"
-#include "XRVersa.h"
-#include "XRLED.h"
-#endif
+
 namespace XRDisplay
 {
-#ifdef BUILD_FOR_LINUX
-    XR1Model xr1(XRKeyMatrix::kpd, XRLED::tlc);
-    U8G2_128X64_OPENGL<TwoWire, Keypad, Adafruit_MPR121> u8g2(&xr1,U8G2_R0, /* clock=*/ 13, /* data=*/ 11, /* cs=*/ 10, /* dc=*/ 14, /* reset=*/ 15, &Wire1, &XRKeyMatrix::kpd, &XRVersa::mpr121_a);
-#else
-    U8G2_SSD1309_128X64_NONAME0_F_4W_SW_SPI u8g2(U8G2_R0, /* clock=*/13, /* data=*/11, /* cs=*/10, /* dc=*/14, /* reset=*/15);
-#endif
+    //U8G2_SSD1309_128X64_NONAME0_F_4W_SW_SPI u8g2(U8G2_R0, /* clock=*/13, /* data=*/11, /* cs=*/10, /* dc=*/14, /* reset=*/15);
+    U8G2_SSD1309_128X64_NONAME0_F_4W_HW_SPI u8g2(U8G2_R0, /* cs=*/10, /* dc=*/14, /* reset=*/15);
+
+    #define XR_DISP_SHIFT_Y 1
+
+    bool metronomeSwing = false;
 
     void init()
     {
+        //u8g2.setBusClock(8000000);
         u8g2.begin();
+        u8g2.setContrast(0);
         u8g2.setFont(small_font);
         u8g2.setFontRefHeightAll();
         u8g2.setDrawColor(1);
         u8g2.setFontPosTop();
         u8g2.setFontDirection(0);
+    }
+
+    void drawSampleWaveform()
+    {
+        u8g2.clearBuffer();
+
+        auto tStart = millis();
+
+        uint16_t maxwidth = 128;
+
+        uint8_t overview_buffer[maxwidth];
+        uint16_t xspace = 1;
+        short samplevalue = 0;
+        uint32_t current_pos = 0;
+        int end_zoomed_x_position = 0;
+        uint16_t overview_factor = 0;
+        uint32_t filesize;
+
+        File f = SD.open("/samples/CH.wav", FILE_READ);
+        unsigned long filelength = f.size();
+
+        Serial.printf("filelength: %d\n", filelength);
+
+        f.seek(44);
+        char buf[512];
+        overview_factor = 0;
+        overview_factor = (filelength / maxwidth);
+        if (overview_factor % 2 != 0)
+            overview_factor = overview_factor - 1;
+
+        end_zoomed_x_position = current_pos;
+        //draw_end_marking(xspace);
+        xspace = 0;
+        current_pos = 0;
+        while (xspace < maxwidth) // generate overview
+        {
+            f.read(buf, 512);
+            samplevalue = ((buf[1] * 512) + buf[0]);
+            overview_buffer[xspace] = samplevalue / 1800 + 50;
+            xspace = xspace + 1;
+            current_pos = current_pos + overview_factor;
+            f.seek(44 + current_pos);
+        }
+
+        xspace = 0;
+        current_pos = 0;
+        int oldy = 50;
+        uint8_t x_offset = 8;
+        overview_factor = 0;
+        //display.fillRect(x_offset, 14, DISPLAY_WIDTH - x_offset - 11, 38, GREY4);
+
+        while (xspace < maxwidth) // draw overview
+        {
+            u8g2.drawLine(x_offset + 1 + (xspace - 1), oldy - 16, x_offset + 1 + xspace, overview_buffer[xspace] - 16);
+            oldy = overview_buffer[xspace];
+            xspace = xspace + 1;
+            current_pos = current_pos + overview_factor;
+        }
+
+        auto tEnd = millis();
+
+        Serial.printf("drawSampleWaveform took %d ms\n", tEnd - tStart);
+
+        u8g2.sendBuffer();
     }
 
     void drawIntro()
@@ -130,12 +188,12 @@ namespace XRDisplay
 
         drawGenericOverlayFrame();
 
-        std::string headerStr = "NEW PROJ.";
+        std::string headerStr = "new proj.";
         u8g2.drawStr(8, 5, headerStr.c_str());
 
         std::string projectNameStr = XRKeyInput::get();
 
-        u8g2.drawStr(50, 5, "ESC BACK  SEL SAVE");
+        u8g2.drawStr(50, 5, "esc back  sel save");
         u8g2.drawFrame(48, 4, 15, 9);
         u8g2.drawFrame(88, 4, 15, 9);
 
@@ -223,7 +281,7 @@ namespace XRDisplay
     {
         drawGenericOverlayFrame();
 
-        u8g2.drawStr(32, 5, "STEP MICROTIMING");
+        u8g2.drawStr(32, 5, "step microtiming");
 
         int valPosX = DISPLAY_MAX_WIDTH / 2;
         valPosX -= (value.length() > 0 ? u8g2.getStrWidth(value.c_str()) / 2 : 0);
@@ -295,6 +353,66 @@ namespace XRDisplay
         }
     }
 
+    void drawHatchedArea(uint8_t xPos, uint8_t yPos, uint8_t width, uint8_t height)
+    {
+        int leftBoundX = xPos;
+        // int rightBoundX = DISPLAY_MAX_WIDTH;
+        int topBoundX = yPos;
+        // int bottomBoundX = DISPLAY_MAX_HEIGHT;
+
+        int pixelRows = height;
+        int pixelCols = width;
+
+        // initialize row template
+        int t[width];
+        int spacing = 2;
+
+        // fill up template
+        for (int i = 0; i < width; i++)
+        {
+            if (i == 0 || (i % spacing == 0))
+            {
+                t[i] = 1;
+            }
+            else
+            {
+                t[i] = 0;
+            }
+        }
+
+        for (int r = 0; r < pixelRows; r++)
+        {
+            if (r != 0)
+            {
+                // Rotate the given array one time toward right
+                for (int i = 0; i < 1; i++)
+                {
+                    int j;
+                    int last;
+
+                    // Stores the last element of array
+                    last = t[width - 1];
+
+                    for (j = width - 1; j > 0; j--)
+                    {
+                        // Shift element of array by one
+                        t[j] = t[j - 1];
+                    }
+                    // Last element of array will be added to the start of array.
+                    t[0] = last;
+                }
+            }
+
+            for (int c = 0; c < pixelCols; c++)
+            {
+                if (t[c] == 1)
+                {
+                    u8g2.drawPixel(leftBoundX + c, topBoundX + r);
+                }
+            }
+        }
+    }
+
     void drawStraightDashedLine(int startX, int endX, int yPos)
     {
         int width = (endX - startX);
@@ -311,6 +429,73 @@ namespace XRDisplay
         }
     }
 
+    void drawModEncoderArea()
+    {
+        // mod encoder area
+        u8g2.drawFrame(4, XR_DISP_SHIFT_Y+24, 121, 27);
+        u8g2.drawLine(5, XR_DISP_SHIFT_Y+34, 123, XR_DISP_SHIFT_Y+34);
+        u8g2.drawLine(33, XR_DISP_SHIFT_Y+24, 33, XR_DISP_SHIFT_Y+50);
+        u8g2.drawLine(64, XR_DISP_SHIFT_Y+24, 64, XR_DISP_SHIFT_Y+50);
+        u8g2.drawLine(94, XR_DISP_SHIFT_Y+24, 94, XR_DISP_SHIFT_Y+50);
+    }
+    
+    void drawFillPage()
+    {
+        auto currentBaseLayer = XRSequencer::getCurrentSelectedTrackLayerNum();
+        const auto baseLayerStr = "layer:" + XRHelpers::strldz(std::to_string(currentBaseLayer+1), 2);
+        u8g2.drawStr(94, XR_DISP_SHIFT_Y+2, baseLayerStr.c_str());
+
+        drawKeyboard(-7);
+        
+        int yShift = XR_DISP_SHIFT_Y-9;
+
+        u8g2.drawStr(24, XR_DISP_SHIFT_Y+22, "X");
+        u8g2.drawStr(35, XR_DISP_SHIFT_Y+22, "X");
+        u8g2.drawStr(64, XR_DISP_SHIFT_Y+22, "X");
+
+        if (XRSequencer::layerChainState.enabled)
+        {            
+            u8g2.drawTriangle(63, yShift+23, 65, yShift+27, 68, yShift+23);
+            u8g2.drawStr(72, XR_DISP_SHIFT_Y+12, "chain on");
+        } 
+        else if (XRSequencer::fillState.fillType == XRSequencer::FILL_TYPE::MANUAL)
+        {            
+            u8g2.drawTriangle(23, yShift+23, 25, yShift+27, 28, yShift+23);
+            u8g2.drawStr(31, XR_DISP_SHIFT_Y+12, "manual fill");
+        }
+        else if (XRSequencer::fillState.fillType == XRSequencer::FILL_TYPE::AUTO) {
+            u8g2.drawTriangle(34, yShift+23, 36, yShift+27, 39, yShift+23);
+            u8g2.drawStr(42, XR_DISP_SHIFT_Y+12, "auto fill");
+
+            auto currentFillMeasure = XRSequencer::fillState.fillMeasure;
+
+            int xMult = 14;
+            int xMultB = 13;
+
+            u8g2.drawStr(16 + (xMultB * 1), XR_DISP_SHIFT_Y+34, "2");
+            u8g2.drawStr(16 + (xMultB * 2), XR_DISP_SHIFT_Y+34, "4");
+            u8g2.drawStr(16 + (xMultB * 3), XR_DISP_SHIFT_Y+34, "8");
+            u8g2.drawStr(16 + (xMultB * 4), XR_DISP_SHIFT_Y+34, "16");
+
+            if (currentFillMeasure == 2)
+            { // 2
+                u8g2.drawTriangle(14 + (xMult * 1), yShift+58, 17 + (xMult * 1), yShift+53, 20 + (xMult * 1), yShift+58);
+            }
+            else if (currentFillMeasure == 4)
+            { // 4
+                u8g2.drawTriangle(14 + (xMult * 2), yShift+58, 17 + (xMult * 2), yShift+53, 20 + (xMult * 2), yShift+58);
+            }
+            else if (currentFillMeasure == 8)
+            { // 8
+                u8g2.drawTriangle(14 + (xMult * 3), yShift+58, 17 + (xMult * 3), yShift+53, 20 + (xMult * 3), yShift+58);
+            }
+            else if (currentFillMeasure == 16)
+            { // 16
+                u8g2.drawTriangle(14 + (xMult * 4), yShift+58, 17 + (xMult * 4), yShift+53, 20 + (xMult * 4), yShift+58);
+            }
+        }
+    }
+
     void drawSequencerScreen(bool queueBlink)
     {
         //Serial.println("enter drawSequencerScreen!");
@@ -318,35 +503,55 @@ namespace XRDisplay
         u8g2.clearBuffer();
 
         auto currentUXMode = XRUX::getCurrentMode();
-        if (currentUXMode == XRUX::PERFORM_TAP)
+
+        if (currentUXMode == XRUX::PERFORM_FILL_CHAIN || currentUXMode == XRUX::FILL_BASE_LAYER_CHANGE)
         {
-            u8g2.drawStr(0, 0, "TAP MODE");
-            u8g2.drawLine(0, 10, DISPLAY_MAX_WIDTH, 10);
 
-            u8g2.drawStr(27, 15, "TAP IN TRACK LAYER");
+            u8g2.drawFrame(4, XR_DISP_SHIFT_Y, 47, 11);
+            u8g2.drawLine(0, 11, DISPLAY_MAX_WIDTH, 11);
+            u8g2.drawStr(8, XR_DISP_SHIFT_Y+2, "fill/chain");
 
-            // left trk icon
-            u8g2.drawLine(20, 27, 39, 27);
-            u8g2.drawLine(39, 27, 39, 55);
-            u8g2.drawLine(39, 55, 20, 55);
-            u8g2.drawLine(20, 31, 34, 31);
-            u8g2.drawLine(34, 31, 34, 50);
-            u8g2.drawLine(34, 50, 20, 50);
-            u8g2.drawBox(20, 34, 8, 3);
+            if (XRSequencer::getCurrentFillChainPageNum() == 0)
+            {
+                drawFillPage();
+            }
+            else
+            {
+               // u8g2.drawStr(85, XR_DISP_SHIFT_Y+2, "edit chain");
+               auto currentBaseLayer = XRSequencer::getCurrentSelectedTrackLayerNum();
+                const auto baseLayerStr = "layer:" + XRHelpers::strldz(std::to_string(currentBaseLayer+1), 2);
+                u8g2.drawStr(94, XR_DISP_SHIFT_Y+2, baseLayerStr.c_str());
 
-            // middle trk icon
-            u8g2.drawFrame(49, 27, 30, 28);
-            u8g2.drawFrame(54, 31, 20, 19);
-            u8g2.drawBox(60, 34, 8, 3);
+                auto &chainState = XRSequencer::layerChainState;
 
-            // right trk icon
-            u8g2.drawLine(107, 27, 88, 27);
-            u8g2.drawLine(88, 27, 88, 55);
-            u8g2.drawLine(88, 55, 107, 55);
-            u8g2.drawLine(107, 31, 93, 31);
-            u8g2.drawLine(93, 31, 93, 50);
-            u8g2.drawLine(93, 50, 107, 50);
-            u8g2.drawBox(100, 34, 8, 3);
+                auto cellWidth = (DISPLAY_MAX_WIDTH / 8) - 2;
+
+                for (int cl = 0; cl < MAXIMUM_SEQUENCER_TRACK_LAYERS; cl++)
+                {
+                    auto cMult = cellWidth * cl;
+                    auto cRowY = cl < 8 ? 15 : 31;
+                    auto cRowX = cl < 8 ? 1 + cMult + cl : 1 + (cellWidth * (cl-8)) + cl-8;
+                    auto paddingX = cl < 8 ? (cl > 0 ? cl*1: 0) : ((cl-8) > 0 ? (cl-8)*1: 0);
+
+                    if (chainState.chain[cl] > -1)
+                    {
+                        u8g2.drawStr(cRowX+paddingX+4, XR_DISP_SHIFT_Y+cRowY+2, XRHelpers::strldz(std::to_string(chainState.chain[cl]+1), 2).c_str());
+
+                        if (cl == XRSequencer::layerChainState.currLayerIndex)
+                        {
+                            u8g2.drawLine(cRowX+paddingX+2, XR_DISP_SHIFT_Y+cRowY+10, cRowX+paddingX+cellWidth-3, XR_DISP_SHIFT_Y+cRowY+10);
+                        } 
+                    }
+                    else
+                    {
+                        drawHatchedArea(cRowX+paddingX, XR_DISP_SHIFT_Y+cRowY-1, cellWidth, cellWidth);
+                    }
+                    
+                    u8g2.drawFrame(cRowX+paddingX, XR_DISP_SHIFT_Y+cRowY-1, cellWidth, cellWidth);
+                }
+            }
+
+            drawFillChainPageNumIndicators();
 
             u8g2.sendBuffer();
 
@@ -354,10 +559,10 @@ namespace XRDisplay
         }
         else if (currentUXMode == XRUX::PERFORM_MUTE)
         {
-            u8g2.drawStr(0, 0, "MUTE MODE");
+            u8g2.drawStr(0, 0, "mute mode");
             u8g2.drawLine(0, 10, DISPLAY_MAX_WIDTH, 10);
 
-            u8g2.drawStr(23, 15, "SELECT TRACKS TO MUTE");
+            u8g2.drawStr(23, 15, "select tracks to mute");
 
             // left trk icon
             u8g2.drawLine(20, 27, 39, 27);
@@ -388,10 +593,10 @@ namespace XRDisplay
         }
         else if (currentUXMode == XRUX::PERFORM_SOLO)
         {
-            u8g2.drawStr(0, 0, "SOLO MODE");
+            u8g2.drawStr(0, 0, "solo mode");
             u8g2.drawLine(0, 10, DISPLAY_MAX_WIDTH, 10);
 
-            u8g2.drawStr(23, 15, "SELECT TRACK TO SOLO");
+            u8g2.drawStr(23, 15, "select tracks to solo");
 
             // left trk icon
             u8g2.drawLine(20, 27, 39, 27);
@@ -425,9 +630,35 @@ namespace XRDisplay
             u8g2.sendBuffer();
             return;
         }
-        else if (currentUXMode == XRUX::PERFORM_RATCHET)
+        else if (currentUXMode == XRUX::PERFORM_RATCHET || currentUXMode == XRUX::SUBMITTING_RATCHET_STEP_VALUE)
         {
+            auto ratchetTrack = XRSequencer::getRatchetTrack();
+
+            // main header area
+            //u8g2.setFont(large_font);
+
+            u8g2.drawFrame(4, XR_DISP_SHIFT_Y, 51, 11);
+            u8g2.drawStr(8, XR_DISP_SHIFT_Y+2, "ratchet/arp");
+
+            const auto headerStr = "track:"+XRHelpers::strldz(std::to_string(ratchetTrack+1), 2);
+            u8g2.drawStr(95, XR_DISP_SHIFT_Y+2, headerStr.c_str());
+            u8g2.drawLine(0, 11, DISPLAY_MAX_WIDTH, 11);
+
+            //u8g2.setFont(small_font);
+
             drawPerformRatchetScreen();
+
+            if (XRSequencer::onRatchetStepPage() || XRUX::getCurrentMode() == XRUX::SUBMITTING_RATCHET_STEP_VALUE) {
+                //drawTrackSoundName();
+
+                std::string metaStr = "arp params";
+
+                u8g2.drawStr(4, XR_DISP_SHIFT_Y+14, metaStr.c_str());
+            }
+
+            drawWriteStateIcon(-20, -4);
+
+            u8g2.sendBuffer();
 
             return;
         }
@@ -437,66 +668,134 @@ namespace XRDisplay
         auto currentSelectedTrack = XRSequencer::getCurrentSelectedTrackNum();
         auto &queuedPattern = XRSequencer::getQueuedPatternState();
 
-        u8g2.drawBox(0,0,128,7);
-        //u8g2.drawLine(0,8,128,8);
-        //drawStraightDashedLine(0, 128, 8);
+        if (currentUXMode == XRUX::PATTERN_WRITE || currentUXMode == XRUX::PATTERN_SEL || currentUXMode == XRUX::PATTERN_CHANGE_QUEUED)
+        {
+            // main header area
+            u8g2.setFont(large_font);
 
-        u8g2.setColorIndex((u_int8_t)0);
+            bool ptnBlink = false;
+            int ptnNumber = currentSelectedPattern + 1;
+            if (queuedPattern.number > -1)
+            {
+                ptnNumber = queuedPattern.number + 1;
+                ptnBlink = (queuedPattern.number != currentSelectedPattern);
+            }
+
+            //auto headerStr = getNumberBufferedStr("pattern", currentSelectedPattern + 1, false);
+            auto headerStr = "pattern-" + ((queueBlink && ptnBlink) ? "" : std::to_string(ptnNumber));
+            u8g2.drawStr(4, XR_DISP_SHIFT_Y, headerStr.c_str());
+
+            // timecode / track info area
+            u8g2.setFont(small_font);
+
+            std::string runtimeStr = XRClock::getClockTimeString();
+            u8g2.drawStr(4, XR_DISP_SHIFT_Y+14, runtimeStr.c_str());
+        }
+        else if (currentUXMode == XRUX::TRACK_WRITE || currentUXMode == XRUX::TRACK_SEL || currentUXMode == XRUX::SUBMITTING_STEP_VALUE || currentUXMode == XRUX::TRACK_LAYER_QUEUED)
+        {
+            // main header area
+            u8g2.setFont(large_font);
+
+            //auto headerStr = getNumberBufferedStr("track", currentSelectedTrack + 1, false);
+            auto headerStr = "track-" + std::to_string(currentSelectedTrack + 1);
+            u8g2.drawStr(4, XR_DISP_SHIFT_Y, headerStr.c_str());
+        }
+
+        u8g2.setFont(small_font);
+
+        // legend area
+
+        auto currTrackLayerNum = XRSequencer::getCurrentSelectedTrackLayerNum();
+        auto queuedLayer = XRSequencer::getQueuedTrackLayer();
+
+        bool lyrBlink = false;
+        int lyrNumber = currTrackLayerNum + 1;
+        if (queuedLayer > -1)
+        {
+            lyrNumber = queuedLayer + 1;
+            lyrBlink = (queuedLayer != currTrackLayerNum);
+        }
+
+        auto lStr = "lyr" + ((queueBlink && lyrBlink) ? "" : XRHelpers::strldz(std::to_string(lyrNumber), 2));
+        //auto lStr = "layer" + std::to_string(currTrackLayerNum + 1);
 
         bool bnkBlink = false;
         int bnkNumber = currentSelectedBank + 1;
-
         if (queuedPattern.bank > -1)
         {
             bnkNumber = queuedPattern.bank + 1;
             bnkBlink = (queuedPattern.bank != currentSelectedBank);
         }
+        //auto bStr = getNumberBufferedStr("bank", bnkNumber, (queueBlink && bnkBlink));
+        auto bStr = "bnk" + ((queueBlink && bnkBlink) ? "" : XRHelpers::strldz(std::to_string(bnkNumber), 2));
 
-        drawMenuHeader("B", bnkNumber, 1, (queueBlink && bnkBlink));
+        // draw layer chain frame if enabled
+        if (XRSequencer::layerChainState.enabled) {
+            u8g2.drawFrame(76, XR_DISP_SHIFT_Y+2, 25, 11);
+        }
 
-        bool ptnBlink = false;
-        int ptnNumber = currentSelectedPattern + 1;
+        u8g2.drawStr(79, XR_DISP_SHIFT_Y+4, lStr.c_str());
+        u8g2.drawStr(79, XR_DISP_SHIFT_Y+14, bStr.c_str());
 
-        if (queuedPattern.number > -1)
+        // if (currentUXMode == XRUX::TRACK_WRITE || currentUXMode == XRUX::TRACK_SEL || currentUXMode == XRUX::SUBMITTING_STEP_VALUE)
+        // {
+        //     bool ptnBlink = false;
+        //     int ptnNumber = currentSelectedPattern + 1;
+        //     if (queuedPattern.number > -1)
+        //     {
+        //         ptnNumber = queuedPattern.number + 1;
+        //         ptnBlink = (queuedPattern.number != currentSelectedPattern);
+        //     }
+
+        //     std::string pStr = "(";
+        //     pStr += getNumberBufferedStr("p", ptnNumber, (queueBlink && ptnBlink));
+        //     pStr += ")";
+
+        //     u8g2.drawStr(55, XR_DISP_SHIFT_Y+4, pStr.c_str());
+        // }
+
+        drawWriteStateIcon();
+
+        // metronome indicator area
+        
+        // triangle
+
+        // int xShift = 8;
+        // int middleX = xShift+98;
+        // u8g2.drawLine(xShift+95, XR_DISP_SHIFT_Y+9, middleX, XR_DISP_SHIFT_Y+5);
+        // u8g2.drawLine(middleX, XR_DISP_SHIFT_Y+5, xShift+101, XR_DISP_SHIFT_Y+9);
+        // u8g2.drawLine(xShift+95, XR_DISP_SHIFT_Y+9, xShift+101, XR_DISP_SHIFT_Y+9);
+        // // middle stick
+        // auto middleStickTopX = metronomeSwing ? 95 : 101;
+        // u8g2.drawLine(middleX, XR_DISP_SHIFT_Y+9, xShift+middleStickTopX, XR_DISP_SHIFT_Y+6);
+
+        // bpm area
+
+        uint8_t currentBpm = (uint8_t)XRClock::getTempo();
+        std::string currentBpmStr = XRHelpers::strldz(std::to_string(currentBpm), 3);
+        u8g2.drawStr(113, XR_DISP_SHIFT_Y+4, currentBpmStr.c_str());
+
+        if (currentUXMode == XRUX::TRACK_WRITE || currentUXMode == XRUX::TRACK_SEL || currentUXMode == XRUX::SUBMITTING_STEP_VALUE || currentUXMode == XRUX::TRACK_LAYER_QUEUED)
         {
-            ptnNumber = queuedPattern.number + 1;
-            ptnBlink = (queuedPattern.number != currentSelectedPattern);
+            // draw control mod area
+            drawControlMods();
+            drawPageNumIndicators();
+
+            // note indicator area
+            auto dNote = getDisplayNote();
+            int xNoteShift = dNote.length() > 2 ? -4 : 0;
+            u8g2.drawStr(xNoteShift+117, XR_DISP_SHIFT_Y+14, getDisplayNote().c_str());
+        }
+        else if (currentUXMode == XRUX::PATTERN_WRITE || currentUXMode == XRUX::PATTERN_SEL || currentUXMode == XRUX::PATTERN_CHANGE_QUEUED)
+        {
+            // draw control mod area
+            drawPatternControlMods();
+            drawPatternPageNumIndicators();
         }
 
         if (currentUXMode == XRUX::PATTERN_WRITE || currentUXMode == XRUX::PATTERN_SEL || currentUXMode == XRUX::PATTERN_CHANGE_QUEUED)
         {
-            u8g2.drawTriangle(15,0,15,6,18,3);
-
-            drawMenuHeader("P", ptnNumber, 21, (queueBlink && ptnBlink));
-        }
-        else if (currentUXMode == XRUX::TRACK_WRITE || currentUXMode == XRUX::TRACK_SEL || currentUXMode == XRUX::SUBMITTING_STEP_VALUE)
-        {
-            u8g2.drawTriangle(15,0,15,6,18,3);
-
-            drawMenuHeader("P", ptnNumber, 21, (queueBlink && ptnBlink));
-            
-            u8g2.drawTriangle(35,0,35,6,38,3);
-
-            auto currTrackLayerNum = XRSequencer::getCurrentSelectedTrackLayerNum();
-
-            std::string layerNumStr = "L";
-            layerNumStr += XRHelpers::strldz(std::to_string(currTrackLayerNum + 1), 2);
-            layerNumStr += ":T";
-            layerNumStr += XRHelpers::strldz(std::to_string(currentSelectedTrack + 1), 2);
-            u8g2.drawStr(41, 0, layerNumStr.c_str());
-        }
-
-        u8g2.setColorIndex((u_int8_t)1);
-
-
-        u8g2.drawLine(0,18,128,18);
-        //u8g2.drawFrame(0, 8, 128, 11);
-        //u8g2.drawFrame(0, 8, 128, 55);
-
-        if (currentUXMode == XRUX::PATTERN_WRITE || currentUXMode == XRUX::PATTERN_SEL || currentUXMode == XRUX::PATTERN_CHANGE_QUEUED)
-        {
-            std::string patternHeaderStr = "PATTERN";
-            u8g2.drawStr(1, 9, patternHeaderStr.c_str());
+            drawModEncoderArea();
 
             // draw control mod area
             drawPatternControlMods();
@@ -505,226 +804,281 @@ namespace XRDisplay
         else if (
             currentUXMode == XRUX::TRACK_WRITE ||
             currentUXMode == XRUX::TRACK_SEL ||
-            currentUXMode == XRUX::SUBMITTING_STEP_VALUE)
+            currentUXMode == XRUX::TRACK_LAYER_QUEUED ||
+            currentUXMode == XRUX::SUBMITTING_STEP_VALUE ||
+            currentUXMode == XRUX::SUBMITTING_RATCHET_STEP_VALUE)
         {
-            auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-            auto currSoundForTrack = XRSound::activePatternSounds[currTrackNum];
-
-            // draw track meta type box
-            int trackMetaStrX = 3;
-
-            std::string trackMetaStr = XRSound::getSoundMetaStr(currSoundForTrack.type);
-            std::string trackInfoStr;
-
-            if (
-                currSoundForTrack.type == XRSound::T_MONO_SAMPLE ||
-                currSoundForTrack.type == XRSound::T_MONO_SYNTH ||
-                currSoundForTrack.type == XRSound::T_DEXED_SYNTH ||
-                currSoundForTrack.type == XRSound::T_FM_DRUM
-            ){
-                std::string soundName(currSoundForTrack.name);
-
-                trackInfoStr += soundName.length() > 0 ? soundName : "INIT";
-            }
-            else if (
-                currSoundForTrack.type == XRSound::T_MIDI || 
-                currSoundForTrack.type == XRSound::T_CV_GATE || 
-                currSoundForTrack.type == XRSound::T_CV_TRIG
-            ){
-                trackInfoStr += "";
-            }
-
-            u8g2.drawStr(1, 9, trackMetaStr.c_str());
-            u8g2.drawLine(32,8,32,18);
-            u8g2.drawStr(36, 9, trackInfoStr.c_str());
-
-            // draw note indicator
-            if (
-                currSoundForTrack.type == XRSound::T_MONO_SYNTH ||
-                currSoundForTrack.type == XRSound::T_DEXED_SYNTH ||
-                currSoundForTrack.type == XRSound::T_MIDI ||
-                currSoundForTrack.type == XRSound::T_CV_GATE)
-            {
-                auto currentSelectedPage = XRSequencer::getCurrentSelectedPage();
-
-                if (currentSelectedPage == 0)
-                {
-                    u8g2.drawStr(17, 9, getDisplayNote().c_str());
-                    u8g2.drawLine(14,8,14,18);
-
-                    // u8g2.setColorIndex((u_int8_t)0);
-                    // u8g2.drawStr(90, 0, getDisplayNote().c_str());
-                    // u8g2.setColorIndex((u_int8_t)1);
-                }
-            }
-
-            // else if (currSoundForTrack.type == XRSound::T_CV_TRIG)
-            // {
-            //     // u8g2.drawLine(3,42,14,42);
-            //     // u8g2.drawLine(14,42,14,28);
-            //     // u8g2.drawLine(14,28,19,28);
-            //     // u8g2.drawLine(19,28,19,42);
-            //     // u8g2.drawLine(19,42,24,42);
-            // }
+            // track info area
+            drawTrackSoundName();
 
             // draw control mod area
             drawControlMods();
             drawPageNumIndicators();
         }
 
-        u8g2.setColorIndex((u_int8_t)0);
-
-        uint8_t currentBpm = (uint8_t)XRClock::getTempo();
-        std::string currentBpmStr = XRHelpers::strldz(std::to_string(currentBpm), 3);
-        u8g2.drawStr(108, 0, currentBpmStr.c_str());
-
-        auto seqState = XRSequencer::getSeqState();
-
-        // transport indicator (play, pause, stop)
-        uint8_t transportIconStartX = 121;
-        if (seqState.playbackState == XRSequencer::STOPPED)
-        {
-            u8g2.drawBox(transportIconStartX, 1, 5, 5);
-        }
-        else if (seqState.playbackState == XRSequencer::RUNNING)
-        {
-            u8g2.drawTriangle(transportIconStartX, 0, transportIconStartX, 6, transportIconStartX + 6, 3);
-        }
-        else if (seqState.playbackState == XRSequencer::PAUSED)
-        {
-            u8g2.drawBox(transportIconStartX, 1, 2, 5);
-            u8g2.drawBox(transportIconStartX + 3, 1, 2, 5);
-        }
-
-        u8g2.setColorIndex((u_int8_t)1);
-
         u8g2.sendBuffer();
+    }
+
+    void drawWriteStateIcon(int xShift, int yShift)
+    {
+        if (XRSD::writeState != XRSD::WRITE_STATE::IDLE)
+        {
+            // draw file sync icon
+            u8g2.setFont(u8g2_font_open_iconic_arrow_1x_t);
+            u8g2.drawGlyph(xShift + 102, XR_DISP_SHIFT_Y + yShift + 4, 0X58);
+            u8g2.setFont(small_font);
+        }
+    }
+
+    void drawTrackSoundName()
+    {
+        // track info area
+        auto currTrackNum = (XRSequencer::onRatchetStepPage() || XRUX::getCurrentMode() == XRUX::SUBMITTING_RATCHET_STEP_VALUE) ? 
+            XRSequencer::getRatchetTrack() : 
+            XRSequencer::getCurrentSelectedTrackNum();
+            
+        auto currSoundForTrack = XRSound::activeKit.sounds[currTrackNum];
+
+        // draw track meta type box
+        int trackMetaStrX = 3;
+
+        std::string trackMetaStr = XRSound::getSoundMetaStr(currSoundForTrack.type);
+        std::string trackInfoStr;
+
+        if (
+            currSoundForTrack.type == XRSound::T_MONO_SAMPLE ||
+            currSoundForTrack.type == XRSound::T_MONO_SYNTH ||
+            currSoundForTrack.type == XRSound::T_DEXED_SYNTH ||
+            currSoundForTrack.type == XRSound::T_FM_DRUM
+        ){
+            std::string soundName(currSoundForTrack.name);
+
+            trackInfoStr += soundName.length() > 0 ? soundName : "init";
+        }
+        else if (
+            currSoundForTrack.type == XRSound::T_MIDI || 
+            currSoundForTrack.type == XRSound::T_CV_GATE || 
+            currSoundForTrack.type == XRSound::T_CV_TRIG
+        ){
+            trackInfoStr += "";
+        }
+
+        u8g2.drawStr(4, XR_DISP_SHIFT_Y+14, trackMetaStr.c_str());
+
+        if (currSoundForTrack.type != XRSound::T_EMPTY) {
+            u8g2.drawTriangle(19,XR_DISP_SHIFT_Y+14,19,XR_DISP_SHIFT_Y+20,22,XR_DISP_SHIFT_Y+17);
+            u8g2.drawStr(25, XR_DISP_SHIFT_Y+14, trackInfoStr.c_str());
+        }
     }
 
     void drawPerformRatchetScreen()
     {
         auto ratchetTrack = XRSequencer::getRatchetTrack();
         auto ratchetDivision = XRSequencer::getRatchetDivision();
+        auto currRatchetPageNum = XRSequencer::getCurrentRatchetPageNum();
 
-        u8g2.drawStr(0, 0, "RATCHET MODE");
-        u8g2.drawLine(0, 10, DISPLAY_MAX_WIDTH, 10);
+        // u8g2.drawStr(4, 0, "perform: ratchet/arp");
+        // u8g2.drawLine(4, 8, 122, 8);
 
-        if (ratchetTrack > -1)
-        {
-            std::string rchTrkStr = "TRK:";
-            rchTrkStr += XRHelpers::strldz(std::to_string(ratchetTrack + 1), 2);
-            u8g2.drawStr(0, 12, rchTrkStr.c_str());
-        }
-        else if (ratchetTrack == -1)
-        {
-            u8g2.drawStr(3, 12, "HOLD A TRACK BUTTON TO RATCHET");
-        }
+        // std::string rchTrkStr = "trk:";
+        // rchTrkStr += XRHelpers::strldz(std::to_string(ratchetTrack + 1), 2);
+        // u8g2.drawStr(100, 0, rchTrkStr.c_str());
 
-        // draw keyboard
-        drawKeyboard(0);
+        if (currRatchetPageNum == 0) {
+            // draw keyboard
+            drawKeyboard(-7);
 
-        if (ratchetDivision > 0)
-        {
-            // ratchet_division = 24 = 96/24 = 4 = 1/4
-            uint8_t divDenominator = (96 / ratchetDivision);
+            if (ratchetDivision > 0)
+            {
+                // ratchet_division = 24 = 96/24 = 4 = 1/4
+                uint8_t divDenominator = (96 / ratchetDivision);
 
-            std::string divStr = "1/";
-            divStr += std::to_string(divDenominator);
+                std::string divStr = "1/";
+                divStr += std::to_string(divDenominator);
 
-            int xMult = 14;
-            int xMultB = 13;
+                int xMult = 14;
+                int xMultB = 13;
+                int yShift = -6;
 
-            // even divisions (bottom of keyboard)
-            if (ratchetDivision == 24)
-            { // 1/4
-                u8g2.drawTriangle(14, 60, 17, 55, 20, 60);
-                u8g2.drawStr(26, 54, divStr.c_str());
+                // even divisions (bottom of keyboard)
+                if (ratchetDivision == 24)
+                { // 1/4
+                    u8g2.drawTriangle(14, yShift+57, 17, yShift+52, 20, yShift+57);
+                    u8g2.drawStr(26, yShift+51, divStr.c_str());
+                }
+                else if (ratchetDivision == 12)
+                { // 1/8
+                    u8g2.drawTriangle(14 + (xMult * 1), yShift+57, 17 + (xMult * 1), yShift+52, 20 + (xMult * 1), yShift+57);
+                    u8g2.drawStr(26 + (xMult * 1), yShift+51, divStr.c_str());
+                }
+                else if (ratchetDivision == 6)
+                { // 1/16
+                    u8g2.drawTriangle(14 + (xMult * 2), yShift+57, 17 + (xMult * 2), yShift+52, 20 + (xMult * 2), yShift+57);
+                    u8g2.drawStr(26 + (xMult * 2), yShift+51, divStr.c_str());
+                }
+                else if (ratchetDivision == 3)
+                { // 1/32
+                    u8g2.drawTriangle(14 + (xMult * 3), yShift+57, 17 + (xMult * 3), yShift+52, 20 + (xMult * 3), yShift+57);
+                    u8g2.drawStr(26 + (xMult * 3), yShift+51, divStr.c_str());
+                }
+                else if (ratchetDivision == 2)
+                { // 1/48
+                    u8g2.drawTriangle(14 + (xMult * 4), yShift+57, 17 + (xMult * 4), yShift+52, 20 + (xMult * 4), yShift+57);
+                    u8g2.drawStr(26 + (xMult * 4), yShift+51, divStr.c_str());
+                }
+                else if (ratchetDivision == 1)
+                { // 1/96
+                    u8g2.drawTriangle(14 + (xMult * 5), yShift+57, 17 + (xMult * 5), yShift+52, 20 + (xMult * 5), yShift+57);
+                    u8g2.drawStr(26 + (xMult * 5), yShift+51, divStr.c_str());
+                }
+                // odd divisions (top of keyboard)
+                else if (ratchetDivision == 16)
+                { // 1/6
+                    u8g2.drawTriangle(22, yShift+21, 24, yShift+25, 27, yShift+21);
+                    u8g2.drawStr(33, yShift+19, divStr.c_str());
+                }
+                else if (ratchetDivision == 8)
+                { // 1/12
+                    u8g2.drawTriangle(22 + (xMultB * 1), yShift+21, 24 + (xMultB * 1), yShift+25, 27 + (xMultB * 1), yShift+21);
+                    u8g2.drawStr(33 + (xMultB * 1), yShift+19, divStr.c_str());
+                }
+                else if (ratchetDivision == 4)
+                { // 1/24
+                    u8g2.drawTriangle(22 + (xMultB * 3), yShift+21, 24 + (xMultB * 3), yShift+25, 27 + (xMultB * 3), yShift+21);
+                    u8g2.drawStr(33 + (xMultB * 3), yShift+19, divStr.c_str());
+                }
             }
-            else if (ratchetDivision == 12)
-            { // 1/8
-                u8g2.drawTriangle(14 + (xMult * 1), 60, 17 + (xMult * 1), 55, 20 + (xMult * 1), 60);
-                u8g2.drawStr(26 + (xMult * 1), 54, divStr.c_str());
-            }
-            else if (ratchetDivision == 6)
-            { // 1/16
-                u8g2.drawTriangle(14 + (xMult * 2), 60, 17 + (xMult * 2), 55, 20 + (xMult * 2), 60);
-                u8g2.drawStr(26 + (xMult * 2), 54, divStr.c_str());
-            }
-            else if (ratchetDivision == 3)
-            { // 1/32
-                u8g2.drawTriangle(14 + (xMult * 3), 60, 17 + (xMult * 3), 55, 20 + (xMult * 3), 60);
-                u8g2.drawStr(26 + (xMult * 3), 54, divStr.c_str());
-            }
-            else if (ratchetDivision == 2)
-            { // 1/48
-                u8g2.drawTriangle(14 + (xMult * 4), 60, 17 + (xMult * 4), 55, 20 + (xMult * 4), 60);
-                u8g2.drawStr(26 + (xMult * 4), 54, divStr.c_str());
-            }
-            else if (ratchetDivision == 1)
-            { // 1/96
-                u8g2.drawTriangle(14 + (xMult * 5), 60, 17 + (xMult * 5), 55, 20 + (xMult * 5), 60);
-                u8g2.drawStr(26 + (xMult * 5), 54, divStr.c_str());
-            }
-            // odd divisions (top of keyboard)
-            else if (ratchetDivision == 16)
-            { // 1/6
-                u8g2.drawTriangle(22, 21, 24, 25, 27, 21);
-                u8g2.drawStr(33, 19, divStr.c_str());
-            }
-            else if (ratchetDivision == 8)
-            { // 1/12
-                u8g2.drawTriangle(22 + (xMultB * 1), 21, 24 + (xMultB * 1), 25, 27 + (xMultB * 1), 21);
-                u8g2.drawStr(33 + (xMultB * 1), 19, divStr.c_str());
-            }
-            else if (ratchetDivision == 4)
-            { // 1/24
-                u8g2.drawTriangle(22 + (xMultB * 3), 21, 24 + (xMultB * 3), 25, 27 + (xMultB * 3), 21);
-                u8g2.drawStr(33 + (xMultB * 3), 19, divStr.c_str());
-            }
-        }
-        else
-        {
-            u8g2.drawStr(10, 54, "HOLD A RATCHET DIVISION KEY");
+        } else {
+            drawExtendedControlMods(true);
+            drawModEncoderArea();
         }
 
-        u8g2.sendBuffer();
+        drawRatchetPageNumIndicators();
 
         return;
     }
 
+    void drawRatchetPageNumIndicators()
+    {
+        auto currRatchetPageNum = XRSequencer::getCurrentRatchetPageNum();
+        auto ratchetPageCount = 2;
+
+        std::string ratchetPageNameMap[ratchetPageCount] = {
+            "ratchet",
+            "arp"
+        };
+
+        auto currPageNameForTrack = ratchetPageNameMap[currRatchetPageNum];
+        auto pageTabPosY = XR_DISP_SHIFT_Y + 53;
+
+        u8g2.drawStr(4, pageTabPosY, currPageNameForTrack.c_str());
+
+        int pageNumBasedStartX = 128;
+        int pageNumStartX = pageNumBasedStartX - 9;
+        int pageBetweenPaddingX = 9;
+
+        auto multX = ratchetPageCount - currRatchetPageNum;
+        auto pageBoxStartX = 128 - (multX * pageBetweenPaddingX);
+
+        u8g2.drawBox(pageBoxStartX, 54, 7, 7);
+
+        for (int l = 0; l < ratchetPageCount; l++)
+        {
+            auto distMultX = ratchetPageCount - (l+1);
+
+            if (l == currRatchetPageNum)
+            {
+                u8g2.setColorIndex((u_int8_t)0);
+                u8g2.drawStr(pageNumStartX + 2 - (pageBetweenPaddingX * distMultX), pageTabPosY, std::to_string(l + 1).c_str());
+                u8g2.setColorIndex((u_int8_t)1);
+            }
+            else
+            {
+                u8g2.drawStr(pageNumStartX + 2 - (pageBetweenPaddingX * distMultX), pageTabPosY, std::to_string(l + 1).c_str());
+            }
+        }
+    }
+
+    void drawFillChainPageNumIndicators()
+    {
+        auto currPageNum = XRSequencer::getCurrentFillChainPageNum();
+        auto fillChainPageCount = 2;
+
+        const std::string fillChainPageNameMap[fillChainPageCount] = {
+            "mode",
+            "chain edit"
+        };
+
+        auto currPageNameForTrack = fillChainPageNameMap[currPageNum];
+        auto pageTabPosY = XR_DISP_SHIFT_Y + 53;
+
+        u8g2.drawStr(4, pageTabPosY, currPageNameForTrack.c_str());
+
+        int pageNumBasedStartX = 128;
+        int pageNumStartX = pageNumBasedStartX - 9;
+        int pageBetweenPaddingX = 9;
+
+        auto multX = fillChainPageCount - currPageNum;
+        auto pageBoxStartX = 128 - (multX * pageBetweenPaddingX);
+
+        u8g2.drawBox(pageBoxStartX, 54, 7, 7);
+
+        for (int l = 0; l < fillChainPageCount; l++)
+        {
+            auto distMultX = fillChainPageCount - (l+1);
+
+            if (l == currPageNum)
+            {
+                u8g2.setColorIndex((u_int8_t)0);
+                u8g2.drawStr(pageNumStartX + 2 - (pageBetweenPaddingX * distMultX), pageTabPosY, std::to_string(l + 1).c_str());
+                u8g2.setColorIndex((u_int8_t)1);
+            }
+            else
+            {
+                u8g2.drawStr(pageNumStartX + 2 - (pageBetweenPaddingX * distMultX), pageTabPosY, std::to_string(l + 1).c_str());
+            }
+        }
+    }
+
     void drawMenuHeader(std::string inputStr, int8_t value, int8_t startX, bool hideNum)
     {
-        if (!hideNum)
-            inputStr += XRHelpers::strldz(std::to_string(value), 2);
+        inputStr = getNumberBufferedStr(inputStr, value, hideNum);
 
         u8g2.drawStr(startX, 0, inputStr.c_str());
     }
 
+    void toggleMetronomeDirection()
+    {
+        metronomeSwing = !metronomeSwing;
+    }
+
+    std::string getNumberBufferedStr(std::string inputStr, int8_t value, bool hideNum)
+    {
+        if (!hideNum)
+            inputStr += XRHelpers::strldz(std::to_string(value), 2);
+
+        return inputStr;
+    }
+
     void drawPatternControlMods()
     {
-        int ctrlModHeaderY = 20;
-        // int ctrlModHeaderBoxSize = 9;
-        int ctrlModHeaderStartX = 0;
-        int ctrlModSpaceWidth = (DISPLAY_MAX_WIDTH / 4);
-        int ctrlModHeaderStartCenteredX = (DISPLAY_MAX_WIDTH / 4) / 2;
-
-        u8g2.drawLine(ctrlModHeaderStartX, 30, 128, 30);
-        u8g2.drawLine(ctrlModHeaderStartX + (ctrlModSpaceWidth * 1), 20, ctrlModHeaderStartX + (ctrlModSpaceWidth * 1), 52);
-        u8g2.drawLine(ctrlModHeaderStartX + (ctrlModSpaceWidth * 2), 20, ctrlModHeaderStartX + (ctrlModSpaceWidth * 2), 52);
-        u8g2.drawLine(ctrlModHeaderStartX + (ctrlModSpaceWidth * 3), 20, ctrlModHeaderStartX + (ctrlModSpaceWidth * 3), 52);
+        int ctrlModHeaderY = XR_DISP_SHIFT_Y+25;
+        int ctrlModHeaderStartX = 4;
+        int ctrlModSpaceWidth = (122 / 4);
+        int ctrlModHeaderStartCenteredX = (122 / 4) / 2;
 
         auto mods = XRSound::getControlModDataForPattern();
 
-        int aPosX = ctrlModHeaderStartCenteredX;
+        int aPosX = ctrlModHeaderStartCenteredX + 3;
         aPosX -= (mods.aName.length() > 0 ? u8g2.getStrWidth(mods.aName.c_str()) / 2 : 0);
 
-        int bPosX = ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 1);
+        int bPosX = ctrlModHeaderStartCenteredX + 3 + (ctrlModSpaceWidth * 1);
         bPosX -= (mods.bName.length() > 0 ? u8g2.getStrWidth(mods.bName.c_str()) / 2 : 0);
 
-        int cPosX = ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 2);
+        int cPosX = ctrlModHeaderStartCenteredX + 4 + (ctrlModSpaceWidth * 2);
         cPosX -= (mods.cName.length() > 0 ? u8g2.getStrWidth(mods.cName.c_str()) / 2 : 0);
 
-        int dPosX = ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 3);
+        int dPosX = ctrlModHeaderStartCenteredX + 4 + (ctrlModSpaceWidth * 3);
         dPosX -= (mods.dName.length() > 0 ? u8g2.getStrWidth(mods.dName.c_str()) / 2 : 0);
 
         u8g2.drawStr(aPosX, ctrlModHeaderY + 1, mods.aName.c_str());
@@ -732,47 +1086,48 @@ namespace XRDisplay
         u8g2.drawStr(cPosX, ctrlModHeaderY + 1, mods.cName.c_str());
         u8g2.drawStr(dPosX, ctrlModHeaderY + 1, mods.dName.c_str());
 
-        int aValuePos = ctrlModHeaderStartCenteredX;
+        int aValuePos = ctrlModHeaderStartCenteredX + 3;
         aValuePos -= (mods.aValue.length() > 0 ? u8g2.getStrWidth(mods.aValue.c_str()) / 2 : 0);
 
-        int bValuePos = ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 1);
+        int bValuePos = ctrlModHeaderStartCenteredX + 3 + (ctrlModSpaceWidth * 1);
         bValuePos -= (mods.bValue.length() > 0 ? u8g2.getStrWidth(mods.bValue.c_str()) / 2 : 0);
 
-        int cValuePos = ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 2);
+        int cValuePos = ctrlModHeaderStartCenteredX + 4 + (ctrlModSpaceWidth * 2);
         cValuePos -= (mods.cValue.length() > 0 ? u8g2.getStrWidth(mods.cValue.c_str()) / 2 : 0);
 
-        int dValuePos = ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 3);
+        int dValuePos = ctrlModHeaderStartCenteredX + 4 + (ctrlModSpaceWidth * 3);
         dValuePos -= (mods.dValue.length() > 0 ? u8g2.getStrWidth(mods.dValue.c_str()) / 2 : 0);
 
-        u8g2.drawStr(aValuePos, ctrlModHeaderY + 17, mods.aValue.c_str());
-        u8g2.drawStr(bValuePos, ctrlModHeaderY + 17, mods.bValue.c_str());
+        u8g2.drawStr(aValuePos, ctrlModHeaderY + 13, mods.aValue.c_str());
+        u8g2.drawStr(bValuePos, ctrlModHeaderY + 13, mods.bValue.c_str());
         
         if (mods.cType == XRSound::RANGE)
         {
             int centerLineStartX = ctrlModHeaderStartX + (ctrlModSpaceWidth * 2);
             int rangeMiddleX = (centerLineStartX + (ctrlModSpaceWidth / 2));
-            u8g2.drawVLine(centerLineStartX + 6, ctrlModHeaderY + 16, 9);                      // left range bound
-            u8g2.drawHLine(centerLineStartX + 6, ctrlModHeaderY + 20, ctrlModSpaceWidth - 12); // range width
-            u8g2.drawVLine(rangeMiddleX, ctrlModHeaderY + 16, 9);                              // range middle
-            u8g2.drawVLine(centerLineStartX + ctrlModSpaceWidth - 6, ctrlModHeaderY + 16, 9);  // right range bound
+
+            u8g2.drawVLine(centerLineStartX + 6, ctrlModHeaderY + 12, 9);                      // left range bound
+            u8g2.drawHLine(centerLineStartX + 6, ctrlModHeaderY + 16, ctrlModSpaceWidth - 12); // range width
+            u8g2.drawVLine(rangeMiddleX, ctrlModHeaderY + 12, 9);                              // range middle
+            u8g2.drawVLine(centerLineStartX + ctrlModSpaceWidth - 6, ctrlModHeaderY + 12, 9);  // right range bound
 
             // range pos cursor
             int rangePosI = rangeMiddleX + (int)(mods.cFloatValue * 10);
-            u8g2.drawFilledEllipse(rangePosI, ctrlModHeaderY + 20, 1, 2);
+            u8g2.drawFilledEllipse(rangePosI, ctrlModHeaderY + 16, 1, 2);
         }
         else
         {
-            u8g2.drawStr(cValuePos, ctrlModHeaderY + 17, mods.cValue.c_str());
+            u8g2.drawStr(cValuePos, ctrlModHeaderY + 13, mods.cValue.c_str());
         }
 
-        u8g2.drawStr(dValuePos, ctrlModHeaderY + 17, mods.dValue.c_str());
+        u8g2.drawStr(dValuePos, ctrlModHeaderY + 13, mods.dValue.c_str());
     }
 
     void drawControlMods()
     {
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
         auto currPageSelected = XRSequencer::getCurrentSelectedPage();
-        auto currSoundForTrack = XRSound::activePatternSounds[currTrackNum];
+        auto currSoundForTrack = XRSound::activeKit.sounds[currTrackNum];
 
         if (currSoundForTrack.type == XRSound::T_MONO_SAMPLE && currPageSelected == 4)
         {
@@ -814,6 +1169,7 @@ namespace XRDisplay
         }
         else
         {
+            drawModEncoderArea();
             drawExtendedControlMods();
         }
     }
@@ -956,33 +1312,28 @@ namespace XRDisplay
         }
     }
 
-    void drawExtendedControlMods()
+    void drawExtendedControlMods(bool useRatchetTrack)
     {
-        int ctrlModHeaderY = 20;
-        int ctrlModHeaderStartX = 0;
-        int ctrlModHeaderStartCenteredX = ((DISPLAY_MAX_WIDTH / 4) / 2);
-        int ctrlModSpaceWidth = (DISPLAY_MAX_WIDTH / 4);
-
-        // header
-        u8g2.drawLine(ctrlModHeaderStartX, 30, 128, 30);
-
-        // dividers
-        u8g2.drawLine(ctrlModSpaceWidth, 20, ctrlModSpaceWidth, 52);
-        u8g2.drawLine(ctrlModSpaceWidth + (ctrlModSpaceWidth * 1), 20, ctrlModSpaceWidth + (ctrlModSpaceWidth * 1), 52);
-        u8g2.drawLine(ctrlModSpaceWidth + (ctrlModSpaceWidth * 2), 20, ctrlModSpaceWidth + (ctrlModSpaceWidth * 2), 52);
+        int ctrlModHeaderY = XR_DISP_SHIFT_Y+25;
+        int ctrlModHeaderStartX = 4;
+        int ctrlModHeaderStartCenteredX = ((122 / 4) / 2);
+        int ctrlModSpaceWidth = (122 / 4);
 
         auto mods = XRSound::getControlModDataForTrack();
+        if (XRSequencer::onRatchetStepPage() || XRUX::getCurrentMode() == XRUX::SUBMITTING_RATCHET_STEP_VALUE) {
+            mods = XRSound::getRatchetControlModData();
+        }
 
-        int aPosX = ctrlModHeaderStartCenteredX;
+        int aPosX = ctrlModHeaderStartCenteredX + 3;
         aPosX -= (mods.aName.length() > 0 ? u8g2.getStrWidth(mods.aName.c_str()) / 2 : 0);
 
-        int bPosX = ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 1);
+        int bPosX = ctrlModHeaderStartCenteredX + 3 + (ctrlModSpaceWidth * 1);
         bPosX -= (mods.bName.length() > 0 ? u8g2.getStrWidth(mods.bName.c_str()) / 2 : 0);
 
-        int cPosX = ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 2);
+        int cPosX = ctrlModHeaderStartCenteredX + 4 + (ctrlModSpaceWidth * 2);
         cPosX -= (mods.cName.length() > 0 ? u8g2.getStrWidth(mods.cName.c_str()) / 2 : 0);
 
-        int dPosX = ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 3);
+        int dPosX = ctrlModHeaderStartCenteredX + 4 + (ctrlModSpaceWidth * 3);
         dPosX -= (mods.dName.length() > 0 ? u8g2.getStrWidth(mods.dName.c_str()) / 2 : 0);
 
         u8g2.drawStr(aPosX, ctrlModHeaderY + 1, mods.aName.c_str());
@@ -990,54 +1341,58 @@ namespace XRDisplay
         u8g2.drawStr(cPosX, ctrlModHeaderY + 1, mods.cName.c_str());
         u8g2.drawStr(dPosX, ctrlModHeaderY + 1, mods.dName.c_str());
 
-        int aValuePos = ctrlModHeaderStartCenteredX;
+        int aValuePos = ctrlModHeaderStartCenteredX + 3;
         aValuePos -= (mods.aValue.length() > 0 ? u8g2.getStrWidth(mods.aValue.c_str()) / 2 : 0);
 
-        int bValuePos = ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 1);
+        int bValuePos = ctrlModHeaderStartCenteredX + 3 + (ctrlModSpaceWidth * 1);
         bValuePos -= (mods.bValue.length() > 0 ? u8g2.getStrWidth(mods.bValue.c_str()) / 2 : 0);
 
-        int cValuePos = ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 2);
+        int cValuePos = ctrlModHeaderStartCenteredX + 4 + (ctrlModSpaceWidth * 2);
         cValuePos -= (mods.cValue.length() > 0 ? u8g2.getStrWidth(mods.cValue.c_str()) / 2 : 0);
 
-        int dValuePos = ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 3);
+        int dValuePos = ctrlModHeaderStartCenteredX + 4 + (ctrlModSpaceWidth * 3);
         dValuePos -= (mods.dValue.length() > 0 ? u8g2.getStrWidth(mods.dValue.c_str()) / 2 : 0);
 
-        u8g2.drawStr(aValuePos, ctrlModHeaderY + 17, mods.aValue.c_str());
+        u8g2.drawStr(aValuePos, ctrlModHeaderY + 13, mods.aValue.c_str());
 
         if (mods.bType == XRSound::RANGE)
         {
             int centerLineStartX = ctrlModHeaderStartX + (ctrlModSpaceWidth * 1);
             int rangeMiddleX = (centerLineStartX + (ctrlModSpaceWidth / 2));
-            u8g2.drawVLine(centerLineStartX + 6, ctrlModHeaderY + 16, 9);                      // left range bound
-            u8g2.drawHLine(centerLineStartX + 6, ctrlModHeaderY + 20, ctrlModSpaceWidth - 12); // range width
-            u8g2.drawVLine(rangeMiddleX, ctrlModHeaderY + 16, 9);                              // range middle
-            u8g2.drawVLine(centerLineStartX + ctrlModSpaceWidth - 6, ctrlModHeaderY + 16, 9);  // right range bound
+            
+            u8g2.drawVLine(centerLineStartX + 5, ctrlModHeaderY + 12, 9);                      // left range bound
+            u8g2.drawHLine(centerLineStartX + 5, ctrlModHeaderY + 16, ctrlModSpaceWidth - 10); // range width
+            u8g2.drawVLine(rangeMiddleX, ctrlModHeaderY + 12, 9);                              // range middle
+            u8g2.drawVLine(centerLineStartX + ctrlModSpaceWidth - 5, ctrlModHeaderY + 12, 9);  // right range bound
 
             // range pos cursor
             int rangePosI = rangeMiddleX + (int)(mods.bFloatValue * 10);
-            u8g2.drawFilledEllipse(rangePosI, ctrlModHeaderY + 20, 1, 2);
+            u8g2.drawFilledEllipse(rangePosI, ctrlModHeaderY + 16, 1, 2);
         }
         else
         {
-            u8g2.drawStr(bValuePos, ctrlModHeaderY + 17, mods.bValue.c_str());
+            u8g2.drawStr(bValuePos, ctrlModHeaderY + 13, mods.bValue.c_str());
         }
 
-        u8g2.drawStr(cValuePos, ctrlModHeaderY + 17, mods.cValue.c_str());
-        u8g2.drawStr(dValuePos, ctrlModHeaderY + 17, mods.dValue.c_str());
+        u8g2.drawStr(cValuePos, ctrlModHeaderY + 13, mods.cValue.c_str());
+        u8g2.drawStr(dValuePos, ctrlModHeaderY + 13, mods.dValue.c_str());
+
+        auto activeStepModLineY = ctrlModHeaderY + 23;
+        auto activeStepModLineShiftX = -9;
 
         if (mods.isAbleToStepModA) {
             if (mods.isActiveStepModA) {
                 u8g2.drawLine(
-                    (ctrlModHeaderStartCenteredX - 12),
-                    ctrlModHeaderY + 29,
-                    (ctrlModHeaderStartCenteredX - 12) + 24,
-                    ctrlModHeaderY + 29
+                    (ctrlModHeaderStartCenteredX + activeStepModLineShiftX),
+                    activeStepModLineY,
+                    (ctrlModHeaderStartCenteredX + activeStepModLineShiftX) + 24,
+                    activeStepModLineY
                 );
             } else {
                 drawStraightDashedLine(
-                    (ctrlModHeaderStartCenteredX - 12),
-                    (ctrlModHeaderStartCenteredX - 12) + 25,
-                    ctrlModHeaderY + 29
+                    (ctrlModHeaderStartCenteredX + activeStepModLineShiftX),
+                    (ctrlModHeaderStartCenteredX + activeStepModLineShiftX) + 25,
+                    activeStepModLineY
                 );
             }
         }
@@ -1045,16 +1400,16 @@ namespace XRDisplay
         if (mods.isAbleToStepModB) {
             if (mods.isActiveStepModB) {
                 u8g2.drawLine(
-                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 1) - 12),
-                    ctrlModHeaderY + 29,
-                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 1) - 12) + 24,
-                    ctrlModHeaderY + 29
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 1) + activeStepModLineShiftX),
+                    activeStepModLineY,
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 1) + activeStepModLineShiftX) + 24,
+                    activeStepModLineY
                 );
             } else {
                 drawStraightDashedLine(
-                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 1) - 12),
-                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 1) - 12) + 25,
-                    ctrlModHeaderY + 29
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 1) + activeStepModLineShiftX),
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 1) + activeStepModLineShiftX) + 25,
+                    activeStepModLineY
                 );
             }
         }
@@ -1062,16 +1417,16 @@ namespace XRDisplay
         if (mods.isAbleToStepModC) {
             if (mods.isActiveStepModC) {
                 u8g2.drawLine(
-                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 2) - 12),
-                    ctrlModHeaderY + 29,
-                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 2) - 12) + 24,
-                    ctrlModHeaderY + 29
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 2) + activeStepModLineShiftX),
+                    activeStepModLineY,
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 2) + activeStepModLineShiftX) + 24,
+                    activeStepModLineY
                 );
             } else {
                 drawStraightDashedLine(
-                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 2) - 12),
-                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 2) - 12) + 25,
-                    ctrlModHeaderY + 29
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 2) + activeStepModLineShiftX),
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 2) + activeStepModLineShiftX) + 25,
+                    activeStepModLineY
                 );
             }
         }
@@ -1079,16 +1434,16 @@ namespace XRDisplay
         if (mods.isAbleToStepModD) {
             if (mods.isActiveStepModD) {
                 u8g2.drawLine(
-                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 3) - 12),
-                    ctrlModHeaderY + 29,
-                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 3) - 12) + 24,
-                    ctrlModHeaderY + 29
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 3) + activeStepModLineShiftX),
+                    activeStepModLineY,
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 3) + activeStepModLineShiftX) + 24,
+                    activeStepModLineY
                 );
             } else {
                 drawStraightDashedLine(
-                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 3) - 12),
-                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 3) - 12) + 25,
-                    ctrlModHeaderY + 29
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 3) + activeStepModLineShiftX),
+                    (ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 3) + activeStepModLineShiftX) + 25,
+                    activeStepModLineY
                 );
             }
         }
@@ -1096,40 +1451,38 @@ namespace XRDisplay
 
     void drawSampleFileControlMods()
     {
-        int ctrlModHeaderY = 20;
+        int ctrlModHeaderY = XR_DISP_SHIFT_Y + 25;
         int ctrlModHeaderStartX = 0;
-        int ctrlModHeaderStartCenteredX = ((DISPLAY_MAX_WIDTH / 4) / 2);
-        int ctrlModSpaceWidth = (DISPLAY_MAX_WIDTH / 4);
+        int ctrlModHeaderStartCenteredX = ((122 / 4) / 2);
+        int ctrlModSpaceWidth = (122 / 4);
 
-        // header
-        u8g2.drawLine(ctrlModHeaderStartX, 30, DISPLAY_MAX_WIDTH, 30);
-
-        // dividers
-        u8g2.drawLine(ctrlModSpaceWidth, 20, ctrlModSpaceWidth, 52);
-        u8g2.drawLine(ctrlModSpaceWidth + (ctrlModSpaceWidth * 1), 20, ctrlModSpaceWidth + (ctrlModSpaceWidth * 1), 52);
+        u8g2.drawFrame(4, XR_DISP_SHIFT_Y+24, 121, 27);
+        u8g2.drawLine(5, XR_DISP_SHIFT_Y+34, 122, XR_DISP_SHIFT_Y+34);
+        u8g2.drawLine(33, XR_DISP_SHIFT_Y+24, 33, XR_DISP_SHIFT_Y+50);
+        u8g2.drawLine(64, XR_DISP_SHIFT_Y+24, 64, XR_DISP_SHIFT_Y+50);
 
         auto mods = XRSound::getControlModDataForTrack();
 
-        int aPosX = ctrlModHeaderStartCenteredX;
+        int aPosX = ctrlModHeaderStartCenteredX + 3;
         aPosX -= (mods.aName.length() > 0 ? u8g2.getStrWidth(mods.aName.c_str()) / 2 : 0);
 
-        int bPosX = ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 1);
+        int bPosX = ctrlModHeaderStartCenteredX + 3 + (ctrlModSpaceWidth * 1);
         bPosX -= (mods.bName.length() > 0 ? u8g2.getStrWidth(mods.bName.c_str()) / 2 : 0);
 
         u8g2.drawStr(aPosX, ctrlModHeaderY + 1, mods.aName.c_str());
         u8g2.drawStr(bPosX, ctrlModHeaderY + 1, mods.bName.c_str());
 
-        int aValuePos = ctrlModHeaderStartCenteredX;
+        int aValuePos = ctrlModHeaderStartCenteredX + 3;
         aValuePos -= (mods.aValue.length() > 0 ? u8g2.getStrWidth(mods.aValue.c_str()) / 2 : 0);
 
-        int bValuePos = ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 1);
+        int bValuePos = ctrlModHeaderStartCenteredX + 3 + (ctrlModSpaceWidth * 1);
         bValuePos -= (mods.bValue.length() > 0 ? u8g2.getStrWidth(mods.bValue.c_str()) / 2 : 0);
 
-        int cValuePos = ctrlModHeaderStartCenteredX + (ctrlModSpaceWidth * 2);
+        int cValuePos = ctrlModHeaderStartCenteredX + 4 + (ctrlModSpaceWidth * 2);
         cValuePos -= (mods.cValue.length() > 0 ? u8g2.getStrWidth(mods.cValue.c_str()) / 2 : 0);
 
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-        auto currSoundForTrack = XRSound::activePatternSounds[currTrackNum];
+        auto currSoundForTrack = XRSound::activeKit.sounds[currTrackNum];
 
         std::string sampleName(currSoundForTrack.sampleName);
         std::string sampleNameB(currSoundForTrack.sampleNameB);
@@ -1140,44 +1493,42 @@ namespace XRDisplay
         fileName1 += sampleName.length() > 0 ? sampleName : " --";
         fileName2 += sampleNameB.length() > 0 ? sampleNameB : " --";
 
-        u8g2.drawStr(cValuePos - 9, ctrlModHeaderY + 1, "FILENAME");
-
-        u8g2.drawStr(cValuePos - 9, ctrlModHeaderY + 12, fileName1.c_str());
-
-        drawStraightDashedLine(cValuePos - 12, 128, 41);
-
-        u8g2.drawStr(cValuePos - 9, ctrlModHeaderY + 23, fileName2.c_str());
+        u8g2.drawStr(cValuePos - 9, ctrlModHeaderY + 1, "filename");
+        u8g2.drawStr(cValuePos - 9, ctrlModHeaderY + 10, fileName1.c_str());
+        u8g2.drawStr(cValuePos - 9, ctrlModHeaderY + 17, fileName2.c_str());
 
         if (sampleName.length() > 0 && sampleNameB.length() == 0) {
-            drawStraightDashedLine(aValuePos - 10, aValuePos + 18, ctrlModHeaderY + 20);
+            drawStraightDashedLine(aValuePos - 10, aValuePos + 18, ctrlModHeaderY + 17);
 
-            u8g2.drawStr(aValuePos, ctrlModHeaderY + 12, "ON");
-            u8g2.drawStr(aValuePos - 8, ctrlModHeaderY + 22, "ACCENT");
-            u8g2.drawStr(bValuePos, ctrlModHeaderY + 17, "--");
+            u8g2.drawStr(aValuePos, ctrlModHeaderY + 10, "on");
+            u8g2.drawStr(aValuePos - 8, ctrlModHeaderY + 18, "accent");
+            u8g2.drawStr(bValuePos, ctrlModHeaderY + 13, "--");
         } else if (sampleName.length() == 0 && sampleNameB.length() > 0) {
-            u8g2.drawStr(aValuePos, ctrlModHeaderY + 17, "--");
+            u8g2.drawStr(aValuePos, ctrlModHeaderY + 13, "--");
 
-            drawStraightDashedLine(bValuePos - 10, bValuePos + 18, ctrlModHeaderY + 20);
+            drawStraightDashedLine(bValuePos - 10, bValuePos + 18, ctrlModHeaderY + 16);
 
-            u8g2.drawStr(bValuePos, ctrlModHeaderY + 12, "ON");
-            u8g2.drawStr(bValuePos - 8, ctrlModHeaderY + 22, "ACCENT");
+            u8g2.drawStr(bValuePos, ctrlModHeaderY + 10, "on");
+            u8g2.drawStr(bValuePos - 8, ctrlModHeaderY + 10, "accent");
         } else if (sampleName.length() == 0 && sampleNameB.length() == 0) {
-            u8g2.drawStr(aValuePos, ctrlModHeaderY + 17, "--");
-            u8g2.drawStr(bValuePos, ctrlModHeaderY + 17, "--");
+            u8g2.drawStr(aValuePos, ctrlModHeaderY + 13, "--");
+            u8g2.drawStr(bValuePos, ctrlModHeaderY + 13, "--");
         }
-        
 
         if (sampleName.length() > 0 && sampleNameB.length() > 0) {
-            u8g2.drawStr(aValuePos, ctrlModHeaderY + 17, "ON");
-            u8g2.drawStr(bValuePos - 8, ctrlModHeaderY + 17, "ACCENT");
+            u8g2.drawStr(aValuePos, ctrlModHeaderY + 13, "on");
+            u8g2.drawStr(bValuePos - 8, ctrlModHeaderY + 13, "accent");
         }
     }
 
     void drawControlModsForADSR(int att, int dec, float sus, int rel)
     {
-        int ctrlModHeaderStartX = 3;
-        int adsrMaxTopPosY = 24;
-        int adsrMaxBottomPosY = 48;
+        int ctrlModHeaderStartX = 4;
+        int adsrMaxTopPosY = XR_DISP_SHIFT_Y + 24;
+        int adsrMaxBottomPosY = XR_DISP_SHIFT_Y + 46;
+
+        // underline
+        u8g2.drawLine(ctrlModHeaderStartX, adsrMaxBottomPosY+4, 124, adsrMaxBottomPosY+4);
 
         // attack
         int attackStartPosX = ctrlModHeaderStartX;
@@ -1211,13 +1562,15 @@ namespace XRDisplay
 
         auto currentSelectedStep = XRSequencer::getCurrentSelectedStepNum();
         auto currentTrackNum = XRSequencer::getCurrentSelectedTrackNum();
+        auto currentLayerNum = XRSequencer::getCurrentSelectedTrackLayerNum();
+        auto &currStep = XRSequencer::activeTrackLayer.tracks[currentTrackNum].steps[currentSelectedStep];
 
         if (
             XRUX::getCurrentMode() == XRUX::SUBMITTING_STEP_VALUE && currentSelectedStep > -1 &&
-            XRSequencer::activeTrackStepModLayer.tracks[currentTrackNum].steps[currentSelectedStep].flags[XRSequencer::NOTE]
+            currStep.tFlags[XRSequencer::NOTE]
         ) {
-            auto noteMod = XRSequencer::activeTrackStepModLayer.tracks[currentTrackNum].steps[currentSelectedStep].mods[XRSequencer::NOTE];
-            auto octaveMod = XRSequencer::activeTrackStepModLayer.tracks[currentTrackNum].steps[currentSelectedStep].mods[XRSequencer::OCTAVE];
+            auto noteMod = currStep.tMods[XRSequencer::NOTE];
+            auto octaveMod = currStep.tMods[XRSequencer::OCTAVE];
 
             outputStr += XRHelpers::getNoteStringForBaseNoteNum(noteMod);
             outputStr += std::to_string(octaveMod);
@@ -1243,10 +1596,9 @@ namespace XRDisplay
         currTrackPageCount = XRSound::getPageCountForCurrentTrack();
         currPageNameForTrack = XRSound::getPageNameForCurrentTrack();
 
-        int pageTabPosY = 54;
+        int pageTabPosY = XR_DISP_SHIFT_Y + 53;
 
-        u8g2.drawLine(0, 52, 128, 52);
-        u8g2.drawStr(1, pageTabPosY, currPageNameForTrack.c_str());
+        u8g2.drawStr(4, pageTabPosY, currPageNameForTrack.c_str());
 
         if (currTrackPageCount == 1 || currTrackPageCount == 0)
             return;
@@ -1257,6 +1609,7 @@ namespace XRDisplay
 
         auto multX = currTrackPageCount - currSelectedPage;
         auto pageBoxStartX = 128 - (multX * pageBetweenPaddingX);
+
         u8g2.drawBox(pageBoxStartX, 54, 7, 7);
 
         for (int l = 0; l < currTrackPageCount; l++)
@@ -1288,21 +1641,21 @@ namespace XRDisplay
         std::string currPageNameForPattern = "";
         currPageNameForPattern = XRSound::patternPageNames[currSelectedPage];
 
-        int pageTabPosY = 54;
+        int pageTabPosY = XR_DISP_SHIFT_Y+53;
 
-        u8g2.drawLine(0, 52, 128, 52);
-        u8g2.drawStr(1, pageTabPosY, currPageNameForPattern.c_str());
+        u8g2.drawStr(4, pageTabPosY, currPageNameForPattern.c_str());
 
         if (patternPageCount == 1 || patternPageCount == 0)
             return;
 
-        int pageNumBasedStartX = 128;
+        int pageNumBasedStartX = 124;
         int pageNumStartX = pageNumBasedStartX - 9;
         int pageBetweenPaddingX = 9;
 
         auto multX = patternPageCount - currSelectedPage;
-        auto pageBoxStartX = 128 - (multX * pageBetweenPaddingX);
-        u8g2.drawBox(pageBoxStartX, 54, 7, 7);
+        auto pageBoxStartX = 124 - (multX * pageBetweenPaddingX);
+
+        u8g2.drawBox(pageBoxStartX, XR_DISP_SHIFT_Y+53, 7, 7);
 
         for (int l = 0; l < patternPageCount; l++)
         {
@@ -1328,12 +1681,12 @@ namespace XRDisplay
 
         auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
 
-        if (XRSound::activePatternSounds[currTrackNum].type == XRSound::T_DEXED_SYNTH) {
+        if (XRSound::activeKit.sounds[currTrackNum].type == XRSound::T_DEXED_SYNTH) {
             menuItems = XRMenu::getDexedSoundMenuItems();
             menuItemMax = DEXED_SOUND_MENU_ITEM_MAX;
         }
 
-        drawGenericMenuList("SOUND", menuItems, menuItemMax);
+        drawGenericMenuList("sound", menuItems, menuItemMax);
 
         u8g2.sendBuffer();
     }
@@ -1342,7 +1695,7 @@ namespace XRDisplay
     {
         auto menuItems = XRMenu::getSetupMenuItems();
 
-        drawGenericMenuList("SETUP", menuItems, SETUP_MENU_ITEM_MAX);
+        drawGenericMenuList("setup", menuItems, SETUP_MENU_ITEM_MAX);
 
         u8g2.sendBuffer();
     }
@@ -1473,7 +1826,7 @@ namespace XRDisplay
         // todo: impl minimap scroll bar
         drawGenericOverlayFrame();
 
-        std::string headerStr = "LOAD PATCH: ";
+        std::string headerStr = "load patch: ";
         headerStr += XRSD::dexedPatchName;
 
         // menu header
@@ -1483,9 +1836,9 @@ namespace XRDisplay
         u8g2.drawLine(ctrlSpaceWidth, 15, ctrlSpaceWidth, 49);
         u8g2.drawLine(ctrlSpaceWidth * 2, 15, ctrlSpaceWidth * 2, 49);
 
-        std::string poolHeaderStr = "SYX.POOL";
-        std::string bankHeaderStr = "SYX.BANK";
-        std::string patchHeaderStr = "SYX.PATCH";
+        std::string poolHeaderStr = "syx.pool";
+        std::string bankHeaderStr = "syx.bank";
+        std::string patchHeaderStr = "syx.patch";
 
         std::string poolStr = XRSD::getCurrentDexedSysexPool();
         std::string bankStr = XRSD::getCurrentDexedSysexBank();
@@ -1511,8 +1864,8 @@ namespace XRDisplay
 
         // esc / sel button legend
         u8g2.drawLine(3, 49, 124, 49);
-        u8g2.drawStr(93, 52, "ESC");
-        u8g2.drawStr(110, 52, "SEL");
+        u8g2.drawStr(93, 52, "esc");
+        u8g2.drawStr(110, 52, "sel");
         u8g2.drawFrame(91, 51, 15, 9);
         u8g2.drawFrame(108, 51, 15, 9);
 

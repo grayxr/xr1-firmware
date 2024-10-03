@@ -11,20 +11,23 @@ namespace XRDisplay
 {
     void init();
 
+    void drawSampleWaveform();
     void drawIntro();
     void drawSetTempoOverlay();
     void drawGenericOverlayFrame(void);
     void drawCreateProjectDialog();
     void drawSaveProject();
+    void drawModEncoderArea();
     void drawHatchedBackground();
     void drawError(std::string message);
     void drawSequencerScreen(bool queueBlink = false);
+    void drawWriteStateIcon(int xShift = 0, int yShift = 0);
     void drawPerformRatchetScreen();
     void drawMenuHeader(std::string inputStr, int8_t value, int8_t startX, bool hideNum);
     void drawControlMods();
     void drawPatternControlMods();
     void drawNormalControlMods();
-    void drawExtendedControlMods();
+    void drawExtendedControlMods(bool useRatchetTrack = false);
     void drawSampleFileControlMods();
     void drawControlModsForADSR(int att, int dec, float sus, int rel);
     void drawPageNumIndicators();
@@ -41,8 +44,13 @@ namespace XRDisplay
     void drawPasteConfirmOverlay(std::string type, uint8_t num);
     void drawStraightDashedLine(int startX, int endX, int yPos);
     void drawStepMicrotimingOverlay(std::string value);
+    void toggleMetronomeDirection();
+    void drawRatchetPageNumIndicators();
+    void drawFillChainPageNumIndicators();
+    void drawTrackSoundName();
 
     std::string getDisplayNote();
+    std::string getNumberBufferedStr(std::string inputStr, int8_t value, bool hideNum);
 }
 
 #endif /* XRDisplay_h */

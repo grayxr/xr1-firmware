@@ -123,6 +123,7 @@ const uint8_t bitocra13_c[1988] U8G2_FONT_SECTION("bitocra13_c") =
     "\272_RL\233\61h\376\13M\272G\60hS;\6\1\377\12U\272OrL\233\61h\0\0\0\4"
     "\377\377\0";
 
-const uint8_t *small_font = bitocra7_c; // u8g2_font_trixel_square_tf
+const uint8_t *small_font = bitocra7_c;
+const uint8_t *large_font = bitocra13_c;
 
 #endif /* XRFonts_h */

@@ -37,6 +37,8 @@ namespace XRClock
     
     float getTempo();
 
+    std::string getClockTimeString();
+    
     std::string getGrooveString(int8_t id);
     std::string getGrooveAmountString(int8_t grooveId, uint8_t amountId);
 

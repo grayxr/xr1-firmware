@@ -6,22 +6,22 @@ namespace XRMenu
     int16_t _cursorPos = 0;
 
     std::string _soundMenuItems[SOUND_MENU_ITEM_MAX] = {
-        "SAVE TRACK SOUND",
-        "LOAD TRACK SOUND",
-        "RECORD SAMPLE",
+        "save track sound",
+        "load track sound",
+        "record sample",
     };
 
     std::string _dexedSoundMenuItems[DEXED_SOUND_MENU_ITEM_MAX] = {
-        "SAVE TRACK SOUND",
-        "LOAD TRACK SOUND",
-        "RECORD SAMPLE",
-        "BROWSE DEXED SYSEX",
+        "save track sound",
+        "load track sound",
+        "record sample",
+        "browse dexed sysex",
     };
 
     std::string _setupMenuItems[SETUP_MENU_ITEM_MAX] = {
-        "SAVE PROJECT",
-        "LOAD/CREATE PROJECT",
-        "CLOCK SETTINGS",
+        "save project",
+        "load/create project",
+        "clock settings",
     };
 
     std::string *getSoundMenuItems()
@@ -36,12 +36,12 @@ namespace XRMenu
 
     std::string getSoundMenuItemsString()
     {
-        return "RECORD SAMPLE\nSAVE TRACK SOUND\nLOAD TRACK SOUND";
+        return "record sample\nsave track sound\nload track sound";
     }
 
     std::string getDexedSoundMenuItemsString()
     {
-        return "\nBROWSE DEXED SYSEX";
+        return "\nbrowse dexed sysex";
     }
 
     std::string *getSetupMenuItems()

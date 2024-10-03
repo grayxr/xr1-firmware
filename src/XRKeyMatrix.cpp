@@ -7,8 +7,9 @@
 #include <XRLED.h>
 #include <XRMenu.h>
 #include <XRClock.h>
+#include <XRHelpers.h>
+#include <XRAsyncIO.h>
 #include <map>
-#include <XRAsyncPSRAMLoader.h>
 
 namespace XRKeyMatrix
 {
@@ -52,6 +53,8 @@ namespace XRKeyMatrix
     int _patternCopyAvailable = -1;
     int _trackCopyAvailable = -1;
     int _stepCopyAvailable = -1;
+    
+    int _baseLayerSelected = -1;
 
     bool _recording = false;
     bool _selectBtnHeld = false;
@@ -76,18 +79,25 @@ namespace XRKeyMatrix
     bool handleFunctionPress(char key);
     bool handleActivateFunction(char key);
     bool handleActivateParamLockStep(char key);
+    bool handleChainSelectBaseLayer(char key);
+    bool handleActivateRatchetParamLockStep(char key);
     bool handlePatternReleaseActions(char key);
+    bool handleRatchetReleaseActions(char key);
     bool handleTrackReleaseActions(char key);
     bool handleTrackLayerReleaseActions(char key);
     bool handleCreateProjectReleaseActions(char key);
     bool handleMenuReleaseActions(char key);
     bool handleFunctionReleaseActions(char key);
     bool handleParamLockStepRelease(char key);
-    bool handleRatchetRelease(char key);
+    bool handleChainSelectBaseLayerRelease(char key);
+    bool handleRatchetParamLockStepRelease(char key);
     bool handleStepPreviewRelease(char key);
     bool handleCopyRelease(char key);
     bool handleRatchets(char key);
     bool handleCopySelect(char key);
+
+    void instantPatternChange(int nextBank, int nextPattern);
+    void prepareQueuedPatternChange(int nextBank, int nextPattern);
     
     // TODO: extract to XRSound namespace method
     XRSound::SOUND_TYPE selectNewSoundTypeForTrack(int currTrackNum, XRSound::SOUND_TYPE currType);
@@ -132,7 +142,9 @@ namespace XRKeyMatrix
                                     currentUXMode == XRUX::PATTERN_CHANGE_INSTANT ||
                                     currentUXMode == XRUX::PASTE_PATTERN ||
                                     currentUXMode == XRUX::PASTE_TRACK ||
-                                    currentUXMode == XRUX::PASTE_STEP
+                                    currentUXMode == XRUX::PASTE_STEP ||
+                                    currentUXMode == XRUX::FILL_BASE_LAYER_CHANGE ||
+                                    currentUXMode == XRUX::TRACK_LAYER_QUEUED
                                 );
 
                                 if (isSensitiveProjectChangeUxMode) {
@@ -242,7 +254,7 @@ namespace XRKeyMatrix
         } 
         else if (currentUXMode == XRUX::UX_MODE::TRACK_SEL && key == SOUND_BTN_CHAR) {
             auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-            auto currSoundForTrack = XRSound::activePatternSounds[currTrackNum];
+            auto currSoundForTrack = XRSound::activeKit.sounds[currTrackNum];
             auto currType = currSoundForTrack.type;
 
             auto newType = selectNewSoundTypeForTrack(currTrackNum, currType);
@@ -268,7 +280,7 @@ namespace XRKeyMatrix
 
             if (key == MOD_A_BTN_CHAR) {            
                 auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-                auto currSoundForTrack = XRSound::activePatternSounds[currTrackNum];    
+                auto currSoundForTrack = XRSound::activeKit.sounds[currTrackNum];    
                 
                 if (currSoundForTrack.type == XRSound::SOUND_TYPE::T_MONO_SAMPLE) {
                     if (currPageSelected == 1) {
@@ -289,6 +301,9 @@ namespace XRKeyMatrix
             _patternCopyAvailable = -1;
             _trackCopyAvailable = -1;
             _stepCopyAvailable = -1;
+            XRSequencer::setCurrentRatchetPageNum(0);
+            XRSequencer::setRatchetTrack(0);
+            XRSequencer::ratchetLatched = false;
 
             XRLED::clearAllStepLEDs();
             XRLED::displayCurrentlySelectedPattern();
@@ -313,72 +328,21 @@ namespace XRKeyMatrix
                 XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_CHANGE_QUEUED);
 
                 XRSequencer::queuePattern(nextPattern, nextBank);
-                if (!XRSD::loadNextPattern(nextBank, nextPattern)) 
-                {
-                    XRSequencer::initNextPattern();
-                }
 
-                if (!XRSD::loadNextPatternSounds(nextBank, nextPattern)) 
-                {
-                    XRSound::initNextPatternSounds();
-                }
-
-                if (!XRSD::loadNextTrackLayer(nextBank, nextPattern, 0)) 
-                {
-                    XRSequencer::initNextTrackLayer();
-                }
-
-                XRAsyncPSRAMLoader::startAsyncInitOfNextSamples();
+                prepareQueuedPatternChange(nextBank, nextPattern);
 
                 XRLED::clearAllStepLEDs();
                 XRDisplay::drawSequencerScreen(false);
+
             } else {
-                // instant pattern change
-                XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_CHANGE_INSTANT);
-
-                if (!XRSD::loadNextPattern(nextBank, nextPattern)) 
-                {
-                    XRSequencer::initNextPattern();
-                }
-
-                if (!XRSD::loadNextPatternSounds(nextBank, nextPattern)) 
-                {
-                    XRSound::initNextPatternSounds();
-                }
-
-                if (!XRSD::loadNextTrackLayer(nextBank, nextPattern, 0)) 
-                {
-                    XRSequencer::initNextTrackLayer();
-                }
-
-                // load next dexed instances
-                XRSound::loadNextDexedInstances();
-
-                // IMPORTANT: must change sound data before sequencer data!
-                XRSound::saveSoundDataForPatternChange(); // save current sound data first
-                XRSound::loadSoundDataForPatternChange(nextBank, nextPattern);
-
-                // save any track step mods for current pattern to SD
-                XRSD::saveCurrentSequencerData();
-                XRSequencer::swapSequencerMemoryForPattern(nextBank, nextPattern);
-                XRAsyncPSRAMLoader::prePatternChange();
-
-                // swap dexed instances so inactive = active and vice versa
-                XRDexedManager::swapInstances();
-
-                //_ptnHeldForSelection = nextPattern; // TODO: need?
-
-                XRUX::setCurrentMode(XRUX::PATTERN_WRITE);
-
-                XRLED::clearAllStepLEDs();
-                XRDisplay::drawSequencerScreen(false);
+                instantPatternChange(nextBank, nextPattern);
             }
 
             return;
         }
 
         // pattern write allow tapping tracks (and recording steps in rec mode)
-        else if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE && keyIsATrack(key))
+        else if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE && keyIsATrack(key) && !_selectBtnHeld)
         {
             auto trackNum = getKeyStepNum(key) - 1;
             auto &trackToUse = XRSequencer::getTrack(trackNum);
@@ -429,6 +393,13 @@ namespace XRKeyMatrix
             }
 
             return;
+        } else if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE && keyIsATrack(key) && _selectBtnHeld) {
+            // allow selecting track in pattern write mode by tapping track keyauto trackNum = getKeyStepNum(key) - 1;
+
+            auto trackNum = getKeyStepNum(key) - 1;
+            auto &trackToUse = XRSequencer::getTrack(trackNum);
+            
+            XRSequencer::setSelectedTrack(trackNum);
         }
 
         // bank sel
@@ -446,66 +417,13 @@ namespace XRKeyMatrix
 
                 XRSequencer::queuePattern(nextPattern, nextBank);
 
-                if (!XRSD::loadNextPattern(nextBank, nextPattern)) 
-                {
-                    XRSequencer::initNextPattern();
-                }
-
-                if (!XRSD::loadNextPatternSounds(nextBank, nextPattern)) 
-                {
-                    XRSound::initNextPatternSounds();
-                }
-
-                if (!XRSD::loadNextTrackLayer(nextBank, nextPattern, 0)) 
-                {
-                    XRSequencer::initNextTrackLayer();
-                }
-
-                XRAsyncPSRAMLoader::startAsyncInitOfNextSamples();
+                prepareQueuedPatternChange(nextBank, nextPattern);
 
                 XRLED::clearAllStepLEDs();
                 XRDisplay::drawSequencerScreen(false);
+
             } else {
-                // instant pattern change
-                XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_CHANGE_INSTANT);
-
-                // IMPORTANT: must change sound data before sequencer data!
-                XRSound::saveSoundDataForPatternChange(); // save current sound data first
-
-                if (!XRSD::loadNextPattern(nextBank, nextPattern)) 
-                {
-                    XRSequencer::initNextPattern();
-                }
-
-                if (!XRSD::loadNextPatternSounds(nextBank, nextPattern)) 
-                {
-                    XRSound::initNextPatternSounds();
-                }
-
-                if (!XRSD::loadNextTrackLayer(nextBank, nextPattern, 0)) 
-                {
-                    XRSequencer::initNextTrackLayer();
-                }
-
-                // load next dexed instances
-                XRSound::loadNextDexedInstances();
-
-                XRSound::loadSoundDataForPatternChange(nextBank, nextPattern);
-
-                // save any track step mods for current pattern to SD
-                XRSD::saveCurrentSequencerData();
-                XRSequencer::swapSequencerMemoryForPattern(nextBank, nextPattern);
-                XRAsyncPSRAMLoader::prePatternChange();
-
-                // swap dexed instances so inactive = active and vice versa
-                XRDexedManager::swapInstances();
-
-                //_ptnHeldForSelection = nextPattern; // TODO: need?
-
-                XRUX::setCurrentMode(XRUX::PATTERN_WRITE);
-
-                XRLED::clearAllStepLEDs();
-                XRDisplay::drawSequencerScreen(false);
+                instantPatternChange(nextBank, nextPattern);
             }
         }
         
@@ -762,17 +680,17 @@ namespace XRKeyMatrix
             {
                 if (_trackCopyAvailable < 3 && destTrack > 2)
                 {
-                    if (XRSound::activePatternSounds[_trackCopyAvailable].type == XRSound::T_FM_DRUM)
+                    if (XRSound::activeKit.sounds[_trackCopyAvailable].type == XRSound::T_FM_DRUM)
                     {
                         trackCanBeCopied = false;
                     }
                 }
                 
                 if (
-                    XRSound::activePatternSounds[_trackCopyAvailable].type == XRSound::T_MONO_SYNTH ||
-                    XRSound::activePatternSounds[_trackCopyAvailable].type == XRSound::T_DEXED_SYNTH ||
-                    XRSound::activePatternSounds[_trackCopyAvailable].type == XRSound::T_FM_DRUM ||
-                    XRSound::activePatternSounds[_trackCopyAvailable].type == XRSound::T_BRAIDS_SYNTH
+                    XRSound::activeKit.sounds[_trackCopyAvailable].type == XRSound::T_MONO_SYNTH ||
+                    XRSound::activeKit.sounds[_trackCopyAvailable].type == XRSound::T_DEXED_SYNTH ||
+                    XRSound::activeKit.sounds[_trackCopyAvailable].type == XRSound::T_FM_DRUM ||
+                    XRSound::activeKit.sounds[_trackCopyAvailable].type == XRSound::T_BRAIDS_SYNTH
                 ) {
                     trackCanBeCopied = false;
                 }
@@ -795,7 +713,7 @@ namespace XRKeyMatrix
 
             XRDisplay::drawPasteConfirmOverlay("TRACK", getKeyStepNum(key));
 
-            XRSD::saveCopiedTrackToSamePattern(_trackCopyAvailable, destTrack);
+            XRSD::saveCopiedTrackToSameLayer(_trackCopyAvailable, destTrack);
 
             _trackCopyAvailable = -1;
 
@@ -854,6 +772,9 @@ namespace XRKeyMatrix
             _patternCopyAvailable = -1;
             _trackCopyAvailable = -1;
             _stepCopyAvailable = -1;
+            XRSequencer::setCurrentRatchetPageNum(0);
+            XRSequencer::setRatchetTrack(0);
+            XRSequencer::ratchetLatched = false;
 
             XRLED::clearAllStepLEDs();
             XRLED::displayPerformModeLEDs();
@@ -871,11 +792,12 @@ namespace XRKeyMatrix
             {
                 // enable mute mode
                 // TODO: find better way to track UI mode before PERFORM_SEL
-                XRUX::setCurrentMode(XRUX::PERFORM_TAP);
+                XRUX::setCurrentMode(XRUX::PERFORM_FILL_CHAIN);
                 XRUX::setPreviousMode(XRUX::PATTERN_WRITE);
 
                 XRLED::clearAllStepLEDs();
-                XRLED::displayTrackLayers();
+                //XRLED::displayTrackLayers();
+                XRLED::displaySelectedTrackLayer();
                 XRDisplay::drawSequencerScreen(false);
             }
             else if (getKeyStepNum(key) == 14)
@@ -909,59 +831,58 @@ namespace XRKeyMatrix
 
                 // displayMuteLEDs();
                 XRLED::clearAllStepLEDs();
+                XRLED::displayRatchetTrackLED(XRSequencer::isRatchetAccented());
                 XRDisplay::drawSequencerScreen(false);
             }
 
             return;
         }
-        else if (currentUXMode == XRUX::PERFORM_TAP && keyIsATrack(key))
-        {
+        else if (
+            currentUXMode == XRUX::PERFORM_FILL_CHAIN && 
+            XRSequencer::getCurrentFillChainPageNum() == 0 && 
+            keyIsATrack(key)
+        ) {
             uint8_t selTrackLayer = getKeyStepNum(key)-1; // zero-based
 
-            Serial.printf(
-                "cur bank: %d cur ptn: %d cur layer: %d sel layer: %d\n",
-                XRSequencer::getCurrentSelectedBankNum(),
-                XRSequencer::getCurrentSelectedPatternNum(),
-                XRSequencer::getCurrentSelectedTrackLayerNum(),
-                selTrackLayer
-            );
+            // Serial.printf(
+            //     "Selecting track layer in fill/chain mode! cur bank: %d cur ptn: %d cur layer: %d sel layer: %d\n",
+            //     XRSequencer::getCurrentSelectedBankNum(),
+            //     XRSequencer::getCurrentSelectedPatternNum(),
+            //     XRSequencer::getCurrentSelectedTrackLayerNum(),
+            //     selTrackLayer
+            // );
 
             if (selTrackLayer == XRSequencer::getCurrentSelectedTrackLayerNum()) {
+                Serial.println("selected current track layer, no-op!");
                 // don't do move to same track layer
                 return;
             }
+            
+            XRSequencer::toggleSelectedFillLayer(selTrackLayer);
 
-            //
-            //
-            // TESTING INSTANT TRACK LAYER SWITCHING LATENCY
-            //
-            //
+            // TODO: handle CHAIN mode as well
 
-            XRSD::saveActiveTrackLayerToSdCard();
-            if (!XRSD::loadNextTrackLayer(XRSequencer::getCurrentSelectedBankNum(), XRSequencer::getCurrentSelectedPatternNum(), selTrackLayer)) {
-                XRSequencer::initNextTrackLayer();
+            return;
+        }
+        else if (
+            currentUXMode == XRUX::PERFORM_FILL_CHAIN && 
+            XRSequencer::getCurrentFillChainPageNum() == 1 && 
+            _baseLayerSelected > -1 &&
+            keyIsATrack(key)
+        ) {
+            auto layerNum = getKeyStepNum(key) - 1;
+
+            // find first unused layer in chain
+            for (int i=0; i<MAXIMUM_SEQUENCER_TRACK_LAYERS; i++) {
+                if (XRSequencer::layerChainState.chain[i] == -1) {
+                    XRSequencer::layerChainState.chain[i] = layerNum;
+                    break;
+                }
             }
-
-            XRSD::saveActiveTrackStepModLayerToSdCard();
-            if (!XRSD::loadActiveTrackStepModLayerFromSdCard(XRSequencer::getCurrentSelectedBankNum(), XRSequencer::getCurrentSelectedPatternNum(), selTrackLayer)) {
-                XRSequencer::initActiveTrackStepModLayer();
-            }
-
-            XRSD::saveActiveSoundStepModLayerToSdCard();
-            if (!XRSD::loadPatternSoundStepModLayerFromSdCard(XRSequencer::getCurrentSelectedBankNum(), XRSequencer::getCurrentSelectedPatternNum(), selTrackLayer)) {
-                XRSound::initPatternSoundStepMods();
-            }
-
-            XRSequencer::swapSequencerMemoryForTrackLayerChange();
-            XRSequencer::setSelectedTrackLayer(selTrackLayer);
-
-            // 
-            //
-            // ELSE USE QUEUEING
-            //
-            //
-
-            XRLED::displayTrackLayers();
+            
+            XRLED::clearAllStepLEDs();
+            XRLED::displayChainLEDs(false);
+            XRDisplay::drawSequencerScreen(false);
 
             return;
         }
@@ -988,6 +909,27 @@ namespace XRKeyMatrix
 
             return;
         }
+        else if (
+            currentUXMode == XRUX::PERFORM_RATCHET && 
+            XRSequencer::getCurrentRatchetPageNum() == 0 &&
+            keyIsATrack(key)
+        ){ 
+            auto trackNum = getKeyStepNum(key) - 1;
+            // auto isRatchetAccented = false;
+
+            // if (trackNum == XRSequencer::getRatchetTrack()) {
+            //     isRatchetAccented = (XRSequencer::isRatchetAccented() ? false : true);
+            // }
+
+            // XRSequencer::toggleIsRatchetAccented(isRatchetAccented);
+            XRSequencer::setRatchetTrack(trackNum);
+            
+            XRLED::clearAllStepLEDs();
+            XRLED::displayRatchetTrackLED(false);
+            XRDisplay::drawSequencerScreen(false);
+
+            return;
+        }
 
         else if (currentUXMode == XRUX::UX_MODE::SOUND_MENU_DEXED_SYSEX_BROWSER && key == SELECT_BTN_CHAR) {
             
@@ -1006,20 +948,21 @@ namespace XRKeyMatrix
             XRUX::setCurrentMode(XRUX::STEP_PREVIEW);
 
             auto &currTrack = XRSequencer::getCurrentSelectedTrack();
+            auto layer = XRSequencer::getCurrentSelectedTrackLayerNum();
             auto track = XRSequencer::getCurrentSelectedTrackNum();
             auto step = XRSequencer::getCurrentSelectedStepNum();
             auto &currStep = XRSequencer::activeTrackLayer.tracks[track].steps[step];
 
             auto noteToUse = currTrack.note;
-            if (XRSequencer::activeTrackStepModLayer.tracks[track].steps[step].flags[XRSequencer::NOTE])
+            if (currStep.tFlags[XRSequencer::NOTE])
             {
-                noteToUse = XRSequencer::activeTrackStepModLayer.tracks[track].steps[step].mods[XRSequencer::NOTE];
+                noteToUse = currStep.tMods[XRSequencer::NOTE];
             }
 
             auto octaveToUse = currTrack.octave;
-            if (XRSequencer::activeTrackStepModLayer.tracks[track].steps[step].flags[XRSequencer::OCTAVE])
+            if (currStep.tFlags[XRSequencer::OCTAVE])
             {
-                octaveToUse = XRSequencer::activeTrackStepModLayer.tracks[track].steps[step].mods[XRSequencer::OCTAVE];
+                octaveToUse = currStep.tMods[XRSequencer::OCTAVE];
             }
 
             // TODO: account for mono sample track accent peculiarity
@@ -1049,6 +992,10 @@ namespace XRKeyMatrix
 
         if (handleActivateParamLockStep(key)) return;
 
+        if (handleChainSelectBaseLayer(key)) return;
+
+        if (handleActivateRatchetParamLockStep(key)) return;
+
         if (handleRatchets(key)) return;
 
         if (handleCopySelect(key)) return;
@@ -1073,6 +1020,8 @@ namespace XRKeyMatrix
 
         if (handleMenuReleaseActions(key)) return;
 
+        if (handleRatchetReleaseActions(key)) return;
+
         if (handleTrackLayerReleaseActions(key)) return;
 
         if (handleTrackReleaseActions(key)) return;
@@ -1081,7 +1030,9 @@ namespace XRKeyMatrix
 
         if (handleParamLockStepRelease(key)) return;
 
-        if (handleRatchetRelease(key)) return;
+        if (handleChainSelectBaseLayerRelease(key)) return;
+
+        if (handleRatchetParamLockStepRelease(key)) return;
 
         if (handleStepPreviewRelease(key)) return;
 
@@ -1179,20 +1130,23 @@ namespace XRKeyMatrix
 
         if (currentUXMode == XRUX::STEP_PREVIEW && (key == SELECT_BTN_CHAR || keyIsATrack(key)))
         {
-            auto &currTrack = XRSequencer::getCurrentSelectedTrack();
+            auto layer = XRSequencer::getCurrentSelectedTrackLayerNum();
             auto track = XRSequencer::getCurrentSelectedTrackNum();
             auto step = XRSequencer::getCurrentSelectedStepNum();
 
+            auto &currTrack = XRSequencer::getCurrentSelectedTrack();
+            auto &currStep = XRSequencer::activeTrackLayer.tracks[track].steps[step];
+
             auto noteToUse = currTrack.note;
-            if (XRSequencer::activeTrackStepModLayer.tracks[track].steps[step].flags[XRSequencer::NOTE])
+            if (currStep.tFlags[XRSequencer::NOTE])
             {
-                noteToUse = XRSequencer::activeTrackStepModLayer.tracks[track].steps[step].mods[XRSequencer::NOTE];
+                noteToUse = currStep.tMods[XRSequencer::NOTE];
             }
 
             auto octaveToUse = currTrack.octave;
-            if (XRSequencer::activeTrackStepModLayer.tracks[track].steps[step].flags[XRSequencer::OCTAVE])
+            if (currStep.tFlags[XRSequencer::OCTAVE])
             {
-                octaveToUse = XRSequencer::activeTrackStepModLayer.tracks[track].steps[step].mods[XRSequencer::OCTAVE];
+                octaveToUse = currStep.tMods[XRSequencer::OCTAVE];
             }
 
             XRSound::noteOffTrackManually(noteToUse, octaveToUse);
@@ -1227,7 +1181,13 @@ namespace XRKeyMatrix
         if (currentUXMode == XRUX::PATTERN_SEL && key == PATTERN_BTN_CHAR && _ptnHeldForSelection == -1)
         {
             XRSequencer::setSelectedPage(0);
+            XRSequencer::setCurrentRatchetPageNum(0);
+            XRSequencer::setRatchetTrack(0);
+            XRSequencer::ratchetLatched = false;
             XRUX::setCurrentMode(XRUX::PATTERN_WRITE); // force patt write mode when leaving patt / patt select action
+
+            // make sure fill mode is disabled
+            XRSequencer::fillState.fillType = XRSequencer::FILL_TYPE::AUTO;
 
             XRLED::clearPageLEDs();
             XRLED::clearAllStepLEDs();
@@ -1235,28 +1195,6 @@ namespace XRKeyMatrix
 
             return true;
         }
-
-        // else if (
-        //     (currentUXMode == XRUX::PATTERN_CHANGE_INSTANT || currentUXMode == XRUX::PATTERN_CHANGE_QUEUED) && 
-        //     btnCharIsATrack(key) && ((getKeyStepNum(key) - 1) == _ptnHeldForSelection)
-        // ) {
-        //     // Serial.println("unmarking pattern as held for selection!");
-
-        //     //auto selectedPattern = getKeyStepNum(key) - 1;
-
-        //     //XRSequencer::setSelectedPattern(selectedPattern);
-
-        //     //_ptnHeldForSelection = -1;
-
-        //     XRLED::clearAllStepLEDs();
-
-        //     XRSequencer::setSelectedPage(0);
-        //     XRUX::setCurrentMode(XRUX::PATTERN_WRITE); // force patt write mode when leaving patt / patt select action
-
-        //     XRDisplay::drawSequencerScreen(false);
-
-        //     return true;
-        // }
 
         return false;
     }
@@ -1270,7 +1208,7 @@ namespace XRKeyMatrix
             uint8_t selTrackLayer = getKeyStepNum(key)-1; // zero-based
 
             Serial.printf(
-                "cur bank: %d cur ptn: %d cur layer: %d sel layer: %d\n",
+                "Selecting track layer! cur bank: %d cur ptn: %d cur layer: %d sel layer: %d\n",
                 XRSequencer::getCurrentSelectedBankNum(),
                 XRSequencer::getCurrentSelectedPatternNum(),
                 XRSequencer::getCurrentSelectedTrackLayerNum(),
@@ -1279,52 +1217,57 @@ namespace XRKeyMatrix
 
             if (selTrackLayer == XRSequencer::getCurrentSelectedTrackLayerNum()) {
                 // don't do move to same track layer
+                Serial.println("selected current track layer, no-op!");
                 return true;
             }
 
-            //
-            //
-            // TESTING INSTANT TRACK LAYER SWITCHING LATENCY
-            //
-            //
+            if (XRSequencer::getSeqState().playbackState == XRSequencer::SEQUENCER_PLAYBACK_STATE::RUNNING) {
+                XRSequencer::prepareQueuedTrackLayerChange(
+                    XRSequencer::getCurrentSelectedBankNum(),
+                    XRSequencer::getCurrentSelectedPatternNum(),
+                    selTrackLayer
+                );
 
-            XRSD::saveActiveTrackLayerToSdCard();
-            if (!XRSD::loadNextTrackLayer(XRSequencer::getCurrentSelectedBankNum(), XRSequencer::getCurrentSelectedPatternNum(), selTrackLayer)) {
-                XRSequencer::initNextTrackLayer();
+                XRSequencer::queueTrackLayer(selTrackLayer);
+
+                XRUX::setCurrentMode(XRUX::TRACK_LAYER_QUEUED);
+            } else {
+                XRSequencer::instantTrackLayerChange(
+                    XRSequencer::getCurrentSelectedBankNum(),
+                    XRSequencer::getCurrentSelectedPatternNum(),
+                    selTrackLayer
+                );
+
+                XRUX::setCurrentMode(XRUX::TRACK_WRITE);
+
+                XRLED::clearAllStepLEDs();
+                XRLED::setDisplayStateForAllStepLEDs();
             }
+                
+            XRDisplay::drawSequencerScreen();
 
-            XRSD::saveActiveTrackStepModLayerToSdCard();
-            if (!XRSD::loadActiveTrackStepModLayerFromSdCard(XRSequencer::getCurrentSelectedBankNum(), XRSequencer::getCurrentSelectedPatternNum(), selTrackLayer)) {
-                XRSequencer::initActiveTrackStepModLayer();
-            }
+            return true;
+        }
 
-            XRSD::saveActiveSoundStepModLayerToSdCard();
-            if (!XRSD::loadPatternSoundStepModLayerFromSdCard(XRSequencer::getCurrentSelectedBankNum(), XRSequencer::getCurrentSelectedPatternNum(), selTrackLayer)) {
-                XRSound::initPatternSoundStepMods();
-            }
+        return false;
+    }
 
-            XRSequencer::swapSequencerMemoryForTrackLayerChange();
-            XRSequencer::setSelectedTrackLayer(selTrackLayer);
+    bool handleRatchetReleaseActions(char key)
+    {
+        XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
 
-            // 
-            //
-            // ELSE USE QUEUEING
-            //
-            //
+        if (
+            !_isFunctionActive && 
+            currentUXMode == XRUX::PERFORM_RATCHET && 
+            XRSequencer::getCurrentRatchetPageNum() == 1 &&
+            keyIsAStep(key)
+        ) {
+            uint8_t stepToToggle = getKeyStepNum(key);
 
-            XRSequencer::setSelectedPage(0);
-            XRUX::setCurrentMode(XRUX::TRACK_WRITE);
-
-            XRLED::displayPageLEDs(
-                -1, 
-                (XRSequencer::getSeqState().playbackState == XRSequencer::SEQUENCER_PLAYBACK_STATE::RUNNING),
-                XRSequencer::getCurrentSelectedPage(),
-                XRSequencer::getCurrentSelectedTrack().lstep // TODO: use pattern last step here?
-            );
-
+            XRSequencer::toggleSelectedStep(stepToToggle);
             XRLED::setDisplayStateForAllStepLEDs();
 
-            XRDisplay::drawSequencerScreen(false);
+            Serial.println("toggling ratchet step!");
 
             return true;
         }
@@ -1344,6 +1287,9 @@ namespace XRKeyMatrix
             XRSD::unloadSampleFileListPaged();
             
             XRSequencer::setSelectedPage(0);
+            XRSequencer::setCurrentRatchetPageNum(0);
+            XRSequencer::setRatchetTrack(0);
+            XRSequencer::ratchetLatched = false;
             XRSequencer::setCurrentStepPage(1);
             XRUX::setCurrentMode(XRUX::TRACK_WRITE);
             XRUX::setPreviousMode(XRUX::TRACK_WRITE); // force track write mode when leaving track / track select action
@@ -1407,13 +1353,14 @@ namespace XRKeyMatrix
         else if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE && keyIsATrack(key))
         {
             auto trackNum = getKeyStepNum(key) - 1;
+            auto layer = XRSequencer::getCurrentSelectedTrackLayerNum();
             auto &track = XRSequencer::activeTrackLayer.tracks[trackNum];
             auto trackNote = track.note;
 
             // if track sound type is synth, trigger note off
-            if (XRSound::activePatternSounds[trackNum].type == XRSound::T_MONO_SYNTH ||
-                XRSound::activePatternSounds[trackNum].type == XRSound::T_DEXED_SYNTH ||
-                XRSound::activePatternSounds[trackNum].type == XRSound::T_BRAIDS_SYNTH)
+            if (XRSound::activeKit.sounds[trackNum].type == XRSound::T_MONO_SYNTH ||
+                XRSound::activeKit.sounds[trackNum].type == XRSound::T_DEXED_SYNTH ||
+                XRSound::activeKit.sounds[trackNum].type == XRSound::T_BRAIDS_SYNTH)
             {
                 XRSound::noteOffTrackManually(trackNote, XRKeyMatrix::getKeyboardOctave());
 
@@ -1431,7 +1378,7 @@ namespace XRKeyMatrix
         bool allowedModeToLaunchMenuFrom = (
             currentUXMode == XRUX::UX_MODE::PATTERN_WRITE || 
             currentUXMode == XRUX::UX_MODE::TRACK_WRITE || 
-            currentUXMode == XRUX::UX_MODE::PERFORM_TAP ||
+            currentUXMode == XRUX::UX_MODE::PERFORM_FILL_CHAIN ||
             currentUXMode == XRUX::UX_MODE::PERFORM_MUTE ||
             currentUXMode == XRUX::UX_MODE::PERFORM_SOLO ||
             currentUXMode == XRUX::UX_MODE::PERFORM_RATCHET
@@ -1509,8 +1456,8 @@ namespace XRKeyMatrix
 
                     auto cursorPos = XRMenu::getCursorPosition();
                     auto currTrackNum = XRSequencer::getCurrentSelectedTrackNum();
-                    if (XRSound::activePatternSounds[currTrackNum].type == XRSound::T_DEXED_SYNTH) {
-                        if (XRMenu::getDexedSoundMenuItems()[cursorPos] == "BROWSE DEXED SYSEX") {
+                    if (XRSound::activeKit.sounds[currTrackNum].type == XRSound::T_DEXED_SYNTH) {
+                        if (XRMenu::getDexedSoundMenuItems()[cursorPos] == "browse dexed sysex") {
                             Serial.println("in browse dexed sysex sub menu");
                             
                             XRUX::setCurrentMode(XRUX::UX_MODE::SOUND_MENU_DEXED_SYSEX_BROWSER);
@@ -1520,6 +1467,7 @@ namespace XRKeyMatrix
                             XRSD::loadDexedVoiceToCurrentTrack();
                             
                             XRDisplay::drawDexedSysexBrowser();
+                            XRMenu::resetCursor();
 
                             return true;
                         }
@@ -1533,7 +1481,7 @@ namespace XRKeyMatrix
 
                     auto cursorPos = XRMenu::getCursorPosition();
 
-                    if (XRMenu::getSetupMenuItems()[cursorPos] == "SAVE PROJECT") { // TODO: something better than a str compare
+                    if (XRMenu::getSetupMenuItems()[cursorPos] == "save project") { // TODO: something better than a str compare
                         XRUX::setCurrentMode(XRUX::PROJECT_BUSY);
                         XRDisplay::drawSaveProject();
                         XRSD::saveProject();
@@ -1692,10 +1640,17 @@ namespace XRKeyMatrix
             return true;
         }
 
+        // metronome toggle
+        if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE && key == DATA_BTN_CHAR) {
+            XRSequencer::metronomeEnabled = (XRSequencer::metronomeEnabled) ? false : true;
+
+            return true;
+        }
+
         bool allowedModeToLaunchMenuFrom = (
             currentUXMode == XRUX::UX_MODE::PATTERN_WRITE || 
             currentUXMode == XRUX::UX_MODE::TRACK_WRITE || 
-            currentUXMode == XRUX::UX_MODE::PERFORM_TAP ||
+            currentUXMode == XRUX::UX_MODE::PERFORM_FILL_CHAIN ||
             currentUXMode == XRUX::UX_MODE::PERFORM_MUTE ||
             currentUXMode == XRUX::UX_MODE::PERFORM_SOLO ||
             currentUXMode == XRUX::UX_MODE::PERFORM_RATCHET
@@ -1720,9 +1675,10 @@ namespace XRKeyMatrix
                 XRUX::setCurrentMode(XRUX::UX_MODE::TRACK_LAYER_SEL);
 
                 XRLED::clearAllStepLEDs();
+                //XRLED::displayCurrentlySelectedTrack();
                 XRLED::displayTrackLayers();
 
-                XRDisplay::drawGeneralConfirmOverlay("SELECT TRACK LAYER");
+                XRDisplay::drawGeneralConfirmOverlay("select track layer");
 
                 return true;
             }
@@ -1740,7 +1696,7 @@ namespace XRKeyMatrix
             XRLED::clearAllStepLEDs();
             XRLED::displayCurrentlySelectedBank();
 
-            XRDisplay::drawGeneralConfirmOverlay("   SELECT BANK");
+            XRDisplay::drawGeneralConfirmOverlay("   select bank");
 
             return true;
         }
@@ -1748,6 +1704,31 @@ namespace XRKeyMatrix
         return false;
     }
    
+    bool handleChainSelectBaseLayerRelease(char key)
+    {
+        XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
+
+        bool allowedModeToReleaseFrom = (
+            currentUXMode == XRUX::PERFORM_FILL_CHAIN &&
+            XRSequencer::getCurrentFillChainPageNum() == 1
+        );
+
+        if (allowedModeToReleaseFrom && keyIsATrack(key))
+        {
+            uint8_t layerNum = getKeyStepNum(key) - 1;
+
+            if (layerNum == _baseLayerSelected) {
+                _baseLayerSelected = -1;
+            }
+
+            XRDisplay::drawSequencerScreen(false);
+
+            return true;
+        }
+
+        return false;
+    }
+
     bool handleParamLockStepRelease(char key)
     {
         XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
@@ -1767,6 +1748,27 @@ namespace XRKeyMatrix
         return false;
     }
 
+    bool handleRatchetParamLockStepRelease(char key)
+    {
+        XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
+
+        // param lock release
+        if (currentUXMode == XRUX::SUBMITTING_RATCHET_STEP_VALUE && keyIsAStep(key)) {
+            // revert
+            XRUX::setCurrentMode(XRUX::PERFORM_RATCHET);
+
+            Serial.println("releasing ratchet param lock!");
+
+            XRSequencer::setCurrentSelectedRatchetStep(-1); // unselect the step
+
+            XRDisplay::drawSequencerScreen(false);
+
+            return true;
+        }
+
+        return false;
+    }
+
     bool handleActivateFunction(char key)
     {
         XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
@@ -1774,7 +1776,8 @@ namespace XRKeyMatrix
         bool allowedModeToActivateFunctionFrom = (
             currentUXMode == XRUX::UX_MODE::PATTERN_WRITE || 
             currentUXMode == XRUX::UX_MODE::TRACK_WRITE || 
-            currentUXMode == XRUX::UX_MODE::SOUND_MENU_DEXED_SYSEX_BROWSER
+            currentUXMode == XRUX::UX_MODE::SOUND_MENU_DEXED_SYSEX_BROWSER || 
+            currentUXMode == XRUX::UX_MODE::PERFORM_RATCHET
         );
 
         if (allowedModeToActivateFunctionFrom) {
@@ -1792,6 +1795,42 @@ namespace XRKeyMatrix
         return false;
     }
 
+    bool handleChainSelectBaseLayer(char key)
+    {
+        XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
+
+        // select chain base layer
+        bool allowedModeToSelectFrom = (
+            currentUXMode == XRUX::PERFORM_FILL_CHAIN &&
+            XRSequencer::getCurrentFillChainPageNum() == 1
+        );
+
+        if (allowedModeToSelectFrom && keyIsATrack(key) && _baseLayerSelected == -1)
+        {
+            uint8_t layerNum = getKeyStepNum(key) - 1;
+
+            _baseLayerSelected = layerNum;
+
+            Serial.printf("handleChainSelectBaseLayer: selected base layer: %d\n", layerNum);
+
+            // reset chain layers
+            for (int i = 1; i < MAXIMUM_SEQUENCER_TRACK_LAYERS; i++)
+            {
+                XRSequencer::layerChainState.chain[i] = -1;
+            }
+            XRSequencer::layerChainState.chain[0] = layerNum;
+            XRSequencer::setSelectedTrackLayer(layerNum);
+
+            XRLED::clearAllStepLEDs();
+            XRLED::displayChainLEDs(false);
+            XRDisplay::drawSequencerScreen(false);
+
+            return true;
+        }
+
+        return false;
+    }
+
     bool handleActivateParamLockStep(char key)
     {
         XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
@@ -1801,6 +1840,8 @@ namespace XRKeyMatrix
 
         if (allowedModeToParamLockFrom && keyIsAStep(key))
         {
+            Serial.printf("handleActivateParamLockStep: param lock step: %c\n", key);
+
             // editing a step value / parameter locking this step
             XRUX::setCurrentMode(XRUX::SUBMITTING_STEP_VALUE);
 
@@ -1821,10 +1862,54 @@ namespace XRKeyMatrix
             }
 
             int selectedStepNum = stepToUse - 1;
-
             XRSequencer::setCurrentSelectedStep(selectedStepNum);
 
             auto &currTrack = XRSequencer::getCurrentSelectedTrack();
+            auto &heldStep = currTrack.steps[selectedStepNum];
+
+            // only toggle held step ON if initially in the OFF position,
+            // so that holding / param locking doesn't turn the step off
+            if (heldStep.state == XRSequencer::STEP_STATE::STATE_OFF)
+            {
+                Serial.println("toggling held step!");
+
+                uint8_t stepToToggle = getKeyStepNum(key);
+
+                XRSequencer::toggleSelectedStep(stepToToggle);
+                XRLED::setDisplayStateForAllStepLEDs();
+            }
+
+            XRDisplay::drawSequencerScreen(false);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    bool handleActivateRatchetParamLockStep(char key)
+    {
+        XRUX::UX_MODE currentUXMode = XRUX::getCurrentMode();
+
+        // param lock step
+        bool allowedModeToParamLockFrom = (
+            currentUXMode == XRUX::PERFORM_RATCHET && 
+            XRSequencer::getCurrentRatchetPageNum() == 1
+        );
+
+        if (allowedModeToParamLockFrom && keyIsAStep(key))
+        {
+            // editing a step value / parameter locking this step
+            XRUX::setCurrentMode(XRUX::SUBMITTING_RATCHET_STEP_VALUE);
+
+            auto stepToUse = getKeyStepNum(key);
+            auto selectedStepNum = stepToUse - 1;
+
+            Serial.printf("ratchet param lock step: %d\n", selectedStepNum);
+
+            XRSequencer::setCurrentSelectedRatchetStep(selectedStepNum);
+
+            auto &currTrack = XRSequencer::activeRatchetLayer.tracks[XRSequencer::getRatchetTrack()];
             auto &heldStep = currTrack.steps[selectedStepNum];
 
             // only toggle held step ON if initially in the OFF position,
@@ -1865,25 +1950,6 @@ namespace XRKeyMatrix
             Serial.println("enter copy select mode!");
 
             XRUX::setCurrentMode(XRUX::COPY_SEL);
-
-            return true;
-        }
-
-        return false;
-    }
-
-    bool handleRatchetRelease(char key)
-    {
-        auto currentUXMode = XRUX::getCurrentMode();
-
-        if (currentUXMode == XRUX::PERFORM_RATCHET && keyIsATrack(key))
-        {
-            Serial.println("release track ratchet");
-
-            XRSequencer::setRatchetTrack(-1);
-            XRSequencer::setRatchetDivision(-1);
-
-            XRDisplay::drawSequencerScreen(false);
 
             return true;
         }
@@ -2012,12 +2078,12 @@ namespace XRKeyMatrix
                 }
                 else if (currType == XRSound::T_DEXED_SYNTH)
                 {
-                    newType = XRSound::T_FM_DRUM;
-                }
-                else if (currType == XRSound::T_FM_DRUM)
-                {
                     newType = XRSound::T_MIDI;
                 }
+                // else if (currType == XRSound::T_FM_DRUM)
+                // {
+                //     newType = XRSound::T_MIDI;
+                // }
                 else if (currType == XRSound::T_MIDI)
                 {
                     newType = XRSound::T_MONO_SAMPLE;
@@ -2092,5 +2158,136 @@ namespace XRKeyMatrix
     bool isSelectBtnHeld()
     {
         return _selectBtnHeld;
+    }
+
+    void instantPatternChange(int nextBank, int nextPattern)
+    {
+        // instant pattern change
+        XRUX::setCurrentMode(XRUX::UX_MODE::PATTERN_CHANGE_INSTANT);
+
+        XRSD::saveCurrentProjectDataSync();
+
+        if (!XRSD::loadNextPatternSettings(nextBank, nextPattern)) 
+        {
+            Serial.println("failed ot load next pattern settings, init it instead!");
+            XRSequencer::initPatternSettings(XRSequencer::idlePatternSettings);
+        }
+
+        if (!XRSD::loadNextTrackLayer(nextBank, nextPattern, 0)) 
+        {
+            Serial.println("failed ot load next track layer, init it instead!");
+            XRSequencer::initTrackLayer(XRSequencer::idleTrackLayer);
+        }
+
+        if (!XRSD::loadNextRatchetLayer(nextBank, nextPattern)) 
+        {
+            Serial.println("failed ot load next ratchet layer, init it instead!");
+            XRSequencer::initRatchetLayer(XRSequencer::idleRatchetLayer);
+        }
+
+        if (!XRSD::loadNextKit(nextBank, nextPattern)) 
+        {
+            Serial.println("failed ot load next kit, init it instead!");
+            XRSound::initKit(XRSound::idleKit);
+        }
+
+        // load next dexed instances
+        XRSound::loadNextDexedInstances();
+
+        // IMPORTANT: must change sound data before sequencer data!
+        XRSound::swapSoundDataForPatternChange(nextBank, nextPattern);
+        XRSequencer::swapSequencerDataForPatternChange(nextBank, nextPattern);
+
+        // swap dexed instances so inactive = active and vice versa
+        XRDexedManager::swapInstances();
+
+        //_ptnHeldForSelection = nextPattern; // TODO: need?
+
+        XRUX::setCurrentMode(XRUX::PATTERN_WRITE);
+
+        XRLED::clearAllStepLEDs();
+        XRDisplay::drawSequencerScreen(false);
+    }
+
+    void ptnFailedReadCallback(const XRAsyncIO::FILE_TYPE fileType)
+    {
+        Serial.printf("ptnFailedReadCallback for file type: %d\n", fileType);
+
+        switch (fileType)
+        {
+        case XRAsyncIO::FILE_TYPE::PATTERN_SETTINGS:
+            XRSequencer::initIdlePatternSettings();
+            Serial.println("pattern settings initialized!");
+            break;
+        case XRAsyncIO::FILE_TYPE::RATCHET_LAYER:
+            XRSequencer::initIdleRatchetLayer();
+            Serial.println("ratchet layer initialized!");
+            break;
+        case XRAsyncIO::FILE_TYPE::TRACK_LAYER:
+            XRSequencer::initIdleTrackLayer();
+            Serial.println("track layer initialized!");
+            break;
+        case XRAsyncIO::FILE_TYPE::KIT:
+            XRSound::initIdleKit();
+            XRSound::loadNextDexedInstances();
+            Serial.println("kit initialized!");
+            break;
+        
+        default:
+            break;
+        }
+    }
+
+    void ptnSuccessReadCallback(const XRAsyncIO::FILE_TYPE fileType)
+    {
+        //Serial.printf("ptnSuccessReadCallback for file type: %d\n", fileType);
+
+        switch (fileType)
+        {
+        case XRAsyncIO::FILE_TYPE::KIT:
+            // make sure the inactive/idle dexed instances have the next pattern's voices loaded
+            XRSound::loadNextDexedInstances();
+            Serial.println("loaded next dexed instances!");
+            break;
+        }
+    }
+
+    void prepareQueuedPatternChange(int nextBank, int nextPattern)
+    {
+        XRAsyncIO::addItem({
+            XRAsyncIO::FILE_TYPE::PATTERN_SETTINGS,
+            XRAsyncIO::FILE_IO_TYPE::READ,
+            XRSD::getPatternSettingsFilename(nextBank, nextPattern),
+            sizeof(XRSequencer::idlePatternSettings),
+            ptnFailedReadCallback,
+            ptnSuccessReadCallback
+        });
+
+        XRAsyncIO::addItem({
+            XRAsyncIO::FILE_TYPE::RATCHET_LAYER,
+            XRAsyncIO::FILE_IO_TYPE::READ,
+            XRSD::getRatchetLayerFilename(nextBank, nextPattern),
+            sizeof(XRSequencer::idleRatchetLayer),
+            ptnFailedReadCallback,
+            ptnSuccessReadCallback
+        });
+
+        XRAsyncIO::addItem({
+            XRAsyncIO::FILE_TYPE::TRACK_LAYER,
+            XRAsyncIO::FILE_IO_TYPE::READ,
+            XRSD::getTrackLayerFilename(nextBank, nextPattern, 0),
+            sizeof(XRSequencer::idleTrackLayer),
+            ptnFailedReadCallback,
+            ptnSuccessReadCallback
+        });
+
+        XRAsyncIO::addItem({
+            XRAsyncIO::FILE_TYPE::KIT,
+            XRAsyncIO::FILE_IO_TYPE::READ,
+            XRSD::getKitFilename(nextBank, nextPattern),
+            sizeof(XRSound::idleKit),
+            ptnFailedReadCallback,
+            ptnSuccessReadCallback
+        });
     }
 }
