@@ -49,9 +49,25 @@ namespace XRVersa
         {7, 2},   // 1/48 note
         {8, 24},  // 1/24 note
         {9, 1},   // 1/96 note
-        {10, 24}, // 1/4 note
-        {11, 24}, // 1/4 note
-        {12, 24}, // 1/4 note
+        {10, -1}, // n/a
+        {11, -1}, // n/a
+        {12, -1}, // n/a
+    };
+
+    std::map<uint8_t, int8_t> _fillKeys = {
+        {0, -1},  // n/a
+        {1, 0},   // -- fill mode OFF
+        {2, 2},   // 2nd measure
+        {3, 1},   // -- fill mode ON
+        {4, 4},   // 4th measure
+        {5, 8},   // 8th measure
+        {6, 100}, // -- chain mode ON
+        {7, 16},  // 16th measure
+        {8, -1},  // n/a
+        {9, -1},  // n/a
+        {10, -1}, // n/a
+        {11, -1}, // n/a
+        {12, -1}, // n/a
     };
 
     bool _fastBtnPressed = false;
@@ -81,9 +97,12 @@ namespace XRVersa
     void handleNoteOnInput(uint8_t pin);
     void handleNoteOffInput(uint8_t pin);
     void handleKeyboardSetRatchets();
+    void handleKeyboardSetFill();
 
     void mprUpdateForRatchets();
     void fastBtnUpdateForRatchets();
+
+    void mprUpdateForFill();
 
     bool init()
     {
@@ -118,6 +137,12 @@ namespace XRVersa
             return;
         }
 
+        if (currentUXMode == XRUX::UX_MODE::PERFORM_FILL_CHAIN) {
+            handleKeyboardSetFill();
+
+            return;
+        }
+
         if (currentUXMode == XRUX::UX_MODE::PROJECT_INITIALIZE)
         {
             mprUpdateExclusive();
@@ -139,7 +164,7 @@ namespace XRVersa
             currentUXMode == XRUX::UX_MODE::PATTERN_WRITE || 
             currentUXMode == XRUX::UX_MODE::TRACK_SEL || 
             currentUXMode == XRUX::UX_MODE::TRACK_WRITE || 
-            currentUXMode == XRUX::UX_MODE::PERFORM_TAP ||
+            currentUXMode == XRUX::UX_MODE::PERFORM_FILL_CHAIN ||
             currentUXMode == XRUX::UX_MODE::PERFORM_MUTE ||
             currentUXMode == XRUX::UX_MODE::PERFORM_SOLO ||
             currentUXMode == XRUX::UX_MODE::SUBMITTING_STEP_VALUE ||
@@ -521,6 +546,57 @@ namespace XRVersa
 
             XRDisplay::drawSequencerScreen(false);
         }
+    }
+
+    void handleKeyboardSetFill()
+    {
+        mprUpdateForFill();
+
+        return;
+    }
+
+    void mprUpdateForFill()
+    {
+        _mprCurrTouched = mpr121_a.touched();
+
+        int8_t invertedNoteNumber = -1;
+
+        for (size_t i = 0; i < 12; i++)
+        {
+            // if *is* touched and *wasnt* touched before, alert!
+            if ((_mprCurrTouched & _BV(i)) && !(_mprLastTouched & _BV(i)))
+            {
+                invertedNoteNumber = _backwardsNoteNumbers[i];
+
+                if (_fillKeys[invertedNoteNumber] == 100) {
+                    XRSequencer::layerChainState.enabled = true;
+                    Serial.println("chain state ON");
+                } else if (_fillKeys[invertedNoteNumber] == 1) {
+                    XRSequencer::fillState.fillType = XRSequencer::FILL_TYPE::AUTO;
+                    XRSequencer::layerChainState.enabled = false;
+                    Serial.println("fill state: AUTO");
+                } else if (_fillKeys[invertedNoteNumber] == 0) {
+                    XRSequencer::fillState.fillType = XRSequencer::FILL_TYPE::MANUAL;
+                    XRSequencer::layerChainState.enabled = false;
+                    Serial.println("fill state: MANUAL");
+                } else if (_fillKeys[invertedNoteNumber] != -1) {
+                    XRSequencer::fillState.fillMeasure = _fillKeys[invertedNoteNumber];
+                    Serial.printf("fill measure: %d\n", _fillKeys[invertedNoteNumber]);
+                }
+
+                XRDisplay::drawSequencerScreen(false);
+
+                //break;
+            }
+
+            // if it *was* touched and now *isnt*, alert!
+            if (!(_mprCurrTouched & _BV(i)) && (_mprLastTouched & _BV(i)))
+            {
+                // no-op
+            }
+        }
+
+        _mprLastTouched = _mprCurrTouched;
     }
 
     void handleNoteInput()

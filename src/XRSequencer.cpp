@@ -9,6 +9,7 @@
 #include <XRAudio.h>
 #include <map>
 #include <XRVersa.h>
+#include <XRAsyncIO.h>
 #include <queue>
 
 namespace XRSequencer
@@ -37,6 +38,13 @@ namespace XRSequencer
 
     TRACK_TRIGGER_STATE trackTriggerState;
 
+    FILL_STATE fillState;
+    bool fillLayerTriggerd = false;
+    bool returnToBaseLayer = false;
+
+    LAYER_CHAIN_STATE layerChainState;
+    bool advanceLayerChain = false;
+
     bool patternSettingsDirty;
     bool ratchetLayerDirty;
     bool trackLayerDirty;
@@ -62,6 +70,9 @@ namespace XRSequencer
     int8_t _ratchetDivision = -1;
     int8_t _ratchetPageNum = 0;
     int8_t _currentSelectedRatchetStep = -1;
+    int8_t _fillChainPageNum = 0;
+    int8_t _currentSelectedFillTrackLayer = 1; // default fill layer to layer 2
+    int8_t _queuedFillTrackLayer = -1;
 
     bool metronomeEnabled = false;
     bool ratchetLatched = false;
@@ -91,6 +102,16 @@ namespace XRSequencer
 
     bool init()
     {
+        // TODO: testing
+        // eventually store in pattern settings?
+        for (int lc = 1; lc < MAXIMUM_SEQUENCER_TRACK_LAYERS; lc++)
+        {
+            layerChainState.chain[lc] = -1;
+        }
+        layerChainState.chain[0] = 0;
+        layerChainState.currentStep = 1;
+        layerChainState.enabled = false;
+
         _currentSelectedBank = 0;
         _currentSelectedPattern = 0;
         _currentSelectedTrack = 0;
@@ -461,7 +482,7 @@ namespace XRSequencer
             displayAllTrackNoteOnLEDs(false);
         }
 
-        if (_recording) {
+        if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE && _recording) {
             XRLED::setPWM(23, 512);
             //XRLED::setPWM(23, 1024);
         }
@@ -487,6 +508,8 @@ namespace XRSequencer
 
                 if (!XRKeyMatrix::isFunctionActive())
                 {
+                    //Serial.println("calling displayPageLEDs from ClockOut96PPQN!");
+
                     XRLED::displayPageLEDs(
                         -1,
                         (_seqState.playbackState == RUNNING),
@@ -514,6 +537,221 @@ namespace XRSequencer
         }
         
         updateCurrentPatternStepState();
+
+        updateFillStepState();
+
+        updateChainStepState();
+    }
+
+    void updateFillStepState()
+    {
+        // presumably we're on the first step of the fill layer
+        // so queue the base layer back up to play after 1 bar completes
+        if (fillLayerTriggerd)
+        {
+            // _currentSelectedFillTrackLayer right now is actually the base layer
+            // while the fill-in is playing. So we need to queue the base layer
+            // so it gets set back to the base layer after the fill layer plays fully
+            prepareQueuedTrackLayerChange(
+                XRSequencer::getCurrentSelectedBankNum(),
+                XRSequencer::getCurrentSelectedPatternNum(),
+                _currentSelectedFillTrackLayer);
+
+            queueTrackLayer(_currentSelectedFillTrackLayer);
+
+            fillLayerTriggerd = false;
+        }
+        else if (returnToBaseLayer)
+        {
+            prepareQueuedTrackLayerChange(
+                XRSequencer::getCurrentSelectedBankNum(),
+                XRSequencer::getCurrentSelectedPatternNum(),
+                _currentSelectedFillTrackLayer);
+
+            queueTrackLayer(_currentSelectedFillTrackLayer);
+
+            returnToBaseLayer = false;
+        }
+
+        auto patternLastStep = activePatternSettings.lstep;
+        auto measureDiv = patternLastStep < 16 ? patternLastStep : 16;
+        int16_t maxMeasureSteps = patternLastStep * fillState.fillMeasure;
+
+        // if the user just reduced the measure beyodn what is currently
+        // being tracked, then reset the current step / measure to 1
+        // once the pattern resets
+        if (fillState.currentStep > maxMeasureSteps && _seqState.currentStep != 1 && _seqState.currentBar != 1)
+        {
+            Serial.println("changed measure, waiting to start fill measure tracking!");
+
+            // but still track steps so that if the user switches back to a higher measure size,
+            // we don't lose the current step state
+            ++fillState.currentStep;
+
+            return;
+        }
+        else if (fillState.currentStep > maxMeasureSteps && _seqState.currentStep == 1 && _seqState.currentBar == 1)
+        {
+            Serial.println("resetting fill tracking after changing measure, starting fill tracking again!");
+
+            fillState.currentStep = 1;
+            fillState.currentMeasure = 1;
+        }
+
+        if (fillState.currentStep <= maxMeasureSteps)
+        {
+            if (fillState.currentStep < maxMeasureSteps)
+            {
+                auto fillInQueueAmount = patternLastStep - 2; // pattern's last step minus 2 so queueing happens fast
+
+                if (fillState.currentStep == ((patternLastStep * (fillState.fillMeasure - 1) - fillInQueueAmount)))
+                {
+                    if (fillState.fillType == FILL_TYPE::AUTO && _currentSelectedFillTrackLayer > -1)
+                    {
+                        Serial.println("queue up the fill layer!");
+
+                        fillLayerTriggerd = true; // trigger fill on next step
+                    }
+                }
+                else if (fillState.currentStep == ((patternLastStep * (fillState.fillMeasure) - fillInQueueAmount)))
+                {
+                    if (fillState.fillType == FILL_TYPE::AUTO && _currentSelectedFillTrackLayer > -1)
+                    {
+                        Serial.println("queue the return to the base layer!");
+
+                        returnToBaseLayer = true; // trigger fill on next step
+                    }
+                }
+
+                if (!((fillState.currentStep) % measureDiv)) // <= 16 by default
+                {
+                    ++fillState.currentMeasure;
+                }
+
+                ++fillState.currentStep; // advance current step for fill state
+            }
+            else
+            {
+                fillState.currentStep = 1;    // reset current step
+                fillState.currentMeasure = 1; // reset current measure after max fill measure
+            }
+        }
+
+        // if (fillState.fillEnabled) {
+        //     Serial.printf(
+        //         "fs.currentMeasure: %d, fs.currentStep: %d, maxMeasureSteps: %d, fs.fillMeasure: %d\n",
+        //         fillState.currentMeasure,
+        //         fillState.currentStep,
+        //         maxMeasureSteps,
+        //         fillState.fillMeasure
+        //     );
+        // }
+    }
+
+    void updateChainStepState()
+    {
+        auto lastChainLayerIndex = 0;
+        for (int lc = 0; lc < MAXIMUM_SEQUENCER_TRACK_LAYERS; lc++)
+        {
+            if (layerChainState.chain[lc] > -1)
+            {
+                lastChainLayerIndex = lc;
+            }
+        }
+
+        if (lastChainLayerIndex == 0) return; // never advance chain if only one layer is in chain
+
+        auto nextLayerInChain = layerChainState.chain[layerChainState.nextLayerIndex];
+
+
+        if (!layerChainState.enabled && _seqState.currentStep != 1 && _seqState.currentBar != 1)
+        {
+            Serial.println("waiting to start chain tracking!");
+
+            // but still track steps so that if the user switches back to a higher measure size,
+            // we don't lose the current step state
+            ++layerChainState.currentStep;
+
+            return;
+        }
+        else if (!layerChainState.enabled && _seqState.currentStep == 1 && _seqState.currentBar == 1)
+        {
+            Serial.println("resetting chain tracking, starting chain tracking again!");
+
+            layerChainState.currentStep = 1;
+            layerChainState.currLayerIndex = 0;
+            layerChainState.nextLayerIndex = 1;
+        }
+
+
+
+        if (advanceLayerChain)
+        {
+            prepareQueuedTrackLayerChange(
+                XRSequencer::getCurrentSelectedBankNum(),
+                XRSequencer::getCurrentSelectedPatternNum(),
+                nextLayerInChain);
+
+            queueTrackLayer(nextLayerInChain);
+
+            advanceLayerChain = false;
+        }
+
+        auto patternLastStep = activePatternSettings.lstep;
+        auto ptnDiv = patternLastStep < 16 ? patternLastStep : 16;
+        // TODO: eventually allow for individual track layers to have different last steps
+
+        if (layerChainState.currentStep <= patternLastStep)
+        {
+            if (!(layerChainState.currentStep % ptnDiv))
+            {
+                ++layerChainState.currLayerIndex;
+            }
+
+            if (layerChainState.currentStep < patternLastStep)
+            {
+                auto queueAmount = patternLastStep - 2; // pattern's last step minus some amount so queueing happens pretty fast
+
+                if (layerChainState.currentStep == (patternLastStep - queueAmount))
+                {
+                    if (layerChainState.enabled)
+                    {
+                        Serial.println("queue up the next chain layer!");
+
+                        advanceLayerChain = true; // trigger fill on next step
+                    }
+                }
+
+                ++layerChainState.currentStep; // advance current step for fill state
+            }
+            else
+            {
+                layerChainState.currentStep = 1;    // reset current step
+                
+                // one full bar, so either reset to the first layer in the chain
+                // or advance to the next layer in the chain
+
+                if (layerChainState.nextLayerIndex == lastChainLayerIndex) {
+                    layerChainState.nextLayerIndex = 0;
+                } else {
+                    layerChainState.nextLayerIndex++;
+                }
+
+                if (layerChainState.currLayerIndex == lastChainLayerIndex+1) {
+                    layerChainState.currLayerIndex = 0;
+                }
+            }
+        }
+
+        if (layerChainState.enabled) {
+            Serial.printf(
+                "currLayerIndex: %d, _nextChainLayerIndex: %d, _currentSelectedTrackLayer: %d, _queuedTrackLayer: %d\n",
+                layerChainState.currLayerIndex,
+                layerChainState.nextLayerIndex,
+                _currentSelectedTrackLayer,
+                _queuedTrackLayer
+            );
+        }
     }
 
     void ClockOutRigid16PPQN(uint32_t tick)
@@ -557,9 +795,9 @@ namespace XRSequencer
             } else if (_queuedTrackLayer > -1) {
                 _drawTrackLayerQueueBlink = 1;
             }
-        } else if ((_drawPatternQueueBlink > -1) && !(tick % 2)) {
+        } else if ((_drawPatternQueueBlink > -1)) {
             _drawPatternQueueBlink = 0;
-        } else if ((_drawTrackLayerQueueBlink > -1) && !(tick % 2)) {
+        } else if ((_drawTrackLayerQueueBlink > -1)) {
             _drawTrackLayerQueueBlink = 0;
         }
 
@@ -609,7 +847,7 @@ namespace XRSequencer
                 XRSound::activeKit.sounds[t] = XRSound::idleKit.sounds[t];
                 XRSound::soundNeedsReinit[t] = true;
 
-                 if (t < 4) {
+                if (t < 4) {
                     Serial.printf("swapping dexed instance for track: %d\n", t);
                     XRDexedManager::swapInstanceForTrack(t);
                     
@@ -630,8 +868,30 @@ namespace XRSequencer
                 //swapTracksDone = false;
             } else if (_queuedTrackLayer > -1)
             {
-                if (t == 0) _dequeueTrackLayer = true;
-                //activeTrackLayer.tracks[t] = idleTrackLayer.tracks[t];
+                if (t == 0) {
+                    Serial.println("MARKING TRACK LAYER DEQUEUE HERE!");
+                    _dequeueTrackLayer = true;
+                }
+
+                handleNoteOffForTrackStep(t, tracksFinalSteps[t]);
+                tracksFinalSteps[t] = -1;
+                
+                // eager load some track stuff from next layer,
+                // and the first couple step data
+                // the rest is too large to write over here
+                activeTrackLayer.tracks[t].length = idleTrackLayer.tracks[t].length;
+                //Serial.printf("track %d length: %d\n", t, activeTrackLayer.tracks[t].length);
+                activeTrackLayer.tracks[t].note = idleTrackLayer.tracks[t].note;
+                activeTrackLayer.tracks[t].octave = idleTrackLayer.tracks[t].octave;
+                activeTrackLayer.tracks[t].velocity = idleTrackLayer.tracks[t].velocity;
+                activeTrackLayer.tracks[t].probability = idleTrackLayer.tracks[t].probability;
+                activeTrackLayer.tracks[t].lstep = idleTrackLayer.tracks[t].lstep;
+                activeTrackLayer.tracks[t].initialized = idleTrackLayer.tracks[t].initialized;
+
+                activeTrackLayer.tracks[t].steps[0] = idleTrackLayer.tracks[t].steps[0];
+                activeTrackLayer.tracks[t].steps[1] = idleTrackLayer.tracks[t].steps[1];
+
+                _trkSwapQueue.push(t);
             }
         }
 
@@ -995,9 +1255,24 @@ namespace XRSequencer
         return _currentSelectedTrackLayer;
     }
 
+    int8_t getCurrentSelectedFillTrackLayerNum()
+    {
+        return _currentSelectedFillTrackLayer;
+    }
+
+    int8_t getQueuedFillTrackLayerNum()
+    {
+        return _queuedFillTrackLayer;
+    }
+
     QUEUED_PATTERN_STATE &getQueuedPatternState()
     {
         return _queuedPatternState;
+    }
+
+    int getQueuedTrackLayer()
+    {
+        return _queuedTrackLayer;
     }
 
     TRACK &getTrack(int track)
@@ -1044,6 +1319,11 @@ namespace XRSequencer
     void toggleIsRatchetAccented(bool enable)
     {
         //_isRatchetAccented = enable;
+    }
+
+     int8_t getCurrentFillChainPageNum()
+    {
+        return _fillChainPageNum;
     }
 
     int8_t getCurrentRatchetPageNum()
@@ -1295,16 +1575,60 @@ namespace XRSequencer
         }
     }
 
+    void handleNoteOnForTrack(int track, TRACK_TRIGGER trigger)
+    {
+        switch (XRSound::activeKit.sounds[track].type)
+        {
+        case XRSound::T_MONO_SAMPLE:
+            XRSound::handleMonoSampleNoteOnForTrack(track);
+
+            break;
+        case XRSound::T_MONO_SYNTH:
+            XRSound::handleMonoSynthNoteOnForTrack(track);
+
+            break;
+        case XRSound::T_DEXED_SYNTH:
+            XRSound::handleDexedSynthNoteOnForTrack(track);
+
+            break;
+        case XRSound::T_BRAIDS_SYNTH:
+            XRSound::handleBraidsNoteOnForTrack(track);
+
+            break;
+        case XRSound::T_FM_DRUM:
+            XRSound::handleFmDrumNoteOnForTrack(track);
+
+            break;
+        case XRSound::T_MIDI:
+            XRSound::handleMIDINoteOnForTrack(track);
+
+            break;
+        case XRSound::T_CV_GATE:
+            XRSound::handleCvGateNoteOnForTrack(track);
+            
+            break;
+        
+        default:
+            break;
+        }
+    }
+
+    void handleNoteOffForTrack(int track)
+    {
+        XRSound::handleNoteOffForTrack(track);
+    }
+
     void updateCurrentPatternStepState()
     {
-        int currPatternLastStep = activePatternSettings.lstep;
+        auto currPatternLastStep = activePatternSettings.lstep;
+        auto patternDiv = currPatternLastStep < 16 ? currPatternLastStep : 16; // should always be 16?
 
         if (_seqState.currentStep <= currPatternLastStep)
         {
             if (_seqState.currentStep < currPatternLastStep)
             {
-                if (!((_seqState.currentStep + 1) % 16))
-                { // TODO: make this bar division configurable
+                if (!((_seqState.currentStep) % patternDiv))
+                {
                     ++_seqState.currentBar;
                 }
 
@@ -1316,6 +1640,8 @@ namespace XRSequencer
                 _seqState.currentBar = 1;  // reset current bar
             }
         }
+
+        //Serial.printf("current step: %d, current bar: %d\n", _seqState.currentStep, _seqState.currentBar);
     }
 
     void updateAllTrackStepStates()
@@ -1344,6 +1670,144 @@ namespace XRSequencer
                     _seqState.currentTrackSteps[t].currentBar = 1;  // reset current bar for track
                 }
             }
+        }
+    }
+
+    void handleTrackLayerQueueActions()
+    {
+        if (_drawTrackLayerQueueBlink > -1)
+        {
+            if (_drawTrackLayerQueueBlink == 1)
+            {
+                //Serial.println("draw track layer blink!");
+
+                XRDisplay::drawSequencerScreen(true);
+
+                auto currentUXMode = XRUX::getCurrentMode();
+                if (
+                    (fillState.fillType == FILL_TYPE::AUTO || fillState.fillType == FILL_TYPE::MANUAL) && 
+                    (currentUXMode == XRUX::FILL_BASE_LAYER_CHANGE || (currentUXMode == XRUX::PERFORM_FILL_CHAIN && _queuedTrackLayer > -1))
+                ) {
+                    Serial.println("here1111!!!!!!!");
+                    //XRLED::clearAllStepLEDs();
+                    XRLED::displaySelectedTrackLayer(true);
+                } else if (
+                    layerChainState.enabled && (
+                    (currentUXMode == XRUX::PERFORM_FILL_CHAIN && 
+                    _fillChainPageNum == 1 && _queuedTrackLayer > -1))
+                ) {
+
+                    XRLED::displayChainLEDs(true);
+                }
+            }
+            else if (_drawTrackLayerQueueBlink == 0)
+            {
+                XRDisplay::drawSequencerScreen(false);
+
+                auto currentUXMode = XRUX::getCurrentMode();
+                if (
+                    (fillState.fillType == FILL_TYPE::AUTO || fillState.fillType == FILL_TYPE::MANUAL) && 
+                    (currentUXMode == XRUX::FILL_BASE_LAYER_CHANGE || (currentUXMode == XRUX::PERFORM_FILL_CHAIN && _queuedTrackLayer > -1))
+                ) {
+                    Serial.println("here2222!!!!!!!");
+                    //XRLED::clearAllStepLEDs();
+                    XRLED::displaySelectedTrackLayer(false);
+                } else if (
+                    layerChainState.enabled && (
+                    (currentUXMode == XRUX::PERFORM_FILL_CHAIN && 
+                    _fillChainPageNum == 1 && _queuedTrackLayer > -1))
+                ) {
+
+                    XRLED::displayChainLEDs(false);
+                }
+            }
+        }
+
+        // when there are track swaps, do them first
+        if (_dequeueTrackLayer && !_trkSwapQueue.empty()) {
+            auto trk = _trkSwapQueue.front();
+
+            for (int s = 0; s < MAXIMUM_SEQUENCER_STEPS; s++)
+            {
+                if (s < 2) continue;;
+
+                activeTrackLayer.tracks[trk].steps[s] = idleTrackLayer.tracks[trk].steps[s];
+            }
+
+            _trkSwapQueue.pop();
+        }
+
+        if (_dequeueTrackLayer && _trkSwapQueue.empty())
+        {
+            Serial.println("enter _dequeueTrackLayer!");
+
+            // reset queue flags
+            _dequeueTrackLayer = false;
+            _drawTrackLayerQueueBlink = -1;
+
+            if (fillState.fillType == FILL_TYPE::AUTO) {
+                // if fill track layer is queued, safe to assume it should replace
+                // the base / current selected track layer
+                if (_queuedFillTrackLayer > -1) {
+                    //Serial.println("enter case 1");
+                    auto newFillLayer = _currentSelectedTrackLayer;
+                    _currentSelectedTrackLayer = _queuedFillTrackLayer;
+                    _currentSelectedFillTrackLayer = newFillLayer;
+                    _queuedFillTrackLayer = -1;
+                } else {
+                    //Serial.println("enter case 2");
+                    auto newFillLayer = _currentSelectedTrackLayer;
+                    // it will soon be the base layer after the next dequeue
+                    _currentSelectedFillTrackLayer = newFillLayer;
+                    _queuedFillTrackLayer = -1;
+                }
+            }
+            
+            _currentSelectedTrackLayer = _queuedTrackLayer; // this is the fill layer
+            _queuedTrackLayer = -1;
+
+            // reinit the idle track layer
+            initIdleTrackLayer();
+
+            auto currentUXMode = XRUX::getCurrentMode();
+
+            if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE || currentUXMode == XRUX::UX_MODE::TRACK_LAYER_QUEUED)
+            {
+                XRUX::setCurrentMode(XRUX::UX_MODE::TRACK_WRITE);
+
+                int lastStep = activeTrackLayer.tracks[_currentSelectedTrack].lstep;
+
+                Serial.println("calling displayPageLEDs after track layer queue from track write function mode!");
+
+                XRLED::clearAllStepLEDs();
+                XRLED::setDisplayStateForAllStepLEDs();
+
+                XRLED::displayPageLEDs(
+                    1,
+                    (_seqState.playbackState == RUNNING),
+                    _currentStepPage,
+                    lastStep // TODO need?
+                );
+            } 
+            else if (currentUXMode == XRUX::UX_MODE::PERFORM_FILL_CHAIN && _fillChainPageNum == 0)
+            {
+                XRLED::clearAllStepLEDs();
+                XRLED::displaySelectedTrackLayer();
+            } 
+            else if (currentUXMode == XRUX::UX_MODE::PERFORM_FILL_CHAIN && _fillChainPageNum == 1)
+            {
+                XRLED::clearAllStepLEDs();
+                XRLED::displayChainLEDs(false);
+            } else if (currentUXMode == XRUX::UX_MODE::FILL_BASE_LAYER_CHANGE) {
+                XRLED::clearAllStepLEDs();
+                XRLED::displaySelectedTrackLayer();
+                XRUX::setCurrentMode(XRUX::UX_MODE::PERFORM_FILL_CHAIN);
+            }
+
+            //Serial.printf("base layer: %d\n", _currentSelectedTrackLayer);
+            //Serial.printf("fill layer: %d\n", _currentSelectedFillTrackLayer);
+
+            XRDisplay::drawSequencerScreen(false);
         }
     }
 
@@ -1533,50 +1997,6 @@ namespace XRSequencer
         }
     }
 
-    void handleTrackLayerQueueActions()
-    {
-        if (_drawTrackLayerQueueBlink > -1)
-        {
-            if (_drawTrackLayerQueueBlink == 1)
-            {
-                Serial.println("draw track layer blink!");
-
-                XRDisplay::drawSequencerScreen(false); // TODO: pass new arg to let display know to blink the new layer number
-            }
-            else if (_drawTrackLayerQueueBlink == 0)
-            {
-                XRDisplay::drawSequencerScreen(false);
-            }
-        }
-
-        if (_dequeueTrackLayer)
-        {
-            Serial.println("enter _dequeueTrackLayer!");
-
-            // reset queue flags
-            _dequeueTrackLayer = false;
-            _drawTrackLayerQueueBlink = -1;
-            _currentSelectedTrackLayer = _queuedTrackLayer;
-            _queuedTrackLayer = -1;
-            // _currentSelectedPage = 0;
-
-            auto currentUXMode = XRUX::getCurrentMode();
-            if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE)
-            {
-                int lastStep = activeTrackLayer.tracks[_currentSelectedTrack].lstep;
-
-                XRLED::displayPageLEDs(
-                    1,
-                    (_seqState.playbackState == RUNNING),
-                    _currentStepPage,
-                    lastStep // TODO need?
-                );
-            }
-
-            XRDisplay::drawSequencerScreen(false);
-        }
-    }
-
     void swapSequencerMemoryForTrackLayerChange()
     {
         // swap data
@@ -1637,6 +2057,69 @@ namespace XRSequencer
     void setSelectedPage(int8_t page)
     {
         _currentSelectedPage = page;
+    }
+
+    void toggleSelectedFillLayer(uint8_t layer)
+    {
+        if (layer == _currentSelectedTrackLayer)
+        {
+            Serial.println("layer is already base layer! no-op!");
+            return;
+        } else if (layer == _currentSelectedFillTrackLayer) {
+            Serial.println("current fill layer is selected again, so queue it up and make it the base layer!");
+
+            if (_seqState.playbackState == XRSequencer::SEQUENCER_PLAYBACK_STATE::RUNNING) {
+                // TODO: if in FILL mode, make the layer change
+                // abide by the desired fill interval
+                prepareQueuedTrackLayerChange(
+                    XRSequencer::getCurrentSelectedBankNum(),
+                    XRSequencer::getCurrentSelectedPatternNum(),
+                    layer
+                );
+
+                queueTrackLayer(layer);
+            
+                // set the fill layer as the former base layer
+                _queuedFillTrackLayer = layer;
+
+                // while the layer is being queued, prevent user from selecting another one
+                XRUX::setCurrentMode(XRUX::UX_MODE::FILL_BASE_LAYER_CHANGE);
+            } else {
+
+                // swap base/fill layer
+                auto newFillLayer = _currentSelectedTrackLayer;
+                _currentSelectedTrackLayer = layer;
+                _currentSelectedFillTrackLayer = newFillLayer;
+
+                Serial.printf("INSTANT TL CHANGE WHILE STOPPED: base layer: %d ", _currentSelectedTrackLayer);
+                Serial.printf("fill layer: %d\n", _currentSelectedFillTrackLayer);
+
+
+                // this call changes the layer number
+                instantTrackLayerChange(
+                    XRSequencer::getCurrentSelectedBankNum(),
+                    XRSequencer::getCurrentSelectedPatternNum(),
+                    layer,
+                    false // TODO: figure out why the wrong track layer is overwritten here instead of using this flag
+                );
+
+                XRLED::displaySelectedTrackLayer();
+                XRDisplay::drawSequencerScreen(false);
+            }
+
+        } else {
+            _currentSelectedFillTrackLayer = layer;
+            _queuedFillTrackLayer = -1;
+            _queuedTrackLayer = -1;
+
+            XRLED::displaySelectedTrackLayer();
+            XRDisplay::drawSequencerScreen(false);
+
+            //Serial.printf("base layer: %d\n", _currentSelectedTrackLayer);
+            //Serial.printf("fill layer: %d\n", _currentSelectedFillTrackLayer);
+
+            //Serial.println("new fill layer is selected!");
+        }
     }
 
     void toggleSelectedStep(uint8_t step)
@@ -1701,6 +2184,23 @@ namespace XRSequencer
                 _seqState.currentBar = 1;
                 _ratchetState.firstBar = true;
 
+                fillState.currentStep = 1;
+                fillState.currentMeasure = 1;
+
+                layerChainState.currentStep = 1;
+                layerChainState.nextLayerIndex = 1;
+                layerChainState.currLayerIndex = 0;
+                _queuedTrackLayer = -1;
+
+                if (layerChainState.enabled) {
+                    instantTrackLayerChange(
+                        XRSequencer::getCurrentSelectedBankNum(),
+                        XRSequencer::getCurrentSelectedPatternNum(),
+                        layerChainState.chain[0],
+                        false
+                    );
+                }
+
                 rewindAllCurrentStepsForAllTracks();
 
                 // if (
@@ -1719,6 +2219,14 @@ namespace XRSequencer
                     XRLED::setDisplayStateForAllStepLEDs();
                 } else if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) {
                     XRLED::clearAllStepLEDs();
+                } else if (currentUXMode == XRUX::UX_MODE::PERFORM_FILL_CHAIN) {
+                    if (_fillChainPageNum == 0) {
+                        XRLED::clearAllStepLEDs();
+                        XRLED::displaySelectedTrackLayer();
+                    } else if (_fillChainPageNum == 1) {
+                        XRLED::clearAllStepLEDs();
+                        XRLED::displayChainLEDs(false);
+                    }
                 }
                 
                 XRClock::start();
@@ -1776,24 +2284,48 @@ namespace XRSequencer
                 _seqState.currentBar = 1;
                 _ratchetState.firstBar = true;
 
+                fillState.currentStep = 1;
+                fillState.currentMeasure = 1;
+
+                layerChainState.currentStep = 1;
+                layerChainState.nextLayerIndex = 1;
+                layerChainState.currLayerIndex = 0;
+                _queuedTrackLayer = -1;
+
+                if (layerChainState.enabled) {
+                    instantTrackLayerChange(
+                        XRSequencer::getCurrentSelectedBankNum(),
+                        XRSequencer::getCurrentSelectedPatternNum(),
+                        layerChainState.chain[0],
+                        false
+                    );
+                }
+
                 rewindAllCurrentStepsForAllTracks();
 
+                XRLED::setPWM(23, 0);     // turn start button led OFF
+
                 if (
-                    currentUXMode == XRUX::UX_MODE::PERFORM_TAP ||
                     currentUXMode == XRUX::UX_MODE::PERFORM_MUTE ||
-                    currentUXMode == XRUX::UX_MODE::PERFORM_SOLO ||
-                    currentUXMode == XRUX::UX_MODE::PERFORM_RATCHET
+                    currentUXMode == XRUX::UX_MODE::PERFORM_SOLO
                 ) {
                     return;
                 }
 
                 XRLED::setPWM(keyLED, 0); // turn off current step LED
-                XRLED::setPWM(23, 0);     // turn start button led OFF
 
                 if (currentUXMode == XRUX::UX_MODE::TRACK_WRITE) {
                     XRLED::setDisplayStateForAllStepLEDs();
                 } else if (currentUXMode == XRUX::UX_MODE::PATTERN_WRITE) {
                     XRLED::clearAllStepLEDs();
+                } else if (currentUXMode == XRUX::UX_MODE::PERFORM_FILL_CHAIN) {
+                    if (_fillChainPageNum == 0) {
+                        XRLED::clearAllStepLEDs();
+                        XRLED::displaySelectedTrackLayer();
+                    } else if (_fillChainPageNum == 1) {
+                        XRLED::clearAllStepLEDs();
+                        XRLED::displayChainLEDs(false);
+                    }
                 }
             }
         } else if (btn == START_BTN_CHAR) {
@@ -1909,6 +2441,8 @@ namespace XRSequencer
                 _ratchetStack[i].trackNum = _ratchetTrack;
                 _ratchetStack[i].length = currRatchetTrack.length;
 
+                //Serial.printf("adding to ratchet stack: track: %d, step: %d, len: %d\n", _ratchetTrack, step, _ratchetStack[i].length);
+
                 trackTriggerState.trackTriggers[_ratchetStack[i].trackNum].currentState = 1;
                 trackTriggerState.trackTriggers[_ratchetStack[i].trackNum].pattern = _currentSelectedPattern;
                 trackTriggerState.trackTriggers[_ratchetStack[i].trackNum].layer = _currentSelectedTrackLayer;
@@ -1931,7 +2465,7 @@ namespace XRSequencer
                 if (trackTriggerState.trackTriggers[t].step > -1) {
                     if (trackTriggerState.trackTriggers[t].currentState == 1)
                     {
-                        // if (t == 1) {
+                        // if (t == 0) {
                         //     Serial.printf("triggering ON step %d for track %d\n", trackTriggerState.trackTriggers[t].step, t);
                         // }
 
@@ -1967,6 +2501,29 @@ namespace XRSequencer
 
                         trackTriggerState.trackTriggers[t].lastState = trackTriggerState.trackTriggers[t].currentState;
                     }
+                } else {
+                    if (trackTriggerState.trackTriggers[t].currentState == 1)
+                    {
+                        //Serial.printf("triggering ON track %d\n", t+1);
+
+                        handleNoteOnForTrack(t, trackTriggerState.trackTriggers[t]);
+
+                        trackTriggerState.trackTriggers[t].lastState = trackTriggerState.trackTriggers[t].currentState;
+                        trackTriggerState.trackTriggers[t].currentState = 2;
+                    }
+                    else if (trackTriggerState.trackTriggers[t].currentState == 0)
+                    {
+                        //Serial.printf("triggering OFF track %d\n", t+1);
+
+                        handleNoteOffForTrack(t);
+
+                        trackTriggerState.trackTriggers[t].pattern = -1;
+                        trackTriggerState.trackTriggers[t].layer = -1;
+                        trackTriggerState.trackTriggers[t].step = -1;
+                        trackTriggerState.trackTriggers[t].soundType = XRSound::T_EMPTY;
+
+                        trackTriggerState.trackTriggers[t].lastState = trackTriggerState.trackTriggers[t].currentState;
+                    }
                 }
             }
         }
@@ -1981,6 +2538,11 @@ namespace XRSequencer
     {
         _queuedPatternState.bank = bank;
         _queuedPatternState.number = pattern;
+    }
+
+    void queueTrackLayer(int layer)
+    {
+        _queuedTrackLayer = layer;
     }
 
     void setSelectedPattern(int8_t pattern)
@@ -2004,6 +2566,11 @@ namespace XRSequencer
     void setCurrentStepPage(int8_t page)
     {
         _currentStepPage = page;
+    }
+
+    void setCurrentFillChainPageNum(int8_t page)
+    {
+        _fillChainPageNum = page;
     }
 
     void setRatchetTrack(int track)
@@ -2040,4 +2607,59 @@ namespace XRSequencer
     {
         return XRUX::getCurrentMode() == XRUX::PERFORM_RATCHET && _ratchetPageNum == 1;
     }
+
+    void trackLayerFailedReadCallback(const XRAsyncIO::FILE_TYPE fileType)
+    {
+        Serial.printf("trackLayerFailedReadCallback for file type: %d\n", fileType);
+
+        switch (fileType)
+        {
+        case XRAsyncIO::FILE_TYPE::TRACK_LAYER:
+            XRSequencer::initIdleTrackLayer();
+            Serial.println("track layer initialized!");
+            break;
+        
+        default:
+            break;
+        }
+    }
+
+    void prepareQueuedTrackLayerChange(int nextBank, int nextPattern, int nextLayer)
+    {
+        XRAsyncIO::addItem({
+            XRAsyncIO::FILE_TYPE::TRACK_LAYER,
+            XRAsyncIO::FILE_IO_TYPE::READ,
+            XRSD::getTrackLayerFilename(nextBank, nextPattern, nextLayer),
+            sizeof(XRSequencer::idleTrackLayer),
+            trackLayerFailedReadCallback,
+            nullptr
+        });
+    }
+
+    void instantTrackLayerChange(int nextBank, int nextPattern, int nextLayer, bool shouldWrite)
+    {
+        if (shouldWrite) {
+            XRSD::saveActiveTrackLayer();
+        }
+
+        if (!XRSD::loadNextTrackLayer(nextBank, nextPattern, nextLayer)) 
+        {
+            Serial.println("failed to load next track layer, initting it instead!");
+            XRSequencer::initTrackLayer(XRSequencer::idleTrackLayer);
+        }
+
+        // swap
+        XRSequencer::activeTrackLayer = XRSequencer::idleTrackLayer;
+
+        // mark it as selected layer
+        XRSequencer::setSelectedTrackLayer(nextLayer);
+
+        // go back to track write
+        //XRUX::setCurrentMode(XRUX::TRACK_WRITE);
+
+        // reset display
+        XRLED::clearAllStepLEDs();
+        XRDisplay::drawSequencerScreen(false);
+    }
+
 }

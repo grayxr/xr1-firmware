@@ -76,13 +76,13 @@ namespace XRAsyncIO
                 _readIO.index = (int8_t*)getReadObject(ctx.fileType);
                 _readIO.total = 0;
 
-                //Serial.printf("Opening file: %s, at index: %d\n", ctx.filename.c_str(), _readIO.index);
+                Serial.printf("Opening file: %s, at index: %d\n", ctx.filename.c_str(), _readIO.index);
 
                 if (!openForRead(ctx)) {
-                    //Serial.println("failed to open for read!");
+                    Serial.println("failed to open for read!");
 
                     if (ctx.failedCb != nullptr) {
-                        //Serial.println("calling present callback for failed read!");
+                        Serial.println("calling present callback for failed read!");
 
                         ctx.failedCb(ctx.fileType);
                     }
@@ -99,7 +99,7 @@ namespace XRAsyncIO
                 _writeIO.remaining = ctx.size;
 
                 if (!openForWrite(ctx)) {
-                    //Serial.println("failed to open for write, retrying!");
+                    Serial.println("failed to open for write, retrying!");
 
                     _state = START; // retry if failed to open for write
                 } else {
@@ -139,7 +139,7 @@ namespace XRAsyncIO
                     _state = IDLE; // so we open the next file!
 
                     if (ctx.successCb != nullptr) {
-                        //Serial.println("calling present callback for successful read completed!");
+                        Serial.println("calling present callback for successful read completed!");
 
                         ctx.successCb(ctx.fileType);
                     }
@@ -166,11 +166,11 @@ namespace XRAsyncIO
         _file = SD.open(ctx.filename.c_str(), FILE_READ);
         if (!_file || !_file.available())
         {
-            //Serial.printf("Failed to open file for reading: %s\n", ctx.filename.c_str());
+            Serial.printf("Failed to open file for reading: %s\n", ctx.filename.c_str());
             return false;
         }
 
-        //Serial.printf("opened file for reading: %s\n", ctx.filename.c_str());
+        Serial.printf("opened file for reading: %s\n", ctx.filename.c_str());
 
         return true;
     }
@@ -181,18 +181,18 @@ namespace XRAsyncIO
         _file = SD.open(ctx.filename.c_str(), FILE_WRITE_BEGIN);
         if (!_file)
         {
-            //Serial.printf("Failed to open file for writing: %s\n", ctx.filename.c_str());
+            Serial.printf("Failed to open file for writing: %s\n", ctx.filename.c_str());
             return false;
         }
 
-        //Serial.printf("opened file for writing: %s\n", ctx.filename.c_str());
+        Serial.printf("opened file for writing: %s\n", ctx.filename.c_str());
 
         return true;
     }
     
     bool doneReading(IO_CONTEXT& ctx, void *buf)
     {
-        //Serial.printf("Reading file: %s ", ctx.filename.c_str());
+        Serial.printf("Reading file: %s\n", ctx.filename.c_str());
 
         uint32_t chunkSize = min(ASYNC_IO_R_BUFFER_SIZE, ctx.size - _readIO.total);
 
@@ -205,7 +205,7 @@ namespace XRAsyncIO
         if (_readIO.total >= ctx.size) {
             _file.close();
 
-            //Serial.printf("done reading file %s!\n", ctx.filename.c_str());
+            Serial.printf("done reading file %s!\n", ctx.filename.c_str());
 
             return true;
         }
@@ -215,7 +215,7 @@ namespace XRAsyncIO
 
     bool doneWriting(IO_CONTEXT& ctx, const byte *buf)
     {
-        //Serial.printf("Writing file: %s ", ctx.filename.c_str());
+        Serial.printf("Writing file: %s ", ctx.filename.c_str());
 
         if (_writeIO.remaining > 0) {
             uint32_t chunkSize = min(ASYNC_IO_W_BUFFER_SIZE, _writeIO.remaining);
@@ -233,7 +233,7 @@ namespace XRAsyncIO
             if (_writeIO.remaining <= 0) {
                 _file.close();
 
-                //Serial.printf("done writing file %s!\n", ctx.filename.c_str());
+                Serial.printf("done writing file %s!\n", ctx.filename.c_str());
 
                 _writeIO.remaining = 0;
                 _writeIO.offset = 0;

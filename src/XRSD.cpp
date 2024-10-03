@@ -8,6 +8,9 @@
 #include <XRSequencer.h>
 #include <XRClock.h>
 
+#define NUM_SAMPLES 44100
+#define WAVEFORMHEIGHT 64
+
 namespace XRSD
 {
     enum WRITE_FILE_TYPE
@@ -82,6 +85,8 @@ namespace XRSD
     uint32_t writeStart;
     uint32_t writeFinish;
 
+    EXTMEM int16_t WFORMDYNAMIC[NUM_SAMPLES];
+
     bool get_sd_voice(File sysex, uint8_t voice_number, uint8_t *data);
 
     bool init()
@@ -123,6 +128,7 @@ namespace XRSD
 
     void writeFileBuffered(std::string filename, const byte *data, size_t size)
     {
+
         File file = SD.open(filename.c_str(), FILE_WRITE_BEGIN);
         if (!file)
         {
@@ -131,6 +137,8 @@ namespace XRSD
             delay(2000);
             return;
         }
+
+        Serial.printf("calling from UX mode: %d\n", XRUX::getCurrentMode());
 
         Serial.printf("Writing file: %s\n", filename.c_str());
 

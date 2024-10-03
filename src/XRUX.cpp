@@ -1,4 +1,5 @@
 #include <XRUX.h>
+#include <XRSequencer.h>
 
 namespace XRUX
 {
@@ -8,6 +9,13 @@ namespace XRUX
     void setCurrentMode(UX_MODE mode)
     {
         setPreviousMode(_current_UX_mode);
+
+        // when switching to a new mode, always disable auto fill state
+        if (XRSequencer::fillState.fillType == XRSequencer::FILL_TYPE::AUTO && mode != UX_MODE::PERFORM_FILL_CHAIN) {
+            XRSequencer::fillState.fillType = XRSequencer::FILL_TYPE::MANUAL;
+            XRSequencer::fillState.currentStep = 1;
+            XRSequencer::fillState.currentMeasure = 1;
+        }
 
         _current_UX_mode = mode;
     }

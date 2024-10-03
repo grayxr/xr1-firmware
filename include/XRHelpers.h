@@ -20,6 +20,8 @@ namespace XRHelpers
     std::string strldz(std::string inputStr, const int zeroNum);
     std::string getNewProjectName();
     std::string getNoteStringForBaseNoteNum(uint8_t num);
+
+    long aMap(long x, long in_min, long in_max, long out_min, long out_max);
 }
 
 #endif /* XRHelpers_h */

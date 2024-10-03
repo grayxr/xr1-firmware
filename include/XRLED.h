@@ -26,8 +26,10 @@ namespace XRLED
     void displayInitializedPatternLEDs();
     void displayInitializedTrackLEDs();
     void displayTrackLayers();
+    void displaySelectedTrackLayer(bool blinkFillLayer = false);
     void toggleNoteOnForTrackLED(uint8_t t, bool enable);
     void displayRatchetTrackLED(bool accented);
+    void displayChainLEDs(bool blinkChainLayer = false);
 
     int8_t getKeyLED(char idx);
     extern Adafruit_TLC5947 tlc;

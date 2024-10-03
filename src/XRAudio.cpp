@@ -17,7 +17,7 @@ namespace XRAudio
         // pullup resistors
         sgtl5000_1.enable();
         sgtl5000_1.inputSelect(AUDIO_INPUT_LINEIN);
-        sgtl5000_1.lineInLevel(0);
+        sgtl5000_1.lineInLevel(5);
         sgtl5000_1.lineOutLevel(29);
         sgtl5000_1.dacVolumeRamp();
         sgtl5000_1.volume(0.90);

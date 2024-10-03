@@ -63,6 +63,8 @@ namespace XRLED
 
     void showOctaveLEDs(int8_t octave)
     {
+        Serial.println("calling showOctaveLEDs");
+
         switch (octave)
         {
         case 1:
@@ -121,7 +123,9 @@ namespace XRLED
 
     void displayPageLEDs(int currentBar, bool sequencerRunning, int currentStepPage, int lastStep)
     {
-        // Serial.printf("enter displayPageLEDs, lastStep: %d\n", lastStep);
+        //Serial.println("calling displayPageLEDs");
+
+        //Serial.printf("enter displayPageLEDs, lastStep: %d\n", lastStep);
         
         //bool blinkCurrentPage = _seq_state.playback_state == RUNNING && currentBar != -1;
         bool blinkCurrentPage = sequencerRunning && currentBar != -1;
@@ -150,6 +154,8 @@ namespace XRLED
 
     void clearAllStepLEDs()
     {
+        Serial.println("calling clearAllStepLEDs");
+
         for (int s = 0; s < 16; s++)
         {
             setPWM(_stepLEDPins[s], 0);
@@ -175,6 +181,8 @@ namespace XRLED
 
     void displayCurrentlySelectedPattern()
     {
+        Serial.println("calling displayCurrentlySelectedPattern");
+
         //auto &bank = XRSequencer::getActivePatternBank();
         //auto currentSelectedBank = XRSequencer::getCurrentSelectedBankNum();
         auto currentSelectedPattern = XRSequencer::getCurrentSelectedPatternNum();
@@ -203,6 +211,7 @@ namespace XRLED
 
     void displayCurrentlySelectedTrack()
     {
+        Serial.println("calling displayCurrentlySelectedTrack");
         //Serial.println("fix displayCurrentlySelectedTrack");
         //return;
 
@@ -248,8 +257,72 @@ namespace XRLED
         }
     }
 
+    void displaySelectedTrackLayer(bool blinkFillLayer)
+    {
+        Serial.println("calling displaySelectedTrackLayer");
+
+        auto currentSelectedTrackLayer = XRSequencer::getCurrentSelectedTrackLayerNum();
+        auto currentSelectedFillTrackLayer = XRSequencer::getCurrentSelectedFillTrackLayerNum();
+        auto queuedFillTrackLayer = XRSequencer::getQueuedFillTrackLayerNum();
+        auto queuedTrackLayer = XRSequencer::getQueuedTrackLayer();
+
+        for (int l = 0; l < MAXIMUM_SEQUENCER_TRACK_LAYERS; l++)
+        {
+            if (l == currentSelectedTrackLayer)
+            {
+                setPWM(_stepLEDPins[l], 4095);
+            }
+            else if (l == currentSelectedFillTrackLayer || l == queuedFillTrackLayer || l == queuedTrackLayer)
+            {
+                //Serial.printf("blinkFillLayer: %d, queuedFillTrackLayer: %d, currentSelectedFillTrackLayer: %d, queuedTrackLayer: %d\n", (int)blinkFillLayer, queuedFillTrackLayer, currentSelectedFillTrackLayer, queuedTrackLayer);
+
+                if (l == queuedFillTrackLayer || l == queuedTrackLayer) {
+                    setPWM(_stepLEDPins[l], blinkFillLayer ? 4095 : 512);
+                } else {
+                    setPWM(_stepLEDPins[l], 512);
+                }
+            } 
+            else {
+                setPWM(_stepLEDPins[l], 0);
+            }
+        }
+    }
+
+    void displayChainLEDs(bool blinkChainLayer)
+    {
+        auto currentSelectedTrackLayer = XRSequencer::getCurrentSelectedTrackLayerNum();
+        auto queuedTrackLayer = XRSequencer::getQueuedTrackLayer();
+
+        // Serial.printf("currentSelectedTrackLayer: %d, queuedTrackLayer: %d\n", currentSelectedTrackLayer, queuedTrackLayer);
+
+        // Serial.printf("LayerChain elements: ");
+        // for (int i = 0; i < MAXIMUM_SEQUENCER_TRACK_LAYERS; i++) {
+        //     Serial.printf("%d ", XRSequencer::layerChainState.chain[i]);
+        // }
+        // Serial.printf("\n");
+
+        for (int l = 0; l < MAXIMUM_SEQUENCER_TRACK_LAYERS; l++)
+        {
+            if (XRSequencer::layerChainState.chain[l] > -1)
+            {
+                auto currChainLayer = XRSequencer::layerChainState.chain[l];
+
+                if (currChainLayer == currentSelectedTrackLayer)
+                {
+                    setPWM(_stepLEDPins[currChainLayer], 4095);
+                }
+                else
+                {
+                    setPWM(_stepLEDPins[currChainLayer], (currChainLayer == queuedTrackLayer && blinkChainLayer) ? 512 : 0);
+                }
+            }
+        }
+    }
+
     void setDisplayStateForAllStepLEDs()
     {
+        Serial.println("calling setDisplayStateForAllStepLEDs");
+
         auto currUXMode = XRUX::getCurrentMode();
         auto &currTrack = (currUXMode == XRUX::PERFORM_RATCHET || currUXMode == XRUX::SUBMITTING_RATCHET_STEP_VALUE) ? 
             XRSequencer::activeRatchetLayer.tracks[XRSequencer::getRatchetTrack()] : 
@@ -314,6 +387,8 @@ namespace XRLED
 
     void displayCurrentOctaveLEDs(int8_t octave)
     {
+        Serial.println("calling displayCurrentOctaveLEDs");
+
         switch (octave)
         {
         case 1:

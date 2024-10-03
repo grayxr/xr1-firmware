@@ -10,7 +10,11 @@
 #include <XRSequencer.h>
 #include <XRSound.h>
 
-#define ASYNC_IO_R_BUFFER_SIZE 512 * 80
+//TODO: define a higher read speed when doing manual bnk/ptn/layer changes
+// use 512 * 8 for when in automated (song / chain / auto fill) modes
+#define ASYNC_IO_R_BUFFER_SIZE 512 * 8
+
+// always use this write size no matter the mode?
 #define ASYNC_IO_W_BUFFER_SIZE 512 * 8
 
 namespace XRAsyncIO

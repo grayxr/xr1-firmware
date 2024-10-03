@@ -185,6 +185,34 @@ namespace XRSequencer
         RECORDING_TRACK tracks[MAXIMUM_SEQUENCER_TRACKS];
     } RECORDING_STATE;
 
+    enum FILL_TYPE : uint8_t
+    {
+        MANUAL = 0,
+        AUTO = 1
+    };
+
+    typedef struct
+    {
+        int8_t currentStep = 1;
+        int8_t currentMeasure = 1; // measure = 16 steps, bar = last step of track
+        int8_t fillMeasure = 4; // by default, the 4th measure is used for fill
+        FILL_TYPE fillType = FILL_TYPE::MANUAL;
+    } FILL_STATE;
+
+    typedef struct
+    {
+        int8_t layers[MAXIMUM_SEQUENCER_TRACK_LAYERS];
+    } LAYER_CHAIN;
+
+    typedef struct
+    {
+        int8_t chain[MAXIMUM_SEQUENCER_TRACK_LAYERS];
+        int8_t currentStep = 1;
+        int8_t nextLayerIndex = 1; // always default to 2nd layer as next
+        int8_t currLayerIndex = 0;
+        bool enabled = false;
+    } LAYER_CHAIN_STATE;
+
     // extern globals
 
     // active = current (used for playback), idle = next (read from SD card during pattern change)
@@ -197,17 +225,19 @@ namespace XRSequencer
 
     // used for saving to SD card
     extern EXTMEM TRACK_LAYER trackLayerForWrite;
-    // extern EXTMEM std::string trackLayerWriteFilename;
     extern EXTMEM RATCHET_LAYER ratchetLayerForWrite;
-    // extern EXTMEM std::string ratchetLayerWriteFilename;
     extern EXTMEM PATTERN_SETTINGS patternSettingsForWrite;
-    // extern EXTMEM std::string patternSettingsWriteFilename;
-
 
     extern DMAMEM PATTERN_FX_PAGE_INDEXES patternFxPages[MAXIMUM_PATTERN_FX_PARAM_PAGES];
     extern DMAMEM TRACK_PERFORM_STATE trackPerformState[MAXIMUM_SEQUENCER_TRACKS];
     extern DMAMEM RECORDING_STATE recordingState;
     extern TRACK_TRIGGER_STATE trackTriggerState;
+    extern FILL_STATE fillState;
+
+    extern LAYER_CHAIN_STATE layerChainState;
+
+    extern bool fillLayerTriggerd;
+    extern bool returnToBaseLayer;
 
     extern bool metronomeEnabled;
     extern bool ratchetLatched;
@@ -233,6 +263,7 @@ namespace XRSequencer
     void swapSequencerMemoryForTrackLayerChange();
     void saveCurrentPatternOffHeap();
     void toggleSelectedStep(uint8_t step);
+    void toggleSelectedFillLayer(uint8_t layer);
 
     void onClockStart();
     void onClockStop();
@@ -266,15 +297,21 @@ namespace XRSequencer
 
     void handleNoteOnForTrackStep(int track, int step, TRACK_TRIGGER trigger);
     void handleNoteOffForTrackStep(int track, int step);
+
+    void handleNoteOnForTrack(int track, TRACK_TRIGGER trigger);
+    void handleNoteOffForTrack(int track);
     
     void handleCurrentTrackStepLEDs(uint8_t t);
     void updateTrackStepState(uint8_t t, uint32_t tick);
     void updateCurrentPatternStepState();
+    void updateFillStepState();
+    void updateChainStepState();
     void displayAllTrackNoteOnLEDs(bool enable);
     void noteOffForAllSounds();
     void handlePatternQueueActions();
     void handleTrackLayerQueueActions();
     void queuePattern(int pattern, int bank);
+    void queueTrackLayer(int layer);
 
     void setSelectedPattern(int8_t pattern);
     void setSelectedTrack(int8_t track);
@@ -287,6 +324,7 @@ namespace XRSequencer
     void setRatchetTrack(int track);
     void setRatchetDivision(int track);
     void setCurrentRatchetPageNum(int8_t page);
+    void setCurrentFillChainPageNum(int8_t page);
     void handleRatchetTrackStepLEDs(uint8_t t);
     void setCurrentRatchetStep(int8_t step);
     void resetRatchetBar();
@@ -295,10 +333,14 @@ namespace XRSequencer
     void toggleSequencerPlayback(char btn);
     void rewindAllCurrentStepsForAllTracks();
 
+    void prepareQueuedTrackLayerChange(int nextBank, int nextPattern, int nextLayer);
+    void instantTrackLayerChange(int nextBank, int nextPattern, int nextLayer, bool shouldWrite = true);
+
     PATTERN_FX_PARAMS getInitPatternFxParams();
 
     SEQUENCER_STATE &getSeqState();
     QUEUED_PATTERN_STATE &getQueuedPatternState();
+    int getQueuedTrackLayer();
 
     TRACK &getTrack(int track);
     STEP &getStep(int track, int step);
@@ -317,6 +359,9 @@ namespace XRSequencer
     int8_t getRatchetDivision();
     int8_t getCurrentRatchetPageNum();
     int8_t getCurrentSelectedRatchetStep();
+    int8_t getCurrentSelectedFillTrackLayerNum();
+    int8_t getQueuedFillTrackLayerNum();
+    int8_t getCurrentFillChainPageNum();
 }
 
 #endif /* XRSequencer_h */

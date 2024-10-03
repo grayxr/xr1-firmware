@@ -75,9 +75,9 @@ namespace XRClock
         auto mins = uClock.getNumberOfMinutes(start);
         auto secs = uClock.getNumberOfSeconds(start);
 
-        auto hrsStr = XRHelpers::strldz(std::to_string(hrs), 2);
-        auto minStr = XRHelpers::strldz(std::to_string(mins), 2);
-        auto secStr = XRHelpers::strldz(std::to_string(secs), 2);
+        auto hrsStr = hrs > 1 ? "00" : XRHelpers::strldz(std::to_string(hrs), 2);
+        auto minStr = hrs > 1 ? "00" : XRHelpers::strldz(std::to_string(mins), 2);
+        auto secStr = hrs > 1 ? "00" : XRHelpers::strldz(std::to_string(secs), 2);
 
         std::string time = hrsStr + ":" + minStr + ":" + secStr;
 

@@ -823,7 +823,6 @@ namespace XRSound
         // L&R input mixer
         inputMixerLeft.gain(0, 0);
         inputMixerRight.gain(0, 0);
-
         // inputMixerLeft.gain(0, 0.25);
         // inputMixerRight.gain(0, 0.25);
 

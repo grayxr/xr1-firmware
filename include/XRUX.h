@@ -20,7 +20,7 @@ namespace XRUX
         PROJECT_BUSY, // The default mode during boot
         CHANGE_SETUP,
         PERFORM_SEL,
-        PERFORM_TAP,
+        PERFORM_FILL_CHAIN,
         PERFORM_MUTE,
         PERFORM_SOLO,
         PERFORM_RATCHET,
@@ -43,6 +43,8 @@ namespace XRUX
         PATTERN_CHANGE_QUEUED,
         PATTERN_CHANGE_INSTANT,
         SUBMITTING_RATCHET_STEP_VALUE,
+        FILL_BASE_LAYER_CHANGE,
+        TRACK_LAYER_QUEUED,
     };
 
     void setCurrentMode(UX_MODE mode);

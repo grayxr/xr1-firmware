@@ -11,22 +11,8 @@ namespace XRMain
     elapsedMillis seqWriteIntervalMs;
 
     bool ticked = false;
-
     bool startWrite = false;
     bool writeDisplayUpdate = false;
-
-    bool writeBusy = false;
-    bool readsDone = false;
-
-    bool rStepOneDone = false;
-    bool rStepTwoDone = false;
-    bool rStepThreeDone = false;
-    bool rStepFourDone = false;
-
-    bool wStepOneDone = false;
-    bool wStepTwoDone = false;
-    bool wStepThreeDone = false;
-    bool wStepFourDone = false;
 
     void handleRuntimeDisplayUpdates();
     void handleWriteUpdates();
@@ -68,6 +54,16 @@ namespace XRMain
 
         delay(1000);
 
+
+
+        // // testing
+
+        // XRDisplay::drawSampleWaveform();
+
+        // return; // testing
+
+
+
         if (!XRSD::loadMachineState())
         {
             XRUX::setCurrentMode(XRUX::UX_MODE::PROJECT_INITIALIZE);
@@ -108,8 +104,8 @@ namespace XRMain
         XREncoder::handleStates();
 
         XRSequencer::handlePatternQueueActions();
-        //XRSequencer::handleTrackLayerQueueActions();
-        
+        XRSequencer::handleTrackLayerQueueActions();
+
         XRSequencer::handleTriggerStates();
 
         handleWriteUpdates();
@@ -170,6 +166,8 @@ namespace XRMain
             if (XRSequencer::trackLayerDirty) {
                 startWrite = true;
 
+                Serial.printf("trackLayerDirty! %s / current active layer: %d\n", XRSD::getActiveTrackLayerFilename(), XRSequencer::getCurrentSelectedTrackLayerNum());
+
                 XRSequencer::trackLayerForWrite = XRSequencer::activeTrackLayer;
                 XRAsyncIO::addItem({
                     XRAsyncIO::FILE_TYPE::TRACK_LAYER,
@@ -222,4 +220,5 @@ namespace XRMain
             }
         }
     }
+
 }

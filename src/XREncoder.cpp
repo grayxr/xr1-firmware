@@ -34,6 +34,7 @@ namespace XREncoder
     void handleEncoderSetRatchetMods();
     void handleEncoderTraversePages(int diff);
     void handleEncoderTraverseRatchetPages(int diff);
+    void handleEncoderTraverseFillChainPages(int diff);
     void handleEncoderPatternModA(int diff);
     void handleEncoderPatternModB(int diff);
     void handleEncoderPatternModC(int diff);
@@ -174,6 +175,15 @@ namespace XREncoder
             int diff = getDiff(MAIN_ENCODER_ADDRESS);
             handleEncoderTraversePages(diff);
             handleEncoderSetPatternMods();
+
+            return;
+        }
+
+        if (
+            currentUXMode == XRUX::UX_MODE::PERFORM_FILL_CHAIN
+        ) {
+            int diff = getDiff(MAIN_ENCODER_ADDRESS);
+            handleEncoderTraverseFillChainPages(diff);
 
             return;
         }
@@ -417,6 +427,43 @@ namespace XREncoder
             } else {
                 XRLED::clearAllStepLEDs();
                 XRLED::displayRatchetTrackLED(false);
+            }
+            
+            XRDisplay::drawSequencerScreen(false);
+        }
+    }
+
+    void handleEncoderTraverseFillChainPages(int diff)
+    {
+        auto pg = XRSequencer::getCurrentFillChainPageNum();
+        int newPage = pg + diff;
+
+        if (newPage != pg) {
+            int maxPages = 2;
+
+            if (newPage > (maxPages - 1)) {
+                newPage = 0;
+            } else if (newPage < 0) {
+                newPage = maxPages - 1;
+            }
+
+            XRSequencer::setCurrentFillChainPageNum(newPage);
+
+            if (newPage == 1) {
+                // // disable fill state
+                // if (XRSequencer::fillState.fillEnabled) {
+                //     XRSequencer::fillState.fillEnabled = false;
+                //     XRSequencer::fillState.currentStep = 1;
+                //     XRSequencer::fillState.currentMeasure = 1;
+                // }
+
+                // XRSequencer::layerChainState.enabled = true;
+
+                XRLED::clearAllStepLEDs();
+                XRLED::displayChainLEDs(false);
+            } else {
+                XRLED::clearAllStepLEDs();
+                XRLED::displaySelectedTrackLayer(false);
             }
             
             XRDisplay::drawSequencerScreen(false);
