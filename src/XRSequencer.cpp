@@ -2271,9 +2271,9 @@ namespace XRSequencer
 
                 XRClock::stop();
 
-                for (size_t d = 0; d < MAXIMUM_DEXED_SYNTH_SOUNDS; d++) {
-                    XRSound::dexedInstances[d].dexed.notesOff();
-                }
+                // for (size_t d = 0; d < MAXIMUM_DEXED_SYNTH_SOUNDS; d++) {
+                //     XRSound::dexedInstances[d].dexed.notesOff();
+                // }
 
                 applyRecordingToSequencerWhenStopped();
 
