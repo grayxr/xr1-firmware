@@ -13,11 +13,11 @@
 
 namespace XRKeyMatrix
 {
-    const byte ROWS = 6;
-    const byte COLS = 6;
+    const uint8_t ROWS = 6;
+    const uint8_t COLS = 6;
 
-    byte rowPins[ROWS] = {38, 37, 36, 35, 34, 33}; //connect to the row pinouts of the keypad
-    byte colPins[COLS] = {2, 9, 12, 41, 40, 39}; //connect to the column pinouts of the keypad
+    uint8_t rowPins[ROWS] = {38, 37, 36, 35, 34, 33}; //connect to the row pinouts of the keypad
+    uint8_t colPins[COLS] = {2, 9, 12, 41, 40, 39}; //connect to the column pinouts of the keypad
 
     char keys[ROWS][COLS] = {
         {'a','b','c','d','e','f'},

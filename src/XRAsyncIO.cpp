@@ -15,10 +15,10 @@ namespace XRAsyncIO
     bool openForRead(IO_CONTEXT& ctx);
     bool openForWrite(IO_CONTEXT& ctx);
     bool doneReading(IO_CONTEXT& ctx, void *buf);
-    bool doneWriting(IO_CONTEXT& ctx, const byte *buf);
+    bool doneWriting(IO_CONTEXT& ctx, const uint8_t *buf);
 
     void *getReadObject(FILE_TYPE fileType);
-    byte *getWriteObject(FILE_TYPE fileType);
+    uint8_t *getWriteObject(FILE_TYPE fileType);
 
     void update()
     {
@@ -213,7 +213,7 @@ namespace XRAsyncIO
         return false;
     }
 
-    bool doneWriting(IO_CONTEXT& ctx, const byte *buf)
+    bool doneWriting(IO_CONTEXT& ctx, const uint8_t *buf)
     {
         Serial.printf("Writing file: %s ", ctx.filename.c_str());
 
@@ -221,12 +221,12 @@ namespace XRAsyncIO
             uint32_t chunkSize = min(ASYNC_IO_W_BUFFER_SIZE, _writeIO.remaining);
 
             yield();
-            memcpy(_writeIO.buffer, (byte *)buf + _writeIO.offset, chunkSize);
+            memcpy(_writeIO.buffer, (uint8_t *)buf + _writeIO.offset, chunkSize);
             yield();
-            uint32_t bytesWritten = _file.write(_writeIO.buffer, chunkSize);
+            uint32_t uint8_tsWritten = _file.write(_writeIO.buffer, chunkSize);
 
             _writeIO.offset += chunkSize;
-            _writeIO.remaining -= bytesWritten; // should use bytesWritten or chunkSize?
+            _writeIO.remaining -= uint8_tsWritten; // should use uint8_tsWritten or chunkSize?
 
             //Serial.printf("REMAINING <=0, remaining: %d\n", _writeIO.remaining);
 
@@ -250,28 +250,28 @@ namespace XRAsyncIO
         switch (fileType)
         {
             case PATTERN_SETTINGS:
-                return (byte *)&XRSequencer::idlePatternSettings;
+                return (uint8_t *)&XRSequencer::idlePatternSettings;
             case TRACK_LAYER:
-                return (byte *)&XRSequencer::idleTrackLayer;
+                return (uint8_t *)&XRSequencer::idleTrackLayer;
             case RATCHET_LAYER:
-                return (byte *)&XRSequencer::idleRatchetLayer;
+                return (uint8_t *)&XRSequencer::idleRatchetLayer;
             case KIT:
-                return (byte *)&XRSound::idleKit;
+                return (uint8_t *)&XRSound::idleKit;
         }
     }
 
-    byte *getWriteObject(FILE_TYPE fileType)
+    uint8_t *getWriteObject(FILE_TYPE fileType)
     {
         switch (fileType)
         {
             case PATTERN_SETTINGS:
-                return (byte *)&XRSequencer::patternSettingsForWrite;
+                return (uint8_t *)&XRSequencer::patternSettingsForWrite;
             case TRACK_LAYER:
-                return (byte *)&XRSequencer::trackLayerForWrite;
+                return (uint8_t *)&XRSequencer::trackLayerForWrite;
             case RATCHET_LAYER:
-                return (byte *)&XRSequencer::ratchetLayerForWrite;
+                return (uint8_t *)&XRSequencer::ratchetLayerForWrite;
             case KIT:
-                return (byte *)&XRSound::kitForWrite;
+                return (uint8_t *)&XRSound::kitForWrite;
         }
     }
 }

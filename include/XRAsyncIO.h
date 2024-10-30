@@ -59,7 +59,7 @@ namespace XRAsyncIO
     typedef struct {
         uint32_t offset;
         uint32_t remaining;
-        byte buffer[ASYNC_IO_W_BUFFER_SIZE];
+        uint8_t buffer[ASYNC_IO_W_BUFFER_SIZE];
     } WRITE_IO;
 
     void update();

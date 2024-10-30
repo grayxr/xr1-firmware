@@ -2880,7 +2880,7 @@ namespace XRSound
         //auto &trackToUse = XRSequencer::getTrack(track);
         //auto &stepToUse = XRSequencer::getStep(track, step);
 
-        XRMIDI::sendNoteOn(64, 100, 1);
+        //XRMIDI::sendNoteOn(64, 100, 1);
     }
 
     void handleCvGateNoteOnForTrackStep(int track, int step)
@@ -3004,7 +3004,7 @@ namespace XRSound
             break;
         case T_MIDI:
             {
-                XRMIDI::sendNoteOff(64, 100, 1);
+                //XRMIDI::sendNoteOff(64, 100, 1);
             }
             break;
         case T_CV_GATE:
@@ -3118,7 +3118,7 @@ namespace XRSound
             break;
         case T_MIDI:
             {
-                XRMIDI::sendNoteOff(64, 100, 1);
+                //XRMIDI::sendNoteOff(64, 100, 1);
             }
             break;
         case T_CV_GATE:
@@ -3511,7 +3511,7 @@ namespace XRSound
             break;
         case T_MIDI:
             {
-                XRMIDI::sendNoteOff(64, 100, 1);
+                //XRMIDI::sendNoteOff(64, 100, 1);
             }
             break;
         case T_CV_GATE:

@@ -51,7 +51,7 @@ namespace XRSD
     PROJECT _current_project;
 
 
-    EXTMEM byte wBuffer[ASYNC_IO_WR_BUFFER_SIZE];
+    EXTMEM uint8_t wBuffer[ASYNC_IO_WR_BUFFER_SIZE];
 
     typedef struct
     {
@@ -126,7 +126,7 @@ namespace XRSD
         wIO.open = false;
     }
 
-    void writeFileBuffered(std::string filename, const byte *data, size_t size)
+    void writeFileBuffered(std::string filename, const uint8_t *data, size_t size)
     {
 
         File file = SD.open(filename.c_str(), FILE_WRITE_BEGIN);
@@ -164,7 +164,7 @@ namespace XRSD
         file.close();
     }
     
-    void writeFileBufferedAsync(WRITE_FILE_TYPE type, const byte *wData)
+    void writeFileBufferedAsync(WRITE_FILE_TYPE type, const uint8_t *wData)
     {
         if(sdBusy()) {
             Serial.println("SD CARD BUSY, CANNOT ASYNC WRITE!");
@@ -357,7 +357,7 @@ namespace XRSD
 
             strcpy(_machine_state.lastOpenedProject, newProjectName.c_str());
 
-            newMachineStateFile.write((byte *)&_machine_state, sizeof(_machine_state));
+            newMachineStateFile.write((uint8_t *)&_machine_state, sizeof(_machine_state));
             newMachineStateFile.close();
         }
     }
@@ -381,7 +381,7 @@ namespace XRSD
             return false;
         }
 
-        machineStateFile.read((byte *)&_machine_state, sizeof(_machine_state));
+        machineStateFile.read((uint8_t *)&_machine_state, sizeof(_machine_state));
         machineStateFile.close();
 
         return true;
@@ -431,7 +431,7 @@ namespace XRSD
         newProjectFilePath += "/.settings.bin";
 
         File newProjectFile = SD.open(newProjectFilePath.c_str(), FILE_WRITE);
-        newProjectFile.write((byte *)&_current_project, sizeof(_current_project));
+        newProjectFile.write((uint8_t *)&_current_project, sizeof(_current_project));
         newProjectFile.close();
 
         delay(100);
@@ -491,7 +491,7 @@ namespace XRSD
 
         File currProjectFile = SD.open(currProjectFilePath.c_str(), FILE_WRITE);
         currProjectFile.truncate();
-        currProjectFile.write((byte *)&_current_project, sizeof(_current_project));
+        currProjectFile.write((uint8_t *)&_current_project, sizeof(_current_project));
         currProjectFile.close();
 
         saveCurrentProjectDataSync();
@@ -503,25 +503,25 @@ namespace XRSD
     {
         writeFileBuffered(
             getActivePatternSettingsFilename(), 
-            (byte *)&XRSequencer::activePatternSettings, 
+            (uint8_t *)&XRSequencer::activePatternSettings, 
             sizeof(XRSequencer::activePatternSettings)
         );
 
         writeFileBuffered(
             getActiveRatchetLayerFilename(), 
-            (byte *)&XRSequencer::activeRatchetLayer, 
+            (uint8_t *)&XRSequencer::activeRatchetLayer, 
             sizeof(XRSequencer::activeRatchetLayer)
         );
 
         writeFileBuffered(
             getActiveTrackLayerFilename(), 
-            (byte *)&XRSequencer::activeTrackLayer, 
+            (uint8_t *)&XRSequencer::activeTrackLayer, 
             sizeof(XRSequencer::activeTrackLayer)
         );
 
         writeFileBuffered(
             getActiveKitFilename(), 
-            (byte *)&XRSound::activeKit, 
+            (uint8_t *)&XRSound::activeKit, 
             sizeof(XRSound::activeKit)
         );
     }
@@ -555,7 +555,7 @@ namespace XRSD
             return false;
         }
 
-        lastKnownProjectFile.read((byte *)&_current_project, sizeof(_current_project));
+        lastKnownProjectFile.read((uint8_t *)&_current_project, sizeof(_current_project));
         lastKnownProjectFile.close();
 
         XRClock::setTempo(_current_project.tempo);
@@ -603,7 +603,7 @@ namespace XRSD
 
     bool loadActivePatternSettingsSync()
     {
-        if(!readFileBuffered(getActivePatternSettingsFilename(), (byte *)&XRSequencer::activePatternSettings, sizeof(XRSequencer::activePatternSettings))) {
+        if(!readFileBuffered(getActivePatternSettingsFilename(), (uint8_t *)&XRSequencer::activePatternSettings, sizeof(XRSequencer::activePatternSettings))) {
             return false;
         }
 
@@ -612,7 +612,7 @@ namespace XRSD
 
     bool loadActiveTrackLayerSync()
     {
-        if(!readFileBuffered(getActiveTrackLayerFilename(), (byte *)&XRSequencer::activeTrackLayer, sizeof(XRSequencer::activeTrackLayer))) {
+        if(!readFileBuffered(getActiveTrackLayerFilename(), (uint8_t *)&XRSequencer::activeTrackLayer, sizeof(XRSequencer::activeTrackLayer))) {
             return false;
         }
 
@@ -621,7 +621,7 @@ namespace XRSD
 
     bool loadActiveRatchetLayerSync()
     {
-        if(!readFileBuffered(getActiveRatchetLayerFilename(), (byte *)&XRSequencer::activeRatchetLayer, sizeof(XRSequencer::activeRatchetLayer))) {
+        if(!readFileBuffered(getActiveRatchetLayerFilename(), (uint8_t *)&XRSequencer::activeRatchetLayer, sizeof(XRSequencer::activeRatchetLayer))) {
             return false;
         }
 
@@ -656,12 +656,12 @@ namespace XRSD
         auto filename = getPatternSettingsFilename(bank, pattern);
 
         if (async) {
-            if (!readFileBufferedAsync(filename, (byte *)&XRSequencer::idlePatternSettings, sizeof(XRSequencer::idlePatternSettings))) {
+            if (!readFileBufferedAsync(filename, (uint8_t *)&XRSequencer::idlePatternSettings, sizeof(XRSequencer::idlePatternSettings))) {
                 Serial.println("failed to read pattern settings async!");
                 return false;
             }
         } else {
-            if (!readFileBuffered(filename, (byte *)&XRSequencer::idlePatternSettings, sizeof(XRSequencer::idlePatternSettings))) {
+            if (!readFileBuffered(filename, (uint8_t *)&XRSequencer::idlePatternSettings, sizeof(XRSequencer::idlePatternSettings))) {
                 return false;
             }
         }
@@ -674,11 +674,11 @@ namespace XRSD
         auto filename = getTrackLayerFilename(bank, pattern, layer);
 
         if (async) {
-            if (!readFileBufferedAsync(filename, (byte *)&XRSequencer::idleTrackLayer, sizeof(XRSequencer::idleTrackLayer))) {
+            if (!readFileBufferedAsync(filename, (uint8_t *)&XRSequencer::idleTrackLayer, sizeof(XRSequencer::idleTrackLayer))) {
                 return false;
             }
         } else {
-            if (!readFileBuffered(filename, (byte *)&XRSequencer::idleTrackLayer, sizeof(XRSequencer::idleTrackLayer))) {
+            if (!readFileBuffered(filename, (uint8_t *)&XRSequencer::idleTrackLayer, sizeof(XRSequencer::idleTrackLayer))) {
                 return false;
             }
         }
@@ -691,11 +691,11 @@ namespace XRSD
         auto filename = getRatchetLayerFilename(bank, pattern);
 
         if (async) {
-            if (!readFileBufferedAsync(filename, (byte *)&XRSequencer::idleRatchetLayer, sizeof(XRSequencer::idleRatchetLayer))) {
+            if (!readFileBufferedAsync(filename, (uint8_t *)&XRSequencer::idleRatchetLayer, sizeof(XRSequencer::idleRatchetLayer))) {
                 return false;
             }
         } else {
-            if (!readFileBuffered(filename, (byte *)&XRSequencer::idleRatchetLayer, sizeof(XRSequencer::idleRatchetLayer))) {
+            if (!readFileBuffered(filename, (uint8_t *)&XRSequencer::idleRatchetLayer, sizeof(XRSequencer::idleRatchetLayer))) {
                 return false;
             }
         }
@@ -705,7 +705,7 @@ namespace XRSD
 
     bool loadActiveKitSync()
     {
-        if (!readFileBuffered(getActiveKitFilename(), (byte *)&XRSound::activeKit, sizeof(XRSound::activeKit))) {
+        if (!readFileBuffered(getActiveKitFilename(), (uint8_t *)&XRSound::activeKit, sizeof(XRSound::activeKit))) {
             return false;
         }
 
@@ -719,11 +719,11 @@ namespace XRSD
         auto filename = getKitFilename(bank, pattern);
 
         if (async) {
-            if (!readFileBufferedAsync(filename, (byte *)&XRSound::idleKit, sizeof(XRSound::idleKit))) {
+            if (!readFileBufferedAsync(filename, (uint8_t *)&XRSound::idleKit, sizeof(XRSound::idleKit))) {
                 return false;
             }
         } else {
-            if (!readFileBuffered(filename, (byte *)&XRSound::idleKit, sizeof(XRSound::idleKit))) {
+            if (!readFileBuffered(filename, (uint8_t *)&XRSound::idleKit, sizeof(XRSound::idleKit))) {
                 return false;
             }
         }
@@ -734,36 +734,36 @@ namespace XRSD
     void saveActivePatternSettings(bool async)
     {
         if (async) {
-            //writeFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_PATTERN_SETTINGS, (byte *)&XRSequencer::patternSettingsForWrite);
+            //writeFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_PATTERN_SETTINGS, (uint8_t *)&XRSequencer::patternSettingsForWrite);
         } else {
-            writeFileBuffered(getActivePatternSettingsFilename(), (byte *)&XRSequencer::activePatternSettings, sizeof(XRSequencer::activePatternSettings));
+            writeFileBuffered(getActivePatternSettingsFilename(), (uint8_t *)&XRSequencer::activePatternSettings, sizeof(XRSequencer::activePatternSettings));
         }
     }
 
     void saveActiveRatchetLayer(bool async)
     {
         if (async) {
-            //writeFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_RATCHET_LAYER, (byte *)&XRSequencer::ratchetLayerForWrite);
+            //writeFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_RATCHET_LAYER, (uint8_t *)&XRSequencer::ratchetLayerForWrite);
         } else {
-            writeFileBuffered(getActiveRatchetLayerFilename(), (byte *)&XRSequencer::activeRatchetLayer, sizeof(XRSequencer::activeRatchetLayer));
+            writeFileBuffered(getActiveRatchetLayerFilename(), (uint8_t *)&XRSequencer::activeRatchetLayer, sizeof(XRSequencer::activeRatchetLayer));
         }
     }
 
     void saveActiveTrackLayer(bool async)
     {
         if (async) {
-            //writeFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_TRACK_LAYER, (byte *)&XRSequencer::trackLayerForWrite);
+            //writeFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_TRACK_LAYER, (uint8_t *)&XRSequencer::trackLayerForWrite);
         } else {
-            writeFileBuffered(getActiveTrackLayerFilename(), (byte *)&XRSequencer::activeTrackLayer, sizeof(XRSequencer::activeTrackLayer));
+            writeFileBuffered(getActiveTrackLayerFilename(), (uint8_t *)&XRSequencer::activeTrackLayer, sizeof(XRSequencer::activeTrackLayer));
         }
     }
 
     void saveActiveKit(bool async)
     {
         if (async) {
-            //writeFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_KIT, (byte *)&XRSound::kitForWrite);
+            //writeFileBufferedAsync(WRITE_FILE_TYPE::ACTIVE_KIT, (uint8_t *)&XRSound::kitForWrite);
         } else {
-            writeFileBuffered(getActiveKitFilename(), (byte *)&XRSound::activeKit, sizeof(XRSound::activeKit));
+            writeFileBuffered(getActiveKitFilename(), (uint8_t *)&XRSound::activeKit, sizeof(XRSound::activeKit));
         }
     }
 

@@ -24,7 +24,7 @@ namespace XRSD
 
     typedef struct {
         std::string filename;
-        byte buffer[ASYNC_IO_WR_BUFFER_SIZE];
+        uint8_t buffer[ASYNC_IO_WR_BUFFER_SIZE];
         uint32_t offset;
         uint32_t remaining;
         uint32_t size;
