@@ -223,10 +223,10 @@ namespace XRAsyncIO
             yield();
             memcpy(_writeIO.buffer, (uint8_t *)buf + _writeIO.offset, chunkSize);
             yield();
-            uint32_t uint8_tsWritten = _file.write(_writeIO.buffer, chunkSize);
+            uint32_t bytesWritten = _file.write(_writeIO.buffer, chunkSize);
 
             _writeIO.offset += chunkSize;
-            _writeIO.remaining -= uint8_tsWritten; // should use uint8_tsWritten or chunkSize?
+            _writeIO.remaining -= bytesWritten; // should use uint8_tsWritten or chunkSize?
 
             //Serial.printf("REMAINING <=0, remaining: %d\n", _writeIO.remaining);
 
