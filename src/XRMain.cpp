@@ -166,7 +166,7 @@ namespace XRMain
             if (XRSequencer::trackLayerDirty) {
                 startWrite = true;
 
-                Serial.printf("trackLayerDirty! %s / current active layer: %d\n", XRSD::getActiveTrackLayerFilename(), XRSequencer::getCurrentSelectedTrackLayerNum());
+                Serial.printf("trackLayerDirty! %s / current active layer: %d\n", XRSD::getActiveTrackLayerFilename().c_str(), XRSequencer::getCurrentSelectedTrackLayerNum());
 
                 XRSequencer::trackLayerForWrite = XRSequencer::activeTrackLayer;
                 XRAsyncIO::addItem({

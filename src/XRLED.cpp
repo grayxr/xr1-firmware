@@ -321,7 +321,7 @@ namespace XRLED
 
     void setDisplayStateForAllStepLEDs()
     {
-        Serial.println("calling setDisplayStateForAllStepLEDs");
+        //Serial.println("calling setDisplayStateForAllStepLEDs");
 
         auto currUXMode = XRUX::getCurrentMode();
         auto &currTrack = (currUXMode == XRUX::PERFORM_RATCHET || currUXMode == XRUX::SUBMITTING_RATCHET_STEP_VALUE) ? 

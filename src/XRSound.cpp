@@ -1345,14 +1345,14 @@ namespace XRSound
                 auto chk = getValueNormalizedAsInt8(activeKit.sounds[currentSelectedTrackNum].params[MSMP_CHOKE]);
                 auto dly = getValueNormalizedAsFloat(activeKit.sounds[currentSelectedTrackNum].params[MSMP_DELAY]);
 
-                mods.aValue = std::to_string(round(lvl * 100));
+                mods.aValue = std::to_string((int16_t)round(lvl * 100));
                 mods.bValue = std::to_string((float)round(pan * 100) / 100);
                 mods.bValue = mods.bValue.substr(0, 3);
                 mods.bFloatValue = pan;
                 mods.bType = RANGE;
 
                 mods.cValue = chk > -1 ? std::to_string(chk+1) : "--";
-                mods.dValue = std::to_string(round(dly * 100));
+                mods.dValue = std::to_string((int16_t)round(dly * 100));
             }
 
             break;
@@ -1559,11 +1559,11 @@ namespace XRSound
                 auto pan = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_PAN]);
                 auto dly = getValueNormalizedAsFloat(currentSoundForTrack.params[MSYN_DELAY]);
 
-                mods.aValue = std::to_string(round(lvl * 100));
+                mods.aValue = std::to_string((int16_t)round(lvl * 100));
                 mods.bValue = std::to_string((float)round(pan * 100) / 100);
                 mods.bValue = mods.bValue.substr(0, 3);
                 mods.cValue = "--";
-                mods.dValue = std::to_string(round(dly * 100));
+                mods.dValue = std::to_string((int16_t)round(dly * 100));
 
                 mods.bFloatValue = pan;
                 mods.bType = RANGE;
@@ -1752,14 +1752,14 @@ namespace XRSound
                 auto pan = getValueNormalizedAsFloat(activeKit.sounds[currentSelectedTrackNum].params[DEXE_PAN]);
                 auto dly = getValueNormalizedAsFloat(activeKit.sounds[currentSelectedTrackNum].params[DEXE_DELAY]);
 
-                mods.aValue = std::to_string(round(lvl * 100));
+                mods.aValue = std::to_string((int16_t)round(lvl * 100));
                 mods.bValue = std::to_string((float)round(pan * 100) / 100);
                 mods.bValue = mods.bValue.substr(0, 3);
                 mods.bFloatValue = pan;
                 mods.bType = RANGE;
 
                 mods.cValue = "--";
-                mods.dValue = std::to_string(round(dly * 100));
+                mods.dValue = std::to_string((int16_t)round(dly * 100));
             }
 
             break;
@@ -3871,7 +3871,7 @@ namespace XRSound
 
     int32_t getFloatValuePaddedAsInt32(float value)
     {
-        return (int32_t)(value * 100);
+        return (int32_t)(round(value * 100));
     }
 
     int32_t getBoolValuePaddedAsInt32(bool value)

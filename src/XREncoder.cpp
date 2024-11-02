@@ -1110,8 +1110,14 @@ namespace XREncoder
             float currLvl = getValueNormalizedAsFloat(XRSound::activeKit.sounds[currSelectedTrackNum].params[MSMP_LEVEL]);
             float newLvl = currLvl + (diff * 0.01);
 
-            if (!(newLvl < 0.0 || newLvl > 1.1) && newLvl != currLvl)
+            //Serial.printf("currLvl: %d, newLvl: %d\n", (int16_t)round(currLvl * 100), (int16_t)round(newLvl * 100));
+
+            if ((int16_t)round(newLvl * 100) != (int16_t)round(currLvl * 100))
             {
+                newLvl = constrain(newLvl, 0.0, 1.0);
+
+            //Serial.printf("HERE: newLvl: %f, int32 val: %d\n", newLvl, getFloatValuePaddedAsInt32(newLvl));
+
                 XRSound::activeKit.sounds[currSelectedTrackNum].params[MSMP_LEVEL] = getFloatValuePaddedAsInt32(newLvl);
                 XRSound::kitDirty = true;
 
@@ -1686,8 +1692,12 @@ namespace XREncoder
             float currLvl = getValueNormalizedAsFloat(XRSound::activeKit.sounds[currSelectedTrackNum].params[DEXE_LEVEL]);
             float newLvl = currLvl + (diff * 0.01);
 
-            if (!(newLvl < 0.0 || newLvl > 1.1) && newLvl != currLvl)
+            //Serial.printf("currLvl: %f, newLvl: %f\n", currLvl, newLvl);
+
+            if (newLvl != currLvl)
             {
+                newLvl = constrain(newLvl, 0.0, 1.0);
+
                 XRSound::activeKit.sounds[currSelectedTrackNum].params[DEXE_LEVEL] = getFloatValuePaddedAsInt32(newLvl);
                 XRSound::kitDirty = true;
 

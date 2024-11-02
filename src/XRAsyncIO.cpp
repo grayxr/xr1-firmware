@@ -215,7 +215,7 @@ namespace XRAsyncIO
 
     bool doneWriting(IO_CONTEXT& ctx, const uint8_t *buf)
     {
-        Serial.printf("Writing file: %s ", ctx.filename.c_str());
+        //Serial.printf("Writing file: %s ", ctx.filename.c_str());
 
         if (_writeIO.remaining > 0) {
             uint32_t chunkSize = min(ASYNC_IO_W_BUFFER_SIZE, _writeIO.remaining);
