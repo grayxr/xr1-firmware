@@ -1,3 +1,6 @@
+#ifndef XRHardware_h
+#define XRHardware_h
+
 #include <Arduino.h>
 #include <SPI.h>
 #include <SD.h>
@@ -22,6 +25,9 @@
 #include <XRFonts.h>
 
 namespace XRHardware {
+
+#define XR1_DISPLAY_WIDTH 128
+#define XR1_DISPLAY_HEIGHT 64
 
 class DeltaTracker
 {
@@ -227,13 +233,13 @@ public:
   {
     bool activeKeys = kpd.getKeys();
     for (size_t i=0; i<LIST_MAX; i++) {
-        if(buttonStates[kpd.key[i].kchar] == KeyState::PRESSED) buttonStates[kpd.key[i].kchar] = KeyState::HOLD;
-        if(buttonStates[kpd.key[i].kchar] == KeyState::RELEASED) buttonStates[kpd.key[i].kchar] = KeyState::IDLE;
+        if(buttonStates[(int)kpd.key[i].kchar] == KeyState::PRESSED) buttonStates[(int)kpd.key[i].kchar] = KeyState::HOLD;
+        if(buttonStates[(int)kpd.key[i].kchar] == KeyState::RELEASED) buttonStates[(int)kpd.key[i].kchar] = KeyState::IDLE;
     }
     if(activeKeys) {
         for (size_t i=0; i<LIST_MAX; i++) {
             if (kpd.key[i].stateChanged) {
-                buttonStates[kpd.key[i].kchar] = kpd.key[i].kstate;
+                buttonStates[(int)kpd.key[i].kchar] = kpd.key[i].kstate;
             }
         }
     }
@@ -325,3 +331,5 @@ public:
 };
 
 }
+
+#endif
